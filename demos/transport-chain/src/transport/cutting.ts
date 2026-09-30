@@ -7,7 +7,7 @@ export function cutting(op: string, inner: Transport): Transport {
   return async (call, invocation) => {
     if (call.op === op && !cut) {
       cut = true;
-      throw new Error(`the line dropped on ${call.entity}.${call.op}`);
+      throw new Error(`the line dropped on ${call.address}.${call.op}`);
     }
 
     return inner(call, invocation);

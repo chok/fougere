@@ -29,4 +29,31 @@ describe('ArgumentResolver', () => {
     await expect(resolver.resolve(plan, Invocation.from()))
       .resolves.toEqual([actor]);
   });
+
+  it('refuses a required parameter the caller did not send', async () => {
+    const plan: BindingPlan = [{ name: 'cents', source: { kind: 'param', name: 'cents', coerce: 'number' }, optional: false }];
+
+    await expect(new ArgumentResolver().resolve(plan, Invocation.from()))
+      .rejects.toMatchObject({ code: 'VALIDATION_FAILED', message: 'cents: Required' });
+  });
+
+  it('hands an optional parameter the caller did not send as undefined', async () => {
+    const plan: BindingPlan = [{ name: 'cents', source: { kind: 'param', name: 'cents', coerce: 'number' }, optional: true }];
+
+    await expect(new ArgumentResolver().resolve(plan, Invocation.from())).resolves.toEqual([undefined]);
+  });
+
+  it.each(['abc', '', ' '])('refuses %j where a number is expected', async (cents) => {
+    const plan: BindingPlan = [{ name: 'cents', source: { kind: 'param', name: 'cents', coerce: 'number' }, optional: false }];
+
+    await expect(new ArgumentResolver().resolve(plan, Invocation.from({ query: { cents } })))
+      .rejects.toMatchObject({ code: 'VALIDATION_FAILED' });
+  });
+
+  it('refuses a word that is not a boolean', async () => {
+    const plan: BindingPlan = [{ name: 'active', source: { kind: 'param', name: 'active', coerce: 'boolean' }, optional: false }];
+
+    await expect(new ArgumentResolver().resolve(plan, Invocation.from({ query: { active: 'yes' } })))
+      .rejects.toMatchObject({ code: 'VALIDATION_FAILED' });
+  });
 });

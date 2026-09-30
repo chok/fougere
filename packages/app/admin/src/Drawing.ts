@@ -19,7 +19,7 @@ export async function fetchTopology(
   try {
     return await sendCall(
       fetcher,
-      { entity: 'rpc', op: 'topology' },
+      { address: 'rpc', op: 'topology' },
       Invocation.empty,
       endpoint,
     ) as TopologyReport;

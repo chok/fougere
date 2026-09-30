@@ -31,8 +31,7 @@ describe('StorageGuard', () => {
     await expect(guarded.create({ name: 'Fern', stock: -1 }))
       .rejects.toMatchObject({
         code: 'INTERNAL_ERROR',
-        entity: 'product',
-        operation: 'create',
+        message: expect.stringContaining('product.create'),
       });
     expect(create).not.toHaveBeenCalled();
   });
@@ -59,7 +58,7 @@ describe('StorageGuard', () => {
     });
 
     await expect(guarded.upsert({ name: 'Fern', stock: -1 }))
-      .rejects.toMatchObject({ operation: 'upsert' });
+      .rejects.toMatchObject({ message: expect.stringContaining('.upsert') });
     expect(upsert).not.toHaveBeenCalled();
   });
 

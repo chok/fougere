@@ -14,24 +14,35 @@ import type { FougereErrorOptions } from './FougereErrorOptions.js';
  */
 export class FougereError<Code extends ErrorCode = ErrorCode> extends Error {
   readonly code: Code;
-  readonly entity?: string;
-  readonly operation?: string;
+  address?: string;
+  operation?: string;
   readonly details?: unknown;
 
   constructor(options: FougereErrorOptions<Code>) {
     super(options.message, { cause: options.cause });
     this.name = 'FougereError';
     this.code = options.code;
-    this.entity = options.entity;
+    this.address = options.address;
     this.operation = options.operation;
     this.details = options.details;
+  }
+
+  /**
+   * Where the call was refused. The facade a refusal crosses first is where it happened, so a
+   * facade further out leaves what a deeper one wrote.
+   */
+  at(address: string, operation: string): this {
+    this.address ??= address;
+    this.operation ??= operation;
+
+    return this;
   }
 
   toJSON() {
     return {
       code: this.code,
       message: this.message,
-      ...(this.entity && { entity: this.entity }),
+      ...(this.address && { address: this.address }),
       ...(this.operation && { operation: this.operation }),
       ...(this.details !== undefined && { details: this.details }),
     };
@@ -45,7 +56,7 @@ export class FougereError<Code extends ErrorCode = ErrorCode> extends Error {
     return new FougereError({
       code: known ? (raw.code as ErrorCode) : ErrorCode.INTERNAL_ERROR,
       message: typeof raw.message === 'string' ? raw.message : 'Unknown error',
-      entity: typeof raw.entity === 'string' ? raw.entity : undefined,
+      address: typeof raw.address === 'string' ? raw.address : undefined,
       operation: typeof raw.operation === 'string' ? raw.operation : undefined,
       details: known ? raw.details : { originalCode: raw.code, details: raw.details },
     });

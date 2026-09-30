@@ -116,7 +116,7 @@ describe('saturation and topology', () => {
     const run = createLocalRunner(app);
     await app.resolve<Facade>('productHandler').list();
 
-    const report = await run({ entity: 'rpc', op: 'topology' }, { params: {}, query: {}, input: undefined, state: {} }) as {
+    const report = await run({ address: 'rpc', op: 'topology' }, { params: {}, query: {}, input: undefined, state: {} }) as {
       fronds: { frond: string; placement: string }[];
       edges: unknown[];
       active: number;
@@ -163,7 +163,7 @@ describe('what leaves as OTLP', () => {
     // OTLP requires exactly one more bucket than there are bounds.
     expect(point.bucketCounts).toHaveLength(point.explicitBounds.length + 1);
     expect(point.attributes.map((a: { key: string }) => a.key)).toEqual(
-      expect.arrayContaining(['fougere.frond', 'fougere.entity', 'fougere.operation', 'fougere.outcome']),
+      expect.arrayContaining(['fougere.frond', 'fougere.address', 'fougere.operation', 'fougere.outcome']),
     );
   });
 

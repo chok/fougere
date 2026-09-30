@@ -39,7 +39,7 @@ export interface FinishedSpan extends SpanContext {
   frond: string | undefined;
   kind: SpanKind;
   crossing: Crossing | undefined;
-  entity: string;
+  address: string;
   operation: string;
   /** When it started, in epoch milliseconds — an INSTANT, not an offset. */
   startedAt: number;
@@ -108,8 +108,8 @@ export interface TracingOptions {
    * it is that turning the rate down no longer drops the traces that matter most.
    */
   sample?: number;
-  /** How far an operation's work goes, by `entity.op` — the boot reads it off the model. */
-  hopsOf?: (entity: string, operation: string) => number;
+  /** How far an operation's work goes, by `address.op` — the boot reads it off the model. */
+  hopsOf?: (address: string, operation: string) => number;
 }
 
 /** The step running here and now. */
@@ -175,15 +175,15 @@ export function tracing(takers: readonly SpanSink[], options: TracingOptions = {
    * Whether a root span is kept. An operation that leaves the process always is — the budget is
    * for the ones a histogram already describes.
    */
-  const keeps = (entity: string, operation: string) =>
-    rate >= 1 || hopsOf(entity, operation) > 0 || Math.random() < rate;
+  const keeps = (address: string, operation: string) =>
+    rate >= 1 || hopsOf(address, operation) > 0 || Math.random() < rate;
 
   const middleware: AppMiddleware = (ctx, next) => {
     if (takers.length === 0) return next();
     // An op that CARRIES a line is not a call this process made: counting it puts the
     // delivery of a log line in the saturation figure, and spanning it puts a line about
     // the span back on the wire. Same rule as `callLines` in `@fougere/log`, one declaration.
-    if (CARRIES_LINE.has(ctx.entity)) return next();
+    if (CARRIES_LINE.has(ctx.address)) return next();
 
     // The wire first, the ambient context second: an arriving call names its parent on
     // the invocation, an outgoing one inherits from the call it is made inside.
@@ -200,7 +200,7 @@ export function tracing(takers: readonly SpanSink[], options: TracingOptions = {
       spanId: randomHex(8),
       // A trace is whole or it is nothing: a call under a sampled parent is sampled, whatever
       // this process would have decided on its own. Only a root is decided here.
-      sampled: parent?.sampled ?? keeps(ctx.entity, ctx.operation),
+      sampled: parent?.sampled ?? keeps(ctx.address, ctx.operation),
       frond: ctx.frond,
       startedAt,
       start,
@@ -231,7 +231,7 @@ export function tracing(takers: readonly SpanSink[], options: TracingOptions = {
         frond: ctx.frond,
         kind: 'operation',
         crossing: ctx.crosses ? 'sent' : ctx.invocation?.crossed ? 'received' : undefined,
-        entity: ctx.entity,
+        address: ctx.address,
         operation: ctx.operation,
         startedAt,
         ms,
@@ -284,7 +284,7 @@ export function tracing(takers: readonly SpanSink[], options: TracingOptions = {
         frond: under.frond,
         kind: 'statement',
         crossing: undefined,
-        entity: ran.subject,
+        address: ran.subject,
         operation: ran.verb,
         startedAt: under.startedAt + Math.max(0, performance.now() - under.start - ran.ms),
         ms: ran.ms,

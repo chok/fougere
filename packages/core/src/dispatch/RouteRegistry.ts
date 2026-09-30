@@ -32,7 +32,7 @@ export class RouteRegistry {
     if (exact || address.surface === undefined) return exact;
 
     const shared = this.byAddress.get(new RouteAddress({
-      entity: address.entity,
+      address: address.address,
       operation: address.operation,
     }).key());
 
@@ -69,9 +69,9 @@ export class RouteRegistry {
     return [...this.byAddress.values()];
   }
 
-  operationNames(entity: string, surface?: string): string[] {
+  operationNames(address: string, surface?: string): string[] {
     return this.routes()
-      .filter((route) => route.address.entity === entity && route.address.surface === surface)
+      .filter((route) => route.address.address === address && route.address.surface === surface)
       .map((route) => route.address.operation);
   }
 }

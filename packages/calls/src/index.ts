@@ -72,7 +72,6 @@ function nameOf(schema: unknown): string | null {
 function frondIndex(app: App): (address: string) => string | undefined {
   const byAddress = new Map<string, string>();
   for (const frond of app.fronds) {
-    for (const entity of frond.entities) byAddress.set(entity.name, frond.name);
     for (const handler of frond.handlers) byAddress.set(handler.address, frond.name);
   }
 
@@ -135,7 +134,7 @@ export function calls(options: CallsOptions = {}): Extension {
         app.observe((event) => {
           // Not its own: keeping a line is a DISPATCH, so the ring would fill with the
           // writes that fill it — the same shape as a logger that logs its own carrying.
-          if (CARRIES_LINE.has(event.call.address.entity)) return;
+          if (CARRIES_LINE.has(event.call.address.address)) return;
           ring.record(event);
           if (event.stage === 'failed') errors.fromDispatch(event);
         }),

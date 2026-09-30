@@ -4,7 +4,7 @@ import type { AppNext, OperationContext } from '@fougere/core';
 export default class Everywhere {
   async around(context: OperationContext, next: AppNext): Promise<unknown> {
     ((globalThis as Record<string, unknown>).__around as string[])
-      .push(`everywhere:${context.entity}.${context.operation}`);
+      .push(`everywhere:${context.address}.${context.operation}`);
 
     return next();
   }

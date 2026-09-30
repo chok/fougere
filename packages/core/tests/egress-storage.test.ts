@@ -62,8 +62,8 @@ describe('what the shape refuses never reaches storage', () => {
 
     await guarded.create({ ...ok, status: 'nope' }).catch((e: FougereError) => {
       expect(e.code).toBe(ErrorCode.INTERNAL_ERROR);
-      expect(e.entity).toBe('contact');
-      expect(e.operation).toBe('create');
+      expect(e.message).toContain('contact.create');
+      expect(e.address).toBeUndefined();
     });
     expect.assertions(3);
   });

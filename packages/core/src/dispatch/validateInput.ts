@@ -7,8 +7,6 @@ import { FougereError } from '../wire/FougereError.js';
 export function validateInput(
   schema: SchemaView | undefined,
   invocation: InvocationContext,
-  entity: string,
-  operation: string,
 ): InvocationContext {
   if (!schema || invocation.input === undefined || invocation.input === null) return invocation;
 
@@ -20,8 +18,6 @@ export function validateInput(
       code: ErrorCode.VALIDATION_FAILED,
       message: result.errors.map((error) => `${dotted(error.path)}: ${error.message}`).join(', '),
       details: result.errors,
-      entity,
-      operation,
     });
   }
 

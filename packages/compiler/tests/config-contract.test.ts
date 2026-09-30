@@ -46,7 +46,7 @@ describe('config states a contract the scan could not derive', () => {
   it('names the validator for an input the scan could only see as an object', async () => {
     const { app, run } = await boot();
 
-    const ok = await run({ entity: 'note', op: 'retitle' }, call({ input: { title: 'Neuf' } }));
+    const ok = await run({ address: 'note', op: 'retitle' }, call({ input: { title: 'Neuf' } }));
     expect((ok as Record<string, unknown>).title).toBe('Neuf');
 
     await app.dispose();
@@ -56,10 +56,10 @@ describe('config states a contract the scan could not derive', () => {
     const { app, run } = await boot();
 
     // `title` is `text({ min: 1 })`, and `input` is not in the declared view.
-    await expect(run({ entity: 'note', op: 'retitle' }, call({ input: { title: '' } })))
+    await expect(run({ address: 'note', op: 'retitle' }, call({ input: { title: '' } })))
       .rejects.toMatchObject({ code: ErrorCode.VALIDATION_FAILED });
 
-    await expect(run({ entity: 'note', op: 'retitle' }, call({ input: { title: 'Ok', input: 'intrus' } })))
+    await expect(run({ address: 'note', op: 'retitle' }, call({ input: { title: 'Ok', input: 'intrus' } })))
       .rejects.toThrow(/Unknown field/);
 
     await app.dispose();
@@ -73,7 +73,7 @@ describe('config declares an op the scan never saw', () => {
     const facade = app.resolve<Record<string, unknown>>('noteHandler');
     expect(Object.keys(facade)).toContain('archive');
 
-    const out = await run({ entity: 'note', op: 'archive' }, call({ params: { id: 'note-9' } }));
+    const out = await run({ address: 'note', op: 'archive' }, call({ params: { id: 'note-9' } }));
     expect(out).toEqual({ id: 'note-9', archived: true });
 
     await app.dispose();
@@ -82,10 +82,8 @@ describe('config declares an op the scan never saw', () => {
   it('binds its arguments from the stated plan, not from a guess on the name', async () => {
     const { app, run } = await boot();
 
-    // No `id` in params → the plan still applies, the handler receives undefined
-    // rather than the op being unreachable or the id being invented from elsewhere.
-    const out = await run({ entity: 'note', op: 'archive' }, call()) as Record<string, unknown>;
-    expect(out.id).toBeUndefined();
+    await expect(run({ address: 'note', op: 'archive' }, call()))
+      .rejects.toMatchObject({ code: ErrorCode.VALIDATION_FAILED, message: 'id: Required' });
 
     await app.dispose();
   });
@@ -95,9 +93,9 @@ describe('an op nobody declared stays unreachable', () => {
   it('config adds ops, it does not open the whole prototype', async () => {
     const { app, run } = await boot();
 
-    await expect(run({ entity: 'note', op: 'constructor' }, call()))
+    await expect(run({ address: 'note', op: 'constructor' }, call()))
       .rejects.toBeInstanceOf(FougereError);
-    await expect(run({ entity: 'note', op: 'toString' }, call()))
+    await expect(run({ address: 'note', op: 'toString' }, call()))
       .rejects.toMatchObject({ code: ErrorCode.NOT_FOUND });
 
     await app.dispose();

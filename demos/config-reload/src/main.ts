@@ -56,22 +56,22 @@ const hangUp = () => new Promise<void>((resolve) => {
 });
 
 console.log(`\n1. fougere.config.ts says logLevel: 'warn' — the handler's two lines are swallowed`);
-console.log('   →', JSON.stringify(await call({ entity: 'health', op: 'check' }, Invocation.empty)));
+console.log('   →', JSON.stringify(await call({ address: 'health', op: 'check' }, Invocation.empty)));
 
 console.log(`\n2. the file is rewritten to 'debug', and the process gets a real SIGHUP`);
 write(`{ db: false, logLevel: 'debug' }`);
 await hangUp();
-console.log('   →', JSON.stringify(await call({ entity: 'health', op: 'check' }, Invocation.empty)));
+console.log('   →', JSON.stringify(await call({ address: 'health', op: 'check' }, Invocation.empty)));
 
 console.log(`\n3. the file also changes db — consulted vs consumed, and it says so`);
 write(`{ db: 'sqlite', logLevel: 'error' }`);
 await hangUp();
-console.log('   →', JSON.stringify(await call({ entity: 'health', op: 'check' }, Invocation.empty)));
+console.log('   →', JSON.stringify(await call({ address: 'health', op: 'check' }, Invocation.empty)));
 
 write(`{\n  db: false,\n  logLevel: 'warn',\n}`);
 // ── What a re-read cannot do: `db` above needed a rebuild, not a new value. ──
 console.log(`\n4. a call is running; the app is drained before being released`);
-const pingSlow = call({ entity: 'health', op: 'pingSlow' }, Invocation.empty);
+const pingSlow = call({ address: 'health', op: 'pingSlow' }, Invocation.empty);
 console.log(`   in flight: ${app.inFlight()}`);
 await app.drain();
 console.log(`   drained — in flight: ${app.inFlight()}, and the call answered: ${JSON.stringify(await pingSlow)}`);

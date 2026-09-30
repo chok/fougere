@@ -45,12 +45,12 @@ export function metrics(app?: App, bounds: readonly number[] = BOUNDS): Metrics 
       // serves, and every topology and saturation figure would count it too.
       if (span.kind !== 'operation') return;
 
-      const key = `${span.entity}\0${span.operation}\0${span.error ?? ''}`;
+      const key = `${span.address}\0${span.operation}\0${span.error ?? ''}`;
       let row = series.get(key);
       if (!row) {
         row = {
           frond: span.frond,
-          entity: span.entity,
+          address: span.address,
           operation: span.operation,
           error: span.error,
           count: 0,
@@ -153,7 +153,7 @@ export function metricsPayload(service: string, snapshot: MetricsSnapshot) {
   /** What an operation's three series are all sliced by — said once, so they stay comparable. */
   const dimensions = (row: Bucketed) => [
     ...(row.frond ? [attr('fougere.frond', row.frond)] : []),
-    attr('fougere.entity', row.entity),
+    attr('fougere.address', row.address),
     attr('fougere.operation', row.operation),
     attr('fougere.outcome', row.error ? 'error' : 'ok'),
     ...(row.error ? [attr('fougere.error.code', row.error)] : []),

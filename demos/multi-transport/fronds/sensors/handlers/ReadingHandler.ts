@@ -29,8 +29,6 @@ export default class ReadingHandler {
     throw new FougereError({
       code: ErrorCode.CONFLICT,
       message: 'station is mid-cycle',
-      entity: 'reading',
-      operation: 'sendCalibration',
       details: { retryAfterSeconds: 30 },
     });
   }

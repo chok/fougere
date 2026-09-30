@@ -96,7 +96,7 @@ describe('remote façade (repli)', () => {
 
     const facade = consumer.resolve<Record<string, (inv?: unknown) => Promise<unknown>>>('productHandler');
     const remote = await facade.list();
-    const local = await createLocalRunner(host)({ entity: 'product', op: 'list' }, Invocation.empty);
+    const local = await createLocalRunner(host)({ address: 'product', op: 'list' }, Invocation.empty);
 
     // Parity is the claim: the same enrichment on both sides, computed where the
     // frond is hosted and carried across untouched.
@@ -123,11 +123,11 @@ describe('remote façade (repli)', () => {
     const consumer = await bootConsumer(host);
 
     const run = createAppRunner(consumer);
-    expect(await run({ entity: 'product', op: 'list' }, Invocation.empty))
+    expect(await run({ address: 'product', op: 'list' }, Invocation.empty))
       .toMatchObject([{ id: '1', displayPrice: '$12.50' }, { id: '2', displayPrice: '$320.00' }]);
 
     // What the proxy must NOT claim: Object.prototype's own names are not operations.
-    await expect(run({ entity: 'product', op: 'constructor' }, Invocation.empty))
+    await expect(run({ address: 'product', op: 'constructor' }, Invocation.empty))
       .rejects.toMatchObject({ code: ErrorCode.NOT_FOUND });
 
     await consumer.dispose();
@@ -159,7 +159,7 @@ describe('remote façade (repli)', () => {
     await expect(failure).rejects.toBeInstanceOf(FougereError);
     await expect(failure).rejects.toMatchObject({
       code: ErrorCode.NOT_FOUND,
-      entity: 'product',
+      address: 'product',
       operation: 'explode',
     });
 
@@ -174,7 +174,7 @@ describe('remote façade (repli)', () => {
     const facade = consumer.resolve<Record<string, (inv?: unknown) => Promise<unknown>>>('unicornHandler');
     await expect(facade.list()).rejects.toMatchObject({
       code: ErrorCode.NOT_FOUND,
-      entity: 'unicorn',
+      address: 'unicorn',
     });
 
     await consumer.dispose();
@@ -207,7 +207,7 @@ describe('remote façade (repli)', () => {
     await facade.list();
     await facade.findById({ ...Invocation.empty, params: { id: '1' } });
 
-    const discoverCalls = spy.mock.calls.filter(([call]) => call.entity === 'rpc' && call.op === 'discover');
+    const discoverCalls = spy.mock.calls.filter(([call]) => call.address === 'rpc' && call.op === 'discover');
     expect(discoverCalls).toHaveLength(1);
 
     await consumer.dispose();
@@ -244,7 +244,7 @@ describe('remote façade (repli)', () => {
     });
     // `card.fronds is not iterable` was what this produced: a TypeError naming neither
     // the remote nor its address, on the one path where the value came from another process.
-    await expect(createAppRunner(app)({ entity: 'post', op: 'list' }, Invocation.empty))
+    await expect(createAppRunner(app)({ address: 'post', op: 'list' }, Invocation.empty))
       .rejects.toThrow(/Remote 'catalog' \(http:\/\/catalog.test\).*frond 'blog' has no valid facades array/s);
   });
 
@@ -334,7 +334,7 @@ describe('remote façade (repli)', () => {
 describe('two remotes serving one entity', () => {
   /** A remote that answers `rpc.discover` with one facade of the given name, and nothing else. */
   const serving = (frond: string, facade: string): Transport => async (call) => {
-    if (call.entity === 'rpc') {
+    if (call.address === 'rpc') {
       return { fronds: [{ name: frond, facades: [{ name: facade, ops: [{ name: 'list', kind: 'query' }] }], facts: [] }] };
     }
 

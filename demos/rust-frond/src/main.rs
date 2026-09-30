@@ -3,7 +3,7 @@
 //! Il ne connaît ni TypeScript, ni Kysely, ni Pothos, ni `entity({...})`.
 //! Il honore exactement deux choses :
 //!
-//!   1. le contrat d'appel   — POST /_fougere/call, JSON-RPC 2.0, `method = "entity.op"`,
+//!   1. le contrat d'appel   — POST /_fougere/call, JSON-RPC 2.0, `method = "address.op"`,
 //!                             `params` = l'InvocationContext ({ params, query, input, state })
 //!   2. la carte d'identité  — `rpc.discover` rend ce qu'il héberge, schéma compris
 //!
@@ -179,7 +179,7 @@ fn identity_card(state: &AppState) -> Value {
 struct Failure {
     code: &'static str,
     message: String,
-    entity: &'static str,
+    address: &'static str,
     operation: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     details: Option<Value>,
@@ -187,7 +187,7 @@ struct Failure {
 
 impl Failure {
     fn not_found(message: String, op: &str) -> Self {
-        Failure { code: "NOT_FOUND", message, entity: "sensor", operation: op.into(), details: None }
+        Failure { code: "NOT_FOUND", message, address: "sensor", operation: op.into(), details: None }
     }
 }
 
@@ -267,9 +267,9 @@ struct AppState {
 }
 
 fn dispatch(state: &AppState, method: &str, params: &Value) -> Result<Value, Failure> {
-    let (entity, op) = method.split_once('.').unwrap_or(("", method));
+    let (address, op) = method.split_once('.').unwrap_or(("", method));
 
-    match (entity, op) {
+    match (address, op) {
         ("rpc", "discover") => Ok(identity_card(state)),
 
         ("sensor", "list") => {
@@ -298,7 +298,7 @@ fn dispatch(state: &AppState, method: &str, params: &Value) -> Result<Value, Fai
                 Err(rejected) => Err(Failure {
                     code: "VALIDATION_FAILED",
                     message: "Validation failed".into(),
-                    entity: "sensor",
+                    address: "sensor",
                     operation: op.into(),
                     details: Some(json!(rejected)),
                 }),

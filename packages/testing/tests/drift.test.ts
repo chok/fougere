@@ -18,7 +18,7 @@ import { testApp, driftOf, agrees, explain } from '../src/index.js';
 const cardOf = async (fixture: string): Promise<IdentityCard> => {
   await using app = await testApp({ root: join(import.meta.dirname, fixture) });
 
-  return await createLocalRunner(app)({ entity: 'rpc', op: 'discover' }, Invocation.empty) as IdentityCard;
+  return await createLocalRunner(app)({ address: 'rpc', op: 'discover' }, Invocation.empty) as IdentityCard;
 };
 
 describe('a card against the one it was copied from', () => {

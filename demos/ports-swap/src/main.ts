@@ -50,7 +50,7 @@ const booted = (ports?: Record<string, string | readonly string[]>) =>
 
 const pay = async (ports?: Record<string, string | readonly string[]>) => {
   const app = await booted(ports);
-  const out = await createLocalRunner(app)({ entity: 'checkout', op: 'pay' }, Invocation.empty);
+  const out = await createLocalRunner(app)({ address: 'checkout', op: 'pay' }, Invocation.empty);
   await app.dispose();
 
   return out;
@@ -79,11 +79,11 @@ console.log('   it extends Storage and asks for one, and nothing else declares i
   const app = await booted({ Payment: 'StripePayment' });
   const call = createLocalRunner(app);
   // `ProductHandler` has never heard of `Recording`, and `Recording` names no entity.
-  await call({ entity: 'product', op: 'add' }, { ...Invocation.empty, params: { title: 'fern' } });
+  await call({ address: 'product', op: 'add' }, { ...Invocation.empty, params: { title: 'fern' } });
   // The neighbour's rows, written the same way — and the link does not see them. The scope
   // is the FROND, so a link goes where its frond goes; `billing` behind `remotes:` would
   // lose nothing its own code mentions.
-  await call({ entity: 'invoice', op: 'record' }, { ...Invocation.empty, params: { reference: 'INV-1' } });
+  await call({ address: 'invoice', op: 'record' }, { ...Invocation.empty, params: { reference: 'INV-1' } });
   console.log('   billing wrote one too, and nothing stood in front of it.');
   await app.dispose();
 }
@@ -94,8 +94,8 @@ console.log('   a close method: one per frond, and the frond\'s scope closes it.
   const app = await booted({ Payment: 'StripePayment' });
   const call = createLocalRunner(app);
   // Two handlers, one Ledger — a single "opened" line above, whatever they ask.
-  await call({ entity: 'checkout', op: 'pay' }, Invocation.empty);
-  await call({ entity: 'invoice', op: 'record' }, { ...Invocation.empty, params: { reference: 'INV-2' } });
+  await call({ address: 'checkout', op: 'pay' }, Invocation.empty);
+  await call({ address: 'invoice', op: 'record' }, { ...Invocation.empty, params: { reference: 'INV-2' } });
   // `Payment` states nothing, so each consumer got its own and nobody closes it — which is
   // what a class holding nothing wants.
   await app.dispose();

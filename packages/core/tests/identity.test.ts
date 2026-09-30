@@ -9,7 +9,7 @@ import { generateKeyPair, issueGrant } from '../src/identity-keys.js';
 const packed = (pem: string) => Buffer.from(pem, 'utf8').toString('base64');
 
 /** One ordinary call — the envelope binds it, so every signature names one. */
-const CALL = { entity: 'post', op: 'list' };
+const CALL = { address: 'post', op: 'list' };
 
 /** What `fougere keys issue <name>` produces, and what the deployment injects. */
 function issue(root: { privateKey: string }, name: string): FrondIdentity {
@@ -84,9 +84,9 @@ describe('caller identity', () => {
     // What signing the state alone could not stop: the signature stays valid, the grant
     // stays valid, and `post.list` becomes `post.delete` for as long as the TTL lasts.
     const blog = issue(root, 'blog');
-    const listing = await signEnvelope(blog, { entity: 'post', op: 'list' });
+    const listing = await signEnvelope(blog, { address: 'post', op: 'list' });
 
-    await expect(verifyEnvelope(listing, root.publicKey, { entity: 'post', op: 'delete' })).rejects.toThrow(/signed for a different call/);
+    await expect(verifyEnvelope(listing, root.publicKey, { address: 'post', op: 'delete' })).rejects.toThrow(/signed for a different call/);
   });
 
   it('refuses a captured envelope replayed with another input', async () => {
@@ -99,9 +99,9 @@ describe('caller identity', () => {
   it('refuses it replayed against another row', async () => {
     // `post.get id=1` must not become `post.get id=2`.
     const blog = issue(root, 'blog');
-    const mine = await signEnvelope(blog, { entity: 'post', op: 'get', params: { id: '1' } });
+    const mine = await signEnvelope(blog, { address: 'post', op: 'get', params: { id: '1' } });
 
-    await expect(verifyEnvelope(mine, root.publicKey, { entity: 'post', op: 'get', params: { id: '2' } })).rejects.toThrow(/signed for a different call/);
+    await expect(verifyEnvelope(mine, root.publicKey, { address: 'post', op: 'get', params: { id: '2' } })).rejects.toThrow(/signed for a different call/);
   });
 
   it('carries an anonymous call — no user, and it still passes', async () => {

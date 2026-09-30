@@ -18,7 +18,7 @@ describe('testApp', () => {
     await using app = await testApp({ root });
     const run = createLocalRunner(app);
 
-    const created = await run({ entity: 'article', op: 'create' }, {
+    const created = await run({ address: 'article', op: 'create' }, {
       ...Invocation.empty,
       input: { title: 'A title', body: 'A body', status: 'draft', views: 0 },
     }) as { id: string; title: string };
@@ -31,11 +31,11 @@ describe('testApp', () => {
     await using app = await testApp({ root });
     const run = createLocalRunner(app);
 
-    await run({ entity: 'article', op: 'create' }, {
+    await run({ address: 'article', op: 'create' }, {
       ...Invocation.empty,
       input: { title: 'Kept', body: 'A body', status: 'draft', views: 0 },
     });
-    const listed = await run({ entity: 'article', op: 'list' }, Invocation.empty) as { items?: unknown[] } | unknown[];
+    const listed = await run({ address: 'article', op: 'list' }, Invocation.empty) as { items?: unknown[] } | unknown[];
 
     const rows = Array.isArray(listed) ? listed : listed.items ?? [];
     expect(rows).toHaveLength(1);
@@ -46,7 +46,7 @@ describe('testApp', () => {
     await run(first);
     await using second = await testApp({ root });
 
-    const listed = await createLocalRunner(second)({ entity: 'article', op: 'list' }, Invocation.empty) as { items?: unknown[] } | unknown[];
+    const listed = await createLocalRunner(second)({ address: 'article', op: 'list' }, Invocation.empty) as { items?: unknown[] } | unknown[];
 
     const rows = Array.isArray(listed) ? listed : listed.items ?? [];
     expect(rows).toHaveLength(0);
@@ -54,7 +54,7 @@ describe('testApp', () => {
 });
 
 async function run(app: Awaited<ReturnType<typeof testApp>>) {
-  await createLocalRunner(app)({ entity: 'article', op: 'create' }, {
+  await createLocalRunner(app)({ address: 'article', op: 'create' }, {
     ...Invocation.empty,
     input: { title: 'Leaked?', body: 'A body', status: 'draft', views: 0 },
   });

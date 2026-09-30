@@ -23,7 +23,7 @@ describe('an entity withdrawn from the public contract', () => {
   it('is served by no REST route', async () => {
     await using app = await testApp({ root });
 
-    expect(tableOf(app).filter((route) => route.entityName === 'secret')).toEqual([]);
+    expect(tableOf(app).filter((route) => route.address === 'secret')).toEqual([]);
   });
 
   it('is absent from the GraphQL schema', async () => {
@@ -39,7 +39,7 @@ describe('an entity withdrawn from the public contract', () => {
   it('answers over RPC all the same — the two readers are not three', async () => {
     await using app = await testApp({ root });
 
-    const local = await createLocalRunner(app)({ entity: 'secret', op: 'list' }, Invocation.empty);
+    const local = await createLocalRunner(app)({ address: 'secret', op: 'list' }, Invocation.empty);
     const overRpc = await serveRpc(app, {
       path: '',
       body: { jsonrpc: '2.0', id: 1, method: 'secret.list', params: Invocation.empty },

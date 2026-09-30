@@ -76,7 +76,7 @@ async function main() {
 
   const run = createLocalRunner(app);
   setInterval(() => {
-    void run({ entity: 'sensor', op: 'recordReading' }, { params: { node: ME }, query: {}, input: undefined, state: {} });
+    void run({ address: 'sensor', op: 'recordReading' }, { params: { node: ME }, query: {}, input: undefined, state: {} });
   }, 4000);
 }
 

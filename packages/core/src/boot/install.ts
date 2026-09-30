@@ -77,7 +77,7 @@ export interface Assembly {
   frondOf: Map<string, string>;
   contractsOf: (operations: EffectiveOperationsMap) => OperationsMap;
   /** Read at call time and never at boot, so a late registration still applies. */
-  getMiddlewares: (entity: string) => AppMiddleware[];
+  getMiddlewares: (address: string) => AppMiddleware[];
   /** Take a middleware on — every entity when no entity is named. */
   use: (middleware: AppMiddleware, entity?: string) => void;
   /**
@@ -445,7 +445,7 @@ function buildFacadeInto(
       routeRegistry.register(new OperationRoute(
         'local',
         new RouteAddress({
-          entity: handler.address,
+          address: handler.address,
           operation,
           ...(surface !== undefined ? { surface } : {}),
         }),

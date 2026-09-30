@@ -70,7 +70,7 @@ is one line of config:
 fronds: { blog: 'http://127.0.0.1:4100' }
 ```
 
-There is no RPC without travel: a call is a value `(entity, operation, invocation)`; the
+There is no RPC without travel: a call is a value `(address, operation, invocation)`; the
 runner executes it directly in memory when the Frond is local and frames it onto the wire
 when it is remote. Transports move the value — they never reshape it.
 

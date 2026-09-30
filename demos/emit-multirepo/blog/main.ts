@@ -18,7 +18,7 @@ const inv = (params: Record<string, string>): InvocationContext =>
 const settle = () => new Promise((r) => setTimeout(r, 400));
 
 const publish = (app: App, id: string, title: string) =>
-  createLocalRunner(app)({ entity: 'post', op: 'publish' }, inv({ id, title }));
+  createLocalRunner(app)({ address: 'post', op: 'publish' }, inv({ id, title }));
 
 async function main() {
   const { createJiti } = await import('jiti');

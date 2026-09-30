@@ -35,7 +35,7 @@ describe('PresenterExecutor', () => {
         rows.map((row) => `${prefix}${row.name}`),
     };
 
-    const output = await new PresenterExecutor(presenter, ['label'], 'product', 'list')
+    const output = await new PresenterExecutor(presenter, ['label'])
       .present(input, { label: ['#'] }) as typeof input & { label: string }[];
 
     expect(output[0]).toEqual({ name: 'Fern', label: '#Fern' });
@@ -45,12 +45,10 @@ describe('PresenterExecutor', () => {
   it('names the computed field when its cardinality is invalid', async () => {
     const presenter = { label: () => [] };
 
-    await expect(new PresenterExecutor(presenter, ['label'], 'product', 'list')
+    await expect(new PresenterExecutor(presenter, ['label'])
       .present([{ name: 'Fern' }]))
       .rejects.toMatchObject({
         code: 'INTERNAL_ERROR',
-        entity: 'product',
-        operation: 'list',
         message: expect.stringContaining("Computed field 'label' failed"),
       });
   });

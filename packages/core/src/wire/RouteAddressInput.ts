@@ -1,5 +1,5 @@
 export interface RouteAddressInput {
-  entity: string;
+  address: string;
   operation: string;
   surface?: string;
 }

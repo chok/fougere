@@ -65,7 +65,7 @@ export class Dispatcher implements DispatchPort {
     this.lifecycle.publish(DispatchEvent.received(call));
 
     try {
-      release = this.inFlight.enter(call.address.entity, call.address.operation);
+      release = this.inFlight.enter(call.address.address, call.address.operation);
       route = await this.routeFor(call);
 
       this.lifecycle.publish(DispatchEvent.resolved(call, route.kind));

@@ -56,7 +56,7 @@ describe('a middleware the frond declares', () => {
   it('runs around its own frond, and takes its dependencies from the frond scope', async () => {
     await using built = await app();
 
-    await createLocalRunner(built)({ entity: 'note', op: 'list' }, Invocation.empty);
+    await createLocalRunner(built)({ address: 'note', op: 'list' }, Invocation.empty);
 
     // `Audit` asks for `Trail`, a service of its own frond — so a middleware is resolved
     // like every other member and not handed in already built.
@@ -66,7 +66,7 @@ describe('a middleware the frond declares', () => {
   it('leaves a neighbouring frond alone', async () => {
     await using built = await app();
 
-    await createLocalRunner(built)({ entity: 'digest', op: 'count' }, Invocation.empty);
+    await createLocalRunner(built)({ address: 'digest', op: 'count' }, Invocation.empty);
 
     // `Audit` belongs to `shop`; `digest` answers in `mail`. A frond reaches its neighbours
     // only by standing above them in the tree, which `shop` does not.
@@ -77,8 +77,8 @@ describe('a middleware the frond declares', () => {
     await using built = await app();
     const run = createLocalRunner(built);
 
-    await run({ entity: 'note', op: 'list' }, Invocation.empty);
-    await run({ entity: 'digest', op: 'count' }, Invocation.empty);
+    await run({ address: 'note', op: 'list' }, Invocation.empty);
+    await run({ address: 'digest', op: 'count' }, Invocation.empty);
 
     // `ops` answers at no address of its own: a middleware reaches what its family serves,
     // and a frond with no family and no handlers reaches nothing.
@@ -89,8 +89,8 @@ describe('a middleware the frond declares', () => {
     await using built = await app(family);
     const run = createLocalRunner(built);
 
-    await run({ entity: 'note', op: 'list' }, Invocation.empty);
-    await run({ entity: 'digest', op: 'count' }, Invocation.empty);
+    await run({ address: 'note', op: 'list' }, Invocation.empty);
+    await run({ address: 'digest', op: 'count' }, Invocation.empty);
 
     expect(around()).toContain('everywhere:note.list');
     expect(around()).toContain('everywhere:digest.count');
@@ -99,7 +99,7 @@ describe('a middleware the frond declares', () => {
   it('puts the inherited one first, which is the order getMiddlewares promises', async () => {
     await using built = await app(family);
 
-    await createLocalRunner(built)({ entity: 'note', op: 'list' }, Invocation.empty);
+    await createLocalRunner(built)({ address: 'note', op: 'list' }, Invocation.empty);
 
     expect(around()).toEqual(['everywhere:note.list', 'audit:note.list']);
   });
@@ -115,7 +115,7 @@ describe('how long a middleware lives', () => {
     await using built = await app();
     const run = createLocalRunner(built);
 
-    for (let call = 0; call < 5; call++) await run({ entity: 'note', op: 'list' }, Invocation.empty);
+    for (let call = 0; call < 5; call++) await run({ address: 'note', op: 'list' }, Invocation.empty);
 
     // Its only consumer is the dispatch, which lives as long as the app — so there is nothing
     // a sixth construction would give that the first did not.
@@ -132,7 +132,7 @@ describe('how long a middleware lives', () => {
 
   it('is closed with its frond, since it answers `Symbol.asyncDispose`', async () => {
     const built = await app();
-    await createLocalRunner(built)({ entity: 'note', op: 'list' }, Invocation.empty);
+    await createLocalRunner(built)({ address: 'note', op: 'list' }, Invocation.empty);
 
     expect(audit().closed).toBe(0);
     await built.dispose();
@@ -145,8 +145,8 @@ describe('how long a middleware lives', () => {
     const run = createLocalRunner(built);
 
     await Promise.all([
-      run({ entity: 'note', op: 'list' }, Invocation.empty),
-      run({ entity: 'note', op: 'findById' }, { ...Invocation.empty, params: { id: 'n1' } }),
+      run({ address: 'note', op: 'list' }, Invocation.empty),
+      run({ address: 'note', op: 'findById' }, { ...Invocation.empty, params: { id: 'n1' } }),
     ]);
 
     expect(audit().built).toBe(1);

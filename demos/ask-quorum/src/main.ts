@@ -45,7 +45,7 @@ console.log(`\n  the subscribers are ${remotes ? 'in THREE other processes' : 'h
 const run = createLocalRunner(app);
 for (const room of ['library', 'atrium']) {
   try {
-    const asked = await run({ entity: 'booking', op: 'reserve' }, { ...Invocation.empty, params: { room } });
+    const asked = await run({ address: 'booking', op: 'reserve' }, { ...Invocation.empty, params: { room } });
     const verdict = asked as { booked: boolean; said: string[] };
 
     console.log(`  ${room.padEnd(8)} → ${verdict.booked ? 'BOOKED' : 'refused'}`);

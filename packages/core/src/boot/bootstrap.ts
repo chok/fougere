@@ -37,7 +37,7 @@ import { resolveEffectiveOperations, type EffectiveOperationModel } from '../Eff
 import { type EffectiveOperationsMap } from '../EffectiveOperationsMap.js';
 
 import { InFlight } from '../dispatch/InFlight.js';
-import { RPC_ENTITY } from '../wire/RpcAnswer.js';
+import { RPC_ADDRESS } from '../wire/RpcAnswer.js';
 import { Invocation } from '../wire/Invocation.js';
 import { addressOf, facadeKeyOf, isFacadeKey } from '../wire/Facade.js';
 import { identityCardOf } from './card.js';
@@ -227,7 +227,7 @@ function warnAboutRelations(relations: RelationCheck[], hosting: Hosting, log: L
 function peerBehind(entity: string, router: RemoteRouter): Peer {
   const ask = async (op: string, params: Record<string, unknown>): Promise<unknown> =>
     (await router.route(entity)).transport(
-      { entity: RPC_ENTITY, op },
+      { address: RPC_ADDRESS, op },
       { ...Invocation.empty, params: params as never },
     );
 
@@ -260,7 +260,7 @@ interface Dispatching {
   dispatcher: Dispatcher;
   /** Stays home: what this process serves, and nothing else. */
   localDispatcher: Dispatcher;
-  getMiddlewares(entity: string): AppMiddleware[];
+  getMiddlewares(address: string): AppMiddleware[];
   /** The one place a middleware is taken on — `App.use` is its late form, a frond's directory its early one. */
   use(middleware: AppMiddleware, entity?: string): void;
 }
@@ -297,7 +297,7 @@ function dispatching(
       new LocalRoutePolicy((surface) => fronds.servedNames(surface)),
       journalOf,
     ),
-    getMiddlewares: (entity) => [...globalMiddlewares, ...(scopedMiddlewares.get(entity) ?? [])],
+    getMiddlewares: (address) => [...globalMiddlewares, ...(scopedMiddlewares.get(address) ?? [])],
     use(middleware, entity) {
       if (entity === undefined) {
         globalMiddlewares.push(middleware);
@@ -471,40 +471,40 @@ function readings(
   };
 
   /** THE membership rule, stated once — every projection reads this and nothing else. */
-  const facadeFor = (entity: string, surface?: string): Record<string, Function> | undefined => {
-    if (!surface) return facadeAt(facadeKeyOf(entity), true);
+  const facadeFor = (address: string, surface?: string): Record<string, Function> | undefined => {
+    if (!surface) return facadeAt(facadeKeyOf(address), true);
 
-    const own = facadeAt(facadeKeyOf(entity, surface), false);
-    if (!fronds.owner(entity)) {
-      sayNoSurfaceAcross(entity, surface);
+    const own = facadeAt(facadeKeyOf(address, surface), false);
+    if (!fronds.owner(address)) {
+      sayNoSurfaceAcross(address, surface);
 
       return own;
     }
 
-    const admitted = fronds.admits(surface, entity);
+    const admitted = fronds.admits(surface, address);
     if (admitted === false) return undefined;
     if (own || admitted === undefined) return own;
 
-    const fallback = facadeAt(facadeKeyOf(entity), false);
+    const fallback = facadeAt(facadeKeyOf(address), false);
 
     return fallback
       ? facadeOperations(
           localDispatcher,
-          entity,
-          routeRegistry.operationNames(entity, surface),
+          address,
+          routeRegistry.operationNames(address, surface),
           surface,
         )
       : undefined;
   };
 
-  const operationsFor = (entity: string, surface?: string): EffectiveOperationsMap | undefined => {
-    if (!surface) return effectiveByKey.get(facadeKeyOf(entity));
+  const operationsFor = (address: string, surface?: string): EffectiveOperationsMap | undefined => {
+    if (!surface) return effectiveByKey.get(facadeKeyOf(address));
 
-    const own = effectiveByKey.get(facadeKeyOf(entity, surface));
-    const admitted = fronds.admits(surface, entity);
+    const own = effectiveByKey.get(facadeKeyOf(address, surface));
+    const admitted = fronds.admits(surface, address);
     if (admitted === false) return undefined;
 
-    return admitted ? (own ?? effectiveByKey.get(facadeKeyOf(entity))) : own;
+    return admitted ? (own ?? effectiveByKey.get(facadeKeyOf(address))) : own;
   };
 
   const presenterFor = (entity: string): unknown | undefined => ownedBy(fronds, container, entity, presenterKeyOf(entity));
@@ -585,11 +585,11 @@ function answerRemotes(
     : undefined));
 
   const remoteFacades = new Map<string, Record<string, Function>>();
-  routeRegistry.addResolver(remoteRoutes((entity) => {
-    const known = remoteFacades.get(entity);
+  routeRegistry.addResolver(remoteRoutes((address) => {
+    const known = remoteFacades.get(address);
     if (known) return known;
-    const facade = createRemoteFacade(entity, remoteRouter, getMiddlewares, state);
-    remoteFacades.set(entity, facade);
+    const facade = createRemoteFacade(address, remoteRouter, getMiddlewares, state);
+    remoteFacades.set(address, facade);
 
     return facade;
   }));
@@ -598,7 +598,7 @@ function answerRemotes(
 /** Refused rather than replaced: two declarations of one name would make the answer depend on wiring order. */
 function serveRpcOn(routeRegistry: RouteRegistry): App['serveRpc'] {
   return (op, answer) => {
-    const address = new RouteAddress({ entity: 'rpc', operation: op });
+    const address = new RouteAddress({ address: RPC_ADDRESS, operation: op });
     if (routeRegistry.find(address)) {
       throw new Error(
         `[claim] rpc operation '${op}' is already served; a second declaration would depend on wiring order.\n`

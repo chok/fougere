@@ -28,12 +28,12 @@ export interface App extends DispatchPort {
    */
   schemaFor(entity: string): Promise<SchemaView>;
   /** The facade a name exposes to one audience, or `undefined` when it exposes none. */
-  facadeFor(entity: string, surface?: string): Record<string, Function> | undefined;
+  facadeFor(address: string, surface?: string): Record<string, Function> | undefined;
   /**
    * The canonical contracts served beside a facade, after prefab + scan + config, binding, kind,
    * topology and surface resolution.
    */
-  operationsFor(entity: string, surface?: string): EffectiveOperationsMap | undefined;
+  operationsFor(address: string, surface?: string): EffectiveOperationsMap | undefined;
   /** The facts this app has a listener for — what a carrier must subscribe to on its behalf. */
   listensTo(): string[];
   /** Hand a fact that came from OUTSIDE to the listeners in this process — and stop there. */
@@ -64,6 +64,6 @@ export interface App extends DispatchPort {
   observe(observer: DispatchObserver): () => void;
   /** Register a global app middleware (runs on every operation). */
   use(middleware: AppMiddleware): void;
-  /** Register an app middleware scoped to a specific entity. */
-  use(entity: string, middleware: AppMiddleware): void;
+  /** Register an app middleware scoped to one address. */
+  use(address: string, middleware: AppMiddleware): void;
 }

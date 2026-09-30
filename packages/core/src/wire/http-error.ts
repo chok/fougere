@@ -38,13 +38,13 @@ function httpStatusFor(code: ErrorCode): number {
 /** Serialize an application error for an untrusted caller. */
 export function toPublicError(err: FougereError): ReturnType<FougereError['toJSON']> {
   if (err.code !== ErrorCode.INTERNAL_ERROR) return err.toJSON();
-  const where = [err.entity, err.operation].filter(Boolean).join('.');
+  const where = [err.address, err.operation].filter(Boolean).join('.');
   log.error(`${where || 'internal'}: ${err.message}`, err.cause ?? err);
 
   return {
     code: ErrorCode.INTERNAL_ERROR,
     message: 'Internal error',
-    ...(err.entity && { entity: err.entity }),
+    ...(err.address && { address: err.address }),
     ...(err.operation && { operation: err.operation }),
   };
 }

@@ -24,9 +24,9 @@ console.log(`
   can place it elsewhere, which is what makes inheriting from it safe at every rung.
 `);
 
-for (const entity of ['cart', 'invoice']) {
-  const said = await run({ entity, op: 'quote' }, Invocation.empty);
-  console.log(`  ${entity}.quote → ${String(said)}`);
+for (const address of ['cart', 'invoice']) {
+  const said = await run({ address, op: 'quote' }, Invocation.empty);
+  console.log(`  ${address}.quote → ${String(said)}`);
 }
 
 console.log(`

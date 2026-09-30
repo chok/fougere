@@ -32,7 +32,7 @@ export default class PostHandler extends Crud(Post, { list: PostCard }) {
   async findBySlug(input: BySlugInput): Promise<Post> {
     const post = await this.posts.publishedBySlug(input.slug);
     if (!post) {
-      throw new FougereError({ code: ErrorCode.NOT_FOUND, message: `No published post at '${input.slug}'`, entity: 'post', operation: 'findBySlug' });
+      throw new FougereError({ code: ErrorCode.NOT_FOUND, message: `No published post at '${input.slug}'` });
     }
 
     return post;
@@ -59,8 +59,8 @@ export default class PostHandler extends Crud(Post, { list: PostCard }) {
 
   /** Validate: signed-in author, free slug. Realize: stamp the author pair. */
   async create(input: PostDraft, user?: User): Promise<Post> {
-    const author = requireUser(user, 'create');
-    await requireFreeSlug(this.posts, input.slug, undefined, 'create');
+    const author = requireUser(user);
+    await requireFreeSlug(this.posts, input.slug, undefined);
 
     return this.posts.create({
       ...input,
@@ -71,9 +71,9 @@ export default class PostHandler extends Crud(Post, { list: PostCard }) {
 
   /** Validate: the author only, free slug if it changes. */
   async update(id: string, input: PostDraft, user?: User): Promise<Post> {
-    const author = requireUser(user, 'update');
-    const post = await requireOwn(this.posts, id, author, 'update');
-    if (input.slug && input.slug !== post.slug) await requireFreeSlug(this.posts, input.slug, id, 'update');
+    const author = requireUser(user);
+    const post = await requireOwn(this.posts, id, author);
+    if (input.slug && input.slug !== post.slug) await requireFreeSlug(this.posts, input.slug, id);
 
     return this.posts.update(id, input);
   }
@@ -84,13 +84,13 @@ export default class PostHandler extends Crud(Post, { list: PostCard }) {
    * server stamps the pair.
    */
   async publish(id: string, user?: User): Promise<Post> {
-    const author = requireUser(user, 'publish');
-    const post = await requireOwn(this.posts, id, author, 'publish');
+    const author = requireUser(user);
+    const post = await requireOwn(this.posts, id, author);
     if (post.status === 'published') {
-      throw new FougereError({ code: ErrorCode.CONFLICT, message: 'Already published', entity: 'post', operation: 'publish' });
+      throw new FougereError({ code: ErrorCode.CONFLICT, message: 'Already published' });
     }
     if (!post.body?.trim()) {
-      throw new FougereError({ code: ErrorCode.CONFLICT, message: 'Cannot publish an empty draft', entity: 'post', operation: 'publish' });
+      throw new FougereError({ code: ErrorCode.CONFLICT, message: 'Cannot publish an empty draft' });
     }
 
     return this.posts.update(id, { status: 'published', publishedAt: new Date() });
@@ -98,8 +98,8 @@ export default class PostHandler extends Crud(Post, { list: PostCard }) {
 
   /** Validate: the author only. */
   async delete(id: string, user?: User): Promise<boolean> {
-    const author = requireUser(user, 'delete');
-    await requireOwn(this.posts, id, author, 'delete');
+    const author = requireUser(user);
+    await requireOwn(this.posts, id, author);
 
     return this.posts.delete(id);
   }

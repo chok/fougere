@@ -64,7 +64,7 @@ for (const op of operations) {
 
 // Everything is local right now, so this costs function calls and nothing else.
 const out = await createLocalRunner(app)(
-  { entity: 'cart', op: 'checkout' },
+  { address: 'cart', op: 'checkout' },
   { params: {}, query: {}, input: undefined, state: {} },
 );
 console.log('\n  cart.checkout →', JSON.stringify(out));

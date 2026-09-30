@@ -223,7 +223,7 @@ async function world(placement: Placement): Promise<World> {
     authors: people.storageFor('author') as Storage,
     articles: writing.storageFor('article') as Storage,
     // Whichever process serves it; what the test asks is that the ANSWER does not move.
-    call: (c, i) => (c.entity === 'article' ? createLocalRunner(writing) : createLocalRunner(people))(c, i),
+    call: (c, i) => (c.address === 'article' ? createLocalRunner(writing) : createLocalRunner(people))(c, i),
     said,
     dispose: async () => {
       await people.dispose();
@@ -245,11 +245,11 @@ const cases = Object.entries(PLACEMENTS);
 /** The client door: what a row is made of travels as `input`, what NAMES one as `params`. */
 const ask = (
   world: World,
-  entity: string,
+  address: string,
   op: string,
   input: Record<string, unknown>,
   params: Record<string, unknown> = {},
-) => world.call({ entity, op }, { ...Invocation.empty, input: input as never, params: params as never });
+) => world.call({ address, op }, { ...Invocation.empty, input: input as never, params: params as never });
 
 describe('validation — the same input, the same refusal', () => {
   it.each(cases)('refuses an empty name with VALIDATION_FAILED — %s', async (_name, where) => {
@@ -371,7 +371,7 @@ describe('collector — resolved by type, from what the door filled', () => {
     const one = await world(where);
 
     const answered = await one.call(
-      { entity: 'census', op: 'who' },
+      { address: 'census', op: 'who' },
       { ...Invocation.empty, state: { who: 'ada' } as never },
     );
     expect(answered).toEqual({ who: 'ada' });
@@ -440,7 +440,7 @@ describe('state — judged where it entered, read the same at every placement', 
   it('in-process', async () => {
     await using app = await createApp({ createContainer, fronds: [visits()], extensions: [session] } as never);
 
-    expect(await createLocalRunner(app)({ entity: 'visit', op: 'read' }, signedIn as never))
+    expect(await createLocalRunner(app)({ address: 'visit', op: 'read' }, signedIn as never))
       .toEqual({ sinceType: '[object Date]' });
   });
 
@@ -454,7 +454,7 @@ describe('state — judged where it entered, read the same at every placement', 
       remoteTransport: (): Transport => acrossTheWire(createLocalRunner(receiver)),
     } as never);
 
-    expect(await createAppRunner(entry)({ entity: 'visit', op: 'read' }, signedIn as never))
+    expect(await createAppRunner(entry)({ address: 'visit', op: 'read' }, signedIn as never))
       .toEqual({ sinceType: '[object Date]' });
   });
 
@@ -467,7 +467,7 @@ describe('state — judged where it entered, read the same at every placement', 
       remoteTransport: (): Transport => acrossTheWire(createLocalRunner(receiver)),
     } as never);
 
-    await expect(createAppRunner(entry)({ entity: 'visit', op: 'read' }, signedIn as never))
+    await expect(createAppRunner(entry)({ address: 'visit', op: 'read' }, signedIn as never))
       .rejects.toMatchObject({ code: ErrorCode.VALIDATION_FAILED, message: expect.stringContaining('state.user: Unknown field') });
   });
 });

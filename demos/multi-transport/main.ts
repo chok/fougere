@@ -56,7 +56,7 @@ async function main() {
     { station: 'north-ridge', celsius: -4.5 },
     { station: 'harbour', celsius: 12.1 },
   ]) {
-    await local({ entity: 'reading', op: 'create' }, inv({ input: row }));
+    await local({ address: 'reading', op: 'create' }, inv({ input: row }));
   }
 
   // Three receivers over the SAME runner. One frond, three facades on the wire.
@@ -80,7 +80,7 @@ async function main() {
   for (const [label, op, invocation] of calls) {
     console.log(`  \x1b[1m${label}\x1b[0m`);
     for (const [name, transport] of paths) {
-      const out = await outcomeOf(() => transport({ entity: 'reading', op }, invocation));
+      const out = await outcomeOf(() => transport({ address: 'reading', op }, invocation));
       console.log(`    \x1b[2m${name.padEnd(16)}\x1b[0m ${out}`);
     }
     console.log('');

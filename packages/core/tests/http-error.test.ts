@@ -39,8 +39,8 @@ describe('toHttpError', () => {
   it('keeps where it happened, which is what makes it findable', () => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
     const body = toPublicError(
-      new FougereError({ code: ErrorCode.INTERNAL_ERROR, message: 'boom', entity: 'product', operation: 'create' }),
+      new FougereError({ code: ErrorCode.INTERNAL_ERROR, message: 'boom', address: 'product', operation: 'create' }),
     );
-    expect(body).toMatchObject({ entity: 'product', operation: 'create', message: 'Internal error' });
+    expect(body).toMatchObject({ address: 'product', operation: 'create', message: 'Internal error' });
   });
 });

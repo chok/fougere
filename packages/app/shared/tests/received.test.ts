@@ -45,7 +45,7 @@ describe('a page receives what its type promises', () => {
   it('reads a row back through the schema — the string becomes a Date', async () => {
     const { fetcher } = watching({ 'rpc.discover': card, 'post.findById': row });
 
-    const post = await sendCall(fetcher, { entity: 'post', op: 'findById' },
+    const post = await sendCall(fetcher, { address: 'post', op: 'findById' },
       { params: {}, query: {}, input: undefined, state: {} }, `/a${nth}`) as { publishedAt: unknown };
 
     expect(post.publishedAt).toBeInstanceOf(Date);
@@ -57,8 +57,8 @@ describe('a page receives what its type promises', () => {
     const at = `/b${nth}`;
     const call = { params: {}, query: {}, input: undefined, state: {} };
 
-    const first = await sendCall(fetcher, { entity: 'post', op: 'list' }, call, at) as { items: { publishedAt: unknown }[] };
-    await sendCall(fetcher, { entity: 'post', op: 'list' }, call, at);
+    const first = await sendCall(fetcher, { address: 'post', op: 'list' }, call, at) as { items: { publishedAt: unknown }[] };
+    await sendCall(fetcher, { address: 'post', op: 'list' }, call, at);
 
     expect(first.items.every((one) => one.publishedAt instanceof Date)).toBe(true);
     expect(asked.filter((method) => method === 'rpc.discover')).toHaveLength(1);
@@ -69,8 +69,8 @@ describe('a page receives what its type promises', () => {
     const at = `/c${nth}`;
     const call = { params: {}, query: {}, input: undefined, state: {} };
 
-    await sendCall(fetcher, { entity: 'rpc', op: 'discover' }, call, at);
-    const post = await sendCall(fetcher, { entity: 'post', op: 'findById' }, call, at) as { publishedAt: unknown };
+    await sendCall(fetcher, { address: 'rpc', op: 'discover' }, call, at);
+    const post = await sendCall(fetcher, { address: 'post', op: 'findById' }, call, at) as { publishedAt: unknown };
 
     expect(post.publishedAt).toBeInstanceOf(Date);
     expect(asked).toEqual(['rpc.discover', 'post.findById']);
@@ -79,7 +79,7 @@ describe('a page receives what its type promises', () => {
   it('hands over what arrived when the app publishes no card', async () => {
     const { fetcher } = watching({ 'rpc.discover': { nope: true }, 'post.findById': row });
 
-    const post = await sendCall(fetcher, { entity: 'post', op: 'findById' },
+    const post = await sendCall(fetcher, { address: 'post', op: 'findById' },
       { params: {}, query: {}, input: undefined, state: {} }, `/d${nth}`) as { publishedAt: unknown };
 
     expect(post.publishedAt).toBe('1970-01-01T00:00:00.000Z');

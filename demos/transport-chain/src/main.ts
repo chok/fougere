@@ -49,7 +49,7 @@ async function run(name: string, chain: Transport) {
   });
 
   const answer = await createLocalRunner(near)(
-    { entity: 'cart', op: 'checkout' },
+    { address: 'cart', op: 'checkout' },
     { params: {}, query: {}, input: undefined, state: {} },
   ).catch((refused: Error) => `refused — ${refused.message}`);
 

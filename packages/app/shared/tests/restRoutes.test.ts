@@ -67,7 +67,7 @@ describe('the verb decides, not the operation name', () => {
   it('serves the same op under its own verb', () => {
     expect(match('POST', 'blog/posts/publish')).toMatchObject({
       kind: 'match',
-      route: { entityName: 'post', operationName: 'publish' },
+      route: { address: 'post', operationName: 'publish' },
     });
   });
 

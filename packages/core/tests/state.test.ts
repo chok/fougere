@@ -30,7 +30,7 @@ const built = (extensions: Extension[], middleware?: (state: Record<string, unkn
 });
 
 const read = (app: Awaited<ReturnType<typeof built>>, state: Record<string, unknown>, crossed?: true) =>
-  createLocalRunner(app)({ entity: 'state', op: 'read' }, { ...Invocation.empty, state, ...(crossed ? { crossed } : {}) });
+  createLocalRunner(app)({ address: 'state', op: 'read' }, { ...Invocation.empty, state, ...(crossed ? { crossed } : {}) });
 
 describe('the state of a call', () => {
   it('is rebuilt by the field that declares it', async () => {
@@ -105,7 +105,7 @@ describe('the state of a call', () => {
       createContainer,
     });
     const since = (user: unknown) =>
-      createLocalRunner(app)({ entity: 'since', op: 'read' }, { ...Invocation.empty, state: { user }, crossed: true });
+      createLocalRunner(app)({ address: 'since', op: 'read' }, { ...Invocation.empty, state: { user }, crossed: true });
 
     await expect(since({ id: 'u1', since: '2026-09-23T00:00:00.000Z' })).resolves.toBe('[object Date]');
     await expect(since({ id: 'u1', since: 'yesterday' })).rejects.toMatchObject({ code: ErrorCode.VALIDATION_FAILED });

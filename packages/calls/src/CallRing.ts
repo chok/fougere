@@ -1,4 +1,4 @@
-import { RPC_ENTITY, type CallPage, type CallRecord, type DispatchEvent } from '@fougere/core';
+import { RPC_ADDRESS, type CallPage, type CallRecord, type DispatchEvent } from '@fougere/core';
 
 /** The message and the code of a refusal, without the stack that carries a body. */
 function refusalOf(error: unknown): CallRecord['refusal'] {
@@ -21,14 +21,14 @@ export class CallRing {
 
   constructor(
     private readonly max = 500,
-    private readonly frondOf: (entity: string) => string | undefined = () => undefined,
+    private readonly frondOf: (address: string) => string | undefined = () => undefined,
   ) {}
 
   /** KNOWN LIMIT — a call this process ORIGINATES carries no trace here. */
   record(event: DispatchEvent): void {
     // A reader reaches this ring through `rpc`, so recording that would make the panel
     // watch itself — one reader, one line, forever.
-    if (event.call.address.entity === RPC_ENTITY) return;
+    if (event.call.address.address === RPC_ADDRESS) return;
 
     if (event.stage === 'received') return this.opened(event);
 
@@ -54,13 +54,13 @@ export class CallRing {
   }
 
   private opened(event: DispatchEvent): void {
-    const { entity, operation, surface } = event.call.address;
-    const frond = this.frondOf(entity);
+    const { address, operation, surface } = event.call.address;
+    const frond = this.frondOf(address);
     const { trace, caller } = event.call.invocation;
     const record: CallRecord = {
       seq: ++this.seq,
       ...(frond ? { frond } : {}),
-      entity,
+      address,
       operation,
       ...(surface !== undefined ? { surface } : {}),
       ...(trace ? { trace } : {}),

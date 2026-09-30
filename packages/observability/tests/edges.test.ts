@@ -34,13 +34,13 @@ async function watched(remotes?: Record<string, string>): Promise<{ app: App; me
 }
 
 const topologyOf = async (app: App): Promise<TopologyReport> =>
-  await createLocalRunner(app)({ entity: 'rpc', op: 'topology' }, empty) as TopologyReport;
+  await createLocalRunner(app)({ address: 'rpc', op: 'topology' }, empty) as TopologyReport;
 
 describe('the edge that is counted', () => {
   it('names both ends when one frond reaches another', async () => {
     const { app, measured } = await watched();
     await using held = app;
-    await createLocalRunner(held)({ entity: 'cart', op: 'servable' }, empty);
+    await createLocalRunner(held)({ address: 'cart', op: 'servable' }, empty);
 
     expect(measured.snapshot().edges).toEqual([
       { from: 'shop', to: 'catalog', count: 1, errors: 0 },

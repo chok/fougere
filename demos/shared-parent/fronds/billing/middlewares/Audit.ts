@@ -12,7 +12,7 @@ export default class Audit {
 
   async around(context: OperationContext, next: AppNext): Promise<unknown> {
     const answer = await next();
-    console.log(`  audit  ${context.entity}.${context.operation} → ${this.money.format(1250)}`);
+    console.log(`  audit  ${context.address}.${context.operation} → ${this.money.format(1250)}`);
 
     return answer;
   }

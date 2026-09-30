@@ -16,7 +16,7 @@ const app = () => createApp({ fronds, createContainer });
 describe('drain', () => {
   it('waits for a call that is already running', async () => {
     const a = await app();
-    const call = createLocalRunner(a)({ entity: 'slow', op: 'work' }, Invocation.empty);
+    const call = createLocalRunner(a)({ address: 'slow', op: 'work' }, Invocation.empty);
 
     expect(a.inFlight()).toBe(1);
     await a.drain();
@@ -37,14 +37,14 @@ describe('drain', () => {
     const a = await app();
     await a.drain();
 
-    await expect(createLocalRunner(a)({ entity: 'slow', op: 'work' }, Invocation.empty))
+    await expect(createLocalRunner(a)({ address: 'slow', op: 'work' }, Invocation.empty))
       .rejects.toThrow(/takes no new call/);
     await a.dispose();
   });
 
   it('rejects on its deadline naming what is left, rather than looking successful', async () => {
     const a = await app();
-    void createLocalRunner(a)({ entity: 'slow', op: 'hang' }, Invocation.empty).catch(() => {});
+    void createLocalRunner(a)({ address: 'slow', op: 'hang' }, Invocation.empty).catch(() => {});
 
     await expect(a.drain(30)).rejects.toThrow(/1 call\(s\) still running after 30ms/);
     await a.dispose();

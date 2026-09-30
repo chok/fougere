@@ -84,7 +84,7 @@ describe('an owned entity has no other facade', () => {
 
   it('answers through the aggregate — the members are reached inside its method', async () => {
     await using app = await boot('fixtures-aggregate');
-    const out = await createLocalRunner(app)({ entity: 'account', op: 'withdraw' }, Invocation.empty);
+    const out = await createLocalRunner(app)({ address: 'account', op: 'withdraw' }, Invocation.from({ params: { id: 'a1' } }));
 
     expect(out).toMatchObject({ holder: 'ada' });
   });
@@ -129,7 +129,7 @@ describe('storage is reached through a repository, never through the port', () =
 
   it('resolves a facade that asks for RepositoryOf<E> with no file written', async () => {
     await using app = await boot('fixtures-holder');
-    const out = await createLocalRunner(app)({ entity: 'bookCard', op: 'list' }, Invocation.empty);
+    const out = await createLocalRunner(app)({ address: 'bookCard', op: 'list' }, Invocation.empty);
 
     expect(out).toEqual([]);
   });

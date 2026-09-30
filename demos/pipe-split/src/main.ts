@@ -47,7 +47,7 @@ console.log(`\n  the two links are ${remotes ? 'in TWO other processes' : 'here,
 
 const run = createLocalRunner(app);
 try {
-  await run({ entity: 'post', op: 'publish' }, { ...Invocation.empty, params: { id: '42' } });
+  await run({ address: 'post', op: 'publish' }, { ...Invocation.empty, params: { id: '42' } });
 } catch (refused) {
   // Announcing is DISPATCH, and finishing a fact is not: the link answers the fact, so an
   // announcement waits for it. Behind `remotes:` that makes publishing depend on another

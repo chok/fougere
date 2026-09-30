@@ -120,7 +120,7 @@ describe('as an installed app — the scan finds nothing, the façade validates 
     const { app, storage, run } = await boot(root);
 
     await expect(
-      run({ entity: 'note', op: 'create' }, call({ title: 'hello', ownerId: 'someone-else' })),
+      run({ address: 'note', op: 'create' }, call({ title: 'hello', ownerId: 'someone-else' })),
     ).rejects.toMatchObject({ code: 'VALIDATION_FAILED', message: expect.stringContaining('Read-only') });
 
     expect(storage.create).not.toHaveBeenCalled();
@@ -131,7 +131,7 @@ describe('as an installed app — the scan finds nothing, the façade validates 
     const { app, storage, run } = await boot(root);
 
     await expect(
-      run({ entity: 'note', op: 'create' }, call({ title: 'hello', isAdmin: true })),
+      run({ address: 'note', op: 'create' }, call({ title: 'hello', isAdmin: true })),
     ).rejects.toMatchObject({ code: 'VALIDATION_FAILED', message: expect.stringContaining('Unknown field') });
 
     expect(storage.create).not.toHaveBeenCalled();
@@ -142,7 +142,7 @@ describe('as an installed app — the scan finds nothing, the façade validates 
     const { app, storage, run } = await boot(root);
 
     await expect(
-      run({ entity: 'note', op: 'update' }, { ...call({ id: 'forged', title: 'x' }), params: { id: 'note-1' } }),
+      run({ address: 'note', op: 'update' }, { ...call({ id: 'forged', title: 'x' }), params: { id: 'note-1' } }),
     ).rejects.toMatchObject({ code: 'VALIDATION_FAILED', message: expect.stringContaining('Immutable') });
 
     expect(storage.update).not.toHaveBeenCalled();
@@ -152,7 +152,7 @@ describe('as an installed app — the scan finds nothing, the façade validates 
   it('lets a legal create through, untouched', async () => {
     const { app, storage, run } = await boot(root);
 
-    const created = await run({ entity: 'note', op: 'create' }, call({ title: 'hello' }));
+    const created = await run({ address: 'note', op: 'create' }, call({ title: 'hello' }));
 
     expect(storage.create).toHaveBeenCalledWith({ title: 'hello' });
     expect(created).toMatchObject({ title: 'hello' });
@@ -162,7 +162,7 @@ describe('as an installed app — the scan finds nothing, the façade validates 
   it('leaves a partial patch legal — an unsent field is untouched', async () => {
     const { app, storage, run } = await boot(root);
 
-    await run({ entity: 'note', op: 'update' }, { ...call({ title: 'renamed' }), params: { id: 'note-1' } });
+    await run({ address: 'note', op: 'update' }, { ...call({ title: 'renamed' }), params: { id: 'note-1' } });
 
     expect(storage.update).toHaveBeenCalledWith('note-1', { title: 'renamed' });
     await app.dispose();
@@ -178,7 +178,7 @@ describe('the façade answers what it declares, and nothing JS lends it', () => 
     'refuses %s — inherited from Object, never declared',
     async (op) => {
       const { app, run } = await boot(root);
-      await expect(run({ entity: 'note', op }, call(undefined)))
+      await expect(run({ address: 'note', op }, call(undefined)))
         .rejects.toMatchObject({ code: 'NOT_FOUND' });
       await app.dispose();
     },
@@ -186,7 +186,7 @@ describe('the façade answers what it declares, and nothing JS lends it', () => 
 
   it('leaves an entity with no façade out of the identity card', async () => {
     const { app, run } = await boot(root);
-    const card = await run({ entity: 'rpc', op: 'discover' }, call(undefined)) as {
+    const card = await run({ address: 'rpc', op: 'discover' }, call(undefined)) as {
       fronds: { facades: { name: string; ops: string[] }[] }[];
     };
     // Note has a handler, so it is hosted; every listed entity must be callable.

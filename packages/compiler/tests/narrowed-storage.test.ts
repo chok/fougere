@@ -55,7 +55,7 @@ describe('a realization narrowing the port', () => {
   it('reaches the gesture the port does not have, through the facade that owns it', async () => {
     await using app = await boot();
 
-    const ranked = await createLocalRunner(app)({ entity: 'card', op: 'search' }, Invocation.empty);
+    const ranked = await createLocalRunner(app)({ address: 'card', op: 'search' }, Invocation.from({ query: { query: 'fern' } }));
 
     expect(ranked).toEqual(['c1', 'c2']);
   });

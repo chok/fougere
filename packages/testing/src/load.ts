@@ -65,7 +65,7 @@ export function loadScript(app: Serving, options: LoadOptions = {}): string {
   const facade = options.facade ?? 'http://127.0.0.1:3000/_fougere/call';
   const ops = reachableOps(app, options.given, options.remotes ?? {});
   // The shape, from the one function that states it. `body` is replaced per iteration.
-  const envelope = frameCall({ entity: 'ENTITY', op: 'OP' }, { params: {}, query: {}, input: undefined, state: {} } as never, 0);
+  const envelope = frameCall({ address: 'ENTITY', op: 'OP' }, { params: {}, query: {}, input: undefined, state: {} } as never, 0);
   // What the envelope carries that an iteration does not fill in itself. Keeping
   // `params` here too put it in the object AND in the spread that overwrites it.
   const perCall = new Set(['method', 'id', 'params']);

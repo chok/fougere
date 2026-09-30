@@ -39,10 +39,10 @@ describe('registerRoutes', () => {
   it('registers routes with correct HTTP methods', () => {
     const { router, getHandler } = fakeRouter();
     const routes: RouteDefinition[] = [
-      { method: 'GET', path: '/posts', operationName: 'list', entityName: 'post', handler: async () => [] },
-      { method: 'POST', path: '/posts', operationName: 'create', entityName: 'post', handler: async () => ({}) },
-      { method: 'PUT', path: '/posts/:id', operationName: 'update', entityName: 'post', handler: async () => ({}) },
-      { method: 'DELETE', path: '/posts/:id', operationName: 'delete', entityName: 'post', handler: async () => true },
+      { method: 'GET', path: '/posts', operationName: 'list', address: 'post', handler: async () => [] },
+      { method: 'POST', path: '/posts', operationName: 'create', address: 'post', handler: async () => ({}) },
+      { method: 'PUT', path: '/posts/:id', operationName: 'update', address: 'post', handler: async () => ({}) },
+      { method: 'DELETE', path: '/posts/:id', operationName: 'delete', address: 'post', handler: async () => true },
     ];
 
     registerRoutes(router, routes);
@@ -57,7 +57,7 @@ describe('registerRoutes', () => {
     const { router, getHandler } = fakeRouter();
     const handlerFn = vi.fn(async (inv: any) => ({ id: inv.params.id, title: inv.input.title }));
     const routes: RouteDefinition[] = [
-      { method: 'PUT', path: '/posts/:id', operationName: 'update', entityName: 'post', handler: handlerFn },
+      { method: 'PUT', path: '/posts/:id', operationName: 'update', address: 'post', handler: handlerFn },
     ];
 
     registerRoutes(router, routes);
@@ -78,7 +78,7 @@ describe('registerRoutes', () => {
   it('returns 201 for POST', async () => {
     const { router, getHandler } = fakeRouter();
     const routes: RouteDefinition[] = [
-      { method: 'POST', path: '/posts', operationName: 'create', entityName: 'post', handler: async () => ({ id: '1' }) },
+      { method: 'POST', path: '/posts', operationName: 'create', address: 'post', handler: async () => ({ id: '1' }) },
     ];
 
     registerRoutes(router, routes);
@@ -92,7 +92,7 @@ describe('registerRoutes', () => {
   it('returns 200 for a custom POST command unless a status is stated', async () => {
     const { router, getHandler } = fakeRouter();
     registerRoutes(router, [
-      { method: 'POST', path: '/posts/:id/publish', operationName: 'publish', entityName: 'post', handler: async () => ({ id: '1' }) },
+      { method: 'POST', path: '/posts/:id/publish', operationName: 'publish', address: 'post', handler: async () => ({ id: '1' }) },
     ]);
 
     expect((await getHandler('POST', '/posts/:id/publish')!(ctx({}, {}, {}, 'POST'))).status).toBe(200);
@@ -101,7 +101,7 @@ describe('registerRoutes', () => {
   it('honors an explicit success status', async () => {
     const { router, getHandler } = fakeRouter();
     registerRoutes(router, [
-      { method: 'POST', path: '/jobs', operationName: 'enqueue', entityName: 'job', successStatus: 202, handler: async () => ({ id: '1' }) },
+      { method: 'POST', path: '/jobs', operationName: 'enqueue', address: 'job', successStatus: 202, handler: async () => ({ id: '1' }) },
     ]);
 
     expect((await getHandler('POST', '/jobs')!(ctx({}, {}, {}, 'POST'))).status).toBe(202);
@@ -110,7 +110,7 @@ describe('registerRoutes', () => {
   it('returns 204 for delete (true)', async () => {
     const { router, getHandler } = fakeRouter();
     const routes: RouteDefinition[] = [
-      { method: 'DELETE', path: '/posts/:id', operationName: 'delete', entityName: 'post', handler: async () => true },
+      { method: 'DELETE', path: '/posts/:id', operationName: 'delete', address: 'post', handler: async () => true },
     ];
 
     registerRoutes(router, routes);
@@ -124,7 +124,7 @@ describe('registerRoutes', () => {
   it('returns 404 when handler returns undefined', async () => {
     const { router, getHandler } = fakeRouter();
     const routes: RouteDefinition[] = [
-      { method: 'GET', path: '/posts/:id', operationName: 'findById', entityName: 'post', handler: async () => undefined },
+      { method: 'GET', path: '/posts/:id', operationName: 'findById', address: 'post', handler: async () => undefined },
     ];
 
     registerRoutes(router, routes);
@@ -138,8 +138,8 @@ describe('registerRoutes', () => {
   it('keeps nullable and boolean custom results as data', async () => {
     const { router, getHandler } = fakeRouter();
     registerRoutes(router, [
-      { method: 'GET', path: '/posts/maybe', operationName: 'maybe', entityName: 'post', handler: async () => null },
-      { method: 'GET', path: '/posts/exists', operationName: 'exists', entityName: 'post', handler: async () => false },
+      { method: 'GET', path: '/posts/maybe', operationName: 'maybe', address: 'post', handler: async () => null },
+      { method: 'GET', path: '/posts/exists', operationName: 'exists', address: 'post', handler: async () => false },
     ]);
 
     await expect(getHandler('GET', '/posts/maybe')!(ctx())).resolves.toEqual({ status: 200, data: null });
@@ -154,7 +154,7 @@ describe('registerRoutes', () => {
     };
     const { router, getHandler } = fakeRouter();
     registerRoutes(router, [
-      { method: 'GET', path: '/values', operationName: 'list', entityName: 'value', outputFields, handler: async () => ({ value: 11 }) },
+      { method: 'GET', path: '/values', operationName: 'list', address: 'value', outputFields, handler: async () => ({ value: 11 }) },
     ]);
 
     expect((await getHandler('GET', '/values')!(ctx())).data).toEqual({ value: 11 });
@@ -163,7 +163,7 @@ describe('registerRoutes', () => {
   it('returns 500 on error', async () => {
     const { router, getHandler } = fakeRouter();
     const routes: RouteDefinition[] = [
-      { method: 'GET', path: '/posts', operationName: 'list', entityName: 'post', handler: async () => { throw new Error('boom'); } },
+      { method: 'GET', path: '/posts', operationName: 'list', address: 'post', handler: async () => { throw new Error('boom'); } },
     ];
 
     registerRoutes(router, routes);

@@ -20,7 +20,7 @@ describe('boot, on a project whose config states a tree', () => {
   it('lets a child resolve what its parent declared', async () => {
     await using app = await boot({ root, createContainer, remoteTransport });
 
-    const out = await createLocalRunner(app)({ entity: 'cart', op: 'quote' }, Invocation.empty);
+    const out = await createLocalRunner(app)({ address: 'cart', op: 'quote' }, Invocation.empty);
 
     expect(out).toBe('12.50 EUR');
   });

@@ -18,7 +18,7 @@ export default class OrderHandler {
   /** Two hops away: ship → requireOpen → requirePaid. */
   async ship(): Promise<void> {
     requireOpen(false, 'ship');
-    throw new FougereError({ code: ErrorCode.CONFLICT, message: 'already shipped', operation: 'ship' });
+    throw new FougereError({ code: ErrorCode.CONFLICT, message: 'already shipped' });
   }
 
   /** Reaches nothing that refuses — an op with no refusal of its own is the ordinary case. */
@@ -33,6 +33,6 @@ export default class OrderHandler {
 
   /** A masked refusal is not a contract: its message never leaves. */
   async audit(): Promise<void> {
-    throw new FougereError({ code: ErrorCode.INTERNAL_ERROR, message: 'nope', operation: 'audit' });
+    throw new FougereError({ code: ErrorCode.INTERNAL_ERROR, message: 'nope' });
   }
 }

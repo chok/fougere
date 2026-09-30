@@ -20,7 +20,7 @@ export default class LaterRepository extends Repository(Later) {
     const { runAt: _dropped, ...invocation } = call.invocation;
     await this.create({
       id: crypto.randomUUID(),
-      entity: call.address.entity,
+      address: call.address.address,
       operation: call.address.operation,
       invocation,
       runAt,
@@ -58,7 +58,7 @@ export default class LaterRepository extends Repository(Later) {
   /** Rebuilds what was kept — the address flat, the invocation whole. */
   callOf(row: Later): Call {
     return new Call(
-      new RouteAddress({ entity: row.entity, operation: row.operation }),
+      new RouteAddress({ address: row.address, operation: row.operation }),
       row.invocation as Record<string, unknown>,
     );
   }

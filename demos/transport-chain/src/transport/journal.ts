@@ -9,7 +9,7 @@ export interface Kept {
 /** A link that remembers an answer and refuses to ask twice — what a replay engine is made of. */
 export function journal(kept: Kept[], inner: Transport): Transport {
   return async (call, invocation) => {
-    const key = `${call.entity}.${call.op}`;
+    const key = `${call.address}.${call.op}`;
     const already = kept.find((one) => one.key === key);
     if (already) return already.answer;
 

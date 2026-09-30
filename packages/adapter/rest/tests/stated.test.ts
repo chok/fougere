@@ -13,8 +13,7 @@ class Post extends entity({ id: primary(), title: text() }) {}
 const app = (overrides?: Record<string, unknown>) => ({
   fronds: [{
     name: 'blog',
-    entities: [{ name: 'post', entityClass: Post, filePath: '', exposed: true }],
-    handlers: [],
+    handlers: [{ address: 'post' }],
     presenters: [],
     ...(overrides ? { operationsOverrides: overrides } : {}),
   }],

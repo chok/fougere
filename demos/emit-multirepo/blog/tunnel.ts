@@ -72,7 +72,7 @@ async function main() {
   let n = 0;
   setInterval(() => {
     n += 1;
-    void createLocalRunner(app)({ entity: 'post', op: 'publish' }, inv({ id: `p${n}`, title: `Frond number ${n}` }));
+    void createLocalRunner(app)({ address: 'post', op: 'publish' }, inv({ id: `p${n}`, title: `Frond number ${n}` }));
   }, 3000);
 }
 

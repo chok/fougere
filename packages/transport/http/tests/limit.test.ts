@@ -20,7 +20,7 @@ describe('the body limit across a hop', () => {
     const receiver = await serve(echo);
     try {
       const forward = createHttpTransport(`http://127.0.0.1:${receiver.port}`);
-      const answer = await forward({ entity: 'note', op: 'create' }, {
+      const answer = await forward({ address: 'note', op: 'create' }, {
         ...Invocation.empty,
         input: { text: 'x'.repeat(LIMIT - 200) },
         state: { user: { id: 'u1', name: 'y'.repeat(3_000) } },
@@ -36,7 +36,7 @@ describe('the body limit across a hop', () => {
     setMaxBodyBytes(LIMIT);
     const forward = createHttpTransport('http://127.0.0.1:9');
 
-    await expect(forward({ entity: 'note', op: 'create' }, { ...Invocation.empty, input: { text: 'x'.repeat(LIMIT + ENVELOPE_BYTES) } }))
+    await expect(forward({ address: 'note', op: 'create' }, { ...Invocation.empty, input: { text: 'x'.repeat(LIMIT + ENVELOPE_BYTES) } }))
       .rejects.toMatchObject({ code: ErrorCode.PAYLOAD_TOO_LARGE });
   });
 });

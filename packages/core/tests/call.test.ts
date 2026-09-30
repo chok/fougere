@@ -21,7 +21,7 @@ describe('FougereError.fromJSON (dual of toJSON)', () => {
     const original = new FougereError({
       code: ErrorCode.CONFLICT,
       message: 'already exists',
-      entity: 'product',
+      address: 'product',
       operation: 'create',
       details: { field: 'name' },
     });
@@ -29,7 +29,7 @@ describe('FougereError.fromJSON (dual of toJSON)', () => {
     expect(revived).toBeInstanceOf(FougereError);
     expect(revived.code).toBe(ErrorCode.CONFLICT);
     expect(revived.message).toBe('already exists');
-    expect(revived.entity).toBe('product');
+    expect(revived.address).toBe('product');
     expect(revived.operation).toBe('create');
     expect(revived.details).toEqual({ field: 'name' });
   });
@@ -52,7 +52,7 @@ describe('createLocalRunner', () => {
   it('executes a façade operation', async () => {
     const app = await createApp({ fronds, createContainer, storageFactory });
     const run = createLocalRunner(app);
-    const result = await run({ entity: 'product', op: 'list' }, Invocation.empty);
+    const result = await run({ address: 'product', op: 'list' }, Invocation.empty);
     // The row, plus what ProductPresenter computes from it. The façade enriches now —
     // it used to be the projections' job alone, so `useQuery` saw none of it.
     expect(result).toEqual([{ ...products[0], displayPrice: '$12.50', isExpensive: false }]);
@@ -63,17 +63,17 @@ describe('createLocalRunner', () => {
   it('rejects an unknown operation with a typed NOT_FOUND', async () => {
     const app = await createApp({ fronds, createContainer, storageFactory });
     const run = createLocalRunner(app);
-    const failure = run({ entity: 'product', op: 'explode' }, Invocation.empty);
+    const failure = run({ address: 'product', op: 'explode' }, Invocation.empty);
     await expect(failure).rejects.toBeInstanceOf(FougereError);
-    await expect(failure).rejects.toMatchObject({ code: ErrorCode.NOT_FOUND, entity: 'product', operation: 'explode' });
+    await expect(failure).rejects.toMatchObject({ code: ErrorCode.NOT_FOUND, address: 'product', operation: 'explode' });
     await app.dispose();
   });
 
   it('rejects an entity it does not host with a typed NOT_FOUND, never a forward', async () => {
     const app = await createApp({ fronds, createContainer, storageFactory });
     const run = createLocalRunner(app);
-    await expect(run({ entity: 'unicorn', op: 'list' }, Invocation.empty))
-      .rejects.toMatchObject({ code: ErrorCode.NOT_FOUND, entity: 'unicorn' });
+    await expect(run({ address: 'unicorn', op: 'list' }, Invocation.empty))
+      .rejects.toMatchObject({ code: ErrorCode.NOT_FOUND, address: 'unicorn' });
     await app.dispose();
   });
 
@@ -87,9 +87,9 @@ describe('createLocalRunner', () => {
       const run = createLocalRunner(app);
       // The whole degradation for `@fougere/observability` not being wired: the op it
       // would have declared is simply not there, and the refusal says what is.
-      await expect(run({ entity: 'rpc', op: 'topology' }, Invocation.empty))
-        .rejects.toMatchObject({ code: ErrorCode.NOT_FOUND, entity: 'rpc', operation: 'topology' });
-      await expect(run({ entity: 'rpc', op: 'topology' }, Invocation.empty))
+      await expect(run({ address: 'rpc', op: 'topology' }, Invocation.empty))
+        .rejects.toMatchObject({ code: ErrorCode.NOT_FOUND, address: 'rpc', operation: 'topology' });
+      await expect(run({ address: 'rpc', op: 'topology' }, Invocation.empty))
         .rejects.toThrow(/Unknown rpc operation 'topology'\. It serves discover, holds, dependents, release\./);
     });
 
@@ -97,7 +97,7 @@ describe('createLocalRunner', () => {
       await using app = await createApp({ fronds, createContainer, storageFactory });
       app.serveRpc('topology', () => ({ fronds: [{ frond: 'catalog', placement: 'local' }] }));
 
-      expect(await createLocalRunner(app)({ entity: 'rpc', op: 'topology' }, Invocation.empty))
+      expect(await createLocalRunner(app)({ address: 'rpc', op: 'topology' }, Invocation.empty))
         .toEqual({ fronds: [{ frond: 'catalog', placement: 'local' }] });
     });
 
@@ -114,7 +114,7 @@ describe('createLocalRunner', () => {
   it('serves the identity card on rpc.discover, JSON-serializable', async () => {
     const app = await createApp({ fronds, createContainer, storageFactory });
     const run = createLocalRunner(app);
-    const card = await run({ entity: 'rpc', op: 'discover' }, Invocation.empty) as IdentityCard;
+    const card = await run({ address: 'rpc', op: 'discover' }, Invocation.empty) as IdentityCard;
 
     const frondNames = card.fronds.map((f) => f.name).sort();
     expect(frondNames).toEqual(['catalog', 'inventory', 'orders']);
@@ -143,7 +143,7 @@ describe('createLocalRunner', () => {
   it('rejects an unknown rpc operation', async () => {
     const app = await createApp({ fronds, createContainer, storageFactory });
     const run = createLocalRunner(app);
-    await expect(run({ entity: 'rpc', op: 'selfdestruct' }, Invocation.empty))
+    await expect(run({ address: 'rpc', op: 'selfdestruct' }, Invocation.empty))
       .rejects.toMatchObject({ code: ErrorCode.NOT_FOUND });
     await app.dispose();
   });
@@ -153,22 +153,22 @@ describe('callValueOf (fabrication of the call value)', () => {
   it('class + verb: designation from the class name', () => {
     class Post {}
     const { call, invocation } = callValueOf(Post, 'list', { query: { limit: '5' } });
-    expect(call).toEqual({ entity: 'post', op: 'list' });
+    expect(call).toEqual({ address: 'post', op: 'list' });
     expect(invocation).toEqual({ ...Invocation.empty, query: { limit: '5' } });
   });
 
   it('raw call passes through untouched', () => {
     const { call, invocation } = callValueOf(
-      { entity: 'product', op: 'search' },
+      { address: 'product', op: 'search' },
       { params: { id: '1' }, input: { q: 'fern' } },
     );
-    expect(call).toEqual({ entity: 'product', op: 'search' });
+    expect(call).toEqual({ address: 'product', op: 'search' });
     expect(invocation).toEqual({ ...Invocation.empty, params: { id: '1' }, input: { q: 'fern' } });
   });
 
   it('no input completes to the empty invocation', () => {
     class Post {}
     expect(callValueOf(Post, 'list').invocation).toEqual(Invocation.empty);
-    expect(callValueOf({ entity: 'post', op: 'list' }).invocation).toEqual(Invocation.empty);
+    expect(callValueOf({ address: 'post', op: 'list' }).invocation).toEqual(Invocation.empty);
   });
 });

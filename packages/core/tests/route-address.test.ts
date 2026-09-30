@@ -6,7 +6,7 @@ describe('RouteAddress', () => {
   it('compares every routing dimension', () => {
     const address = new RouteAddress({
       surface: 'public',
-      entity: 'product',
+      address: 'product',
       operation: 'list',
     });
 
@@ -16,21 +16,21 @@ describe('RouteAddress', () => {
   });
 
   it('uses collision-safe keys', () => {
-    const left = new RouteAddress({ entity: 'a/b', operation: 'c' });
-    const right = new RouteAddress({ entity: 'a', operation: 'b/c' });
+    const left = new RouteAddress({ address: 'a/b', operation: 'c' });
+    const right = new RouteAddress({ address: 'a', operation: 'b/c' });
 
     expect(left.key()).not.toBe(right.key());
   });
 
   it('refuses incomplete identities', () => {
-    expect(() => new RouteAddress({ entity: ' ', operation: 'list' })).toThrow(/entity/);
-    expect(() => new RouteAddress({ entity: 'product', operation: '' })).toThrow(/operation/);
+    expect(() => new RouteAddress({ address: ' ', operation: 'list' })).toThrow(/address/);
+    expect(() => new RouteAddress({ address: 'product', operation: '' })).toThrow(/operation/);
   });
 });
 
 describe('Call', () => {
   it('normalizes its invocation once', () => {
-    const address = new RouteAddress({ entity: 'product', operation: 'create' });
+    const address = new RouteAddress({ address: 'product', operation: 'create' });
     const call = new Call(address, { input: { name: 'Fern', omitted: undefined } });
 
     expect(call.address).toBe(address);

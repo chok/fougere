@@ -37,7 +37,7 @@ describe('a fact reaching several fronds', () => {
   it('reaches every handler that accepts it, in fronds that declared nothing', async () => {
     await using app = await createApp({ fronds: emitted, createContainer });
 
-    await createLocalRunner(app)({ entity: 'post', op: 'publish' }, { ...Invocation.empty, params: { id: '42' } });
+    await createLocalRunner(app)({ address: 'post', op: 'publish' }, { ...Invocation.empty, params: { id: '42' } });
     await settle();
 
     // Two subscribers, two fronds, no registration on either side. Order is scan order
@@ -51,7 +51,7 @@ describe('a fact reaching several fronds', () => {
     // DigestHandler throws every time. The publication must not become hostage to it —
     // the EventBus this replaces did `await Promise.all(handlers)` and took the rejection.
     const out = await createLocalRunner(app)(
-      { entity: 'post', op: 'publish' },
+      { address: 'post', op: 'publish' },
       { ...Invocation.empty, params: { id: '7' } },
     );
     await settle();
@@ -77,7 +77,7 @@ describe('a fact reaching several fronds', () => {
     await using app = await createApp({ fronds: [blog], createContainer });
 
     await expect(
-      createLocalRunner(app)({ entity: 'post', op: 'publish' }, { ...Invocation.empty, params: { id: '1' } }),
+      createLocalRunner(app)({ address: 'post', op: 'publish' }, { ...Invocation.empty, params: { id: '1' } }),
     ).resolves.toEqual({ id: '1' });
     await settle();
     expect(heard()).toEqual([]);
@@ -122,16 +122,16 @@ describe('a listener that lives in another process', () => {
       createContainer,
       remotes: { search: 'http://127.0.0.1:9' },
       remoteTransport: () => async (call) => {
-        if (call.entity === 'rpc') {
+        if (call.address === 'rpc') {
           return { fronds: [{ name: 'search', facades: [{ name: 'index', ops: [{ name: 'reindex', kind: 'command' }] }], facts: [] }] };
         }
-        wire.push(`${call.frond}:${call.entity}.${call.op}`);
+        wire.push(`${call.frond}:${call.address}.${call.op}`);
 
         return undefined;
       },
     });
 
-    await createLocalRunner(app)({ entity: 'post', op: 'publish' }, { ...Invocation.empty, params: { id: '9' } });
+    await createLocalRunner(app)({ address: 'post', op: 'publish' }, { ...Invocation.empty, params: { id: '9' } });
     await settle();
 
     expect(wire).toEqual(['search:index.reindex']);
@@ -208,7 +208,7 @@ describe('a fact stamped at the announcement', () => {
     // Through the TYPED emitter, which is what `Emit<T>` being partial buys: `at: created()`
     // is not the announcer's to write, and asking for it made every emitter cast past its
     // own type — so nothing checked the two fields it does write.
-    await createLocalRunner(app)({ entity: 'post', op: 'publish' }, { ...Invocation.empty, params: { id: 'z' } });
+    await createLocalRunner(app)({ address: 'post', op: 'publish' }, { ...Invocation.empty, params: { id: 'z' } });
     await settle();
 
     const arrived = (globalThis as any).__lastFact as { id: string; at: Date };
@@ -244,7 +244,7 @@ describe('a sender whose copy has moved ahead', () => {
 
     expect(heard()).not.toContain('search:77');
     const shape = (refused as AggregateError).errors
-      .find((e: { entity?: string }) => e.entity === 'index') as { details?: unknown[] };
+      .find((e: { address?: string }) => e.address === 'index') as { details?: unknown[] };
     expect(shape.details).toEqual([{ path: ['author'], message: 'Unknown field' }]);
   });
 

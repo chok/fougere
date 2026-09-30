@@ -9,7 +9,7 @@ export default class Audit {
   }
 
   async around(context: OperationContext, next: AppNext): Promise<unknown> {
-    this.trail.note(`audit:${context.entity}.${context.operation}`);
+    this.trail.note(`audit:${context.address}.${context.operation}`);
 
     return next();
   }

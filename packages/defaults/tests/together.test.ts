@@ -62,21 +62,21 @@ async function boot(split: boolean) {
   return {
     said,
     storage: storageOf,
-    announceInside: () => call({ entity: 'transfer', op: 'moveAndAnnounceInside' },
+    announceInside: () => call({ address: 'transfer', op: 'moveAndAnnounceInside' },
       { ...Invocation.empty, params: { from: 'a', to: 'b', amount: 100 } as never }),
-    announceAfter: () => call({ entity: 'transfer', op: 'moveAndAnnounceAfter' },
+    announceAfter: () => call({ address: 'transfer', op: 'moveAndAnnounceAfter' },
       { ...Invocation.empty, params: { from: 'a', to: 'b', amount: 100 } as never }),
-    nest: () => call({ entity: 'nested', op: 'nest' }, Invocation.empty),
-    sync: () => call({ entity: 'refresh', op: 'sync' }, Invocation.empty),
-    syncAndFail: () => call({ entity: 'refresh', op: 'syncAndFail' }, Invocation.empty),
+    nest: () => call({ address: 'nested', op: 'nest' }, Invocation.empty),
+    sync: () => call({ address: 'refresh', op: 'sync' }, Invocation.empty),
+    syncAndFail: () => call({ address: 'refresh', op: 'syncAndFail' }, Invocation.empty),
     move: (amount: number) =>
-      call({ entity: 'transfer', op: 'move' },
+      call({ address: 'transfer', op: 'move' },
         { ...Invocation.empty, params: { from: 'a', to: 'b', amount } as never }),
     moveAndFail: (amount: number) =>
-      call({ entity: 'transfer', op: 'moveAndFail' },
+      call({ address: 'transfer', op: 'moveAndFail' },
         { ...Invocation.empty, params: { from: 'a', to: 'b', amount } as never }),
     overdraw: () =>
-      call({ entity: 'transfer', op: 'overdraw' },
+      call({ address: 'transfer', op: 'overdraw' },
         { ...Invocation.empty, params: { from: 'a', to: 'b' } as never }),
     async [Symbol.asyncDispose]() {
       await app.dispose();

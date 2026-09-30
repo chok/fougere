@@ -32,7 +32,7 @@ describe('an operation crosses its boundary in one order', () => {
     const run = createLocalRunner(mounted);
 
     const created = await run(
-      { entity: 'product', op: 'create' },
+      { address: 'product', op: 'create' },
       { ...Invocation.empty, input: { id: 'p1', name: 'Fern' } },
     );
 
@@ -55,7 +55,7 @@ describe('an operation crosses its boundary in one order', () => {
     const run = createLocalRunner(mounted);
 
     await expect(run(
-      { entity: 'product', op: 'create' },
+      { address: 'product', op: 'create' },
       { ...Invocation.empty, input: { id: 'p1', name: 'Fern', unknown: true } },
     )).rejects.toMatchObject({ code: 'VALIDATION_FAILED' });
 

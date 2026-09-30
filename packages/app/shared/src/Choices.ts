@@ -24,7 +24,7 @@ export class Choices {
     const where = text ? { [reference.label]: { contains: text } } : undefined;
     const answer = await sendCall(
       fetcher,
-      { entity: reference.to, op: 'list' },
+      { address: reference.to, op: 'list' },
       invocationOf({ query: { limit: Choices.LIMIT + 1, ...(where ? { where } : {}) } }),
     );
     const rows = itemsOf<Record<string, unknown>>(answer);

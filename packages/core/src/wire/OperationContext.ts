@@ -1,7 +1,7 @@
 // ── Types ───────────────────────────────────────
 export interface OperationContext {
-  /** Entity name (e.g. 'product'). */
-  entity: string;
+  /** The address the operation answers at — `checkout` in `checkout.pay`. */
+  address: string;
   /**
    * Which frond owns this operation — the unit that gets deployed, and therefore the
    * one a reader groups by first. Absent only where no frond claims the call.

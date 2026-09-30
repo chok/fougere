@@ -44,7 +44,7 @@ describe('a view named for one op', () => {
   it('projects that op onto its view — the index ships cards', async () => {
     const { app, run } = await boot();
 
-    const { items: rows } = await run({ entity: 'note', op: 'list' }, call()) as { items: Record<string, unknown>[] };
+    const { items: rows } = await run({ address: 'note', op: 'list' }, call()) as { items: Record<string, unknown>[] };
 
     expect(Object.keys(rows[0]!).sort()).toEqual(['id', 'title']);
     await app.dispose();
@@ -53,7 +53,7 @@ describe('a view named for one op', () => {
   it('leaves every other op on the entity — the full row still travels', async () => {
     const { app, run } = await boot();
 
-    const note = await run({ entity: 'note', op: 'findById' }, call()) as Record<string, unknown>;
+    const note = await run({ address: 'note', op: 'findById' }, call()) as Record<string, unknown>;
 
     expect(note.body).toBe('Le corps entier');
     await app.dispose();
@@ -77,7 +77,7 @@ describe('a computed field meets the same boundary', () => {
   it('rides along on an op with no view — open is the default', async () => {
     const { app, run } = await boot();
 
-    const note = await run({ entity: 'note', op: 'findById' }, call()) as Record<string, unknown>;
+    const note = await run({ address: 'note', op: 'findById' }, call()) as Record<string, unknown>;
 
     expect(note.excerpt).toBe('Le ');
     await app.dispose();
@@ -86,7 +86,7 @@ describe('a computed field meets the same boundary', () => {
   it('stays out of an op that named its view — the author stated the list', async () => {
     const { app, run } = await boot();
 
-    const { items: rows } = await run({ entity: 'note', op: 'list' }, call()) as { items: Record<string, unknown>[] };
+    const { items: rows } = await run({ address: 'note', op: 'list' }, call()) as { items: Record<string, unknown>[] };
 
     expect(Object.keys(rows[0]!).sort()).toEqual(['id', 'title']);
     expect(rows[0]).not.toHaveProperty('excerpt');

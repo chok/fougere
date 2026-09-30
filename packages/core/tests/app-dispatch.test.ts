@@ -30,7 +30,7 @@ describe('App.dispatch', () => {
       storageFactory,
     });
     app.observe((event) => events.push(event));
-    const call = new Call(new RouteAddress({ entity: 'product', operation: 'list' }));
+    const call = new Call(new RouteAddress({ address: 'product', operation: 'list' }));
 
     await expect(app.dispatch(call)).resolves.toMatchObject([{ id: '1', name: 'Fern' }]);
     expect(events.map(({ stage }) => stage))
@@ -48,11 +48,11 @@ describe('App.dispatch', () => {
 
     // `app.use` adds a middleware this late; this is its dual — participate, or watch.
     const stop = app.observe((event) => seen.push(event.stage));
-    await app.dispatch(new Call(new RouteAddress({ entity: 'product', operation: 'list' })));
+    await app.dispatch(new Call(new RouteAddress({ address: 'product', operation: 'list' })));
     expect(seen).toEqual(['received', 'resolved', 'completed', 'settled']);
 
     stop();
-    await app.dispatch(new Call(new RouteAddress({ entity: 'product', operation: 'list' })));
+    await app.dispatch(new Call(new RouteAddress({ address: 'product', operation: 'list' })));
     expect(seen).toHaveLength(4);
   });
 
@@ -65,7 +65,7 @@ describe('App.dispatch', () => {
     });
     app.observe((event) => events.push(event));
 
-    await createAppRunner(app)({ entity: 'product', op: 'list' }, Invocation.empty);
+    await createAppRunner(app)({ address: 'product', op: 'list' }, Invocation.empty);
 
     expect(events.map(({ stage }) => stage))
       .toEqual(['received', 'resolved', 'completed', 'settled']);
@@ -81,7 +81,7 @@ describe('App.dispatch', () => {
     app.observe((event) => events.push(event));
 
     await createAppRunner(app, 'admin')(
-      { entity: 'rpc', op: 'discover' },
+      { address: 'rpc', op: 'discover' },
       Invocation.empty,
     );
 
@@ -98,7 +98,7 @@ describe('App.dispatch', () => {
     });
 
     await expect(createLocalRunner(app)(
-      { entity: 'product', op: 'list' },
+      { address: 'product', op: 'list' },
       Invocation.empty,
     )).rejects.toMatchObject({ code: 'NOT_FOUND' });
     expect(transport).not.toHaveBeenCalled();

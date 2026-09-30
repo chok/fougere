@@ -49,7 +49,7 @@ export default class ExplainCommand {
 
   private ask(op: string, raw: Record<string, unknown>) {
     return createAppRunner(this.app)(
-      { entity: 'explain', op },
+      { address: 'explain', op },
       { params: {}, query: {}, input: raw, state: {} },
     );
   }

@@ -33,7 +33,7 @@ describe('a stubbed port', () => {
     await using app = await testApp({ root, stub: [Payment] });
     app.stub(Payment).charge.mockReturnValue({ provider: 'test', cents: 4990 });
 
-    const out = await createLocalRunner(app)({ entity: 'order', op: 'pay' }, Invocation.empty);
+    const out = await createLocalRunner(app)({ address: 'order', op: 'pay' }, Invocation.empty);
 
     expect(out).toEqual({ provider: 'test', cents: 4990 });
   });
@@ -41,7 +41,7 @@ describe('a stubbed port', () => {
   it('records what it was called with', async () => {
     await using app = await testApp({ root, stub: [Payment] });
 
-    await createLocalRunner(app)({ entity: 'order', op: 'pay' }, Invocation.empty);
+    await createLocalRunner(app)({ address: 'order', op: 'pay' }, Invocation.empty);
 
     expect(app.stub(Payment).charge).toHaveBeenCalledWith(4990);
   });
@@ -49,7 +49,7 @@ describe('a stubbed port', () => {
   it('leaves the realization in place when nothing is stubbed', async () => {
     await using app = await testApp({ root });
 
-    const out = await createLocalRunner(app)({ entity: 'order', op: 'pay' }, Invocation.empty);
+    const out = await createLocalRunner(app)({ address: 'order', op: 'pay' }, Invocation.empty);
 
     // `StripePayment extends Payment` IS the registration — the port resolves to it.
     expect(out).toEqual({ provider: 'stripe', cents: 4990 });

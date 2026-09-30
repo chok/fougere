@@ -102,7 +102,7 @@ describe('EffectiveOperation as the shared runtime contract', () => {
     });
     await expect(app.facadeFor('post')!.publish(invocation))
       .resolves.toMatchObject({ handledBy: 'delegate' });
-    await expect(createAppRunner(app)({ entity: 'post', op: 'publish' }, invocation))
+    await expect(createAppRunner(app)({ address: 'post', op: 'publish' }, invocation))
       .resolves.toMatchObject({ handledBy: 'delegate' });
   });
 });

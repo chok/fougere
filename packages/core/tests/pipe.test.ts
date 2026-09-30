@@ -75,7 +75,7 @@ describe('an op that finishes a fact', () => {
   it('hands every subscriber what it answered, not what was announced', async () => {
     await using app = await createApp({ fronds: piped, createContainer });
 
-    await createLocalRunner(app)({ entity: 'post', op: 'publish' }, { ...Invocation.empty, params: { id: '42' } });
+    await createLocalRunner(app)({ address: 'post', op: 'publish' }, { ...Invocation.empty, params: { id: '42' } });
     await settle(() => seen().length > 0);
 
     // `PostHandler` announced an address. `RedactHandler` set it aside, and the subscriber
@@ -87,7 +87,7 @@ describe('an op that finishes a fact', () => {
   it('still stamps what the entity says the system writes', async () => {
     await using app = await createApp({ fronds: piped, createContainer });
 
-    await createLocalRunner(app)({ entity: 'post', op: 'publish' }, { ...Invocation.empty, params: { id: '7' } });
+    await createLocalRunner(app)({ address: 'post', op: 'publish' }, { ...Invocation.empty, params: { id: '7' } });
     await settle(() => seen().length > 0);
 
     // The core's own link runs first: `at: created()` is the entity speaking, and a

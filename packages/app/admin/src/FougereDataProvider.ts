@@ -37,7 +37,7 @@ export function createDataProvider(options: ProviderOptions) {
 
   const call = async (resource: string, op: string, context: Record<string, unknown>): Promise<unknown> => {
     try {
-      return await sendCall(fetcher, { entity: resource, op }, {
+      return await sendCall(fetcher, { address: resource, op }, {
         params: {}, query: {}, input: undefined, state: {}, ...context,
       }, endpoint);
     } catch (err) {

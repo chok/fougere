@@ -20,7 +20,7 @@ export default class LoadCommand {
 
   async run(raw: Record<string, unknown>) {
     const result = await createAppRunner(this.app)(
-      { entity: 'load', op: 'execute' },
+      { address: 'load', op: 'execute' },
       { params: {}, query: {}, input: raw, state: {} },
     ) as LoadScenario;
 

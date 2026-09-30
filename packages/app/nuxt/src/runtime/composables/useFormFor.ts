@@ -3,16 +3,9 @@ import { reactive, computed, onMounted } from 'vue';
 import { useRequestFetch } from '#imports';
 import { lowerFirst, validationErrorsOf } from '@fougere/core/contract';
 import { useCommand } from './useFougereData.js';
-import { Choices, facadeOf, formFieldsOf, payloadOf, errorsByField, type Choice, type Fetcher, type FormEntity, type FormField, type FormErrors, type FormFieldName, type FormRow, type FormValues } from '@fougere/app/client';
+import { Choices, facadeOf, formFieldsOf, payloadOf, errorsByField, type Choice, type Fetcher, type FormEntity, type FormField, type FormErrors, type FormFieldName, type FormRow, type FormValues, type FormOptions } from '@fougere/app/client';
 
-export interface FormOptions {
-  /** Command the submit rides. Default: 'create'. */
-  op?: string;
-  /** Initial values (edit mode: the loaded entity). */
-  initial?: Record<string, unknown>;
-  /** Call params designating the target (edit mode: { id }). */
-  params?: Record<string, string>;
-}
+export type { FormOptions };
 
 export function useFormFor<E extends FormEntity>(entity: E, options: FormOptions = {}) {
   const entityKey = lowerFirst(entity.name);
@@ -28,7 +21,7 @@ export function useFormFor<E extends FormEntity>(entity: E, options: FormOptions
   const errors = reactive<Record<string, string>>({});
   // A form is designated by its ENTITY — it is a set of fields — so the facade it submits to is
   // an address with no handler type behind it, and what it answers is the entity's row.
-  const command = useCommand(facadeOf(entity), options.op ?? 'create');
+  const command = useCommand(options.to ?? facadeOf(entity), options.op ?? 'create');
   const fetcher = useRequestFetch() as Fetcher;
   const choices = reactive<Record<string, Choice[]>>({});
   const searchable = reactive<Record<string, boolean>>({});

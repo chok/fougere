@@ -72,8 +72,8 @@ observeWith(async () => {
 
 const storageOf = (entity: string) => app.storageFor(entity)!;
 const call = createLocalRunner(app);
-const run = (entity: string, op: string, params: Record<string, unknown> = {}) =>
-  call({ entity, op }, { ...Invocation.empty, params: params as never });
+const run = (address: string, op: string, params: Record<string, unknown> = {}) =>
+  call({ address, op }, { ...Invocation.empty, params: params as never });
 
 await storageOf('account').create({ id: 'ada', owner: 'Ada', balance: 1000 });
 await storageOf('account').create({ id: 'bob', owner: 'Bob', balance: 0 });

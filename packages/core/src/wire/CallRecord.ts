@@ -5,7 +5,7 @@ export interface CallRecord {
   /** Monotonic, and the whole cursor protocol: a reader asks for what is above its own. */
   seq: number;
   frond?: string;
-  entity: string;
+  address: string;
   operation: string;
   surface?: string;
   /** Known at `resolved`, so absent on a call that never found a route. */

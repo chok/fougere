@@ -13,10 +13,10 @@ import { entity, json, number, optional, primary, text } from '@fougere/schema';
 export default class Later extends entity({
   id: primary(text()),
   /** The address, flat, so a due row is found without reading what it carries. */
-  entity: text(),
+  address: text(),
   operation: text(),
   /** What the caller supplied — params, query, input, identity. `runAt` is dropped on the way out. */
   invocation: json(),
   runAt: number({ integer: true }),
   takenUntil: optional(number({ integer: true })),
-}) {}
+}, { previous: { address: 'entity' } }) {}

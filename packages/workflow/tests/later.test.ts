@@ -42,8 +42,8 @@ async function booting(sweepMs: number): Promise<App> {
   });
 }
 
-const calling = (entity: string, operation: string, invocation: PartialInvocation) =>
-  new Call(new RouteAddress({ entity, operation }), invocation);
+const calling = (address: string, operation: string, invocation: PartialInvocation) =>
+  new Call(new RouteAddress({ address, operation }), invocation);
 
 const notes = (app: App) => app.storageFor('note') as Storage;
 const laters = (app: App) => app.storageFor('later') as Storage;
@@ -61,7 +61,7 @@ describe('a call that runs later', () => {
 
     const kept = await laters(app).list();
     expect(kept).toHaveLength(1);
-    expect(kept[0]).toMatchObject({ entity: 'note', operation: 'create' });
+    expect(kept[0]).toMatchObject({ address: 'note', operation: 'create' });
     expect((kept[0] as { invocation: { input: unknown } }).invocation.input)
       .toEqual({ id: 'n1', body: 'hello' });
 

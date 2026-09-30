@@ -555,7 +555,7 @@ boot: a boot migrates and seeds, which describing a project may not do — `load
 the entity's own fields, and the envelope from `frameCall`; what it marks as the operator's is the
 weights, the stages and the thresholds, in the file where they sit. Pinned by `cli/tests/load.test.ts`.
 
-**`rpc` is a registry, not an `if`** — `wire/call.ts`, `RPC_ENTITY`, served out of
+**`rpc` is a registry, not an `if`** — `wire/call.ts`, `RPC_ADDRESS`, served out of
 `dispatch/RouteRegistry.ts`. `app.serveRpc(op, answer)` is how an optional package declares
 a reading core does not hold, and a second declaration of one name is REFUSED. An app that
 never installed `@fougere/observability` answers `Unknown rpc operation 'topology'. It
@@ -858,7 +858,9 @@ compares two `rpc.discover` cards through `Card.diff`.
 whatever host called `generateRoutes`, so one surface was named beside the operation and
 the other three files away. The PREFIX stays the host's — naming is the frond's, mounting
 is not — and a host's `overrides:` still wins, since it is deciding for someone else's
-frond. Pinned by `adapter/rest/tests/stated.test.ts`.
+frond. A route is one op at one ADDRESS: `generateRoutes` walks the handlers, never the
+entities, so a handler with no entity (`checkout.pay`) has its route and the fields come from
+the op's own contract. Pinned by `adapter/rest/tests/stated.test.ts` and `routes.test.ts`.
 
 **Operation contract, three producers** — the façade consumes `OperationContract` and
 nothing else. A prefab DECLARES (`Crud.__ops`, runtime), the scan DERIVES from source,
@@ -866,7 +868,7 @@ nothing else. A prefab DECLARES (`Crud.__ops`, runtime), the scan DERIVES from s
 found — the answer for a method inherited from an installed base class. `description` is the
 method's own doc sentence, read from the AST (`compiler/src/scan/handler-parser.ts`, `docSentenceOf`).
 
-**Call contract** (`core/src/wire/call.ts`) — a Frond call is a value `(entity, op,
+**Call contract** (`core/src/wire/call.ts`) — a Frond call is a value `(address, op,
 invocation)`. `createLocalRunner` (`boot/runner.ts`) executes locally, `createAppRunner`
 follows the topology, `identityCardOf` (`boot/card.ts`) answers `rpc.discover`. Transports
 move the value, never reshape it. Browser-safe surface: `@fougere/core/contract`.
@@ -1108,9 +1110,6 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
   changed is that nothing has to notice by reading: `statementsOf` (`@fougere/testing`) is the
   number in a test, `FinishedSpan.statements` is the same number in production. Refusing it
   remains open — a page size is not a constant, so there is no threshold to hard-code.
-- **`BindingPlan.optional` is written five times by core and ignored by `resolveArgs`.** Not a
-  missing reader: making it refuse breaks four tests, two of which state the opposite policy
-  on purpose. Closing it means choosing which door is right.
 - **`storage.client` remains the anonymous multi-statement path, validator off** — everything else
   writes through a guarded port, `Together<[…]>` included.
 - **A provider class named `<Entity>Storage` is DISCARDED, not honoured** — the entry used to
@@ -1157,10 +1156,6 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
   `npx`'d at scaffold time. A tool that changes what it writes inside its major (a config file
   renamed, a flag dropped) breaks `fougere new` for everyone until `scaffold.json` follows; `door:check`
   is where it is seen. Moving a major is a deliberate edit of that file.
-- **A primitive parameter is coerced, never refused** — `ArgumentResolver` (`dispatch/ArgumentResolver.ts`),
-  the `param` branch, and `coercionFor` (`wire/binding.ts`). `excitement?: number` receives `NaN`
-  for `?excitement=abc` and `0` for `?excitement=`, and the op answers 200. The doc says
-  "coerced" (`4.business/1.handlers.md`) and nothing about a refusal. Measured 2026-09-17.
 - **`unique()` builds two unique indexes on a fresh table** — `createTableSQL` writes the column
   constraint (`<table>_<column>_key`) and `delta` adds `<table>_<column>_idx` through `indexSQL`
   for the same column, so every write on it is checked twice. Measured on Postgres 17, 2026-09-17.

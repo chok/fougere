@@ -143,9 +143,9 @@ async function outcomeOf(run: () => Promise<unknown>): Promise<unknown> {
     return { ok: await run() };
   } catch (err) {
     if (err instanceof FougereError) {
-      const { code, message, entity, operation, details } = err;
+      const { code, message, address, operation, details } = err;
 
-      return { failed: { code, message, entity, operation, details } };
+      return { failed: { code, message, address, operation, details } };
     }
     throw err;
   }
@@ -163,7 +163,7 @@ describe('the protocol changes, the call does not', () => {
   ];
 
   it.each(cases)('in-process, HTTP and TCP agree on %s', async (_label, op, invocation) => {
-    const call = { entity: 'product', op };
+    const call = { address: 'product', op };
     const local = await outcomeOf(() => localRun(call, invocation));
     const http = await outcomeOf(() => httpTransport(call, invocation));
     const tcp = await outcomeOf(() => socketTransport(call, invocation));
@@ -192,10 +192,10 @@ describe('asynchrony — what the socket makes visible and HTTP hid', () => {
     // the same socket. HTTP would have opened three connections and let the
     // kernel do the pairing; here the contract does it.
     const inFlight = [
-      socketTransport({ entity: 'product', op: 'findById' }, inv({ params: { id: 'p2' } })),
-      outcomeOf(() => socketTransport({ entity: 'product', op: 'reserve' }, inv())),
-      socketTransport({ entity: 'product', op: 'findById' }, inv({ params: { id: 'p1' } })),
-      socketTransport({ entity: 'rpc', op: 'discover' }, inv()),
+      socketTransport({ address: 'product', op: 'findById' }, inv({ params: { id: 'p2' } })),
+      outcomeOf(() => socketTransport({ address: 'product', op: 'reserve' }, inv())),
+      socketTransport({ address: 'product', op: 'findById' }, inv({ params: { id: 'p1' } })),
+      socketTransport({ address: 'rpc', op: 'discover' }, inv()),
     ];
     const [second, failure, first, card] = await Promise.all(inFlight);
 

@@ -80,9 +80,9 @@ async function outcomeOf(run: () => Promise<unknown>): Promise<unknown> {
     return { ok: await run() };
   } catch (err) {
     if (err instanceof FougereError) {
-      const { code, message, entity, operation, details } = err;
+      const { code, message, address, operation, details } = err;
 
-      return { failed: { code, message, entity, operation, details } };
+      return { failed: { code, message, address, operation, details } };
     }
     throw err;
   }
@@ -99,7 +99,7 @@ describe('gradient — the moved Frond behaves identically', () => {
   ];
 
   it.each(cases)('parity on %s', async (_label, op, invocation) => {
-    const local = await outcomeOf(() => localRun({ entity: 'product', op }, invocation));
+    const local = await outcomeOf(() => localRun({ address: 'product', op }, invocation));
     const remote = await outcomeOf(() => facade[op](invocation));
     expect(remote).toEqual(JSON.parse(JSON.stringify(local)));
   }, 15_000);
@@ -111,7 +111,7 @@ describe('gradient — the moved Frond behaves identically', () => {
   it('the validation verdict happens handler-side and crosses typed', async () => {
     const failure = facade.create(inv({ input: { stock: -2 } }));
     await expect(failure).rejects.toBeInstanceOf(FougereError);
-    await expect(failure).rejects.toMatchObject({ code: ErrorCode.VALIDATION_FAILED, entity: 'product' });
+    await expect(failure).rejects.toMatchObject({ code: ErrorCode.VALIDATION_FAILED, address: 'product', operation: 'create' });
   });
 
   it('a business failure keeps its details across the wire', async () => {

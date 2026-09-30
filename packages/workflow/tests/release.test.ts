@@ -102,7 +102,7 @@ describe('a release that was interrupted', () => {
     expect(expired.status).toBe('running');
 
     const swept = await createLocalRunner(second.app)(
-      { entity: 'run', op: 'sweep' }, Invocation.empty,
+      { address: 'run', op: 'sweep' }, Invocation.empty,
     ) as { resumed: string[] };
     expect(swept.resumed).toEqual(['user:ada']);
     expect(await ids(second.posts)).toEqual([]);

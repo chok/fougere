@@ -11,10 +11,10 @@ export default class TaskHandler extends Crud(Task) {
   async complete(id: string): Promise<Task> {
     const task = await super.findById(id);
     if (!task) {
-      throw new FougereError({ code: ErrorCode.NOT_FOUND, message: `Task '${id}' not found`, entity: 'task', operation: 'complete' });
+      throw new FougereError({ code: ErrorCode.NOT_FOUND, message: `Task '${id}' not found` });
     }
     if (task.status === 'done') {
-      throw new FougereError({ code: ErrorCode.CONFLICT, message: 'Already done', entity: 'task', operation: 'complete' });
+      throw new FougereError({ code: ErrorCode.CONFLICT, message: 'Already done' });
     }
 
     return super.update(id, { status: 'done' });

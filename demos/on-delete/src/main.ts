@@ -107,6 +107,6 @@ console.log(split
   : 'Uncomment `sources:` in fougere.config.ts and run again. The entities do not change.');
 console.log(`${'─'.repeat(74)}\n`);
 
-await call({ entity: 'run', op: 'sweep' }, Invocation.empty);
+await call({ address: 'run', op: 'sweep' }, Invocation.empty);
 await app.dispose();
 await storage.close!();

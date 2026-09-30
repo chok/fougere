@@ -29,7 +29,7 @@ const settle = () => new Promise((r) => setTimeout(r, 120));
 
 /** What a reader sees when it asks — always through the facade, never from the push. */
 async function seenBy(app: App, name: string): Promise<string> {
-  const rows = (await createLocalRunner(app)({ entity: 'post', op: 'list' }, as(name))) as {
+  const rows = (await createLocalRunner(app)({ address: 'post', op: 'list' }, as(name))) as {
     title: string;
     status: string;
   }[];
@@ -101,12 +101,12 @@ async function main() {
   };
 
   console.log(bold('1. alice drafts "Ferns unfurl in silence"'));
-  await run({ entity: 'post', op: 'createDraft' }, as('alice', { input: { id: 'p1', title: 'Ferns unfurl in silence' } }));
+  await run({ address: 'post', op: 'createDraft' }, as('alice', { input: { id: 'p1', title: 'Ferns unfurl in silence' } }));
   await settle();
   show();
 
   console.log(bold('2. alice publishes it'));
-  await run({ entity: 'post', op: 'publish' }, as('alice', { params: { id: 'p1' } }));
+  await run({ address: 'post', op: 'publish' }, as('alice', { params: { id: 'p1' } }));
   await settle();
   show();
 

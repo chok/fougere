@@ -81,7 +81,7 @@ export function createSocketTransport(
   const strand = (reason: string) => {
     for (const [id, settle] of pending) {
       pending.delete(id);
-      settle({ error: new FougereError({ code: ErrorCode.SERVICE_UNAVAILABLE, message: reason, entity: 'socket' }) });
+      settle({ error: new FougereError({ code: ErrorCode.SERVICE_UNAVAILABLE, message: reason }) });
     }
   };
   socket.on('error', (err) => strand(`socket failed: ${err.message}`));
@@ -94,8 +94,8 @@ export function createSocketTransport(
         pending.delete(id);
         resolve({ error: new FougereError({
           code: ErrorCode.GATEWAY_TIMEOUT,
-          message: `${call.entity}.${call.op} timed out after ${timeoutMs}ms`,
-          entity: call.entity,
+          message: `${call.address}.${call.op} timed out after ${timeoutMs}ms`,
+          address: call.address,
           operation: call.op,
         }) });
       }, timeoutMs);

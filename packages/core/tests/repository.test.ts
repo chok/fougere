@@ -67,7 +67,7 @@ describe('Repository(Entity)', () => {
 describe('the declared one wins, the default is always there', () => {
   it('resolves a repository nobody wrote — it is the port itself', async () => {
     await using app = await createApp({ fronds, createContainer, storageFactory });
-    const out = await createLocalRunner(app)({ entity: 'node', op: 'all' }, Invocation.empty);
+    const out = await createLocalRunner(app)({ address: 'node', op: 'all' }, Invocation.empty);
 
     // NodeHandler asked for `NodeRepository`, no such file exists, and the call answered.
     expect(out).toEqual(rows);
@@ -75,7 +75,7 @@ describe('the declared one wins, the default is always there', () => {
 
   it('uses the written one when there is one', async () => {
     await using app = await createApp({ fronds, createContainer, storageFactory });
-    const out = await createLocalRunner(app)({ entity: 'reading', op: 'loud' }, Invocation.empty);
+    const out = await createLocalRunner(app)({ address: 'reading', op: 'loud' }, Invocation.empty);
 
     // `loud()` exists on no storage — answering it proves the declared class was injected.
     expect(out).toEqual(rows);
@@ -85,7 +85,7 @@ describe('the declared one wins, the default is always there', () => {
     await using app = await createApp({ fronds, createContainer, storageFactory });
 
     await expect(
-      createLocalRunner(app)({ entity: 'reading', op: 'storage' }, Invocation.empty),
+      createLocalRunner(app)({ address: 'reading', op: 'storage' }, Invocation.empty),
     ).rejects.toThrow();
   });
 });

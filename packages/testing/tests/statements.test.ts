@@ -18,7 +18,7 @@ beforeAll(async () => {
   app = await testApp({ root });
   call = createLocalRunner(app);
   for (const name of ['first', 'second', 'third']) {
-    await call({ entity: 'item', op: 'add' }, { ...Invocation.empty, input: { name } });
+    await call({ address: 'item', op: 'add' }, { ...Invocation.empty, input: { name } });
   }
 }, 30_000);
 
@@ -26,7 +26,7 @@ afterAll(async () => { await app?.dispose(); });
 
 describe('statementsOf', () => {
   it('counts one statement for a page', async () => {
-    const ran = await statementsOf(() => call({ entity: 'item', op: 'list' }, Invocation.empty));
+    const ran = await statementsOf(() => call({ address: 'item', op: 'list' }, Invocation.empty));
 
     expect(ran).toHaveLength(1);
     expect(ran[0].verb).toBe('select');
@@ -34,7 +34,7 @@ describe('statementsOf', () => {
   });
 
   it('counts the reads a row-at-a-time answer makes', async () => {
-    const ran = await statementsOf(() => call({ entity: 'item', op: 'listOneByOne' }, Invocation.empty));
+    const ran = await statementsOf(() => call({ address: 'item', op: 'listOneByOne' }, Invocation.empty));
 
     // The page, then one read per row it already held. Three rows here; in production it is
     // however many the page returned, which is what makes it invisible until it is counted.
@@ -45,14 +45,14 @@ describe('statementsOf', () => {
   it('stops counting when the block ends, refusal included', async () => {
     await expect(statementsOf(() => Promise.reject(new Error('refused')))).rejects.toThrow('refused');
 
-    const after = await statementsOf(() => call({ entity: 'item', op: 'list' }, Invocation.empty));
+    const after = await statementsOf(() => call({ address: 'item', op: 'list' }, Invocation.empty));
     expect(after).toHaveLength(1);
   });
 });
 
 describe('spansOf', () => {
   it('takes out of the op exactly what ran under it', async () => {
-    const spans = await spansOf(app, () => call({ entity: 'item', op: 'listOneByOne' }, Invocation.empty));
+    const spans = await spansOf(app, () => call({ address: 'item', op: 'listOneByOne' }, Invocation.empty));
     const [op] = spans.filter((span) => span.kind === 'operation');
     const under = spans.filter((span) => span.kind === 'statement');
 
@@ -68,7 +68,7 @@ describe('spansOf', () => {
    * which is the kind of thing a duration alone never says.
    */
   it('separates what the op waited for from what it did', async () => {
-    const spans = await spansOf(app, () => call({ entity: 'item', op: 'listOneByOne' }, Invocation.empty));
+    const spans = await spansOf(app, () => call({ address: 'item', op: 'listOneByOne' }, Invocation.empty));
     const [op] = spans.filter((span) => span.kind === 'operation');
 
     expect(op.selfMs).toBeGreaterThan(0);

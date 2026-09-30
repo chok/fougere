@@ -79,7 +79,7 @@ describe('a receiver that establishes its caller', () => {
   it('lets a signed call through, and the state arrives as signed', async () => {
     const transport = createHttpTransport(base, { sign: (call) => signEnvelope(app, call) });
     const state = await transport(
-      { entity: 'post', op: 'list' },
+      { address: 'post', op: 'list' },
       { ...Invocation.empty, state: { user: { id: 'alice', role: 'reader' } } },
     );
 
@@ -91,7 +91,7 @@ describe('a receiver that establishes its caller', () => {
     // must go through anyway. It is the PEER that is always present, not the user.
     const transport = createHttpTransport(base, { sign: (call) => signEnvelope(app, call) });
 
-    expect(await transport({ entity: 'post', op: 'list' }, Invocation.empty)).toEqual({ state: {}, caller: 'app' });
+    expect(await transport({ address: 'post', op: 'list' }, Invocation.empty)).toEqual({ state: {}, caller: 'app' });
   });
 
   it('refuses a frond signed by another root — a parallel system, valid throughout', async () => {
@@ -99,7 +99,7 @@ describe('a receiver that establishes its caller', () => {
     const impostor = issue(outsider.privateKey, 'app');
     const transport = createHttpTransport(base, { sign: (call) => signEnvelope(impostor, call) });
 
-    await expect(transport({ entity: 'post', op: 'list' }, Invocation.empty)).rejects.toThrow(/grant signature/);
+    await expect(transport({ address: 'post', op: 'list' }, Invocation.empty)).rejects.toThrow(/grant signature/);
   });
 
   it('drops a claimed state when a signed one travels beside it', async () => {
@@ -109,7 +109,7 @@ describe('a receiver that establishes its caller', () => {
       params: {},
       query: {},
       state: { user: { role: 'admin' } },
-      identity: await signEnvelope(app, { entity: 'post', op: 'list', state: { user: { role: 'reader' } } }),
+      identity: await signEnvelope(app, { address: 'post', op: 'list', state: { user: { role: 'reader' } } }),
     });
 
     expect(answer.result).toEqual({ state: { user: { role: 'reader' } }, caller: 'app' });
@@ -120,7 +120,7 @@ describe('a receiver that establishes its caller', () => {
     // spread its own invocation would forward the name it was handed.
     const transport = createHttpTransport(base, { sign: (call) => signEnvelope(app, call) });
     const relayed = await transport(
-      { entity: 'post', op: 'list' },
+      { address: 'post', op: 'list' },
       { ...Invocation.empty, caller: 'shop' },
     );
 
@@ -213,7 +213,7 @@ describe('an envelope proves WHAT, not only WHO', () => {
   it('refuses a captured envelope replayed against another operation', async () => {
     // Signed for `post.list`, posted as `post.delete`: same signature, same grant, same
     // 60-second window. Binding the call is what closes it.
-    const captured = await signEnvelope(app, { entity: 'post', op: 'list' });
+    const captured = await signEnvelope(app, { address: 'post', op: 'list' });
     const res = await fetch(`${base}/_fougere/call`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
@@ -231,7 +231,7 @@ describe('an envelope proves WHAT, not only WHO', () => {
   });
 
   it('refuses one replayed with a swapped body', async () => {
-    const captured = await signEnvelope(app, { entity: 'post', op: 'list', input: { title: 'hello' } });
+    const captured = await signEnvelope(app, { address: 'post', op: 'list', input: { title: 'hello' } });
     const res = await fetch(`${base}/_fougere/call`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },

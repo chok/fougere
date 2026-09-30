@@ -63,7 +63,7 @@ describe('a line the frond announces', () => {
     vi.spyOn(console, 'info').mockImplementation(() => {});
     await using built = await app(file);
 
-    await createLocalRunner(built)({ entity: 'order', op: 'create' }, { ...Invocation.empty, params: { id: '7' } });
+    await createLocalRunner(built)({ address: 'order', op: 'create' }, { ...Invocation.empty, params: { id: '7' } });
     await settle(() => said(file).includes('order 7 created'));
 
     expect(said(file)).toContain('order 7 created');
@@ -76,7 +76,7 @@ describe('a line the frond announces', () => {
 
     // `OrderHandler` announces through `Emit<LogLine>`: the destination has it and the
     // console does not, because nothing asked for the console.
-    await createLocalRunner(built)({ entity: 'order', op: 'create' }, { ...Invocation.empty, params: { id: '1' } });
+    await createLocalRunner(built)({ address: 'order', op: 'create' }, { ...Invocation.empty, params: { id: '1' } });
     // `Logger` is the shortcut, and printing is part of what it IS — skipping the console
     // once a destination existed made a devtools ring silence the operator's terminal:
     // 306 per-operation lines in `demos/observability` became 2.
@@ -95,7 +95,7 @@ describe('a line the frond announces', () => {
     vi.spyOn(console, 'info').mockImplementation(() => {});
     await using built = await app(file);
 
-    await createLocalRunner(built)({ entity: 'order', op: 'create' }, { ...Invocation.empty, params: { id: '9' } });
+    await createLocalRunner(built)({ address: 'order', op: 'create' }, { ...Invocation.empty, params: { id: '9' } });
     await settle(() => said(file).includes('order 9 created') && audited().length > 0);
 
     // Declared nowhere: `AuditHandler.record` accepts `Fact<LogLine>`, and that IS the
@@ -124,7 +124,7 @@ describe('a line the frond announces', () => {
 
     // `OrderHandler` writes `level`, `name`, `message` and nothing else — `at: created()`
     // is realized by the announcement, which is what makes `Emit<T>` partial.
-    await createLocalRunner(built)({ entity: 'order', op: 'create' }, { ...Invocation.empty, params: { id: '3' } });
+    await createLocalRunner(built)({ address: 'order', op: 'create' }, { ...Invocation.empty, params: { id: '3' } });
     await settle(() => audited().length > 0);
 
     expect(audited()[0]?.at).toBeInstanceOf(Date);
@@ -137,8 +137,8 @@ describe('a line the frond announces', () => {
     await using first = await app(file);
     await using other = await app(second);
 
-    await createLocalRunner(first)({ entity: 'order', op: 'create' }, { ...Invocation.empty, params: { id: 'a' } });
-    await createLocalRunner(other)({ entity: 'order', op: 'create' }, { ...Invocation.empty, params: { id: 'b' } });
+    await createLocalRunner(first)({ address: 'order', op: 'create' }, { ...Invocation.empty, params: { id: 'a' } });
+    await createLocalRunner(other)({ address: 'order', op: 'create' }, { ...Invocation.empty, params: { id: 'b' } });
     await settle(() => said(file).includes('order a created') && said(second).includes('order b created'));
 
     // A hold kept per PROCESS sent the second app's lines to the first app's facade, and

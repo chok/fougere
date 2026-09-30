@@ -28,7 +28,7 @@ describe('an inferred input beside a collected entity', () => {
     await using app = await createApp({ scan, createContainer, extensions: [session] });
 
     const out = await createLocalRunner(app)(
-      { entity: 'post', op: 'bodyFirst' },
+      { address: 'post', op: 'bodyFirst' },
       { ...Invocation.empty, input, state },
     );
 
@@ -39,7 +39,7 @@ describe('an inferred input beside a collected entity', () => {
     await using app = await createApp({ scan: await scanProject(root), createContainer, extensions: [session] });
 
     const out = await createLocalRunner(app)(
-      { entity: 'post', op: 'collectorFirst' },
+      { address: 'post', op: 'collectorFirst' },
       { ...Invocation.empty, input, state },
     );
 

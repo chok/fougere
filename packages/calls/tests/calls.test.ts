@@ -24,8 +24,8 @@ const storageFactory: StorageFactory = () => ({
   delete: vi.fn(),
 }) as never;
 
-const callTo = (entity: string, operation: string) =>
-  new Call(new RouteAddress({ entity, operation }));
+const callTo = (address: string, operation: string) =>
+  new Call(new RouteAddress({ address, operation }));
 
 describe('the ring', () => {
   it('folds the five transitions of one call into one record', () => {
@@ -33,7 +33,7 @@ describe('the ring', () => {
     const call = callTo('order', 'list');
 
     ring.record(DispatchEvent.received(call));
-    expect(ring.since(0).calls[0]).toMatchObject({ seq: 1, entity: 'order', operation: 'list', verdict: 'running' });
+    expect(ring.since(0).calls[0]).toMatchObject({ seq: 1, address: 'order', operation: 'list', verdict: 'running' });
 
     ring.record(DispatchEvent.resolved(call, 'remote'));
     ring.record(DispatchEvent.completed(call, 'remote'));
@@ -84,7 +84,7 @@ describe('the ring', () => {
   it('keeps the traceparent, which is what lets two processes be sewn', () => {
     const ring = new CallRing();
     const call = new Call(
-      new RouteAddress({ entity: 'order', operation: 'list' }),
+      new RouteAddress({ address: 'order', operation: 'list' }),
       { trace: '00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01' },
     );
 
@@ -105,7 +105,7 @@ describe('the ring', () => {
 });
 
 describe('the extension', () => {
-  it('names the frond of each entity when the app holds several', async () => {
+  it('names the frond of each address when the app holds several', async () => {
     await using app = await createApp({
       scan: await scanProject(fixtures),
       createContainer,
@@ -117,11 +117,11 @@ describe('the extension', () => {
     await app.dispatch(callTo('crate', 'list'));
 
     const page = await createAppRunner(app)(
-      { entity: 'rpc', op: 'calls' },
+      { address: 'rpc', op: 'calls' },
       { params: {}, query: {}, input: { since: 0 }, state: {} },
     ) as CallPage;
 
-    expect(page.calls.map((one) => `${one.frond}/${one.entity}`)).toEqual(['shop/order', 'warehouse/crate']);
+    expect(page.calls.map((one) => `${one.frond}/${one.address}`)).toEqual(['shop/order', 'warehouse/crate']);
   });
 
   it('gives each app its own ring, so releasing one does not blind the other', async () => {
@@ -138,20 +138,20 @@ describe('the extension', () => {
     const older = await boot();
     const newer = await boot();
     const read = (app: Awaited<ReturnType<typeof boot>>) => createAppRunner(app)(
-      { entity: 'rpc', op: 'calls' },
+      { address: 'rpc', op: 'calls' },
       { params: {}, query: {}, input: { since: 0 }, state: {} },
     ) as Promise<CallPage>;
 
     await older.dispatch(callTo('order', 'list'));
     await newer.dispatch(callTo('crate', 'list'));
 
-    expect((await read(older)).calls.map((one) => one.entity)).toEqual(['order']);
-    expect((await read(newer)).calls.map((one) => one.entity)).toEqual(['crate']);
+    expect((await read(older)).calls.map((one) => one.address)).toEqual(['order']);
+    expect((await read(newer)).calls.map((one) => one.address)).toEqual(['crate']);
 
     await older.dispose();
 
     await newer.dispatch(callTo('order', 'list'));
-    expect((await read(newer)).calls.map((one) => one.entity)).toEqual(['crate', 'order']);
+    expect((await read(newer)).calls.map((one) => one.address)).toEqual(['crate', 'order']);
 
     await newer.dispose();
   });
@@ -167,14 +167,14 @@ describe('the extension', () => {
     await app.dispatch(callTo('order', 'list'));
 
     const page = await createAppRunner(app)(
-      { entity: 'rpc', op: 'calls' },
+      { address: 'rpc', op: 'calls' },
       { params: {}, query: {}, input: { since: 0 }, state: {} },
     ) as CallPage;
 
     expect(page.calls).toHaveLength(1);
     expect(page.calls[0]).toMatchObject({
       frond: 'shop',
-      entity: 'order',
+      address: 'order',
       operation: 'list',
       route: 'local',
       verdict: 'ok',

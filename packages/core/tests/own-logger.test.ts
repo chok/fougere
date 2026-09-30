@@ -63,7 +63,7 @@ describe('a line says who wrote it', () => {
     await using app = await createApp({ fronds, createContainer });
     const lines = printed();
 
-    await createLocalRunner(app)({ entity: 'post', op: 'publish' }, Invocation.empty);
+    await createLocalRunner(app)({ address: 'post', op: 'publish' }, Invocation.empty);
 
     expect(lines.find((line) => line.includes('price recomputed'))).toContain('[app:blog:Pricing]');
     expect(lines.find((line) => line.includes('author read'))).toContain('[app:people:AuthorHandler]');
@@ -75,14 +75,14 @@ describe('a line says what it was written during', () => {
     await using app = await createApp({ fronds, createContainer });
     const around: (string | undefined)[] = [];
     const watching: AppMiddleware = (ctx, next) => {
-      if (ctx.entity === 'author') around.push(ambient.currentOperation());
+      if (ctx.address === 'author') around.push(ambient.currentOperation());
 
       return next();
     };
     app.use(watching);
     const lines = printed();
 
-    await createLocalRunner(app)({ entity: 'post', op: 'publish' }, Invocation.empty);
+    await createLocalRunner(app)({ address: 'post', op: 'publish' }, Invocation.empty);
 
     expect(lines.find((line) => line.includes('price recomputed'))).toContain('(blog:PostHandler.publish)');
     expect(lines.find((line) => line.includes('author read'))).toContain('[app:people:AuthorHandler] (findById)');

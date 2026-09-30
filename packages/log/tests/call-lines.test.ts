@@ -32,7 +32,7 @@ describe('a call writes two lines', () => {
       extensions: [log()],
     });
 
-    await createLocalRunner(app)({ entity: 'order', op: 'create' }, { ...Invocation.empty, params: { id: '7' } });
+    await createLocalRunner(app)({ address: 'order', op: 'create' }, { ...Invocation.empty, params: { id: '7' } });
 
     const calls = lines.filter((line) => line.includes('OrderHandler.create'));
     expect(calls).toHaveLength(2);
@@ -49,7 +49,7 @@ describe('a call writes two lines', () => {
     });
 
     await createLocalRunner(app)(
-      { entity: 'order', op: 'create' },
+      { address: 'order', op: 'create' },
       Invocation.from({ params: { id: '8' }, caller: 'catalog' }),
     );
 
@@ -71,7 +71,7 @@ describe('a call writes two lines', () => {
       extensions: [log()],
     });
 
-    await expect(createLocalRunner(app)({ entity: 'refusing', op: 'run' }, Invocation.empty)).rejects.toThrow();
+    await expect(createLocalRunner(app)({ address: 'refusing', op: 'run' }, Invocation.empty)).rejects.toThrow();
 
     expect(errors.some((line) => line.includes('[app:ops]') && line.includes('RefusingHandler.run'))).toBe(true);
   });
@@ -84,7 +84,7 @@ describe('a call writes two lines', () => {
       extensions: [log(join(mkdtempSync(join(tmpdir(), 'fougere-log-')), 'lines.jsonl'))],
     });
 
-    await createLocalRunner(app)({ entity: 'order', op: 'create' }, { ...Invocation.empty, params: { id: '9' } });
+    await createLocalRunner(app)({ address: 'order', op: 'create' }, { ...Invocation.empty, params: { id: '9' } });
     await new Promise((wake) => setTimeout(wake, 50));
 
     expect(lines.some((line) => line.includes('.record'))).toBe(false);
@@ -100,7 +100,7 @@ describe('declared once in the config', () => {
       only: ['shop'],
     });
 
-    await createLocalRunner(app)({ entity: 'order', op: 'create' }, { ...Invocation.empty, params: { id: '1' } });
+    await createLocalRunner(app)({ address: 'order', op: 'create' }, { ...Invocation.empty, params: { id: '1' } });
 
     expect(app.extensions()).toContain('log');
     expect(lines.some((line) => line.includes('OrderHandler.create'))).toBe(true);

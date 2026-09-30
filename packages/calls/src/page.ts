@@ -215,7 +215,7 @@ function calls() {
     const row = el('tr', { class: 'pick' + (arrived ? ' fresh' : '') },
       '<td class="soft mono">' + clock(c.startedAt) + '</td>'
       + (many ? '<td class="soft">' + esc(c.frond ?? '—') + '</td>' : '')
-      + '<td class="lead">' + esc(c.entity + '.' + c.operation)
+      + '<td class="lead">' + esc(c.address + '.' + c.operation)
         + (c.surface ? '<span class="soft">/' + esc(c.surface) + '</span>' : '')
         + (c.verdict === 'failed' ? ' <span class="chip failed">' + esc(c.refusal?.code ?? 'failed') + '</span>' : '')
         + (c.verdict === 'running' ? ' <span class="chip warn">running</span>' : '') + '</td>'
@@ -245,7 +245,7 @@ function refused() {
     rows.push(el('tr', {},
       '<td class="soft mono">' + clock(one.lastAt) + '</td>'
       + '<td class="failed tag">' + esc(one.code) + '</td>'
-      + '<td class="lead">' + esc(one.entity ? one.entity + '.' + one.operation : one.from) + '</td>'
+      + '<td class="lead">' + esc(one.address ? one.address + '.' + one.operation : one.from) + '</td>'
       + '<td>' + esc(one.message) + '</td>'
       + '<td class="num soft">' + (one.count > 1 ? '×' + one.count : '') + '</td>'));
 
@@ -415,7 +415,7 @@ function draw() {
 
 function show(call) {
   const op = state.model?.fronds.flatMap((f) => f.operations)
-    .find((one) => one.address === call.entity + '.' + call.operation);
+    .find((one) => one.address === call.address + '.' + call.operation);
   const rows = [
     ['route', routeOf(call)],
     ['verdict', call.verdict === 'failed' ? (call.refusal?.code ?? 'failed') : call.verdict],
@@ -432,7 +432,7 @@ function show(call) {
   }
 
   document.getElementById('body').innerHTML =
-    '<h2>' + esc(call.entity + '.' + call.operation) + '</h2><dl>'
+    '<h2>' + esc(call.address + '.' + call.operation) + '</h2><dl>'
     + rows.map(([k, v]) => '<dt>' + k + '</dt><dd class="' + (k === 'trace' || k === 'file' ? 'mono' : '') + '">'
       + esc(v) + '</dd>').join('') + '</dl>';
   document.getElementById('detail').setAttribute('open', '');

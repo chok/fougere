@@ -59,7 +59,7 @@ export default class DevtoolsCommand {
 
   private view(raw: Record<string, unknown>, since: Record<string, number>): Promise<CallsView> {
     return createAppRunner(this.app)(
-      { entity: 'devtools', op: 'execute' },
+      { address: 'devtools', op: 'execute' },
       { params: {}, query: {}, input: { ...raw, since }, state: {} },
     ) as Promise<CallsView>;
   }
@@ -70,7 +70,7 @@ function render(call: CallRecord & { source: string }, many: boolean): string {
   // coloured value moves the column by however many bytes the colour took.
   const at = many ? pc.dim(pad(new URL(call.source).port || call.source, 5)) : '';
   const frond = pc.dim(pad(call.frond ?? '—', 9));
-  const address = pc.bold(pad(`${call.entity}.${call.operation}${call.surface ? `/${call.surface}` : ''}`, 22));
+  const address = pc.bold(pad(`${call.address}.${call.operation}${call.surface ? `/${call.surface}` : ''}`, 22));
   const route = call.route
     ? (ROUTE[call.route] ?? pc.dim)(pad(call.route, 9))
     : pc.red(pad('unrouted', 9));

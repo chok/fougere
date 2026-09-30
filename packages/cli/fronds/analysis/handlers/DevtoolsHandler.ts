@@ -51,7 +51,7 @@ export default class DevtoolsHandler {
     const read = await Promise.all(asked.map(async (one): Promise<CallSource & { calls: CallRecord[] }> => {
       try {
         const page = await createHttpTransport(one.url)(
-          { entity: 'rpc', op: 'calls' },
+          { address: 'rpc', op: 'calls' },
           { params: {}, query: {}, input: { since: since[one.url] ?? 0 }, state: {} },
         ) as CallPage;
 

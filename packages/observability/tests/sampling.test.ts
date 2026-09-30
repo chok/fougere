@@ -37,14 +37,14 @@ async function traced(sample: number, split = true): Promise<FinishedSpan[]> {
   });
 
   const run = createLocalRunner(app);
-  for (let nth = 0; nth < 40; nth++) await run({ entity: 'cart', op: 'servable' }, empty);
+  for (let nth = 0; nth < 40; nth++) await run({ address: 'cart', op: 'servable' }, empty);
 
   return kept;
 }
 
 describe('a sampling budget', () => {
   it('never drops an operation whose work leaves the process', async () => {
-    const spans = (await traced(0)).filter((span) => span.kind === 'operation' && span.entity === 'cart');
+    const spans = (await traced(0)).filter((span) => span.kind === 'operation' && span.address === 'cart');
 
     expect(spans).toHaveLength(40);
     expect(spans.every((span) => span.sampled)).toBe(true);
@@ -55,7 +55,7 @@ describe('a sampling budget', () => {
    * Same fixture, same operation — only `remotes:` is gone, so the work stays here.
    */
   it('applies to an operation whose work stays here', async () => {
-    const spans = (await traced(0, false)).filter((span) => span.kind === 'operation' && span.entity === 'cart');
+    const spans = (await traced(0, false)).filter((span) => span.kind === 'operation' && span.address === 'cart');
 
     expect(spans).toHaveLength(40);
     expect(spans.some((span) => span.sampled)).toBe(false);

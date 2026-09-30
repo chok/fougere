@@ -7,7 +7,7 @@ import type { Transport } from '../wire/Transport.js';
 export function createTransportEntry(dispatcher: DispatchPort, surface?: string): Transport {
   return (legacy, invocation) => dispatcher.dispatch(new Call(
     new RouteAddress({
-      entity: legacy.entity,
+      address: legacy.address,
       operation: legacy.op,
       ...(surface !== undefined ? { surface } : {}),
     }),

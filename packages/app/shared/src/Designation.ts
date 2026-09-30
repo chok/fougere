@@ -1,7 +1,7 @@
 import {
   FougereError,
   ErrorCode,
-  RPC_ENTITY,
+  RPC_ADDRESS,
   assertIdentityCard,
   decoded,
   lowerFirst,
@@ -60,7 +60,7 @@ export function entityKeyOf(entity: EntityClass): string {
 }
 
 export function callOf(designation: Designation, op: string): FrondCall {
-  return { entity: addressOf(designation), op };
+  return { address: addressOf(designation), op };
 }
 
 export function invocationOf(input?: CallInput): InvocationContext {
@@ -123,7 +123,7 @@ function learn(answer: unknown, endpoint: string): void {
 function schemasOf(fetcher: Fetcher, endpoint: string): Promise<Map<string, SchemaView>> {
   const asked = schemas.get(endpoint) ?? (async () => {
     try {
-      return schemasIn(await postCall(fetcher, { entity: RPC_ENTITY, op: 'discover' }, invocationOf(), endpoint), endpoint);
+      return schemasIn(await postCall(fetcher, { address: RPC_ADDRESS, op: 'discover' }, invocationOf(), endpoint), endpoint);
     } catch { /* unreachable, or an app that publishes no card */ }
 
     return new Map<string, SchemaView>();
@@ -140,13 +140,13 @@ export async function sendCall(
   endpoint: string = CALL_ENDPOINT,
 ): Promise<unknown> {
   const answer = await postCall(fetcher, call, invocation, endpoint);
-  if (call.entity === RPC_ENTITY) {
+  if (call.address === RPC_ADDRESS) {
     if (call.op === 'discover') learn(answer, endpoint);
 
     return answer;
   }
 
-  return decoded((await schemasOf(fetcher, endpoint)).get(call.entity), answer);
+  return decoded((await schemasOf(fetcher, endpoint)).get(call.address), answer);
 }
 
 // ── The link ─────────────────────────────────────
@@ -218,7 +218,7 @@ export function asFougereError(err: unknown, entityKey: string, op: string): Fou
     : new FougereError({
         code: ErrorCode.SERVICE_UNAVAILABLE,
         message: (err as Error)?.message ?? String(err),
-        entity: entityKey,
+        address: entityKey,
         operation: op,
         cause: err,
       });

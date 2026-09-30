@@ -32,7 +32,7 @@ export function dynamicOperations(operation: (name: string) => Operation): Recor
  */
 export function facadeOperations(
   dispatcher: DispatchPort,
-  entity: string,
+  address: string,
   operationNames?: Iterable<string>,
   surface?: string,
   received?: Received,
@@ -40,7 +40,7 @@ export function facadeOperations(
   const operation = (name: string): Operation => async (invocation) => {
     const answer = await dispatcher.dispatch(new Call(
       new RouteAddress({
-        entity,
+        address,
         operation: name,
         ...(surface !== undefined ? { surface } : {}),
       }),

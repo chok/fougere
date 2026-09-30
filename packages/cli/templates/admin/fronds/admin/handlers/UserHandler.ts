@@ -11,10 +11,10 @@ export default class UserHandler extends Crud(User) {
   async deactivate(id: string): Promise<User> {
     const user = await super.findById(id);
     if (!user) {
-      throw new FougereError({ code: ErrorCode.NOT_FOUND, message: `User '${id}' not found`, entity: 'user', operation: 'deactivate' });
+      throw new FougereError({ code: ErrorCode.NOT_FOUND, message: `User '${id}' not found` });
     }
     if (user.status === 'inactive') {
-      throw new FougereError({ code: ErrorCode.CONFLICT, message: 'Already inactive', entity: 'user', operation: 'deactivate' });
+      throw new FougereError({ code: ErrorCode.CONFLICT, message: 'Already inactive' });
     }
 
     return super.update(id, { status: 'inactive' });

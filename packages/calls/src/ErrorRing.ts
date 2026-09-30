@@ -10,11 +10,11 @@ export class ErrorRing extends Ring<ErrorGroup> {
   /** A refusal that a call carried. `details` reaches here intact, unlike a span's code. */
   fromDispatch(event: DispatchEvent): void {
     const error = event.error as { code?: string; message?: string; details?: unknown } | undefined;
-    const { entity, operation } = event.call.address;
+    const { address, operation } = event.call.address;
 
     this.group({
       code: typeof error?.code === 'string' ? error.code : 'INTERNAL_ERROR',
-      entity,
+      address,
       operation,
       message: error?.message ?? String(event.error),
       fields: (validationErrorsOf(error) ?? []).map((one) => ({ path: dotted(one.path), message: one.message })),
@@ -30,7 +30,7 @@ export class ErrorRing extends Ring<ErrorGroup> {
   }
 
   private group(one: Omit<ErrorGroup, 'seq' | 'key' | 'count' | 'firstAt' | 'lastAt'>): void {
-    const key = [one.from, one.code, one.entity ?? '', one.operation ?? ''].join(' ');
+    const key = [one.from, one.code, one.address ?? '', one.operation ?? ''].join(' ');
     const seen = this.byKey.get(key);
     const at = Date.now();
 

@@ -64,7 +64,7 @@ export function workflow({ sweepMs = SWEEP_MS }: WorkflowOptions = {}): Extensio
        * dispatch: an op that dispatched the due ones would answer for calls it only started.
        */
       const beatOnce = async () => {
-        await app.dispatch(new Call(new RouteAddress({ entity: 'run', operation: 'sweep' })))
+        await app.dispatch(new Call(new RouteAddress({ address: 'run', operation: 'sweep' })))
           .catch(() => undefined);
 
         for (const row of await later.due()) {

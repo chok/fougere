@@ -27,7 +27,7 @@ async function digestOf(input: unknown): Promise<string> {
 /** What the envelope pins, as one comparable value. */
 async function boundTo(call: SignedCall) {
   return {
-    entity: call.entity,
+    address: call.address,
     op: call.op,
     params: call.params ?? {},
     query: call.query ?? {},
@@ -110,7 +110,7 @@ async function openWith(root: Verifier, token: string, presented: SignedCall): P
   // call. Without it a captured envelope is a blank cheque until it expires.
   const bound = JSON.stringify(payload.bound);
   if (bound !== JSON.stringify(await boundTo(presented))) {
-    throw new Error(`Envelope was signed for a different call than ${presented.entity}.${presented.op}`);
+    throw new Error(`Envelope was signed for a different call than ${presented.address}.${presented.op}`);
   }
 
   return {

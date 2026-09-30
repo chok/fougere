@@ -50,7 +50,7 @@ export interface ObservabilityOptions {
  * recompute it per call — it looks one name up. An address the model does not hold answers zero,
  * which is what `rpc` and a brought frond's own ops are.
  */
-function hopsIn(app: App): (entity: string, operation: string) => number {
+function hopsIn(app: App): (address: string, operation: string) => number {
   const hops = new Map<string, number>();
   for (const frond of app.fronds) {
     for (const handler of frond.handlers) {
@@ -60,7 +60,7 @@ function hopsIn(app: App): (entity: string, operation: string) => number {
     }
   }
 
-  return (entity, operation) => hops.get(`${entity}.${operation}`) ?? 0;
+  return (address, operation) => hops.get(`${address}.${operation}`) ?? 0;
 }
 
 /** Observe this process — one member of the ascent. */

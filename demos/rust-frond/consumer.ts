@@ -29,13 +29,13 @@ const RUST_FROND = process.env.RUST_FROND_URL ?? 'http://localhost:4200';
  * Elle est reproduite ici parce qu'elle n'est pas exportée hors de bootstrap ;
  * c'est le même Proxy, à la lettre.
  */
-function doublure(entity: string, transport: Transport): Record<string, (input?: Partial<InvocationContext>) => Promise<unknown>> {
+function doublure(address: string, transport: Transport): Record<string, (input?: Partial<InvocationContext>) => Promise<unknown>> {
   return new Proxy({} as Record<string, (input?: Partial<InvocationContext>) => Promise<unknown>>, {
     get(_target, prop) {
       if (typeof prop !== 'string' || prop === 'then') return undefined;
 
       return async (input: Partial<InvocationContext> = {}) => {
-        const call: FrondCall = { entity, op: prop };
+        const call: FrondCall = { address, op: prop };
 
         return transport(call, { ...Invocation.empty, ...input });
       };
@@ -52,7 +52,7 @@ async function main(): Promise<void> {
   // ─── 1. Découverte ───────────────────────────────────────────────
   title('1.', 'Découverte — le TS ne sait rien, il demande');
 
-  const card = (await transport({ entity: 'rpc', op: 'discover' }, Invocation.empty)) as IdentityCard;
+  const card = (await transport({ address: 'rpc', op: 'discover' }, Invocation.empty)) as IdentityCard;
   for (const frond of card.fronds) {
     for (const facade of frond.facades) {
       console.log(`   ${frond.name} › ${facade.name} — ops: ${facade.ops.map((o) => o.name).join(', ')}`);

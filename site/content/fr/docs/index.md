@@ -72,7 +72,7 @@ L'énoncé de topologie entier tient en une ligne de config :
 fronds: { blog: 'http://127.0.0.1:4100' }
 ```
 
-Pas de RPC sans voyage : un appel est une valeur `(entity, operation, invocation)` ; le
+Pas de RPC sans voyage : un appel est une valeur `(address, operation, invocation)` ; le
 runner l'exécute directement en mémoire quand la Frond est locale et la met sur le fil
 quand elle est distante. Les transports déplacent la valeur — ils ne la remodèlent jamais.
 

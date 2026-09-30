@@ -23,7 +23,7 @@ describe('le frond catalog, seul', () => {
   it('facture au tarif que la réalisation applique', async () => {
     await using app = await testApp();
 
-    const quote = await createLocalRunner(app)({ entity: 'product', op: 'quote' }, {
+    const quote = await createLocalRunner(app)({ address: 'product', op: 'quote' }, {
       ...Invocation.empty,
       input: sampleInput(Product, { sku: 'ABC-01', cents: 1000 }),
     });
@@ -36,7 +36,7 @@ describe('le frond catalog, seul', () => {
     await using app = await testApp({ stub: [Pricing] });
     app.stub(Pricing).total.mockReturnValue(4242);
 
-    const quote = await createLocalRunner(app)({ entity: 'product', op: 'quote' }, {
+    const quote = await createLocalRunner(app)({ address: 'product', op: 'quote' }, {
       ...Invocation.empty,
       input: sampleInput(Product, { sku: 'ABC-01', cents: 1000 }),
     });

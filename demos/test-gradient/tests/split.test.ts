@@ -36,7 +36,7 @@ afterAll(async () => {
 describe('une app derrière sa porte', () => {
   it('accepte une ligne semée par le fil', async () => {
     const created = await call(
-      { entity: 'product', op: 'create' },
+      { address: 'product', op: 'create' },
       { params: {}, query: {}, input: sampleInput(Product, { sku: 'WIRE-1' }), state: {} },
     ) as { sku: string; id: string };
 
@@ -48,7 +48,7 @@ describe('une app derrière sa porte', () => {
     const bad = { ...sampleInput(Product, { sku: 'WIRE-2' }), cents: -1 };
 
     await expect(call(
-      { entity: 'product', op: 'create' },
+      { address: 'product', op: 'create' },
       { params: {}, query: {}, input: bad, state: {} },
     )).rejects.toThrow(/cents/);
   });

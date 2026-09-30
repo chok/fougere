@@ -96,7 +96,7 @@ function browserVerdict(input: unknown): Verdict {
 
 async function validator(run: ReturnType<typeof createLocalRunner>, op: string, input: unknown): Promise<Verdict> {
   try {
-    const out = await run({ entity: 'product', op }, { ...Invocation.empty, input });
+    const out = await run({ address: 'product', op }, { ...Invocation.empty, input });
 
     return verdictOf(out, undefined);
   } catch (e) {
@@ -177,7 +177,7 @@ describe('what a refusal names', () => {
     await using app = await createApp({ fronds: validated, createContainer, storageFactory });
 
     await expect(
-      createLocalRunner(app)({ entity: 'nowhere', op: 'list' }, Invocation.empty),
-    ).rejects.toThrow(/is not hosted here\. Hosted here: (?!.*\bnowhere\b)/);
+      createLocalRunner(app)({ address: 'nowhere', op: 'list' }, Invocation.empty),
+    ).rejects.toThrow(/Nothing here answers at 'nowhere'\. Served here: (?!.*\bnowhere\b)/);
   });
 });

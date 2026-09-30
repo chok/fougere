@@ -53,13 +53,13 @@ const app = await createApp({
 
 const run = createLocalRunner(app);
 for (const sku of ['fern', 'moss', 'ivy']) {
-  await run({ entity: 'order', op: 'create' }, { ...Invocation.empty, input: { sku, cents: 1200 } });
+  await run({ address: 'order', op: 'create' }, { ...Invocation.empty, input: { sku, cents: 1200 } });
 }
 
 // Dispatch is not delivery: the writer returned before the destinations finished.
 await new Promise((resolve) => setTimeout(resolve, 50));
 
-const kept = await run({ entity: 'keep', op: 'list' }, Invocation.empty) as string[];
+const kept = await run({ address: 'keep', op: 'list' }, Invocation.empty) as string[];
 console.log(`
   Logger printed the three lines above, and it always does — a destination is an addition.
   The same lines reached TWO of them, each declared by its signature alone: a file

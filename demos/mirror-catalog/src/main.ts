@@ -23,7 +23,7 @@ process.env.PARTNER_URL = partner.url;
 
 const app = await bootApp(root, { migrates: true });
 const call = createLocalRunner(app);
-const refresh = () => call({ entity: 'catalog', op: 'refresh' }, Invocation.empty) as Promise<Refreshed>;
+const refresh = () => call({ address: 'catalog', op: 'refresh' }, Invocation.empty) as Promise<Refreshed>;
 
 const say = (label: string, r: Refreshed) =>
   console.log(`   → ${r.written} row(s) written, asked the partner for everything since `
@@ -41,7 +41,7 @@ console.log(`\n2. the same pass again — from the mark the first one left behin
 say('second', await refresh());
 
 console.log(`\n3. a query the source could not have served — findCheapest three, from the copy`);
-const findCheapest = await call({ entity: 'catalog', op: 'findCheapest' }, Invocation.empty) as { title: string; priceCents: number }[];
+const findCheapest = await call({ address: 'catalog', op: 'findCheapest' }, Invocation.empty) as { title: string; priceCents: number }[];
 for (const book of findCheapest) console.log(`   ${String(book.priceCents).padStart(5)}  ${book.title}`);
 
 console.log(`\n4. the partner ships a row the shape refuses — and the mark stays put`);

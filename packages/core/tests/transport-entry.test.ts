@@ -9,7 +9,7 @@ describe('createTransportEntry', () => {
     const entry = createTransportEntry({ dispatch } satisfies DispatchPort, 'admin');
 
     await expect(entry(
-      { frond: 'catalog', entity: 'product', op: 'create' },
+      { frond: 'catalog', address: 'product', op: 'create' },
       { params: {}, query: {}, input: { name: 'Fern', omitted: undefined }, state: {} },
     )).resolves.toBe('admin/product.create');
 

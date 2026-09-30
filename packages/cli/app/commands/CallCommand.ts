@@ -44,27 +44,35 @@ export default class CallCommand {
     }
     const [address, op] = target.split('.');
 
-    // Flags → invocation, by the same rule the framework's binding uses:
-    // a primitive param (like `id`) resolves from `params`, an object from
-    // `body`. So `--id` is a route param, every other flag is the body.
-    const flags = parseFlags(process.argv.slice(2));
-    const params: Record<string, string> = {};
-    const input: Record<string, unknown> = {};
-    for (const [k, v] of Object.entries(flags)) {
-      if (k === 'id') params.id = String(v);
-      else input[k] = v;
-    }
-
     const { bootApp } = await import('@fougere/defaults');
     const app = await bootApp(process.cwd(), {});
     try {
+      const { params, input } = CallCommand.invocationOf(app, lowerFirst(address), op, parseFlags(process.argv.slice(2)));
       const result = await createAppRunner(app)(
-        { entity: lowerFirst(address), op },
+        { address: lowerFirst(address), op },
         { params, query: {}, input, state: {} },
       );
       this.ui.note(JSON.stringify(result, null, 2), target);
     } finally {
       await app.dispose();
     }
+  }
+
+  /** A flag the op's binding names as a parameter goes where the resolver reads one; the rest is the input. */
+  private static invocationOf(app: App, address: string, op: string, flags: Record<string, unknown>) {
+    const contract = app.fronds
+      .flatMap((frond) => frond.handlers)
+      .find((handler) => handler.address === address)
+      ?.operations?.get(op);
+    const named = new Set((contract?.binding ?? [])
+      .flatMap((binding) => binding.source.kind === 'param' ? [binding.source.name] : []));
+    const params: Record<string, string> = {};
+    const input: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(flags)) {
+      if (named.has(key)) params[key] = String(value);
+      else input[key] = value;
+    }
+
+    return { params, input };
   }
 }

@@ -55,7 +55,7 @@ That is what a replay engine does, and the four links here are fifteen lines eac
 - **Durability.** The journal is an array. A real one outlives the process.
 - **Resuming the body.** Line 5 is a second run started by this script. Nobody restarts a
   handler on its own; that is what a worker is for.
-- **An identity per execution.** The journal is keyed by `entity.op`, so two concurrent
+- **An identity per execution.** The journal is keyed by `address.op`, so two concurrent
   checkouts would share it. A run id would have to travel in the invocation.
 
 Those three are what Temporal sells, and they do not fall out of anything. What falls out is

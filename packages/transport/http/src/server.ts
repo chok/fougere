@@ -27,10 +27,10 @@ export async function handleRpc(runner: Transport, raw: unknown, options: Receiv
     return {
       jsonrpc: '2.0',
       id,
-      error: { code: INVALID_REQUEST, message: `Invalid method '${req.method}' — expected 'entity.op'` },
+      error: { code: INVALID_REQUEST, message: `Invalid method '${req.method}' — expected 'address.op'` },
     };
   }
-  const entity = req.method.slice(0, dot);
+  const address = req.method.slice(0, dot);
   const op = req.method.slice(dot + 1);
 
   // Fresh objects — middlewares deposit into state, nothing may be shared.
@@ -38,7 +38,7 @@ export async function handleRpc(runner: Transport, raw: unknown, options: Receiv
   const strangers = Object.entries(sent)
     .filter(([key, value]) => value !== undefined && !SENT[key as keyof InvocationContext])
     .map(([key]) => key);
-  if (strangers.length > 0) return malformed(id, strangers, entity, op);
+  if (strangers.length > 0) return malformed(id, strangers, address, op);
 
   /** State is ESTABLISHED here, or it is only claimed. */
   let state: Record<string, unknown> = sent.state ?? {};
@@ -46,19 +46,17 @@ export async function handleRpc(runner: Transport, raw: unknown, options: Receiv
   if (options.verify && sent.identity) {
     try {
       // What ARRIVED, never what we would rather it had been — the comparison is the point.
-      ({ caller, state } = await options.verify(sent.identity, {
-        entity,
-        op,
+      ({ caller, state } = await options.verify(sent.identity, { address, op,
         params: sent.params ?? {},
         query: sent.query ?? {},
         input: sent.input,
         runAt: sent.runAt,
       }));
     } catch (err) {
-      return refused(id, (err as Error)?.message ?? 'unverifiable identity', entity, op);
+      return refused(id, (err as Error)?.message ?? 'unverifiable identity', address, op);
     }
   } else if (options.requireIdentity) {
-    return refused(id, 'this receiver takes signed calls only', entity, op);
+    return refused(id, 'this receiver takes signed calls only', address, op);
   }
 
   // Built field by field, never spread from `sent`: everything here is either validated
@@ -75,14 +73,14 @@ export async function handleRpc(runner: Transport, raw: unknown, options: Receiv
   };
 
   try {
-    return { jsonrpc: '2.0', id, result: await runner({ entity, op }, invocation) };
+    return { jsonrpc: '2.0', id, result: await runner({ address, op }, invocation) };
   } catch (err) {
     const failure = err instanceof FougereError
       ? err
       : new FougereError({
           code: ErrorCode.INTERNAL_ERROR,
           message: (err as Error)?.message ?? 'Internal error',
-          entity,
+          address,
           operation: op,
           cause: err,
         });
@@ -102,12 +100,12 @@ const SENT = {
   crossed: false,
 } satisfies Record<keyof InvocationContext, boolean>;
 
-function malformed(id: string | number, strangers: string[], entity: string, op: string): RpcResponse {
+function malformed(id: string | number, strangers: string[], address: string, op: string): RpcResponse {
   const admitted = Object.keys(SENT).filter((key) => SENT[key as keyof InvocationContext]);
   const data = toPublicError(new FougereError({
     code: ErrorCode.BAD_REQUEST,
     message: `Unknown invocation member ${strangers.map((key) => `'${key}'`).join(', ')} — one of ${admitted.join(', ')}.`,
-    entity,
+    address,
     operation: op,
   }));
 
@@ -115,9 +113,9 @@ function malformed(id: string | number, strangers: string[], entity: string, op:
 }
 
 /** An admission refusal, framed like any other failure so a caller reads one vocabulary. */
-function refused(id: string | number, why: string, entity: string, op: string): RpcResponse {
+function refused(id: string | number, why: string, address: string, op: string): RpcResponse {
   const data = toPublicError(
-    new FougereError({ code: ErrorCode.UNAUTHORIZED, message: `Refused: ${why}`, entity, operation: op }),
+    new FougereError({ code: ErrorCode.UNAUTHORIZED, message: `Refused: ${why}`, address, operation: op }),
   );
 
   return { jsonrpc: '2.0', id, error: { code: APP_ERROR, message: data.message, data } };

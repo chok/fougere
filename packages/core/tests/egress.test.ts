@@ -62,7 +62,7 @@ describe('a write-only field never crosses the façade outbound', () => {
 
   it('omits it from a list, keeping the cursor the array carries', async () => {
     const { app, run } = await boot();
-    const out = await run({ entity: 'secret', op: 'list' }, empty) as any;
+    const out = await run({ address: 'secret', op: 'list' }, empty) as any;
 
     expect(out.items[0]).toEqual({ id: 'a1', label: 'prod key' });
     expect(JSON.stringify(out)).not.toContain(SECRET);
@@ -76,7 +76,7 @@ describe('a write-only field never crosses the façade outbound', () => {
 
   it('omits it from a single record', async () => {
     const { app, run } = await boot();
-    const out = await run({ entity: 'secret', op: 'findById' }, { ...empty, params: { id: 'a1' } });
+    const out = await run({ address: 'secret', op: 'findById' }, { ...empty, params: { id: 'a1' } });
 
     expect(out).toEqual({ id: 'a1', label: 'prod key' });
     await app.dispose();
@@ -86,7 +86,7 @@ describe('a write-only field never crosses the façade outbound', () => {
     const { app, run } = await boot();
     // write-only is exactly that: a client may SUPPLY it, never read it back.
     const out = await run(
-      { entity: 'secret', op: 'create' },
+      { address: 'secret', op: 'create' },
       { ...empty, input: { label: 'prod key', passwordHash: SECRET } },
     );
 
@@ -96,7 +96,7 @@ describe('a write-only field never crosses the façade outbound', () => {
 
   it('leaves keys the schema knows nothing about untouched', async () => {
     const { app, run } = await boot();
-    const out = await run({ entity: 'secret', op: 'audit' }, empty);
+    const out = await run({ address: 'secret', op: 'audit' }, empty);
 
     expect(out).toEqual({ checked: 1, computedByHand: 'kept' });
     await app.dispose();
@@ -104,7 +104,7 @@ describe('a write-only field never crosses the façade outbound', () => {
 
   it('passes a scalar result through', async () => {
     const { app, run } = await boot();
-    const out = await run({ entity: 'secret', op: 'delete' }, { ...empty, params: { id: 'a1' } });
+    const out = await run({ address: 'secret', op: 'delete' }, { ...empty, params: { id: 'a1' } });
 
     expect(out).toBe(true);
     await app.dispose();

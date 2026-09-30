@@ -7,7 +7,7 @@ export type { RpcResponse } from './jsonrpc/RpcResponse.js';
 
 /** Frame a call as a JSON-RPC request. */
 export function frameCall(call: FrondCall, invocation: InvocationContext, id: number): RpcRequest {
-  return { jsonrpc: '2.0', id, method: `${call.entity}.${call.op}`, params: invocation };
+  return { jsonrpc: '2.0', id, method: `${call.address}.${call.op}`, params: invocation };
 }
 
 /** Unframe a JSON-RPC response — the result, or the revived FougereError thrown. */
@@ -16,7 +16,7 @@ export function unframeResponse(response: unknown, call: FrondCall): unknown {
     throw new FougereError({
       code: ErrorCode.BAD_GATEWAY,
       message: 'Answered neither a result nor an error — not a Fougere receiver?',
-      entity: call.entity,
+      address: call.address,
       operation: call.op,
     });
   }
@@ -26,7 +26,7 @@ export function unframeResponse(response: unknown, call: FrondCall): unknown {
       throw new FougereError({
         code: ErrorCode.BAD_GATEWAY,
         message: 'Answered an error that is not a JSON-RPC error object',
-        entity: call.entity,
+        address: call.address,
         operation: call.op,
       });
     }
@@ -34,7 +34,7 @@ export function unframeResponse(response: unknown, call: FrondCall): unknown {
     throw new FougereError({
       code: ErrorCode.INTERNAL_ERROR,
       message: `${error.message} (rpc ${error.code})`,
-      entity: call.entity,
+      address: call.address,
       operation: call.op,
     });
   }
@@ -99,17 +99,17 @@ export function createHttpTransport(baseUrl: string, options: HttpTransportOptio
         if (isTimeout(err)) {
           throw new FougereError({
             code: ErrorCode.GATEWAY_TIMEOUT,
-            message: `${call.entity}.${call.op} timed out after ${timeoutMs}ms`,
+            message: `${call.address}.${call.op} timed out after ${timeoutMs}ms`,
             cause: new Error(`${baseUrl} did not answer in ${timeoutMs}ms`),
-            entity: call.entity,
+            address: call.address,
             operation: call.op,
           });
         }
         if (attempt < retries && isConnectionFailure(err)) continue;
         throw new FougereError({
           code: ErrorCode.SERVICE_UNAVAILABLE,
-          message: `${call.entity}.${call.op}: the process serving it is unreachable`,
-          entity: call.entity,
+          message: `${call.address}.${call.op}: the process serving it is unreachable`,
+          address: call.address,
           operation: call.op,
           cause: new Error(`${baseUrl} unreachable: ${(err as Error)?.message ?? err}`, { cause: err }),
         });
@@ -119,9 +119,9 @@ export function createHttpTransport(baseUrl: string, options: HttpTransportOptio
       if (!res.ok) {
         throw new FougereError({
           code: ErrorCode.BAD_GATEWAY,
-          message: `${call.entity}.${call.op}: the receiver answered HTTP ${res.status} — not a Fougere receiver?`,
+          message: `${call.address}.${call.op}: the receiver answered HTTP ${res.status} — not a Fougere receiver?`,
           cause: new Error(`${baseUrl} answered HTTP ${res.status}`),
-          entity: call.entity,
+          address: call.address,
           operation: call.op,
         });
       }
@@ -132,9 +132,9 @@ export function createHttpTransport(baseUrl: string, options: HttpTransportOptio
       } catch {
         throw new FougereError({
           code: ErrorCode.BAD_GATEWAY,
-          message: `${call.entity}.${call.op}: the receiver answered non-JSON`,
+          message: `${call.address}.${call.op}: the receiver answered non-JSON`,
           cause: new Error(`${baseUrl} answered non-JSON`),
-          entity: call.entity,
+          address: call.address,
           operation: call.op,
         });
       }
@@ -148,9 +148,9 @@ export function createHttpTransport(baseUrl: string, options: HttpTransportOptio
 function tooLarge(call: FrondCall, baseUrl: string): FougereError {
   return new FougereError({
     code: ErrorCode.PAYLOAD_TOO_LARGE,
-    message: `${call.entity}.${call.op} carries more than the ${maxBodyBytes()} bytes a caller may send (maxBodyBytes).`,
+    message: `${call.address}.${call.op} carries more than the ${maxBodyBytes()} bytes a caller may send (maxBodyBytes).`,
     cause: new Error(`refused for ${baseUrl}`),
-    entity: call.entity,
+    address: call.address,
     operation: call.op,
   });
 }

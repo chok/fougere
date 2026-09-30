@@ -13,10 +13,10 @@ npx tsx consumer.ts     # the TS consumer, in another terminal
 
 The frond honours two contracts, and both are JSON:
 
-1. **the wire** — `POST /_fougere/call`, JSON-RPC 2.0, `method = "entity.op"`,
+1. **the wire** — `POST /_fougere/call`, JSON-RPC 2.0, `method = "address.op"`,
    `params` = the InvocationContext. See `packages/transport/http/src/jsonrpc.ts`.
 2. **the map** — `rpc.discover` returns what it hosts, schemas included.
-   See `RPC_ENTITY` in `packages/core/src/wire/call.ts`.
+   See `RPC_ADDRESS` in `packages/core/src/wire/call.ts`.
 
 Everything else belongs to it: the language, the storage, the validator.
 

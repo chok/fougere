@@ -25,7 +25,7 @@ describe('designation', () => {
   });
 
   it('names a call as entity + verb', () => {
-    expect(callOf(Post, 'publish')).toEqual({ entity: 'post', op: 'publish' });
+    expect(callOf(Post, 'publish')).toEqual({ address: 'post', op: 'publish' });
   });
 
   /**
@@ -35,7 +35,7 @@ describe('designation', () => {
    */
   it('takes the address itself from a facade that has no class to name it', () => {
     expect(addressOf('checkout')).toBe('checkout');
-    expect(callOf('checkout', 'pay')).toEqual({ entity: 'checkout', op: 'pay' });
+    expect(callOf('checkout', 'pay')).toEqual({ address: 'checkout', op: 'pay' });
   });
 
   it('answers the same thing either way for a facade that has both', () => {
@@ -122,7 +122,7 @@ describe('asFougereError', () => {
     const refusal = new FougereError({
       code: ErrorCode.VALIDATION_FAILED,
       message: 'title: too short',
-      entity: 'post',
+      address: 'post',
       operation: 'create',
     });
     expect(asFougereError(refusal, 'post', 'create')).toBe(refusal);
@@ -132,6 +132,6 @@ describe('asFougereError', () => {
     const failure = asFougereError(new TypeError('Failed to fetch'), 'post', 'list');
     expect(failure.code).toBe(ErrorCode.SERVICE_UNAVAILABLE);
     expect(failure.message).toBe('Failed to fetch');
-    expect(failure.entity).toBe('post');
+    expect(failure.address).toBe('post');
   });
 });

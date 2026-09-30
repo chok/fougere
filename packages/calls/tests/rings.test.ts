@@ -30,8 +30,8 @@ describe('the query ring', () => {
 });
 
 describe('the error ring', () => {
-  const failed = (entity: string, op: string, error: unknown) =>
-    DispatchEvent.failed(new Call(new RouteAddress({ entity, operation: op })), error);
+  const failed = (address: string, op: string, error: unknown) =>
+    DispatchEvent.failed(new Call(new RouteAddress({ address, operation: op })), error);
 
   it('unfolds a validation refusal field by field', () => {
     const ring = new ErrorRing();
@@ -44,7 +44,7 @@ describe('the error ring', () => {
     // What a span cannot carry: it keeps the code and drops the reason.
     expect(ring.since(0).lines[0]).toMatchObject({
       code: 'VALIDATION_FAILED',
-      entity: 'post',
+      address: 'post',
       operation: 'create',
       fields: [{ path: 'title', message: 'is required' }],
       from: 'dispatch',

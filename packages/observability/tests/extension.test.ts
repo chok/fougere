@@ -25,7 +25,7 @@ describe('observability as an extension', () => {
     await using app = await boot([observability()]);
 
     expect(app.extensions()).toContain('observability');
-    const report = await createLocalRunner(app)({ entity: 'rpc', op: 'topology' }, EMPTY) as {
+    const report = await createLocalRunner(app)({ address: 'rpc', op: 'topology' }, EMPTY) as {
       fronds: { frond: string; placement: string }[];
     };
     expect(report.fronds).toEqual([{ frond: 'catalog', placement: 'local', entities: 1, facades: 1 }]);

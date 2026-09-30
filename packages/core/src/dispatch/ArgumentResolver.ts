@@ -1,7 +1,11 @@
 import type { InvocationContext } from '../wire/InvocationContext.js';
 import type { BindingPlan } from '../wire/binding.js';
+import { ErrorCode } from '../wire/ErrorCode.js';
+import { FougereError } from '../wire/FougereError.js';
 import type { CollectorLookup } from './CollectorLookup.js';
 import { collectedAs } from '../prefab/collector.js';
+
+type ParamSource = Extract<BindingPlan[number]['source'], { kind: 'param' }>;
 
 /** Resolves an operation's declared binding plan against one invocation. */
 export class ArgumentResolver {
@@ -22,16 +26,7 @@ export class ArgumentResolver {
           break;
         }
         case 'param': {
-          // `null` is a value, not a miss. Nullish coalescing used to make an explicit
-          // nullable path/GraphQL argument fall through to query (or become undefined),
-          // collapsing `T | null` into `T | undefined`. Only undefined means absent.
-          const fromParams = ctx.params[binding.source.name];
-          let val: unknown = fromParams === undefined
-            ? ctx.query[binding.source.name]
-            : fromParams;
-          if (val != null && binding.source.coerce === 'number') val = Number(val);
-          if (val != null && binding.source.coerce === 'boolean') val = val === 'true' || val === '1' || val === true;
-          args.push(val);
+          args.push(ArgumentResolver.param(binding.source, binding.optional, ctx));
           break;
         }
         case 'fact':
@@ -60,4 +55,48 @@ export class ArgumentResolver {
 
     return args;
   }
+
+  /**
+   * A value the caller typed in a path or a query string. `null` is a value, not a miss: only
+   * `undefined` means absent, so `T | null` stays apart from `T | undefined`.
+   */
+  private static param(source: ParamSource, optional: boolean, ctx: InvocationContext): unknown {
+    const { name, coerce } = source;
+    const fromParams = ctx.params[name];
+    const value: unknown = fromParams === undefined ? ctx.query[name] : fromParams;
+
+    if (value === undefined) {
+      if (optional) return undefined;
+      throw refused(name, 'Required');
+    }
+    if (value === null || coerce === undefined) return value;
+
+    const coerced = coerce === 'number' ? ArgumentResolver.number(value) : ArgumentResolver.boolean(value);
+    if (coerced === undefined) throw refused(name, `Expected a ${coerce}, got ${JSON.stringify(value)}`);
+
+    return coerced;
+  }
+
+  private static number(value: unknown): number | undefined {
+    if (typeof value === 'number') return Number.isNaN(value) ? undefined : value;
+    if (typeof value !== 'string' || value.trim() === '') return undefined;
+    const parsed = Number(value);
+
+    return Number.isNaN(parsed) ? undefined : parsed;
+  }
+
+  private static boolean(value: unknown): boolean | undefined {
+    if (value === true || value === 'true' || value === '1') return true;
+    if (value === false || value === 'false' || value === '0') return false;
+
+    return undefined;
+  }
+}
+
+function refused(name: string, message: string): FougereError {
+  return new FougereError({
+    code: ErrorCode.VALIDATION_FAILED,
+    message: `${name}: ${message}`,
+    details: [{ path: [name], message }],
+  });
 }

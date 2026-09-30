@@ -19,11 +19,11 @@ describe('an announced fact', () => {
   it('is visible from the test, under its own name', async () => {
     await using app = await testApp({ root });
     const run = createLocalRunner(app);
-    const post = await run({ entity: 'post', op: 'create' }, {
+    const post = await run({ address: 'post', op: 'create' }, {
       ...Invocation.empty, input: { title: 'A title' },
     }) as { id: string };
 
-    await run({ entity: 'post', op: 'publish' }, { ...Invocation.empty, input: { id: post.id, title: 'A title' } });
+    await run({ address: 'post', op: 'publish' }, { ...Invocation.empty, input: { id: post.id, title: 'A title' } });
 
     expect(app.announced(PostPublished)).toMatchObject([{ id: post.id, title: 'A title' }]);
   });
@@ -31,11 +31,11 @@ describe('an announced fact', () => {
   it('carries what its own lifecycle stamps', async () => {
     await using app = await testApp({ root });
     const run = createLocalRunner(app);
-    const post = await run({ entity: 'post', op: 'create' }, {
+    const post = await run({ address: 'post', op: 'create' }, {
       ...Invocation.empty, input: { title: 'Stamped' },
     }) as { id: string };
 
-    await run({ entity: 'post', op: 'publish' }, { ...Invocation.empty, input: { id: post.id, title: 'Stamped' } });
+    await run({ address: 'post', op: 'publish' }, { ...Invocation.empty, input: { id: post.id, title: 'Stamped' } });
 
     // The announcement is a fact's point of persistence, so `applyCreate` runs there —
     // `at: created()` is filled although the handler never wrote it.
@@ -59,7 +59,7 @@ describe('its dual — a fact that arrives', () => {
 
     // `list` answers an array CARRYING its page metadata (`hasMore`, `total`), so the
     // rows are copied out before comparing — otherwise those properties are compared too.
-    const rows = await createLocalRunner(app)({ entity: 'indexed', op: 'list' }, Invocation.empty) as { items: unknown[] };
+    const rows = await createLocalRunner(app)({ address: 'indexed', op: 'list' }, Invocation.empty) as { items: unknown[] };
     expect(rows.items).toMatchObject([{ postId: 'p1', title: 'Delivered' }]);
   });
 
@@ -74,12 +74,12 @@ describe('its dual — a fact that arrives', () => {
   it('was announced in this process too, so both gestures can be watched at once', async () => {
     await using app = await testApp({ root });
     const run = createLocalRunner(app);
-    const post = await run({ entity: 'post', op: 'create' }, { ...Invocation.empty, input: { title: 'Both' } }) as { id: string };
+    const post = await run({ address: 'post', op: 'create' }, { ...Invocation.empty, input: { title: 'Both' } }) as { id: string };
 
-    await run({ entity: 'post', op: 'publish' }, { ...Invocation.empty, input: { id: post.id, title: 'Both' } });
+    await run({ address: 'post', op: 'publish' }, { ...Invocation.empty, input: { id: post.id, title: 'Both' } });
 
     expect(app.announced(PostPublished)).toHaveLength(1);
-    const rows = await run({ entity: 'indexed', op: 'list' }, Invocation.empty) as { items: unknown[] };
+    const rows = await run({ address: 'indexed', op: 'list' }, Invocation.empty) as { items: unknown[] };
     expect(rows.items).toHaveLength(1);
   });
 });

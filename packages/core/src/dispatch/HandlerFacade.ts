@@ -21,6 +21,7 @@ import { OutputView } from './OutputView.js';
 import { PresenterExecutor } from './PresenterExecutor.js';
 import { presenterArguments, presenterPlans } from './presenterArguments.js';
 import { validateInput } from './validateInput.js';
+import { FougereError } from '../wire/FougereError.js';
 import type { Facade } from './Facade.js';
 
 /** Adapts one handler facade to executable operations. */
@@ -79,22 +80,22 @@ export class HandlerFacade {
 
   /** One operation, through the same ordered boundary steps on every route. */
   async execute(op: string, input?: Partial<InvocationContext>): Promise<unknown> {
-    const entity = this.handler.address;
+    const address = this.handler.address;
     const contract = this.contracts.get(op);
     if (!contract) {
       throw new Error(
-        `${entity} serves no operation '${op}'. `
+        `${address} serves no operation '${op}'. `
         + `It serves ${[...this.contracts.keys()].join(', ')}.`,
       );
     }
 
     const received = Invocation.from(input);
-    const state = received.crossed ? { ...received.state } : this.facade.state.judge(received.state, entity, op);
+    const state = received.crossed ? { ...received.state } : this.facade.state.judge(received.state, address, op);
     const invocation = received.withState(state);
     const entered = { ...state };
     const { className, method } = this.effectiveOperations.get(op)!.implementation;
     const context: OperationContext = {
-      entity,
+      address,
       frond: this.facade.frond,
       handler: className,
       operation: op,
@@ -106,7 +107,8 @@ export class HandlerFacade {
     const label = `${this.facade.frond}:${className}.${method}`;
 
     return runMiddlewares(this.facade.middlewares(), context, () =>
-      this.facade.enterOperation(label, () => this.answer(op, contract, context, invocation, entered)));
+      this.facade.enterOperation(label, () => this.answer(op, contract, context, invocation, entered)))
+      .catch((error: unknown) => { throw error instanceof FougereError ? error.at(address, op) : error; });
   }
 
   /**
@@ -121,7 +123,7 @@ export class HandlerFacade {
     entered: Record<string, unknown>,
   ): Promise<unknown> {
     const state = this.facade.state.judge(context.state, this.handler.address, op, entered);
-    const validated = validateInput(contract.input, { ...invocation, state }, this.handler.address, op);
+    const validated = validateInput(contract.input, { ...invocation, state });
     context.invocation = validated;
 
     const args = contract.binding ? await this.arguments.resolve(contract.binding, validated) : [];
@@ -149,12 +151,9 @@ export class HandlerFacade {
     output: unknown,
     invocation: InvocationContext,
   ): Promise<unknown> {
-    const entity = this.handler.address;
     const executor = new PresenterExecutor(
-      this.facade.presenterScope.resolve(presenterKeyOf(entity)),
+      this.facade.presenterScope.resolve(presenterKeyOf(this.handler.address)),
       presenter.fields,
-      entity,
-      op,
     );
 
     return presenterArguments(this.presenterPlans, invocation, this.arguments)

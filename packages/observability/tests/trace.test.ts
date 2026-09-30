@@ -128,7 +128,7 @@ describe('a span per operation', () => {
     await host.resolve<Facade>('productHandler').list();
     await expect(host.resolve<Facade>('productHandler').reserve()).rejects.toThrow();
 
-    expect(spans.map((s) => [s.entity, s.operation, s.error])).toEqual([
+    expect(spans.map((s) => [s.address, s.operation, s.error])).toEqual([
       ['product', 'list', undefined],
       ['product', 'reserve', 'CONFLICT'],
     ]);

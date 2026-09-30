@@ -67,7 +67,7 @@ function payload(service: string, spans: FinishedSpan[]) {
               traceId: span.traceId,
               spanId: span.spanId,
               ...(span.parentId ? { parentSpanId: span.parentId } : {}),
-              name: `${span.entity}.${span.operation}`,
+              name: `${span.address}.${span.operation}`,
               // A statement left this process for an engine, and a hop for another process: a
               // viewer draws an edge between a CLIENT and the SERVER under it. `selfMs` is NOT
               // sent — a collector derives it from the tree it already holds.
@@ -97,7 +97,7 @@ function kindOf(span: FinishedSpan): number {
 function attributesOf(span: FinishedSpan) {
   const values: [string, string | number | undefined][] = [
     ['rpc.system', 'fougere'],
-    ['rpc.service', span.entity],
+    ['rpc.service', span.address],
     ['rpc.method', span.operation],
     ['fougere.frond', span.frond],
     ['fougere.caller_frond', span.callerFrond],

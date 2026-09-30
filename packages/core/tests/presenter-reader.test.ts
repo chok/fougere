@@ -41,12 +41,12 @@ describe('a computed field sees the reader', () => {
     const run = createLocalRunner(mounted);
 
     const asOwner = await run(
-      { entity: 'list', op: 'list' },
+      { address: 'list', op: 'list' },
       { ...Invocation.empty, state: { user: { id: 'u1', name: 'Moi' } } },
     ) as { id: string; canEdit: boolean }[];
 
     const asStranger = await run(
-      { entity: 'list', op: 'list' },
+      { address: 'list', op: 'list' },
       { ...Invocation.empty, state: { user: { id: 'u9', name: 'Quelqu\'un' } } },
     ) as { id: string; canEdit: boolean }[];
 
@@ -57,7 +57,7 @@ describe('a computed field sees the reader', () => {
   it('answers for nobody when nobody is asking', async () => {
     await using mounted = await app();
     const run = createLocalRunner(mounted);
-    const out = await run({ entity: 'list', op: 'list' }, Invocation.empty) as { canEdit: boolean }[];
+    const out = await run({ address: 'list', op: 'list' }, Invocation.empty) as { canEdit: boolean }[];
 
     expect(out.map((l) => l.canEdit)).toEqual([false, false]);
   });
@@ -68,7 +68,7 @@ describe('a computed field runs once for the page', () => {
     await using mounted = await app();
     const run = createLocalRunner(mounted);
     await run(
-      { entity: 'list', op: 'list' },
+      { address: 'list', op: 'list' },
       { ...Invocation.empty, state: { user: { id: 'u1', name: 'Moi' } } },
     );
 

@@ -28,17 +28,17 @@ export default class PostHandler extends Crud(Post) {
    */
   async publish(id: string, user?: User): Promise<Post> {
     if (!user) {
-      throw new FougereError({ code: ErrorCode.UNAUTHORIZED, message: 'Login required to publish', entity: 'post', operation: 'publish' });
+      throw new FougereError({ code: ErrorCode.UNAUTHORIZED, message: 'Login required to publish' });
     }
     const post = await super.findById(id);
     if (!post) {
-      throw new FougereError({ code: ErrorCode.NOT_FOUND, message: `Post '${id}' not found`, entity: 'post', operation: 'publish' });
+      throw new FougereError({ code: ErrorCode.NOT_FOUND, message: `Post '${id}' not found` });
     }
     if (post.authorId !== user.id) {
-      throw new FougereError({ code: ErrorCode.FORBIDDEN, message: 'Only the author can publish', entity: 'post', operation: 'publish' });
+      throw new FougereError({ code: ErrorCode.FORBIDDEN, message: 'Only the author can publish' });
     }
     if (post.status === 'published') {
-      throw new FougereError({ code: ErrorCode.CONFLICT, message: 'Already published', entity: 'post', operation: 'publish' });
+      throw new FougereError({ code: ErrorCode.CONFLICT, message: 'Already published' });
     }
 
     return super.update(id, { status: 'published', publishedAt: new Date() });

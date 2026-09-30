@@ -121,7 +121,7 @@ export async function fetchCard(
 ): Promise<IdentityCard> {
   return await sendCall(
     fetcher,
-    { entity: 'rpc', op: 'discover' },
+    { address: 'rpc', op: 'discover' },
     Invocation.empty,
     endpoint,
   ) as IdentityCard;

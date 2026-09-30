@@ -23,7 +23,7 @@ describe('a caller receives what its type promises', () => {
   it('hands over a Date when both fronds live in one process', async () => {
     await using app = await createApp({ fronds, createContainer });
 
-    const out = await createLocalRunner(app)({ entity: 'reader', op: 'findStamp' }, Invocation.empty);
+    const out = await createLocalRunner(app)({ address: 'reader', op: 'findStamp' }, Invocation.empty);
 
     expect(out).toEqual({ date: true, text: '[object Date]' });
   });
@@ -37,7 +37,7 @@ describe('a caller receives what its type promises', () => {
       remoteTransport: () => remote,
     });
 
-    const out = await createAppRunner(app)({ entity: 'reader', op: 'findStamp' }, Invocation.empty);
+    const out = await createAppRunner(app)({ address: 'reader', op: 'findStamp' }, Invocation.empty);
 
     expect(out).toEqual({ date: true, text: '[object Date]' });
   });
@@ -45,7 +45,7 @@ describe('a caller receives what its type promises', () => {
   it('still puts data on the wire — the row leaves encoded, and this side puts it back', async () => {
     await using app = await createApp({ fronds: [journal], createContainer });
 
-    const onTheWire = await createLocalRunner(app)({ entity: 'entry', op: 'findLast' }, Invocation.empty);
+    const onTheWire = await createLocalRunner(app)({ address: 'entry', op: 'findLast' }, Invocation.empty);
 
     expect((onTheWire as { at: unknown }).at).toBe('1970-01-01T00:00:00.000Z');
   });

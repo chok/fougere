@@ -18,7 +18,7 @@ describe('a handler with no entity', () => {
   it('is served, and answers', async () => {
     await using app = await createApp({ fronds, createContainer });
 
-    const out = await createLocalRunner(app)({ entity: 'health', op: 'check' }, Invocation.empty);
+    const out = await createLocalRunner(app)({ address: 'health', op: 'check' }, Invocation.empty);
 
     expect(out).toEqual({ status: 'up' });
   });

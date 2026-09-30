@@ -7,29 +7,29 @@ import User from '@fronds/user/entities/User.js';
 // nothing, which makes them words of the frond rather than a service — and keeps them out of
 // the handler, where only public methods become operations.
 
-export function requireUser(user: User | undefined, operation: string): User {
+export function requireUser(user: User | undefined): User {
   if (!user) {
-    throw new FougereError({ code: ErrorCode.UNAUTHORIZED, message: 'Sign in to write', entity: 'post', operation });
+    throw new FougereError({ code: ErrorCode.UNAUTHORIZED, message: 'Sign in to write' });
   }
 
   return user;
 }
 
-export async function requireOwn(posts: PostRepository, id: string, author: User, operation: string): Promise<Post> {
+export async function requireOwn(posts: PostRepository, id: string, author: User): Promise<Post> {
   const post = await posts.findById(id);
   if (!post) {
-    throw new FougereError({ code: ErrorCode.NOT_FOUND, message: `Post '${id}' not found`, entity: 'post', operation });
+    throw new FougereError({ code: ErrorCode.NOT_FOUND, message: `Post '${id}' not found` });
   }
   if (post.authorId !== author.id) {
-    throw new FougereError({ code: ErrorCode.FORBIDDEN, message: 'Only the author can do that', entity: 'post', operation });
+    throw new FougereError({ code: ErrorCode.FORBIDDEN, message: 'Only the author can do that' });
   }
 
   return post;
 }
 
-export async function requireFreeSlug(posts: PostRepository, slug: string, ownId: string | undefined, operation: string): Promise<void> {
+export async function requireFreeSlug(posts: PostRepository, slug: string, ownId: string | undefined): Promise<void> {
   const clash = await posts.findBySlug(slug);
   if (clash && clash.id !== ownId) {
-    throw new FougereError({ code: ErrorCode.CONFLICT, message: `Slug '${slug}' is already taken`, entity: 'post', operation });
+    throw new FougereError({ code: ErrorCode.CONFLICT, message: `Slug '${slug}' is already taken` });
   }
 }

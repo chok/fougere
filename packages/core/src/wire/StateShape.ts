@@ -51,7 +51,7 @@ export class StateShape {
    */
   judge(
     state: Record<string, unknown>,
-    entity: string,
+    address: string,
     operation: string,
     entered: Record<string, unknown> = {},
   ): Record<string, unknown> {
@@ -69,7 +69,7 @@ export class StateShape {
       message: errors.map((error) => `${dotted(error.path)}: ${error.message}`).join(', ')
         + (declared.length ? ` — this process declares ${declared.join(', ')}` : ' — this process declares no state member'),
       details: errors,
-      entity,
+      address,
       operation,
     });
   }

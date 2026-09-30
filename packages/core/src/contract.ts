@@ -27,7 +27,7 @@ export type { Transport } from './wire/Transport.js';
 export { ENVELOPE_BYTES, maxBodyBytes, maxFrameBytes, setMaxBodyBytes } from './wire/BodyLimit.js';
 // The reserved entity, VALUE and not type: a consumer that wants to leave it alone — a
 // call log ignoring its own reader — has to be able to name it.
-export { RPC_ENTITY } from './wire/RpcAnswer.js';
+export { RPC_ADDRESS } from './wire/RpcAnswer.js';
 export type { CallPage } from './wire/CallPage.js';
 export { pageOf, asPage, type Page } from './wire/Page.js';
 export type { CallRecord } from './wire/CallRecord.js';
@@ -69,7 +69,7 @@ export interface CallValue {
 
 /**
  * Fabricate the call value — one designation, two spellings: `callValueOf(Post, 'list', { query
- * })` (class + verb) or `callValueOf({ entity, op }, input)` (raw, for dynamic bridges).
+ * })` (class + verb) or `callValueOf({ address, op }, input)` (raw, for dynamic bridges).
  */
 export function callValueOf(
   target: { name: string } | FrondCall,
@@ -78,7 +78,7 @@ export function callValueOf(
 ): CallValue {
   const [call, given] =
     typeof opOrInput === 'string'
-      ? [{ entity: lowerFirst((target as { name: string }).name), op: opOrInput }, input]
+      ? [{ address: lowerFirst((target as { name: string }).name), op: opOrInput }, input]
       : [target as FrondCall, opOrInput];
 
   return { call, invocation: Invocation.from(given) };

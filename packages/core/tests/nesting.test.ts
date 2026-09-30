@@ -29,7 +29,7 @@ describe('a child resolves what its parent declared', () => {
       createContainer,
     });
 
-    const out = await createLocalRunner(app)({ entity: 'cart', op: 'quote' }, Invocation.empty);
+    const out = await createLocalRunner(app)({ address: 'cart', op: 'quote' }, Invocation.empty);
 
     expect(out).toBe('12.50 EUR');
   });
@@ -41,7 +41,7 @@ describe('a child resolves what its parent declared', () => {
       createContainer,
     });
 
-    await expect(createLocalRunner(app)({ entity: 'post', op: 'quote' }, Invocation.empty))
+    await expect(createLocalRunner(app)({ address: 'post', op: 'quote' }, Invocation.empty))
       .rejects.toThrow(/Money/);
   });
 });

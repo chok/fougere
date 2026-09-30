@@ -9,10 +9,10 @@ import { CARRIES_LINE, type AppMiddleware, type Logger } from '@fougere/core';
  */
 export function callLines(logger: Logger): AppMiddleware {
   return async (context, next) => {
-    if (CARRIES_LINE.has(context.entity)) return next();
+    if (CARRIES_LINE.has(context.address)) return next();
 
     const log = context.frond ? logger.child(context.frond) : logger;
-    const call = `${context.handler ?? context.entity}.${context.operation}`;
+    const call = `${context.handler ?? context.address}.${context.operation}`;
     const from = context.invocation?.caller ? ` ← ${context.invocation.caller}` : '';
     const start = performance.now();
     const cost = () => `(${(performance.now() - start).toFixed(1)}ms)`;

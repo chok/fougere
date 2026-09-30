@@ -65,7 +65,7 @@ function payload(service: string, spans: FinishedSpan[]) {
               traceId: span.traceId,
               spanId: span.spanId,
               ...(span.parentId ? { parentSpanId: span.parentId } : {}),
-              name: `${span.entity}.${span.operation}`,
+              name: `${span.address}.${span.operation}`,
               // 1 INTERNAL, 3 CLIENT: a statement left this process for an engine, and a
               // viewer draws the two differently. `selfMs` is NOT sent — a collector
               // derives it from the tree it already holds.

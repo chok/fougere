@@ -15,7 +15,7 @@ describe('a span on the wire', () => {
 
     exporter.sink({
       traceId: '0'.repeat(32), spanId: '1'.repeat(16), parentId: undefined, sampled: true,
-      callerFrond: 'shop', frond: 'catalog', kind: 'operation', entity: 'product', operation: 'list',
+      callerFrond: 'shop', frond: 'catalog', kind: 'operation', address: 'product', operation: 'list',
       startedAt: 1, ms: 2, selfMs: 1, statements: 3, error: undefined,
     } as never);
     await exporter.flush();
@@ -45,7 +45,7 @@ describe('a span on the wire', () => {
     const exporter = otlp({ service: 'shop', url: 'http://collector/v1/traces', flushMs: 0 });
     const span = (kind: 'operation' | 'statement', crossing: 'sent' | 'received' | undefined) => ({
       traceId: '0'.repeat(32), spanId: '1'.repeat(16), parentId: undefined, sampled: true, callerFrond: undefined,
-      frond: 'catalog', kind, crossing, entity: 'product', operation: 'list', startedAt: 1, ms: 2, selfMs: 1,
+      frond: 'catalog', kind, crossing, address: 'product', operation: 'list', startedAt: 1, ms: 2, selfMs: 1,
       statements: 0, error: undefined,
     }) as never;
 

@@ -18,8 +18,6 @@ export default class ProductHandler {
     throw new FougereError({
       code: ErrorCode.CONFLICT,
       message: 'stock already held',
-      entity: 'product',
-      operation: 'reserve',
     });
   }
 }

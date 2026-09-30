@@ -21,7 +21,7 @@ describe('a test that states nothing', () => {
   it('answers on its own entity', async () => {
     await using app = await testApp();
 
-    const created = await createLocalRunner(app)({ entity: 'article', op: 'create' }, {
+    const created = await createLocalRunner(app)({ address: 'article', op: 'create' }, {
       ...Invocation.empty,
       input: { title: 'From position alone', body: 'A body', status: 'draft', views: 0 },
     }) as { title: string };

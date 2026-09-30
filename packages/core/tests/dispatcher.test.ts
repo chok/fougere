@@ -10,7 +10,7 @@ import { InFlight } from '../src/dispatch/InFlight.js';
 import { ErrorCode } from '../src/wire/ErrorCode.js';
 
 function setup(execute: Route['execute']) {
-  const address = new RouteAddress({ entity: 'product', operation: 'list' });
+  const address = new RouteAddress({ address: 'product', operation: 'list' });
   const route: Route = { kind: 'local', address, execute };
   const routes = new RouteRegistry();
   const events: DispatchEvent[] = [];
@@ -49,11 +49,11 @@ describe('Dispatcher', () => {
       new InFlight(),
       new DispatchLifecycle([(event) => events.push(event)]),
     );
-    const call = new Call(new RouteAddress({ entity: 'missing', operation: 'list' }));
+    const call = new Call(new RouteAddress({ address: 'missing', operation: 'list' }));
 
     await expect(dispatcher.dispatch(call)).rejects.toMatchObject({
       code: ErrorCode.NOT_FOUND,
-      entity: 'missing',
+      address: 'missing',
       operation: 'list',
     });
     expect(events.map(({ stage }) => stage)).toEqual(['received', 'failed', 'settled']);
@@ -93,14 +93,14 @@ describe('Dispatcher', () => {
     );
 
     await expect(dispatcher.dispatch(new Call(
-      new RouteAddress({ entity: 'product', operation: 'list' }),
+      new RouteAddress({ address: 'product', operation: 'list' }),
     ))).rejects.toMatchObject({ code: ErrorCode.SERVICE_UNAVAILABLE });
     expect(events.map(({ stage }) => stage)).toEqual(['received', 'failed', 'settled']);
     expect(inFlight.count).toBe(0);
   });
 
   it('does not let an observer alter the dispatch result', async () => {
-    const address = new RouteAddress({ entity: 'product', operation: 'count' });
+    const address = new RouteAddress({ address: 'product', operation: 'count' });
     const routes = new RouteRegistry();
     routes.register({ kind: 'system', address, execute: async () => 2 });
     const failure = new Error('metrics failed');

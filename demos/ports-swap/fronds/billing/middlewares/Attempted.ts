@@ -12,11 +12,11 @@ export default class Attempted {
   async around(context: OperationContext, next: AppNext): Promise<unknown> {
     try {
       const answer = await next();
-      console.log(`    around  ${context.entity}.${context.operation} → answered`);
+      console.log(`    around  ${context.address}.${context.operation} → answered`);
 
       return answer;
     } catch (refusal) {
-      console.log(`    around  ${context.entity}.${context.operation} → refused: ${(refusal as Error).message}`);
+      console.log(`    around  ${context.address}.${context.operation} → refused: ${(refusal as Error).message}`);
       throw refusal;
     }
   }

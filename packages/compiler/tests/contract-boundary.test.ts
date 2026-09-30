@@ -13,7 +13,7 @@ describe('an operation contract is one boundary on every facade', () => {
     const when = '2026-08-05T12:00:00.000Z';
 
     const result = await run(
-      { entity: 'event', op: 'schedule' },
+      { address: 'event', op: 'schedule' },
       { params: {}, query: {}, input: { when }, state: {} },
     );
 

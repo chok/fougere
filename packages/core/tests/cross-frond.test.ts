@@ -36,7 +36,7 @@ describe('frond → frond, through the façade', () => {
   it('answers when both fronds live in one process', async () => {
     await using app = await createApp({ fronds: both, createContainer });
 
-    const out = await createLocalRunner(app)({ entity: 'commande', op: 'servable' }, Invocation.empty);
+    const out = await createLocalRunner(app)({ address: 'commande', op: 'servable' }, Invocation.empty);
 
     expect(out).toBe(true);
   });
@@ -50,7 +50,7 @@ describe('frond → frond, through the façade', () => {
       remoteTransport: () => remote,
     });
 
-    const out = await createAppRunner(app)({ entity: 'commande', op: 'servable' }, Invocation.empty);
+    const out = await createAppRunner(app)({ address: 'commande', op: 'servable' }, Invocation.empty);
 
     expect(out).toBe(true);
   });

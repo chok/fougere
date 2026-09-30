@@ -2,7 +2,6 @@ import type { Fields, SchemaView } from '@fougere/schema';
 import { Visibility } from '@fougere/schema';
 import type { HttpMethod } from '@fougere/http';
 import type { HandlerEntry as CoreHandlerEntry } from '@fougere/core';
-import type { EntityEntry } from './EntityEntry.js';
 import type { OperationMeta } from './OperationMeta.js';
 import type { GenerateRoutesOptions } from './GenerateRoutesOptions.js';
 
@@ -10,7 +9,8 @@ export interface RouteDefinition {
   method: HttpMethod;
   path: string;
   operationName: string;
-  entityName: string;
+  /** Where the operation answers — `checkout` in `checkout.pay`. */
+  address: string;
   /** Handler facade method to call (receives InvocationContext). */
   handler: (invocation: unknown) => Promise<unknown>;
   /** Input schema (for validation / JSON schema generation). */
@@ -27,7 +27,7 @@ export interface RouteDefinition {
 }
 
 /** Only what this projection reads of a scanned handler — five fields of nine. */
-type HandlerEntry = Pick<CoreHandlerEntry, 'address' | 'surface'> & {
+type HandlerEntry = Pick<CoreHandlerEntry, 'address' | 'surface' | 'exposed'> & {
   /** `Crud(Post, PostPublic)` — the handler-wide output view, scoping every op. */
   outputOverride?: SchemaView;
   /** The scanned constructor, which carries the same statement made on the class. */
@@ -48,7 +48,6 @@ interface PresenterEntry {
 
 interface FrondLike {
   name: string;
-  entities: EntityEntry[];
   handlers: HandlerEntry[];
   presenters: PresenterEntry[];
   surfaces?: Record<string, string[]>;
@@ -58,10 +57,10 @@ interface FrondLike {
 
 interface AppLike {
   fronds: FrondLike[];
-  /** The façade an entity exposes to one audience — `undefined` when none. */
-  facadeFor(entity: string, surface?: string): Record<string, Function> | undefined;
+  /** The façade an address serves to one audience — `undefined` when none. */
+  facadeFor(address: string, surface?: string): Record<string, Function> | undefined;
   /** Canonical operation table produced by core. */
-  operationsFor(entity: string, surface?: string): Map<string, OperationMeta> | undefined;
+  operationsFor(address: string, surface?: string): Map<string, OperationMeta> | undefined;
 }
 
 type HandlerFacade = Record<string, Function>;
@@ -97,9 +96,9 @@ function deriveMethod(
   return 'POST';
 }
 
-/** Derive route path from entity name + operation name. */
-function derivePath(entityName: string, opName: string): string {
-  const base = `/${pluralize(entityName)}`;
+/** Derive route path from the address + operation name. */
+function derivePath(address: string, opName: string): string {
+  const base = `/${pluralize(address)}`;
 
   // Standard CRUD
   if (opName === 'list') return base;
@@ -124,66 +123,67 @@ function derivePath(entityName: string, opName: string): string {
 
 // ─── Public API ─────────────────────────────────
 
-/** Generate REST route definitions from a fougere App. */
+/** Generate REST route definitions from a fougere App — one route per operation, per address served. */
 export function generateRoutes(app: AppLike, options: GenerateRoutesOptions = {}): RouteDefinition[] {
   return app.fronds.flatMap((frond) =>
-    frond.entities.flatMap((entity) => routesOf(app, frond, entity, options)));
+    [...new Set(frond.handlers.map((handler) => handler.address))]
+      .flatMap((address) => routesOf(app, frond, address, options)));
 }
 
-/** What one entity answers on REST — nothing, when this surface does not serve it. */
+/** What one address answers on REST — nothing, when this surface does not serve it. */
 function routesOf(
   app: AppLike,
   frond: FrondLike,
-  entity: EntityEntry,
+  address: string,
   options: GenerateRoutesOptions,
 ): RouteDefinition[] {
   const surface = options.surface;
   // Membership is core's answer, not ours — one rule, read here (see App.facadeFor).
-  const facade = app.facadeFor(entity.name, surface) as HandlerFacade | undefined;
+  const facade = app.facadeFor(address, surface) as HandlerFacade | undefined;
   if (!facade) return [];
-  if (options.filter && !options.filter(entity, frond.name)) return [];
-  if (!surface && entity.exposed === false) return [];
-
-  const effectiveOperations = app.operationsFor(entity.name, surface);
-  if (!effectiveOperations) {
-    throw new Error(`REST cannot project '${entity.name}' without its EffectiveOperation table.`);
-  }
+  if (options.filter && !options.filter(address, frond.name)) return [];
 
   const handler = (surface
-    ? frond.handlers.find((one) => one.address === entity.name && one.surface === surface)
-    : undefined) ?? frond.handlers.find((one) => !one.surface && one.address === entity.name);
-  // The handler's output schema if declared, otherwise the entity. A frond whose class never
-  // crossed the wire arrives as one too: boot rebuilds the card before here.
-  const outputSchema: SchemaView = handler?.outputOverride ?? handler?.ctor?.__output ?? entity.entityClass;
+    ? frond.handlers.find((one) => one.address === address && one.surface === surface)
+    : undefined) ?? frond.handlers.find((one) => !one.surface && one.address === address);
+  if (!surface && handler?.exposed === false) return [];
+
+  const effectiveOperations = app.operationsFor(address, surface);
+  if (!effectiveOperations) {
+    throw new Error(`REST cannot project '${address}' without its EffectiveOperation table.`);
+  }
+
+  // `Crud(Post, PostPublic)` scopes every op of the handler; an op that states its own view wins.
+  const view: SchemaView | undefined = handler?.outputOverride ?? handler?.ctor?.__output;
 
   // The resolved table defines the public operation set. This also works for remote proxy
   // facades, which intentionally cannot enumerate their keys before discovery.
   return [...effectiveOperations.keys()].map((opName) => routeFor({
-    entity,
+    address,
     frond,
     facade,
-    fields: outputSchema.getFields(),
+    view,
     opName,
     meta: effectiveOperations.get(opName),
     options,
   }));
 }
 
-/** One operation of one entity, and everything that decides how it is addressed. */
+/** One operation at one address, and everything that decides how it is addressed. */
 interface Projecting {
-  entity: EntityEntry;
+  address: string;
   frond: FrondLike;
   facade: HandlerFacade;
-  fields: Fields;
+  view: SchemaView | undefined;
   opName: string;
   meta: OperationMeta | undefined;
   options: GenerateRoutesOptions;
 }
 
-function routeFor({ entity, frond, facade, fields, opName, meta, options }: Projecting): RouteDefinition {
+function routeFor({ address, frond, facade, view, opName, meta, options }: Projecting): RouteDefinition {
   if (!meta) {
     throw new Error(
-      `REST facade '${entity.name}' exposes '${opName}' but its EffectiveOperation table does not.`,
+      `REST facade '${address}' exposes '${opName}' but its EffectiveOperation table does not.`,
     );
   }
 
@@ -192,7 +192,7 @@ function routeFor({ entity, frond, facade, fields, opName, meta, options }: Proj
   // which is what `overrides:` is for and why it wins.
   const stated = frond.operationsOverrides?.[opName]?.rest as
     { method?: HttpMethod; path?: string; status?: number } | undefined;
-  const override = { ...stated, ...(options.overrides?.[entity.name] ?? {})[opName] } as
+  const override = { ...stated, ...(options.overrides?.[address] ?? {})[opName] } as
     { method?: HttpMethod; path?: string; status?: number };
 
   // Handler and method overrides are already executed by the facade, from the same
@@ -204,11 +204,11 @@ function routeFor({ entity, frond, facade, fields, opName, meta, options }: Proj
 
   return {
     method: override.method ?? deriveMethod(opName, meta.kind),
-    path: (options.prefix ?? '') + (override.path ?? derivePath(entity.name, opName)),
+    path: (options.prefix ?? '') + (override.path ?? derivePath(address, opName)),
     operationName: opName,
-    entityName: entity.name,
+    address,
     handler: (invocation) => op(invocation),
-    ...inputAndOutput(meta, fields, opName),
+    ...inputAndOutput(meta, view),
     successStatus: override.status,
     ...(meta.description && { description: meta.description }),
   };
@@ -217,14 +217,12 @@ function routeFor({ entity, frond, facade, fields, opName, meta, options }: Proj
 /** Both pass through the client-surface projections — write-only out, read-only in. */
 function inputAndOutput(
   meta: OperationMeta,
-  fields: Fields,
-  opName: string,
+  view: SchemaView | undefined,
 ): { inputFields: Fields | undefined; outputFields: Fields | undefined } {
-  const inputFields = meta.input?.getFields()
-    ?? (opName === 'create' || opName === 'update' ? Visibility.of(fields).input : undefined);
+  const output = meta.output ?? view;
 
   return {
-    inputFields,
-    outputFields: meta.output ? Visibility.of(meta.output.getFields()).output : Visibility.of(fields).output,
+    inputFields: meta.input ? Visibility.of(meta.input.getFields()).input : undefined,
+    outputFields: output ? Visibility.of(output.getFields()).output : undefined,
   };
 }

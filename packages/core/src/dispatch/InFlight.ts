@@ -11,12 +11,12 @@ export class InFlight {
     return this.running;
   }
 
-  enter(entity: string, operation: string): () => void {
+  enter(address: string, operation: string): () => void {
     if (!this.accepting) {
       throw new FougereError({
         code: ErrorCode.SERVICE_UNAVAILABLE,
         message: 'This app is being released and takes no new call — reach the current one through its handle.',
-        entity,
+        address,
         operation,
       });
     }

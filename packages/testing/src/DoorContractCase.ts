@@ -168,7 +168,7 @@ function facadesOf(app: App, entity: SchemaView, name: string, surface?: string)
   });
 
   return {
-    local: (op, call) => run({ entity: name, op }, invocation(call)),
+    local: (op, call) => run({ address: name, op }, invocation(call)),
 
     rpc: async (op, call) => {
       const answer = await serveRpc(app, {
@@ -183,8 +183,8 @@ function facadesOf(app: App, entity: SchemaView, name: string, surface?: string)
 
     rest: async (op, call) => {
       // The route the REST facade itself would match, read from its own table — rebuilding
-      // the path here would be a second opinion on where an entity lives.
-      const route = tableOf(app).find((one) => one.entityName === name && one.operationName === op);
+      // the path here would be a second opinion on where an address lives.
+      const route = tableOf(app).find((one) => one.address === name && one.operationName === op);
       if (!route) throw new Error(`[checkDoors] REST serves no ${name}.${op}`);
       const path = route.segments.map((segment) => (segment.startsWith(':') ? call?.id ?? '' : segment)).join('/');
 

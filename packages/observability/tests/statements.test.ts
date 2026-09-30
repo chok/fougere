@@ -69,7 +69,7 @@ describe('a statement belongs to the step it ran under', () => {
     expect(ran.traceId).toBe(op.traceId);
     expect(ran.frond).toBe(op.frond);
     // The label a viewer draws: the table it touched, and what it did to it.
-    expect(`${ran.entity}.${ran.operation}`).toBe('product.select');
+    expect(`${ran.address}.${ran.operation}`).toBe('product.select');
   });
 
   it('never begins before the operation that issued it', async () => {
@@ -142,7 +142,7 @@ describe('a statement is charged upward without a span of its own', () => {
   const kept: FinishedSpan[] = [];
   const quiet = tracing([(span) => kept.push(span)]);
   const call = (ran: number[]) => quiet.middleware(
-    { entity: 'product', operation: 'list', args: [], state: {} },
+    { address: 'product', operation: 'list', args: [], state: {} },
     async () => {
       await new Promise((wake) => setTimeout(wake, SLOW));
       for (const ms of ran) quiet.statement({ subject: 'product', verb: 'select', ms, failed: false });
@@ -173,7 +173,7 @@ describe('the one reader that has to choose', () => {
     const { series } = measured.snapshot();
     // `product.select` is not an operation this process answers: published as one, it would
     // appear in the topology, in the saturation figure and in every rate built on them.
-    expect(series.map((row) => `${row.entity}.${row.operation}`)).toEqual(['product.list']);
+    expect(series.map((row) => `${row.address}.${row.operation}`)).toEqual(['product.list']);
     expect(series[0].count).toBe(1);
     expect(series[0].statements).toBe(3);
   });

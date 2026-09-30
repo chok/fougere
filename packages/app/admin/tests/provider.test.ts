@@ -113,7 +113,7 @@ describe('the Fougere data provider', () => {
           data: {
             code: 'VALIDATION_FAILED',
             message: 'title: Too short',
-            entity: 'post',
+            address: 'post',
             operation: 'create',
             details: [{ path: ['title'], message: 'Too short' }],
           },

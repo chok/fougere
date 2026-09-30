@@ -37,7 +37,7 @@ describe('a frond the app states', () => {
     await using app = await appOf();
 
     const page = await app.dispatch(new Call(
-      new RouteAddress({ entity: 'post', operation: 'list' }), Invocation.empty));
+      new RouteAddress({ address: 'post', operation: 'list' }), Invocation.empty));
 
     expect(page).toMatchObject({ items: [{ id: '1', title: 'hello' }] });
   });
@@ -48,7 +48,7 @@ describe('a frond the app states', () => {
     // `Crud.__ops` is runtime, so it survives a scan that resolved nothing — and a
     // declaration that resolved nothing on purpose is the same case.
     const one = await app.dispatch(new Call(
-      new RouteAddress({ entity: 'post', operation: 'findById' }),
+      new RouteAddress({ address: 'post', operation: 'findById' }),
       { params: { id: '1' }, query: {}, input: {}, state: {} }));
 
     expect(one).toMatchObject({ id: '1' });

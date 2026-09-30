@@ -11,10 +11,10 @@ export default class PostHandler extends Crud(Post) {
   async publish(id: string): Promise<Post> {
     const post = await super.findById(id);
     if (!post) {
-      throw new FougereError({ code: ErrorCode.NOT_FOUND, message: `Post '${id}' not found`, entity: 'post', operation: 'publish' });
+      throw new FougereError({ code: ErrorCode.NOT_FOUND, message: `Post '${id}' not found` });
     }
     if (post.status === 'published') {
-      throw new FougereError({ code: ErrorCode.CONFLICT, message: 'Already published', entity: 'post', operation: 'publish' });
+      throw new FougereError({ code: ErrorCode.CONFLICT, message: 'Already published' });
     }
 
     return super.update(id, { status: 'published' });

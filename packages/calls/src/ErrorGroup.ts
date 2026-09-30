@@ -3,7 +3,7 @@ export interface ErrorGroup {
   seq: number;
   key: string;
   code: string;
-  entity?: string;
+  address?: string;
   operation?: string;
   message: string;
   count: number;

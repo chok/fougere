@@ -26,7 +26,7 @@ async function billing() {
   const app = await createApp({ scan: await scanProject(root), createContainer });
   const run = createLocalRunner(app);
   const call = (op: string, invocation: Record<string, unknown>) =>
-    run({ entity: 'invoice', op }, { params: {}, query: {}, input: undefined, state: {}, ...invocation } as never);
+    run({ address: 'invoice', op }, { params: {}, query: {}, input: undefined, state: {}, ...invocation } as never);
 
   return { app, call };
 }
@@ -58,7 +58,8 @@ describe('a narrow type in an operation signature', () => {
 
   it('never looks in the input for a plain parameter', async () => {
     const { app, call } = await billing();
-    expect(await call('doublePlain', { input: { amount: 1500 } })).toBeNaN();
+    await expect(call('doublePlain', { input: { amount: 1500 } }))
+      .rejects.toMatchObject({ code: 'VALIDATION_FAILED', message: 'amount: Required' });
     await app.dispose();
   });
 
@@ -68,8 +69,8 @@ describe('a narrow type in an operation signature', () => {
     expect(await call('doubleCents', { params: { amount: '1500' } })).toBe(3000);
     expect(await call('doubleCents', { query: { amount: '1500' } })).toBe(3000);
 
-    // The declared source is a named parameter, never the input fallback.
-    expect(await call('doubleCents', { input: { amount: 1500 } })).toBeNaN();
+    await expect(call('doubleCents', { input: { amount: 1500 } }))
+      .rejects.toMatchObject({ code: 'VALIDATION_FAILED', message: 'amount: Required' });
 
     await app.dispose();
   });

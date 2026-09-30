@@ -117,7 +117,7 @@ export default class PostHandler extends Crud(Post, { list: PostCard }) {
     const author = requireUser(user, 'publish');
     const post = await requireOwn(this.posts, id, author, 'publish');
     if (post.status === 'published') {
-      throw new FougereError({ code: ErrorCode.CONFLICT, message: 'Already published', entity: 'post', operation: 'publish' });
+      throw new FougereError({ code: ErrorCode.CONFLICT, message: 'Already published' });
     }
     return this.posts.update(id, { status: 'published', publishedAt: new Date() });
   }

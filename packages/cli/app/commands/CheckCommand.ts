@@ -15,7 +15,7 @@ export default class CheckCommand {
   async run(raw: Record<string, unknown>) {
     // Ride the call contract — the same envelope every consumer uses.
     const result = await createAppRunner(this.app)(
-      { entity: 'check', op: 'execute' },
+      { address: 'check', op: 'execute' },
       { params: {}, query: {}, input: raw, state: {} },
     ) as CheckResult;
 

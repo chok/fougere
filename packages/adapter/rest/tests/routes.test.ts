@@ -55,16 +55,23 @@ function opsMap(
 }
 
 function fakeApp(
-  entities: { name: string; entityClass: any }[],
   facades: Record<string, any>,
   handlers: any[] = [],
   surfaces?: Record<string, string[]>,
 ) {
+  // What serves is what a real app lists: one handler per façade key, `<surface>:<address>Handler`.
+  const served = Object.keys(facades).map((key) => {
+    const [, surface, address] = /^(?:(\w+):)?(\w+)Handler$/.exec(key)!;
+
+    return handlers.find((one) => one.address === address && one.surface === surface)
+      ?? { address, ...(surface ? { surface } : {}) };
+  });
+
   return {
     // `presenters` was missing: the real scanner always answers an array, empty when
     // a frond declares none. Omitting it made this stand-in a shape the source never
     // produces — no test here exercises presenters, so the empty list is the truth.
-    fronds: [{ name: 'test', entities, handlers, presenters: [], surfaces }],
+    fronds: [{ name: 'test', handlers: served, presenters: [], surfaces }],
     resolve: <T>(name: string) => facades[name] as unknown as T,
     // Mirrors App.facadeFor (bootstrap.ts): naming an audience closes it —
     // the `surfaces:` list when it exists, else a façade under the surface key.
@@ -98,7 +105,6 @@ function fakeApp(
 describe('generateRoutes', () => {
   it('refuses a facade with no canonical operation table', () => {
     const app = fakeApp(
-      [{ name: 'post', entityClass: Post }],
       { postHandler: fakeCrud() },
     );
 
@@ -106,9 +112,8 @@ describe('generateRoutes', () => {
       .toThrow(/without its EffectiveOperation table/);
   });
 
-  it('generates CRUD routes for all entities', () => {
+  it('generates CRUD routes for every address', () => {
     const app = fakeApp(
-      [{ name: 'post', entityClass: Post }],
       { postHandler: fakeCrud() },
       [{ address: 'post', operations: opsMap(['list', 'findById', 'create', 'update', 'delete']) }],
     );
@@ -129,7 +134,6 @@ describe('generateRoutes', () => {
     // Facade only has read ops — bootstrap enforces the whitelist
     const crud = fakeCrud();
     const app = fakeApp(
-      [{ name: 'post', entityClass: Post }],
       { postHandler: { list: crud.list, findById: crud.findById } },
       [{ address: 'post', operations: opsMap(['list', 'findById']) }],
     );
@@ -145,7 +149,6 @@ describe('generateRoutes', () => {
 
   it('applies prefix', () => {
     const app = fakeApp(
-      [{ name: 'post', entityClass: Post }],
       { postHandler: fakeCrud() },
     );
 
@@ -155,12 +158,8 @@ describe('generateRoutes', () => {
     expect(routes[1].path).toBe('/api/posts/:id');
   });
 
-  it('pluralizes entity names correctly', () => {
+  it('pluralizes addresses', () => {
     const app = fakeApp(
-      [
-        { name: 'post', entityClass: Post },
-        { name: 'category', entityClass: Post },
-      ],
       { postHandler: fakeCrud(), categoryHandler: fakeCrud() },
     );
 
@@ -173,7 +172,6 @@ describe('generateRoutes', () => {
 
   it('generates routes for all operations', () => {
     const app = fakeApp(
-      [{ name: 'post', entityClass: Post }],
       {
         postHandler: {
           ...fakeCrud(),
@@ -205,7 +203,6 @@ describe('generateRoutes', () => {
 
   it('custom ById operations get :id in path', () => {
     const app = fakeApp(
-      [{ name: 'post', entityClass: Post }],
       { postHandler: { ...fakeCrud(), archiveById: vi.fn(async () => ({})) } },
       [{
         address: 'post',
@@ -222,7 +219,6 @@ describe('generateRoutes', () => {
 
   it('supports route overrides', () => {
     const app = fakeApp(
-      [{ name: 'post', entityClass: Post }],
       { postHandler: { ...fakeCrud(), publish: vi.fn(async () => ({})) } },
       [{
         address: 'post',
@@ -246,7 +242,6 @@ describe('generateRoutes', () => {
   it('route handler forwards InvocationContext to facade', async () => {
     const crud = fakeCrud();
     const app = fakeApp(
-      [{ name: 'post', entityClass: Post }],
       { postHandler: crud },
       [{ address: 'post', operations: opsMap(['list', 'findById', 'create', 'update', 'delete']) }],
     );
@@ -269,68 +264,74 @@ describe('generateRoutes', () => {
     expect(crud.update).toHaveBeenCalledWith(updateInvocation);
   });
 
-  it('skips entities without handler facade', () => {
+  it('skips an address with no facade', () => {
     const app = fakeApp(
-      [
-        { name: 'post', entityClass: Post },
-        { name: 'author', entityClass: Author },
-      ],
       { postHandler: fakeCrud() },
     );
 
     const routes = generateRoutes(app);
-    const entities = [...new Set(routes.map((r) => r.entityName))];
-    expect(entities).toEqual(['post']);
+    const addresses = [...new Set(routes.map((r) => r.address))];
+    expect(addresses).toEqual(['post']);
   });
 
   it('filter option works', () => {
     const app = fakeApp(
-      [
-        { name: 'post', entityClass: Post },
-        { name: 'author', entityClass: Author },
-      ],
       { postHandler: fakeCrud(), authorHandler: fakeCrud() },
     );
 
     const routes = generateRoutes(app, {
-      filter: (e) => e.name === 'post',
+      filter: (address) => address === 'post',
     });
 
-    const entities = [...new Set(routes.map((r) => r.entityName))];
-    expect(entities).toEqual(['post']);
+    const addresses = [...new Set(routes.map((r) => r.address))];
+    expect(addresses).toEqual(['post']);
   });
 
-  it('surface config filters entities for this surface', () => {
+  it('surface config filters addresses for this surface', () => {
     const app = fakeApp(
-      [
-        { name: 'post', entityClass: Post },
-        { name: 'author', entityClass: Author },
-      ],
       { postHandler: fakeCrud(), authorHandler: fakeCrud() },
       [],
       { rest: ['Post'] },
     );
 
     const routes = generateRoutes(app, { surface: 'rest' });
-    const entities = [...new Set(routes.map((r) => r.entityName))];
-    expect(entities).toEqual(['post']);
+    const addresses = [...new Set(routes.map((r) => r.address))];
+    expect(addresses).toEqual(['post']);
   });
 
   it('without surface option, surfaces config is ignored', () => {
     const app = fakeApp(
-      [
-        { name: 'post', entityClass: Post },
-        { name: 'author', entityClass: Author },
-      ],
       { postHandler: fakeCrud(), authorHandler: fakeCrud() },
       [],
       { rest: ['Post'] },
     );
 
     const routes = generateRoutes(app);
-    const entities = [...new Set(routes.map((r) => r.entityName))];
-    expect(entities).toContain('post');
-    expect(entities).toContain('author');
+    const addresses = [...new Set(routes.map((r) => r.address))];
+    expect(addresses).toContain('post');
+    expect(addresses).toContain('author');
+  });
+});
+
+describe('a route per address, never per entity', () => {
+  it('serves a handler that names no entity', () => {
+    const app = fakeApp(
+      { checkoutHandler: { pay: vi.fn(async () => ({ reference: 'ch_1' })) } },
+      [{ address: 'checkout', operations: new Map([['pay', { kind: 'command' }]]) }],
+    );
+
+    expect(generateRoutes(app).map((r) => `${r.method} ${r.path}`)).toEqual(['POST /checkouts/pay']);
+  });
+
+  it('serves a handler at an address other than the entity it answers', () => {
+    const app = fakeApp(
+      { articleHandler: { list: vi.fn(async () => []) } },
+      [{ address: 'article', operations: opsMap([], { list: { output: Post } }) }],
+    );
+    const [list] = generateRoutes(app);
+
+    expect(`${list!.method} ${list!.path}`).toBe('GET /articles');
+    expect(Object.keys(list!.outputFields!)).toEqual(['id', 'title', 'views', 'createdAt']);
   });
 });
 
@@ -344,9 +345,8 @@ describe("boundary 'closed' → route field membership", () => {
 
   it('write-only is absent from outputFields, read-only absent from inputFields', () => {
     const app = fakeApp(
-      [{ name: 'account', entityClass: Account }],
       { accountHandler: fakeCrud() },
-      [{ address: 'account', operations: opsMap(['list', 'create']) }],
+      [{ address: 'account', operations: opsMap([], { list: { output: Account }, create: { input: Account, output: Account } }) }],
     );
 
     const routes = generateRoutes(app);
@@ -365,7 +365,6 @@ describe('the operation in words', () => {
     // Map<string, OperationContract>. It was simply dropped here, so every generated
     // route was undocumented and no OpenAPI could be produced from them.
     const app = fakeApp(
-      [{ name: 'post', entityClass: Post }],
       { postHandler: { ...fakeCrud(), publish: async () => ({}) } },
       [{
         address: 'post',

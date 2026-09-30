@@ -26,7 +26,7 @@ export default class FreezeCommand {
     }
 
     const freeze = (input: Record<string, unknown>) =>
-      createAppRunner(this.app)({ entity: 'freeze', op: 'execute' }, { params: {}, query: {}, input, state: {} }) as Promise<FreezeInspection>;
+      createAppRunner(this.app)({ address: 'freeze', op: 'execute' }, { params: {}, query: {}, input, state: {} }) as Promise<FreezeInspection>;
 
     // Idempotent while it refuses: this writes when nothing is ambiguous, and reports
     // otherwise — so the first call is both the inspection and the happy path.

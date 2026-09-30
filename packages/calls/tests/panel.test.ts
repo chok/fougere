@@ -38,7 +38,7 @@ describe('the panel', () => {
       expect(hello).toContain('"fronds":["shop","warehouse"]');
 
       // Then a call, pushed as it settles.
-      await app.dispatch(new Call(new RouteAddress({ entity: 'order', operation: 'list' })));
+      await app.dispatch(new Call(new RouteAddress({ address: 'order', operation: 'list' })));
       const pushed = new TextDecoder().decode((await reader.read()).value);
       expect(pushed).toContain('event: call');
       expect(pushed).toContain('"operation":"list"');

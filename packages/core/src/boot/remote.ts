@@ -6,7 +6,7 @@
 import type { FrondCall } from '../wire/FrondCall.js';
 import type { StateShape } from '../wire/StateShape.js';
 import type { Transport } from '../wire/Transport.js';
-import { RPC_ENTITY } from '../wire/RpcAnswer.js';
+import { RPC_ADDRESS } from '../wire/RpcAnswer.js';
 import { assertIdentityCard } from '../wire/card/IdentityCard.js';
 import { runMiddlewares, type AppMiddleware } from '../wire/AppMiddleware.js';
 import { type OperationContext } from '../wire/OperationContext.js';
@@ -29,7 +29,7 @@ interface Route {
 }
 
 export interface RemoteRouter {
-  route(entity: string): Promise<Route>;
+  route(address: string): Promise<Route>;
 }
 
 export function createRemoteRouter(
@@ -54,7 +54,7 @@ export function createRemoteRouter(
         const transport = transports.get(url) ?? makeTransport(url);
         transports.set(url, transport);
         try {
-          const answer = await transport({ entity: RPC_ENTITY, op: 'discover' }, Invocation.empty);
+          const answer = await transport({ address: RPC_ADDRESS, op: 'discover' }, Invocation.empty);
 
           // Judged below and not here: this catch means "unreachable, retry", and a
           // refusal thrown inside it would be swallowed into another silent retry.
@@ -75,23 +75,23 @@ export function createRemoteRouter(
   };
 
   return {
-    async route(entity) {
-      if (!byEntity.has(entity) && pending.size > 0) await discover();
-      const hit = byEntity.get(entity);
+    async route(address) {
+      if (!byEntity.has(address) && pending.size > 0) await discover();
+      const hit = byEntity.get(address);
       if (hit) return hit;
       if (pending.size > 0) {
         throw new FougereError({
           code: ErrorCode.SERVICE_UNAVAILABLE,
-          message: `No reachable remote hosts '${entity}' — unreachable: ${[...pending.keys()].join(', ')}.\n`
+          message: `No reachable remote serves '${address}' — unreachable: ${[...pending.keys()].join(', ')}.\n`
           + '  Named in `remotes:`, and did not answer.',
-          entity,
+          address,
         });
       }
       throw new FougereError({
         code: ErrorCode.NOT_FOUND,
-        message: `No declared remote hosts '${entity}'.\n`
+        message: `No declared remote serves '${address}'.\n`
           + '  Nothing here serves it either — add its frond to `fronds:`/`scan:`, or name the frond that does in `remotes:`.',
-        entity,
+        address,
       });
     },
   };
@@ -101,22 +101,23 @@ type Facade = Record<string, (invocation?: InvocationContext) => Promise<unknown
 
 /** Façade-shaped stand-in — the consumer can't tell it from a local facade. */
 export function createRemoteFacade(
-  entity: string,
+  address: string,
   router: RemoteRouter,
   middlewaresFor: (address: string) => AppMiddleware[],
   shape: StateShape,
 ): Facade {
   const opFn = (op: string) => async (received: InvocationContext = Invocation.empty) => {
-    const { frond, transport, schema } = await router.route(entity);
-    const call: FrondCall = { frond, entity, op };
-    const state = received.crossed ? { ...received.state } : shape.judge(received.state, entity, op);
+    const { frond, transport, schema } = await router.route(address);
+    const call: FrondCall = { frond, address, op };
+    const state = received.crossed ? { ...received.state } : shape.judge(received.state, address, op);
     const invocation = { ...received, state };
     const entered = { ...state };
     const ctx: OperationContext = {
-      entity, frond, operation: op, args: [], state, invocation, crosses: true,
+      address, frond, operation: op, args: [], state, invocation, crosses: true,
     };
-    const answer = await runMiddlewares(middlewaresFor(entity), ctx, () =>
-      transport(call, { ...(ctx.invocation ?? invocation), state: shape.judge(ctx.state, entity, op, entered) }));
+    const answer = await runMiddlewares(middlewaresFor(address), ctx, () =>
+      transport(call, { ...(ctx.invocation ?? invocation), state: shape.judge(ctx.state, address, op, entered) }))
+      .catch((error: unknown) => { throw error instanceof FougereError ? error.at(address, op) : error; });
 
     // The schema the card carried, put to work: a row crosses as data and comes back through
     // the same codecs a local facade applies, so a placement does not decide what a caller
@@ -156,10 +157,10 @@ function claimFacades(
           code: ErrorCode.INTERNAL_ERROR,
           message:
             `[claim] Two remotes serve '${facade.name}': '${first}' and '${label}'.\n`
-            + `  A call names an entity, not a frond, so nothing could choose between them.\n`
+            + `  A call names an address, not a frond, so nothing could choose between them.\n`
             + `  - Keep one of the two out of \`remotes:\`, or\n`
-            + `  - expose one of them under a different entity name.`,
-          entity: facade.name,
+            + `  - expose one of them under a different address.`,
+          address: facade.name,
         });
       }
 

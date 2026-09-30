@@ -41,10 +41,10 @@ describe('an app written in JavaScript', () => {
     await using app = await booting([NoteHandler]);
 
     const run = createLocalRunner(app);
-    const written = await run({ entity: 'note', op: 'create' }, { ...Invocation.empty, input: { body: 'Hello' } });
+    const written = await run({ address: 'note', op: 'create' }, { ...Invocation.empty, input: { body: 'Hello' } });
 
     expect(written.body).toBe('Hello');
-    expect((await run({ entity: 'note', op: 'list' }, Invocation.empty)).items).toHaveLength(1);
+    expect((await run({ address: 'note', op: 'list' }, Invocation.empty)).items).toHaveLength(1);
   });
 
   it('injects what the declaration names', async () => {
@@ -59,7 +59,7 @@ describe('an app written in JavaScript', () => {
       operations: { readStamp: { binding: [] } },
     }]);
 
-    expect(await createLocalRunner(app)({ entity: 'note', op: 'readStamp' }, Invocation.empty)).toBe('noon');
+    expect(await createLocalRunner(app)({ address: 'note', op: 'readStamp' }, Invocation.empty)).toBe('noon');
   });
 
   it('refuses a constructor asking for more than it is declared', async () => {

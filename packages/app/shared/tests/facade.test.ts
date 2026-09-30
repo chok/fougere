@@ -55,7 +55,7 @@ describe('the two ways to write one address', () => {
    */
   it('takes the address itself from a facade with no class to name it', () => {
     expect(addressOf('checkout')).toBe('checkout');
-    expect(callOf('checkout', 'pay')).toEqual({ entity: 'checkout', op: 'pay' });
+    expect(callOf('checkout', 'pay')).toEqual({ address: 'checkout', op: 'pay' });
   });
 
   it('answers the same thing either way for a facade that has both', () => {

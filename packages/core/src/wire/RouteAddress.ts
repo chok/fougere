@@ -14,13 +14,13 @@ function optional(value: string | undefined, name: string): string | undefined {
 
 /** Canonical identity of one callable operation. */
 export class RouteAddress {
-  readonly entity: string;
+  readonly address: string;
   readonly operation: string;
   readonly surface?: string;
 
   /** Names one callable operation, and freezes it so a registry key cannot drift. */
   constructor(input: RouteAddressInput) {
-    this.entity = required(input.entity, 'entity');
+    this.address = required(input.address, 'address');
     this.operation = required(input.operation, 'operation');
     this.surface = optional(input.surface, 'surface');
     Object.freeze(this);
@@ -28,7 +28,7 @@ export class RouteAddress {
 
   /** Serializes the three segments so a route can be looked up in a `Map`. */
   key(): string {
-    return JSON.stringify([this.surface ?? null, this.entity, this.operation]);
+    return JSON.stringify([this.surface ?? null, this.address, this.operation]);
   }
 
   /** Compares two addresses by their key, so `surface` counts as much as the operation. */
@@ -40,13 +40,13 @@ export class RouteAddress {
   toString(): string {
     const audience = this.surface ? `${this.surface}/` : '';
 
-    return `${audience}${this.entity}.${this.operation}`;
+    return `${audience}${this.address}.${this.operation}`;
   }
 
   /** Sends the address over the wire without `surface: undefined` riding along. */
   toJSON(): RouteAddressInput {
     return {
-      entity: this.entity,
+      address: this.address,
       operation: this.operation,
       ...(this.surface !== undefined ? { surface: this.surface } : {}),
     };

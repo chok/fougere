@@ -13,7 +13,7 @@ export default class GraphCommand {
   async run(raw: Record<string, unknown>) {
     // Ride the call contract — the same envelope every consumer uses.
     const result = await createAppRunner(this.app)(
-      { entity: 'graph', op: 'execute' },
+      { address: 'graph', op: 'execute' },
       { params: {}, query: {}, input: raw, state: {} },
     ) as GraphResult;
 

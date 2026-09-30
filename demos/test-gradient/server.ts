@@ -42,7 +42,7 @@ function inputFor(field: ReturnType<typeof formFieldsOf>[number]): string {
 }
 
 async function page(): Promise<string> {
-  const { items } = await run({ entity: 'product', op: 'list' }, Invocation.empty) as Page<Product>;
+  const { items } = await run({ address: 'product', op: 'list' }, Invocation.empty) as Page<Product>;
   const fields = formFieldsOf(Product, 'product');
 
   return `<!doctype html><meta charset="utf-8"><title>test-gradient</title>

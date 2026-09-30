@@ -21,7 +21,7 @@ describe('a port declared by extension', () => {
   it('hands the handler the implementation, not the base it declared', async () => {
     await using app = await createApp({ fronds: one, createContainer });
 
-    const out = await createLocalRunner(app)({ entity: 'checkout', op: 'pay' }, Invocation.empty);
+    const out = await createLocalRunner(app)({ address: 'checkout', op: 'pay' }, Invocation.empty);
 
     expect(out).toEqual({ provider: 'stripe', amountCents: 4990 });
   });
@@ -62,7 +62,7 @@ describe('two implementations of one port', () => {
       ports: { Payment: 'OgonePayment' },
     });
 
-    const out = await createLocalRunner(app)({ entity: 'checkout', op: 'pay' }, Invocation.empty);
+    const out = await createLocalRunner(app)({ address: 'checkout', op: 'pay' }, Invocation.empty);
 
     expect(out).toEqual({ provider: 'ogone', amountCents: 4990 });
   });
@@ -79,7 +79,7 @@ describe('a framework builtin is a port too', () => {
   it('hands the handler the declared subclass, not the default Logger', async () => {
     await using app = await createApp({ fronds: overridden, createContainer });
 
-    const out = await createLocalRunner(app)({ entity: 'report', op: 'run' }, Invocation.empty);
+    const out = await createLocalRunner(app)({ address: 'report', op: 'run' }, Invocation.empty);
 
     expect(out).toEqual({ logger: 'AuditLogger', seen: 1 });
   });
@@ -115,7 +115,7 @@ describe('a port answered by a chain', () => {
       ...(ports ? { ports } : {}),
     });
     const said = await createLocalRunner(app)(
-      { entity: 'checkout', op: 'pay' },
+      { address: 'checkout', op: 'pay' },
       { ...Invocation.empty, params: { amountCents: '100' } },
     ) as { provider: string };
     await app.dispose();

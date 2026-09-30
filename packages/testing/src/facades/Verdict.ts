@@ -43,7 +43,7 @@ export function checkContract(app: App, entity: SchemaView, options: CheckOption
     for (const one of table) {
       it(one.why, async () => {
         const verdict = await verdictOf(() => run(
-          { entity: name, op: one.patch ? update : create },
+          { address: name, op: one.patch ? update : create },
           { ...Invocation.empty, params: one.patch ? { id: '__absent__' } : {}, input: one.input },
         ));
 
@@ -63,7 +63,7 @@ export function checkOutput(app: App, entity: SchemaView, options: CheckOptions 
   describe(`${entity.name} — what leaves it`, () => {
     it(closed.length > 0 ? `keeps ${closed.join(', ')} in` : 'closes no field, and says so', async () => {
       const row = await run(
-        { entity: name, op: create },
+        { address: name, op: create },
         { ...Invocation.empty, input: sampleInput(entity, options.given ?? {}, options) },
       ) as Record<string, unknown>;
 
@@ -72,7 +72,7 @@ export function checkOutput(app: App, entity: SchemaView, options: CheckOptions 
 
     it('answers with fields the entity declares, and no others', async () => {
       const row = await run(
-        { entity: name, op: create },
+        { address: name, op: create },
         { ...Invocation.empty, input: sampleInput(entity, options.given ?? {}, options) },
       ) as Record<string, unknown>;
 

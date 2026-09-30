@@ -56,7 +56,7 @@ describe('a class that stands in front of a seam', () => {
   it('is in front of the storage, declared nowhere but in its own signature', async () => {
     await using built = await app();
 
-    await createLocalRunner(built)({ entity: 'product', op: 'add' }, { ...Invocation.empty, params: { title: 'fern' } });
+    await createLocalRunner(built)({ address: 'product', op: 'add' }, { ...Invocation.empty, params: { title: 'fern' } });
 
     // `Counting` names no entity and no frond: it extends `Storage` and asks for one.
     expect(wrote()).toEqual(['counting(fern)']);
@@ -66,8 +66,8 @@ describe('a class that stands in front of a seam', () => {
     await using built = await app();
     const call = createLocalRunner(built);
 
-    await call({ entity: 'product', op: 'add' }, { ...Invocation.empty, params: { title: 'moss' } });
-    const rows = await call({ entity: 'product', op: 'list' }, Invocation.empty) as { items: unknown[] };
+    await call({ address: 'product', op: 'add' }, { ...Invocation.empty, params: { title: 'moss' } });
+    const rows = await call({ address: 'product', op: 'list' }, Invocation.empty) as { items: unknown[] };
 
     // `list` is not on the wrapper. It reaches the realization through the base's forwards,
     // which is what lets a wrapper be three lines instead of thirteen.
@@ -80,7 +80,7 @@ describe('a class that stands in front of a seam', () => {
     // The guard stands OUTSIDE the chain, so a link reads what the entity says a row is —
     // and a refused one never gets there at all.
     await expect(
-      createLocalRunner(built)({ entity: 'product', op: 'add' }, { ...Invocation.empty, params: { title: '' } }),
+      createLocalRunner(built)({ address: 'product', op: 'add' }, { ...Invocation.empty, params: { title: '' } }),
     ).rejects.toThrow(/title/);
     expect(wrote()).toEqual([]);
   });
@@ -88,7 +88,7 @@ describe('a class that stands in front of a seam', () => {
   it('is named in `ports:` like any other chain', async () => {
     await using built = await app({ Storage: ['Counting'] });
 
-    await createLocalRunner(built)({ entity: 'product', op: 'add' }, { ...Invocation.empty, params: { title: 'ivy' } });
+    await createLocalRunner(built)({ address: 'product', op: 'add' }, { ...Invocation.empty, params: { title: 'ivy' } });
 
     expect(wrote()).toEqual(['counting(ivy)']);
   });
@@ -99,7 +99,7 @@ describe('a class that stands in front of a seam', () => {
     // A link goes where its FROND goes, which is what preserves the gradient: `warehouse`
     // moved behind `remotes:` would not silently lose one its own code never mentioned. A
     // link that must be everywhere is a frond that is everywhere (`Extension.fronds`).
-    await createLocalRunner(built)({ entity: 'crate', op: 'add' }, { ...Invocation.empty, params: { label: 'oak' } });
+    await createLocalRunner(built)({ address: 'crate', op: 'add' }, { ...Invocation.empty, params: { label: 'oak' } });
 
     expect(wrote()).toEqual([]);
   });
@@ -123,7 +123,7 @@ describe('a link declared by the frond above', () => {
   it('stands in front of the rows of every frond under it', async () => {
     await using built = await family({ warehouse: { extends: 'ledger' } });
 
-    await createLocalRunner(built)({ entity: 'crate', op: 'add' }, { ...Invocation.empty, params: { label: 'oak' } });
+    await createLocalRunner(built)({ address: 'crate', op: 'add' }, { ...Invocation.empty, params: { label: 'oak' } });
 
     // A seam has no container key — its realization is built, not resolved — so inheriting a
     // link is a list carried down, the same shape a middleware needed.
@@ -133,7 +133,7 @@ describe('a link declared by the frond above', () => {
   it('reaches nothing while the two fronds are only neighbours', async () => {
     await using built = await family();
 
-    await createLocalRunner(built)({ entity: 'crate', op: 'add' }, { ...Invocation.empty, params: { label: 'ash' } });
+    await createLocalRunner(built)({ address: 'crate', op: 'add' }, { ...Invocation.empty, params: { label: 'ash' } });
 
     expect(wrote()).toEqual([]);
   });

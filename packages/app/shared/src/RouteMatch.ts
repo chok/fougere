@@ -21,12 +21,12 @@ export function tableOf(app: App): Matchable[] {
   const table = app.fronds.flatMap((frond) =>
     generateRoutes(app, {
       prefix: `/${frond.name}`,
-      filter: (_entity, frondName) => frondName === frond.name,
+      filter: (_address, frondName) => frondName === frond.name,
     }).map((route) => ({
       method: route.method as string,
       segments: route.path.split('/').filter(Boolean),
       path: route.path,
-      entityName: route.entityName,
+      address: route.address,
       operationName: route.operationName,
     })),
   );

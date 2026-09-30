@@ -48,7 +48,7 @@ beforeAll(async () => {
 const cardOf = async (fixture: string): Promise<IdentityCard> => {
   await using app = await testApp({ root: join(import.meta.dirname, fixture) });
 
-  return await createLocalRunner(app)({ entity: 'rpc', op: 'discover' }, Invocation.empty) as IdentityCard;
+  return await createLocalRunner(app)({ address: 'rpc', op: 'discover' }, Invocation.empty) as IdentityCard;
 };
 
 describe('what a consumer synced', () => {

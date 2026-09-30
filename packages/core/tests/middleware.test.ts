@@ -6,7 +6,7 @@ import { FougereError } from '../src/wire/FougereError.js';
 
 function ctx(overrides?: Partial<OperationContext>): OperationContext {
   return {
-    entity: 'product',
+    address: 'product',
     operation: 'create',
     args: [{ name: 'Fern' }],
     state: {},
@@ -103,18 +103,18 @@ describe('runMiddlewares', () => {
 // ── FougereError ────────────────────────────────
 
 describe('FougereError', () => {
-  it('has code, entity, operation', () => {
+  it('has code, address, operation', () => {
     const err = new FougereError({
       code: ErrorCode.NOT_FOUND,
       message: 'Product not found',
-      entity: 'product',
+      address: 'product',
       operation: 'findById',
     });
 
     expect(err).toBeInstanceOf(Error);
     expect(err.name).toBe('FougereError');
     expect(err.code).toBe('NOT_FOUND');
-    expect(err.entity).toBe('product');
+    expect(err.address).toBe('product');
     expect(err.operation).toBe('findById');
     expect(err.message).toBe('Product not found');
   });
@@ -123,14 +123,14 @@ describe('FougereError', () => {
     const err = new FougereError({
       code: ErrorCode.VALIDATION_FAILED,
       message: 'Invalid input',
-      entity: 'order',
+      address: 'order',
       operation: 'create',
     });
 
     expect(err.toJSON()).toEqual({
       code: ErrorCode.VALIDATION_FAILED,
       message: 'Invalid input',
-      entity: 'order',
+      address: 'order',
       operation: 'create',
     });
   });

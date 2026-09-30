@@ -154,9 +154,7 @@ export class StorageGuard {
     if (errors.length > 0) {
       throw new FougereError({
         code: ErrorCode.BAD_REQUEST,
-        message: `Refused as a filter — ${errors.join(', ')}`,
-        entity: this.entity,
-        operation: 'list',
+        message: `Refused as a filter on ${this.entity} — ${errors.join(', ')}`,
         details: errors,
       });
     }
@@ -247,9 +245,7 @@ export class StorageGuard {
     if (errors.length > 0) {
       throw new FougereError({
         code: ErrorCode.INTERNAL_ERROR,
-        message: `Refused on the way out — ${errors.join(', ')}`,
-        entity: this.entity,
-        operation,
+        message: `Refused on the way out of ${this.entity}.${operation} — ${errors.join(', ')}`,
         details: errors,
       });
     }
@@ -287,9 +283,7 @@ export class StorageGuard {
 
     throw new FougereError({
       code: ErrorCode.VALIDATION_FAILED,
-      message: `Refused on the way out — ${errors.join(', ')}`,
-      entity: this.entity,
-      operation,
+      message: `Refused on the way out of ${this.entity}.${operation} — ${errors.join(', ')}`,
       details: errors,
     });
   }

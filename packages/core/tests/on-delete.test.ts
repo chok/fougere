@@ -166,7 +166,7 @@ describe('restrict — the row stays until nothing names it', () => {
     }));
     const call = createLocalRunner(world.app);
 
-    await expect(call({ entity: 'user', op: 'delete' }, { ...Invocation.empty, params: { id: 'bob' } as never }))
+    await expect(call({ address: 'user', op: 'delete' }, { ...Invocation.empty, params: { id: 'bob' } as never }))
       .rejects.toThrow(/comment\.authorId/);
     await world.dispose();
   });

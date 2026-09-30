@@ -43,9 +43,9 @@ function verdictOfForm(schema: SchemaView & { validate(i: unknown): unknown }, i
 
 /** What the facade does on arrival. A refusal is a typed error, not a return value. */
 async function verdictOfFacade(run: ReturnType<typeof createLocalRunner>, op: string, input: unknown): Promise<Verdict> {
-  const [entity, name] = op.split('.');
+  const [address, name] = op.split('.');
   try {
-    await run({ entity, op: name }, { ...Invocation.empty, input });
+    await run({ address, op: name }, { ...Invocation.empty, input });
 
     return { ok: true };
   } catch (error) {

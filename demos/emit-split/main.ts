@@ -23,7 +23,7 @@ const inv = (params: Record<string, string>): InvocationContext =>
 const settle = () => new Promise((r) => setTimeout(r, 300));
 
 async function publish(app: App, id: string, title: string) {
-  return createLocalRunner(app)({ entity: 'post', op: 'publish' }, inv({ id, title }));
+  return createLocalRunner(app)({ address: 'post', op: 'publish' }, inv({ id, title }));
 }
 
 function title(n: string, text: string) {

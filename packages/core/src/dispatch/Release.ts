@@ -131,8 +131,6 @@ async function refuseHeld(
     code: ErrorCode.CONFLICT,
     message: `${dependent.entity}.${dependent.field} holds ${found.length} row(s) naming this one, `
       + `and states onDelete 'restrict' — take them out first, or declare what should happen.`,
-    entity,
-    operation: 'delete',
   });
 }
 

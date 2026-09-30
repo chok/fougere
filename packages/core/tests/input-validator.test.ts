@@ -10,7 +10,7 @@ describe('validateInput', () => {
   it('returns a decoded invocation for a valid input', () => {
     const invocation = Invocation.from({ input: { name: 'Fern', price: 12 } });
 
-    const validated = validateInput(Product, invocation, 'product', 'create');
+    const validated = validateInput(Product, invocation);
 
     expect(validated).not.toBe(invocation);
     expect(validated.input).toEqual({ name: 'Fern', price: 12 });
@@ -20,17 +20,15 @@ describe('validateInput', () => {
   it('returns the original invocation when no input schema applies', () => {
     const invocation = Invocation.from({ input: { anything: true } });
 
-    expect(validateInput(undefined, invocation, 'health', 'check')).toBe(invocation);
+    expect(validateInput(undefined, invocation)).toBe(invocation);
   });
 
-  it('returns a typed refusal with the operation identity', () => {
+  it('returns a typed refusal', () => {
     const invocation = Invocation.from({ input: { name: 'Fern', price: -1 } });
 
-    expect(() => validateInput(Product, invocation, 'product', 'create'))
+    expect(() => validateInput(Product, invocation))
       .toThrow(expect.objectContaining({
         code: 'VALIDATION_FAILED',
-        entity: 'product',
-        operation: 'create',
       }));
   });
 });

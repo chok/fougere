@@ -9,8 +9,6 @@ export class PresenterExecutor {
   constructor(
     private readonly presenter: Record<string, unknown> | undefined,
     private readonly fieldNames: readonly string[] | undefined,
-    private readonly entity = 'unknown',
-    private readonly operation = 'unknown',
   ) {}
 
   async present(result: unknown, args: PresenterArgs = {}): Promise<unknown> {
@@ -64,8 +62,6 @@ export class PresenterExecutor {
       throw new FougereError({
         code: ErrorCode.INTERNAL_ERROR,
         message: `Computed field '${name}' failed: ${(cause as Error)?.message ?? cause}`,
-        entity: this.entity,
-        operation: this.operation,
         cause,
       });
     }

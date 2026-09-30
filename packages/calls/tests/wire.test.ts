@@ -29,21 +29,21 @@ describe('over the wire', () => {
     const facade = await serve(createLocalRunner(app), { port: 0 });
 
     try {
-      await app.dispatch(new Call(new RouteAddress({ entity: 'order', operation: 'list' })));
+      await app.dispatch(new Call(new RouteAddress({ address: 'order', operation: 'list' })));
 
       const read = createHttpTransport(`http://127.0.0.1:${facade.port}`);
       const page = await read(
-        { entity: 'rpc', op: 'calls' },
+        { address: 'rpc', op: 'calls' },
         { params: {}, query: {}, input: { since: 0 }, state: {} },
       ) as CallPage;
 
       expect(page.calls).toHaveLength(1);
-      expect(page.calls[0]).toMatchObject({ frond: 'shop', entity: 'order', operation: 'list', route: 'local', verdict: 'ok' });
+      expect(page.calls[0]).toMatchObject({ frond: 'shop', address: 'order', operation: 'list', route: 'local', verdict: 'ok' });
       expect(page.cursor).toBe(1);
 
       // Reading is itself a call, and it must not appear in what it reads.
       const second = await read(
-        { entity: 'rpc', op: 'calls' },
+        { address: 'rpc', op: 'calls' },
         { params: {}, query: {}, input: { since: page.cursor }, state: {} },
       ) as CallPage;
       expect(second.calls).toHaveLength(0);
@@ -83,11 +83,11 @@ describe('two apps against one hosted frond', () => {
       })));
 
       for (const consumer of consumers) {
-        await consumer.dispatch(new Call(new RouteAddress({ entity: 'order', operation: 'list' })));
+        await consumer.dispatch(new Call(new RouteAddress({ address: 'order', operation: 'list' })));
       }
 
       const read = (app: (typeof consumers)[number]) => createAppRunner(app)(
-        { entity: 'rpc', op: 'calls' },
+        { address: 'rpc', op: 'calls' },
         { params: {}, query: {}, input: { since: 0 }, state: {} },
       ) as Promise<CallPage>;
 
@@ -95,7 +95,7 @@ describe('two apps against one hosted frond', () => {
       for (const consumer of consumers) {
         const page = await read(consumer);
         expect(page.calls).toHaveLength(1);
-        expect(page.calls[0]).toMatchObject({ entity: 'order', operation: 'list' });
+        expect(page.calls[0]).toMatchObject({ address: 'order', operation: 'list' });
       }
 
       // The hosted ring holds BOTH executions, and — with nobody signing on loopback —

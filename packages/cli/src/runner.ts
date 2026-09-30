@@ -121,7 +121,7 @@ export async function run(app: App, root = new URL('..', import.meta.url).pathna
             } else {
               // Ride the call contract — the same envelope every consumer uses.
               await createAppRunner(app)(
-                { entity: lowerFirst(entity.name), op: 'execute' },
+                { address: lowerFirst(entity.name), op: 'execute' },
                 { params: {}, query: {}, input: input, state: {} },
               );
             }

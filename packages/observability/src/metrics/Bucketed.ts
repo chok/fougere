@@ -1,6 +1,6 @@
 export interface Bucketed {
   frond: string | undefined;
-  entity: string;
+  address: string;
   operation: string;
   error: string | undefined;
   count: number;

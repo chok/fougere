@@ -16,17 +16,11 @@ import {
   type FormFieldName,
   type FormRow,
   type FormValues,
+  type FormOptions,
 } from '@fougere/app/client';
 import { useCommand } from './useFougereData/CommandStore.js';
 
-export interface FormOptions {
-  /** Command the submit rides. Default: 'create'. */
-  op?: string;
-  /** Initial values (edit mode: the loaded entity). */
-  initial?: Record<string, unknown>;
-  /** Call params designating the target (edit mode: { id }). */
-  params?: Record<string, string>;
-}
+export type { FormOptions };
 
 export function useFormFor<E extends FormEntity>(entity: E, options: FormOptions = {}) {
   const entityKey = entityKeyOf(entity);
@@ -40,7 +34,7 @@ export function useFormFor<E extends FormEntity>(entity: E, options: FormOptions
   const errors = writable<FormErrors<E>>({});
   // A form is designated by its ENTITY — it is a set of fields — so the facade it submits to is
   // an address with no handler type behind it, and what it answers is the entity's row.
-  const command = useCommand(facadeOf(entity), options.op ?? 'create');
+  const command = useCommand(options.to ?? facadeOf(entity), options.op ?? 'create');
   const choices = writable<Partial<Record<FormFieldName<E>, Choice[]>>>({});
   const searchable = writable<Partial<Record<FormFieldName<E>, boolean>>>({});
 

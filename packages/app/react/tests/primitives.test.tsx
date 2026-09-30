@@ -251,6 +251,19 @@ describe('useFormFor', () => {
     expect(calls[0]!.method).toBe('post.update');
     expect(calls[0]!.params.params).toEqual({ id: 'a' });
   });
+
+  it('submits where it is told, and takes its fields from the entity still', async () => {
+    const calls = wire(() => ({ id: 'n' }));
+    const { result } = renderHook(() => useFormFor(Post, { to: facade('article' as never) }));
+
+    act(() => {
+      result.current.setValue('title', 'fine');
+      result.current.setValue('body', 'b');
+    });
+    await act(async () => { await result.current.submit(); });
+
+    expect(calls[0]!.method).toBe('article.create');
+  });
 });
 
 describe('useFormFor — a reference', () => {
