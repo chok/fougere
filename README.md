@@ -52,6 +52,13 @@ npm create fougere@latest -- shop --frond blog --app nuxt
 cd shop && pnpm install && pnpm migrate && pnpm dev   # :3000
 ```
 
+With pnpm, a version published too recently is held back by its `minimum-release-age`. To try the
+latest one right away:
+
+```bash
+pnpm --config.minimum-release-age=0 create fougere
+```
+
 You now have a running app: the table created, the form contract, the REST and GraphQL
 surfaces, and pages calling operations through `useQuery` / `useCommand`. Nothing above
 was generated into a file you have to keep.
