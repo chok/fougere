@@ -58,8 +58,8 @@ export async function closeAll(levels: readonly (() => unknown)[], refusals: str
 
 /**
  * The schema slot, as every boot fills it: the database is READ against the entities, and a
- * boot that finds it behind refuses rather than writing to it. Writing is `fougere migrate
- * --apply`, or `migrating()` stated by a process whose database is born with it.
+ * boot that finds it behind refuses rather than writing to it. Writing is `fougere migrate`,
+ * or `migrating()` stated by a process whose database is born with it.
  *
  * Documented: [lifecycle](https://fougere.dev/docs/infra/lifecycle).
  */
@@ -75,7 +75,7 @@ export function checking(pending?: (app: App) => Promise<readonly string[]>): Ex
       throw new Error(
         `Fougere boot refused: the database is behind the entities (${behind.length}):\n`
         + behind.map((line) => `  ${line}`).join('\n')
-        + '\n  Read the plan: fougere migrate — then write it: fougere migrate --apply',
+        + '\n  Your database: fougere migrate --latest --apply — a shared one: fougere freeze, then fougere migrate --apply',
       );
     },
   };
