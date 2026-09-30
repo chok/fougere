@@ -37,9 +37,13 @@ export function useFormFor<E extends FormEntity>(entity: E, options: FormOptions
   async function search(name: FormFieldName<E>, text = ''): Promise<void> {
     const reference = fields.find((field) => field.name === name)?.reference;
     if (!reference) return;
-    const offer = await Choices.of(fetcher, reference, text);
-    choices[name] = offer.choices;
-    if (!text) searchable[name] = offer.more;
+    try {
+      const offer = await Choices.of(fetcher, reference, text);
+      choices[name] = offer.choices;
+      if (!text) searchable[name] = offer.more;
+    } catch (refusal) {
+      errors[name] = (refusal as Error).message;
+    }
   }
 
   onMounted(() => {

@@ -51,9 +51,13 @@ export function useFormFor<E extends FormEntity>(entity: E, options: FormOptions
   const search = useCallback(async (name: FormFieldName<E>, text = '') => {
     const reference = fields.find((field) => field.name === name)?.reference;
     if (!reference) return;
-    const offer = await Choices.of(fetcher, reference, text);
-    setChoices((current) => ({ ...current, [name]: offer.choices }));
-    if (!text) setSearchable((current) => ({ ...current, [name]: offer.more }));
+    try {
+      const offer = await Choices.of(fetcher, reference, text);
+      setChoices((current) => ({ ...current, [name]: offer.choices }));
+      if (!text) setSearchable((current) => ({ ...current, [name]: offer.more }));
+    } catch (refusal) {
+      setErrors((current) => ({ ...current, [name]: (refusal as Error).message }));
+    }
   }, [fields]);
 
   useEffect(() => {

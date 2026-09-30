@@ -258,6 +258,14 @@ describe('useFormFor — a reference', () => {
   class Note extends entity({ id: primary(), body: text(), writerId: ref(Writer) }) {}
   const rows = [{ id: 'w1', name: 'Alice' }, { id: 'w2', name: 'Bob' }];
 
+  it('says under the field when its target serves no list, rather than rejecting in the background', async () => {
+    wire((method) => (method === 'writer.list' ? new Error("No route serves 'writer.list'") : null));
+    const { result } = renderHook(() => useFormFor(Note));
+
+    await waitFor(() => expect(result.current.errors.writerId).toContain("No route serves 'writer.list'"));
+    expect(result.current.choices.writerId).toBeUndefined();
+  });
+
   it('offers the first rows of its target, named, and searches the rest by that name', async () => {
     const calls = wire((method, params: any) =>
       method === 'writer.list'
