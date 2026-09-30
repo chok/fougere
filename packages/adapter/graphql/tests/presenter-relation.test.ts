@@ -2,6 +2,7 @@ import SchemaBuilder from '@pothos/core';
 import { describe, expect, it } from 'vitest';
 import { entity, number, primary, ref, text } from '@fougere/schema';
 import { registerAll } from '../src/auto-register.js';
+import { served } from './served.js';
 
 /**
  * Un presenter et une relation peuvent nommer le même champ.
@@ -48,7 +49,10 @@ function fakeApp(presenterFields: string[], views?: Record<string, any>) {
     })(),
     resolve: () => { throw new Error('no such registration'); },
     facadeFor: () => facade,
-    operationsFor: () => new Map(),
+    operationsFor(this: any, address: string) {
+      return served(this.facadeFor(address), this.fronds.flatMap((frond: any) => frond.entities)
+        .find((entity: any) => entity.name === address)?.entityClass);
+    },
   } as never;
 }
 

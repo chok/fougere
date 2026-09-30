@@ -33,6 +33,7 @@ function crudOps(entityName: string, entityClass?: any): Map<string, any> {
   return new Map([
     ['list', {
       kind: 'query',
+      output: entityClass,
       signature: {
         name: 'list',
         params: [{ name: 'options', type: { raw: 'ListOptions', name: 'ListOptions' }, optional: true }],
@@ -41,6 +42,7 @@ function crudOps(entityName: string, entityClass?: any): Map<string, any> {
     }],
     ['findById', {
       kind: 'query',
+      output: entityClass,
       signature: {
         name: 'findById',
         params: [{ name: 'id', type: { raw: 'string', name: 'string' } }],
@@ -277,7 +279,7 @@ describe('registerAll', () => {
     );
 
     registerAll(builder, app, {
-      filter: (entity) => entity.name === 'author',
+      filter: (address) => address === 'author',
     });
 
     const schema = builder.toSchema();
@@ -772,5 +774,45 @@ describe('an entity a client can supply nothing for', () => {
     const createStamp = schema.getMutationType()!.getFields()['createStamp'];
     expect(createStamp).toBeDefined();
     expect(createStamp.args.map((a) => a.name)).toEqual([]);
+  });
+});
+
+describe('a root field per address, a type per schema returned', () => {
+  it('serves an address other than the entity it answers, and reuses that entity\'s type', () => {
+    const builder = new SchemaBuilder({});
+    builder.queryType({});
+    builder.mutationType({});
+    const app = fakeApp(
+      [{ name: 'post', entityClass: Post }],
+      { articleHandler: { list: vi.fn(async () => []) } },
+      [{ address: 'article', operations: pickOps(crudOps('Post', Post), ['list']) }],
+    );
+
+    registerAll(builder, app);
+    const schema = builder.toSchema();
+
+    const articles = schema.getQueryType()!.getFields().articles!;
+    expect(String(articles.type)).toBe('ArticleList!');
+    expect(String((schema.getTypeMap()['ArticleList'] as any).getFields().items.type)).toBe('[Post!]!');
+  });
+
+  it('serves an address that names no entity', () => {
+    class Receipt extends entity({ reference: text() }) {}
+    const builder = new SchemaBuilder({});
+    builder.queryType({});
+    builder.mutationType({});
+    const app = fakeApp([], { checkoutHandler: { pay: vi.fn(async () => ({ reference: 'ch_1' })) } }, [{
+      address: 'checkout',
+      operations: new Map([['pay', {
+        kind: 'command',
+        output: Receipt,
+        signature: { name: 'pay', params: [], returnType: { raw: 'Receipt', name: 'Receipt' } },
+      }]]),
+    }]);
+
+    registerAll(builder, app);
+    const schema = builder.toSchema();
+
+    expect(Object.keys(schema.getMutationType()!.getFields())).toContain('pay');
   });
 });

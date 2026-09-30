@@ -32,7 +32,7 @@ function build(fronds: { name: string; handler: string; overrides?: Record<strin
       handlers: [{
         address: name === 'annotation' ? 'note' : 'chapter',
         ctor: { name: handler },
-        operations: new Map([['ofBook', { kind: 'query', signature: ofBook }]]),
+        operations: new Map([['ofBook', { kind: 'query', signature: ofBook, output: name === 'annotation' ? Note : Chapter }]]),
       }],
       presenters: [],
       operationsOverrides: overrides,
@@ -40,7 +40,8 @@ function build(fronds: { name: string; handler: string; overrides?: Record<strin
     presenterFor: () => undefined,
     resolve: () => { throw new Error('no such registration'); },
     facadeFor: () => ({ ofBook: async () => [] }),
-    operationsFor: () => new Map([['ofBook', { kind: 'query', signature: ofBook }]]),
+    operationsFor: (address: string) =>
+      new Map([['ofBook', { kind: 'query', signature: ofBook, output: address === 'note' ? Note : Chapter }]]),
   } as never;
 
   const builder = new SchemaBuilder({});

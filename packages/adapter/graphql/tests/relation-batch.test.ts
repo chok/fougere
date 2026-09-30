@@ -2,6 +2,7 @@ import SchemaBuilder from '@pothos/core';
 import { describe, expect, it } from 'vitest';
 import { entity, many, primary, ref, text } from '@fougere/schema';
 import { registerAll } from '../src/auto-register.js';
+import { served } from './served.js';
 
 /**
  * A relation is read once per PAGE, not once per row.
@@ -38,7 +39,10 @@ function build(userDoor: Record<string, Function>) {
     facadeFor: (name: string) => (name === 'order'
       ? { list: async () => orders, findById: async () => undefined }
       : userDoor),
-    operationsFor: () => new Map(),
+    operationsFor(this: any, address: string) {
+      return served(this.facadeFor(address), this.fronds.flatMap((frond: any) => frond.entities)
+        .find((entity: any) => entity.name === address)?.entityClass);
+    },
   } as never;
 
   const builder = new SchemaBuilder({});
@@ -157,7 +161,10 @@ describe('the many side of a relation', () => {
           },
         }
         : { list: async () => [] }),
-      operationsFor: () => new Map(),
+      operationsFor(this: any, address: string) {
+      return served(this.facadeFor(address), this.fronds.flatMap((frond: any) => frond.entities)
+        .find((entity: any) => entity.name === address)?.entityClass);
+    },
     } as never;
 
     const builder = new SchemaBuilder({});

@@ -752,6 +752,7 @@ function resolveOutputType(
     ? config.viewType(meta.output, opName)
     : undefined;
   const type = declared ?? config.type;
+  if (!type) return { type: undefined, isList: false, nullable: false };
 
   if (rt?.array) {
     return { type: [type], isList: false, nullable: false };
@@ -767,7 +768,7 @@ export function registerOperations(builder: InstanceType<typeof SchemaBuilder>, 
   // Pre-register list wrapper type if list op exists
   let listWrapperType: any;
   const listMeta = config.operations.get('list');
-  if (listMeta && typeof config.facade.list === 'function') {
+  if (listMeta && config.type && typeof config.facade.list === 'function') {
     listWrapperType = registerObjectType(builder, `${config.name}List`, {
       items:     { type: [config.type] },
       total:     {

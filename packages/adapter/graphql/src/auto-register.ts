@@ -101,7 +101,6 @@ interface EntityEntry {
   name: string;
   /** A live class in-process, a card from a frond whose class never crossed. */
   entityClass: SchemaView;
-  exposed?: boolean;
 }
 
 interface HandlerEntry {
@@ -112,9 +111,9 @@ interface HandlerEntry {
   address: string;
   operations: Map<string, OperationMeta>;
   surface?: string;
-  outputOverride?: SchemaView;
+  exposed?: boolean;
   /** `name` is the class's own — it names the handler when two ops claim one root field. */
-  ctor?: { __output?: SchemaView; name?: string };
+  ctor?: { name?: string };
 }
 
 interface PresenterFieldMeta {
@@ -146,10 +145,10 @@ interface FrondLike {
 
 interface AppLike {
   fronds: FrondLike[];
-  /** The façade an entity exposes to one audience — `undefined` when none. */
-  facadeFor(entity: string, surface?: string): Record<string, Function> | undefined;
+  /** The façade an address serves to one audience — `undefined` when none. */
+  facadeFor(address: string, surface?: string): Record<string, Function> | undefined;
   /** Canonical operation table produced by core. */
-  operationsFor(entity: string, surface?: string): Map<string, OperationMeta> | undefined;
+  operationsFor(address: string, surface?: string): Map<string, OperationMeta> | undefined;
   /** The presenter of an entity — `undefined` when none. */
   presenterFor(entity: string): unknown | undefined;
 }
@@ -173,8 +172,8 @@ function targetKey(target: unknown): string {
 // ─── Public API ─────────────────────────────────
 
 export interface RegisterAllOptions {
-  /** Override which entities to expose. Default: all scanned entities with a handler. */
-  filter?: (entity: EntityEntry, frondName: string) => boolean;
+  /** Keep only the addresses this answers true for. Default: every address served. */
+  filter?: (address: string, frondName: string) => boolean;
   /** Surface name for filtering (e.g. 'graphql', 'rest'). Uses frond.config.ts surfaces if set. */
   surface?: string;
 }
@@ -202,7 +201,7 @@ export function registerAll(
 ): void {
   // Collect registered types across all fronds for relation wiring, keyed by entity NAME.
   //
-  // The name is the identity everywhere else in the system — `facadeFor(entity)`,
+  // The name is the identity everywhere else in the system —
   // `storageFor(entity)`, `schemaFor(entity)` all take one, and the table, the GraphQL type
   // and the DI match are all derived from it. This registry keyed by class OBJECT was the
   // lone dissent, and it cost a silent failure: a relation target that is not the very
@@ -214,86 +213,101 @@ export function registerAll(
     {
       name: string;
       type: any;
-      facade: HandlerFacade;
+      /** The facade that lists the entity's rows — absent when no address does. */
+      facade?: HandlerFacade;
       presenterFields: Set<string>;
       /** The entity's OWN fields — pass 2 wires relations from these, not from an output view. */
       fields: Fields;
     }
   >();
 
-  // ── Pass 1: register types + operations ────────
+  // ── Pass 1: a type per schema an operation returns, a root field per operation ──
+  //
+  // A type is a projection of a SCHEMA, so it is built from what the operations answer; a root
+  // field is an operation at an ADDRESS, so it is built from the handlers. An entity is never
+  // where a call goes — `checkout.pay` names none, `article.list` answers `Post`.
+
+  const entities = app.fronds.flatMap((frond) => frond.entities.map((entity) => ({ entity, frond })));
+  const entityOf = (view: SchemaView): EntityEntry | undefined =>
+    entities.find(({ entity }) => entity.entityClass === view)?.entity;
+  const presenters = new Map(app.fronds.flatMap((frond) =>
+    (frond.presenters ?? []).map((presenter) => [registryKey(presenter.entityName), presenter] as const)));
+
+  /** The GraphQL type of an entity, built the first time an operation returns it. */
+  const entityType = (entity: EntityEntry): any => {
+    const known = typeRegistry.get(registryKey(entity.name));
+    if (known) return known.type;
+
+    const name = upperFirst(entity.name);
+    const presenterMeta = presenters.get(registryKey(entity.name));
+    const presenter = presenterMeta
+      ? app.presenterFor(entity.name) as Record<string, Function> | undefined
+      : undefined;
+    const type = registerType(builder, {
+      name,
+      entity: entity.entityClass as any,
+      presenter: presenter as any,
+      presenterFields: presenterMeta?.fields,
+      presenterFieldMeta: presenterMeta?.fieldMeta,
+      presenterViews: presenterMeta?.views as any,
+      viewType: (view, fieldName) => viewTypeOf(builder, view, `${name}${upperFirst(fieldName)}`),
+    });
+    // The presenter's computed field names travel too: pass 2 must not derive a relation over a
+    // name the author wrote.
+    typeRegistry.set(registryKey(entity.name), {
+      name, type,
+      presenterFields: new Set(presenterMeta?.fields ?? []),
+      fields: entity.entityClass.getFields(),
+    });
+
+    return type;
+  };
+
+  /** What an operation's declared output becomes: its entity's type, or a type of its own. */
+  const typeOf = (view: SchemaView, name: string): any => {
+    const entity = entityOf(view);
+
+    return entity ? entityType(entity) : viewTypeOf(builder, view, name);
+  };
 
   for (const frond of app.fronds) {
-    const handlerMap = new Map(frond.handlers.filter((h) => !h.surface).map((h) => [h.address, h]));
-    const presenterMap = new Map((frond.presenters ?? []).map((p) => [p.entityName, p]));
-
     const surfaceName = options?.surface;
 
-    for (const entity of frond.entities) {
+    for (const address of new Set(frond.handlers.map((handler) => handler.address))) {
       // Membership is core's answer, not ours — one rule, read here (see App.facadeFor).
-      const facade = app.facadeFor(entity.name, surfaceName) as HandlerFacade | undefined;
+      const facade = app.facadeFor(address, surfaceName) as HandlerFacade | undefined;
       if (!facade) continue;
-
-      if (options?.filter && !options.filter(entity, frond.name)) continue;
-      if (!surfaceName && entity.exposed === false) continue;
+      if (options?.filter && !options.filter(address, frond.name)) continue;
 
       const handler = (surfaceName
-        ? frond.handlers.find((h) => h.address === entity.name && h.surface === surfaceName)
-        : undefined) ?? handlerMap.get(entity.name);
-      const typeName = upperFirst(entity.name);
+        ? frond.handlers.find((h) => h.address === address && h.surface === surfaceName)
+        : undefined) ?? frond.handlers.find((h) => !h.surface && h.address === address);
+      if (!surfaceName && handler?.exposed === false) continue;
 
-      const presenterMeta = presenterMap.get(entity.name);
-      let presenter: Record<string, Function> | undefined;
-      if (presenterMeta) {
-        presenter = app.presenterFor(entity.name) as Record<string, Function> | undefined;
+      const operations = app.operationsFor(address, surfaceName);
+      if (!operations) {
+        throw new Error(`GraphQL cannot project '${address}' without its EffectiveOperation table.`);
       }
 
-      // Use handler's output schema if declared, otherwise entity
-      const outputSchema = handler?.outputOverride
-        ?? (handler?.ctor as any)?.__output
-        ?? entity.entityClass;
+      const name = upperFirst(address);
+      const rows = operations.get('list')?.output ?? operations.get('findById')?.output;
 
-      const type = registerType(builder, {
-        name: typeName,
-        entity: outputSchema as any,
-        presenter: presenter as any,
-        presenterFields: presenterMeta?.fields,
-        presenterFieldMeta: presenterMeta?.fieldMeta,
-        presenterViews: presenterMeta?.views as any,
-        viewType: (view, fieldName) => viewTypeOf(builder, view, `${typeName}${upperFirst(fieldName)}`),
-      });
-
-      // Track for relation wiring. The presenter's computed field names travel too: pass 2
-      // must not derive a relation over a name the author wrote.
-      typeRegistry.set(registryKey(entity.name), {
-        name: typeName, type, facade,
-        presenterFields: new Set(presenterMeta?.fields ?? []),
-        fields: entity.entityClass.getFields(),
-      });
-
-      const opOverrides = frond.operationsOverrides;
-
-      const operations = app.operationsFor(entity.name, surfaceName);
-      if (!operations) {
-        throw new Error(
-          `GraphQL cannot project '${entity.name}' without its EffectiveOperation table.`,
-        );
+      // A relation reads its target through the address that serves its rows.
+      const target = rows && entityOf(rows);
+      if (target) {
+        entityType(target);
+        typeRegistry.get(registryKey(target.name))!.facade ??= facade;
       }
 
       registerOperations(builder, {
-        name: typeName,
-        type,
+        name,
+        type: rows ? typeOf(rows, name) : undefined,
         facade,
         operations,
-        operationsOverrides: opOverrides,
+        operationsOverrides: frond.operationsOverrides,
         // Named so a root-field clash can say WHICH two handlers, in which fronds.
-        origin: `${frond.name}/${handler?.ctor?.name ?? `${typeName}Handler`}`,
-        // What an op declares as its return becomes its GraphQL type — unless that IS
-        // the entity's own schema, which already has one.
-        viewType: (view, opName) =>
-          view === outputSchema || view === entity.entityClass
-            ? type
-            : viewTypeOf(builder, view, `${typeName}${upperFirst(opName)}`),
+        origin: `${frond.name}/${handler?.ctor?.name ?? `${name}Handler`}`,
+        viewType: (view, opName) => typeOf(view, `${name}${upperFirst(opName)}`),
       });
     }
   }
@@ -308,7 +322,8 @@ export function registerAll(
         const target = Role.of(field).target;
         if (!target) continue;
         const targetEntry = typeRegistry.get(targetKey(target));
-        if (!targetEntry) continue;
+        const targetFacade = targetEntry?.facade;
+        if (!targetEntry || !targetFacade) continue;
 
         // authorId → author, user_id → user. Both spellings, because a foreign key
         // is named by its author and `/Id$/` alone left `user_id` untouched — the
@@ -322,7 +337,7 @@ export function registerAll(
         const nullable = Shapes.isNullable(field.shape);
 
         const targetKeyName = primaryNameOf(targetEntry.fields);
-        const targetList = targetEntry.facade.list;
+        const targetList = targetFacade.list;
         relationFields[relationName] = (t: any) => t.field({
           type: targetEntry.type,
           nullable,
@@ -332,14 +347,14 @@ export function registerAll(
             // A facade that serves no list — a handler narrowed to `findById` — keeps the
             // row-at-a-time path rather than losing the relation entirely.
             if (typeof targetList !== 'function') {
-              return targetEntry.facade.findById({ params: { id: fk }, query: {}, input: undefined, state: {} });
+              return targetFacade.findById({ params: { id: fk }, query: {}, input: undefined, state: {} });
             }
 
             return loadByKey(ctx, directionKey(targetKey(target), targetKeyName), String(fk), (ids) =>
               // The facade the `many` dual already uses, with a SET where it names one
               // value. Nothing new is published: a criterion learned to name several.
               readInSlices(ids, async (slice) => {
-                const result = await targetList.call(targetEntry.facade, {
+                const result = await targetList.call(targetFacade, {
                   params: {}, query: { where: { [targetKeyName]: slice } }, input: undefined, state: {},
                 }) as any;
                 const rows = Array.isArray(result) ? result : result?.items ?? result?.data ?? [];
@@ -355,7 +370,8 @@ export function registerAll(
         const target = Role.of(field).target;
         if (!target) continue;
         const targetEntry = typeRegistry.get(targetKey(target));
-        if (!targetEntry) continue;
+        const targetFacade = targetEntry?.facade;
+        if (!targetEntry || !targetFacade) continue;
 
         // Trouver la FK inverse sur l'entité cible (la relation « one » qui pointe ici).
         // Read off the registry, not off the target object: a target rebuilt from a card is
@@ -382,7 +398,7 @@ export function registerAll(
             // relation rendait alors TOUTE la table cible, sans un mot.
             return loadByKey(ctx, directionKey(targetKey(target), reverseFkName), String(id), (ids) =>
               readInSlices(ids, async (slice) => {
-                const result = await targetEntry.facade.list({
+                const result = await targetFacade.list({
                   params: {}, query: { where: { [reverseFkName]: slice } }, input: undefined, state: {},
                 }) as any;
                 const rows = Array.isArray(result) ? result : result?.items ?? result?.data ?? [];

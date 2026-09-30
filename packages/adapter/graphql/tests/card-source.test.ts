@@ -13,6 +13,7 @@ import SchemaBuilder from '@pothos/core';
 import { describe as suite, expect, it } from 'vitest';
 import { Card, entity, primary, ref, many, text, number, type EntityConstructor } from '@fougere/schema';
 import { registerAll } from '../src/auto-register.js';
+import { served } from './served.js';
 
 class Author extends entity({
   id: primary(),
@@ -49,7 +50,10 @@ function fakeApp(authorSchema: unknown, postSchema: unknown) {
     resolve: () => { throw new Error('no presenter'); },
     presenterFor: () => undefined,
     facadeFor: () => facade,
-    operationsFor: () => new Map(),
+    operationsFor(this: any, address: string) {
+      return served(this.facadeFor(address), this.fronds.flatMap((frond: any) => frond.entities)
+        .find((entity: any) => entity.name === address)?.entityClass);
+    },
   } as any;
 }
 
@@ -119,7 +123,10 @@ suite('the GraphQL projection reads a card as readily as a class', () => {
       resolve: () => { throw new Error('no presenter'); },
       presenterFor: () => undefined,
       facadeFor: () => facade,
-      operationsFor: () => new Map(),
+      operationsFor(this: any, address: string) {
+      return served(this.facadeFor(address), this.fronds.flatMap((frond: any) => frond.entities)
+        .find((entity: any) => entity.name === address)?.entityClass);
+    },
     } as any);
 
     const noteFields = (schema.getTypeMap()['Note'] as any).getFields();

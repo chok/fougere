@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { entity, primary, text } from '@fougere/schema';
 import { registerType } from '../src/OperationsConfig.js';
 import { registerAll } from '../src/auto-register.js';
+import { served } from './served.js';
 
 /**
  * A computed field says how MANY values it carries.
@@ -101,7 +102,10 @@ describe('the arity of a computed field', () => {
       resolve: () => ({ tags: () => [], excerpt: () => [] }),
       presenterFor: () => ({ tags: () => [], excerpt: () => [] }),
       facadeFor: () => ({ list: async () => [] }),
-      operationsFor: () => new Map(),
+      operationsFor(this: any, address: string) {
+      return served(this.facadeFor(address), this.fronds.flatMap((frond: any) => frond.entities)
+        .find((entity: any) => entity.name === address)?.entityClass);
+    },
     };
 
     const builder = new SchemaBuilder({});

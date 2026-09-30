@@ -1,4 +1,4 @@
-import type { Fields, SchemaView } from '@fougere/schema';
+import type { Fields } from '@fougere/schema';
 import { Visibility } from '@fougere/schema';
 import type { HttpMethod } from '@fougere/http';
 import type { HandlerEntry as CoreHandlerEntry } from '@fougere/core';
@@ -26,13 +26,8 @@ export interface RouteDefinition {
   // (`PresenterExecutor`), so the rows arrive computed and a second pass was duplicated work.
 }
 
-/** Only what this projection reads of a scanned handler — five fields of nine. */
-type HandlerEntry = Pick<CoreHandlerEntry, 'address' | 'surface' | 'exposed'> & {
-  /** `Crud(Post, PostPublic)` — the handler-wide output view, scoping every op. */
-  outputOverride?: SchemaView;
-  /** The scanned constructor, which carries the same statement made on the class. */
-  ctor?: (new (...args: never[]) => unknown) & { __output?: SchemaView };
-};
+/** Only what this projection reads of a scanned handler. */
+type HandlerEntry = Pick<CoreHandlerEntry, 'address' | 'surface' | 'exposed'>;
 // No `operations` here, and its absence is the point. It was declared, never read — this
 // file takes its table from `app.operationsFor()` — and it carried `OperationMeta`, whose
 // `kind` is REQUIRED because that is true of an EffectiveOperation. A scanned handler's
@@ -153,16 +148,12 @@ function routesOf(
     throw new Error(`REST cannot project '${address}' without its EffectiveOperation table.`);
   }
 
-  // `Crud(Post, PostPublic)` scopes every op of the handler; an op that states its own view wins.
-  const view: SchemaView | undefined = handler?.outputOverride ?? handler?.ctor?.__output;
-
   // The resolved table defines the public operation set. This also works for remote proxy
   // facades, which intentionally cannot enumerate their keys before discovery.
   return [...effectiveOperations.keys()].map((opName) => routeFor({
     address,
     frond,
     facade,
-    view,
     opName,
     meta: effectiveOperations.get(opName),
     options,
@@ -174,13 +165,12 @@ interface Projecting {
   address: string;
   frond: FrondLike;
   facade: HandlerFacade;
-  view: SchemaView | undefined;
   opName: string;
   meta: OperationMeta | undefined;
   options: GenerateRoutesOptions;
 }
 
-function routeFor({ address, frond, facade, view, opName, meta, options }: Projecting): RouteDefinition {
+function routeFor({ address, frond, facade, opName, meta, options }: Projecting): RouteDefinition {
   if (!meta) {
     throw new Error(
       `REST facade '${address}' exposes '${opName}' but its EffectiveOperation table does not.`,
@@ -208,21 +198,16 @@ function routeFor({ address, frond, facade, view, opName, meta, options }: Proje
     operationName: opName,
     address,
     handler: (invocation) => op(invocation),
-    ...inputAndOutput(meta, view),
+    ...inputAndOutput(meta),
     successStatus: override.status,
     ...(meta.description && { description: meta.description }),
   };
 }
 
 /** Both pass through the client-surface projections — write-only out, read-only in. */
-function inputAndOutput(
-  meta: OperationMeta,
-  view: SchemaView | undefined,
-): { inputFields: Fields | undefined; outputFields: Fields | undefined } {
-  const output = meta.output ?? view;
-
+function inputAndOutput(meta: OperationMeta): { inputFields: Fields | undefined; outputFields: Fields | undefined } {
   return {
     inputFields: meta.input ? Visibility.of(meta.input.getFields()).input : undefined,
-    outputFields: output ? Visibility.of(output.getFields()).output : undefined,
+    outputFields: meta.output ? Visibility.of(meta.output.getFields()).output : undefined,
   };
 }
