@@ -1,0 +1,85 @@
+{
+  "$defs": {
+    "user": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "x-fougere": {
+            "role": {
+              "primary": true
+            },
+            "lifecycle": {
+              "create": {
+                "generate": "cuid2"
+              },
+              "update": "forbidden"
+            }
+          }
+        },
+        "name": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string"
+        },
+        "emailVerified": {
+          "type": "boolean"
+        },
+        "image": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "x-fougere": {
+            "lifecycle": {
+              "create": "optional"
+            }
+          }
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "x-fougere": {
+            "lifecycle": {
+              "create": "now",
+              "update": "forbidden"
+            }
+          }
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "x-fougere": {
+            "lifecycle": {
+              "create": "now",
+              "update": "forbidden"
+            }
+          }
+        }
+      },
+      "x-fougere-version": 1,
+      "x-fougere-vendor": "fougere",
+      "title": "user",
+      "required": [
+        "name",
+        "email",
+        "emailVerified"
+      ],
+      "x-fougere-derived": {
+        "from": "User",
+        "nameOf": {
+          "id": "id",
+          "name": "name",
+          "email": "email",
+          "emailVerified": "emailVerified",
+          "image": "image",
+          "createdAt": "createdAt",
+          "updatedAt": "updatedAt"
+        }
+      }
+    }
+  },
+  "x-fougere-version": 1,
+  "x-fougere-vendor": "fougere"
+}

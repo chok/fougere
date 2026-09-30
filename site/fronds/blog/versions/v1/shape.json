@@ -1,0 +1,135 @@
+{
+  "$defs": {
+    "post": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "x-fougere": {
+            "role": {
+              "primary": true
+            },
+            "lifecycle": {
+              "create": {
+                "generate": "cuid2"
+              },
+              "update": "forbidden"
+            }
+          }
+        },
+        "slug": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160
+        },
+        "summary": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "maxLength": 300,
+          "x-fougere": {
+            "lifecycle": {
+              "create": "optional"
+            }
+          }
+        },
+        "body": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "x-fougere": {
+            "lifecycle": {
+              "create": "optional"
+            }
+          }
+        },
+        "authorId": {
+          "type": "string",
+          "x-fougere": {
+            "role": {
+              "relation": {
+                "to": "user",
+                "kind": "one"
+              }
+            },
+            "boundary": {
+              "in": "closed"
+            }
+          }
+        },
+        "authorName": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "x-fougere": {
+            "lifecycle": {
+              "create": "optional"
+            },
+            "boundary": {
+              "in": "closed"
+            }
+          }
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "x-fougere": {
+            "lifecycle": {
+              "create": "now",
+              "update": "forbidden"
+            }
+          }
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "draft",
+            "published"
+          ],
+          "x-fougere": {
+            "lifecycle": {
+              "create": {
+                "value": "draft"
+              }
+            },
+            "boundary": {
+              "in": "closed"
+            }
+          }
+        },
+        "publishedAt": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time",
+          "x-fougere": {
+            "lifecycle": {
+              "create": "optional"
+            },
+            "boundary": {
+              "in": "closed"
+            }
+          }
+        }
+      },
+      "x-fougere-version": 1,
+      "x-fougere-vendor": "fougere",
+      "title": "post",
+      "required": [
+        "slug",
+        "title"
+      ]
+    }
+  },
+  "x-fougere-version": 1,
+  "x-fougere-vendor": "fougere"
+}
