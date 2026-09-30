@@ -43,6 +43,11 @@ export default class MigrateCommand {
     for (const warning of result.warnings) this.ui.warn(warning);
 
     const planned = result.changes.length + result.added.length;
+    if (planned === 0 && result.warnings.length > 0) {
+      this.ui.info('Nothing to add. What is warned above stays as it is: an existing column is never altered.');
+
+      return;
+    }
     if (planned === 0) {
       this.ui.success('Up to date — the database holds what the entities declare.');
 
