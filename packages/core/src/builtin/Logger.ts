@@ -119,6 +119,16 @@ export class Logger {
 const objectOf = (arg: unknown): object =>
   typeof arg === 'object' && arg !== null && !Array.isArray(arg) ? arg : { value: arg };
 
+/**
+ * The operation as the line's writer sees it: bare when the writer is the class that runs it —
+ * `app:blog:PostHandler (publish)` — and whole when a service writes during another's.
+ */
+function operationSeenFrom(name: string, during: string): string {
+  const dot = during.lastIndexOf('.');
+
+  return name.endsWith(`:${during.slice(0, dot)}`) ? during.slice(dot + 1) : during;
+}
+
 export function formatted(
   record: Rendered,
   color = supportsColor(),
@@ -126,7 +136,7 @@ export function formatted(
   const style = LEVEL_STYLE[record.level];
   const time = stamp(record.at);
   const method = record.level;
-  const during = record.during ? ` (${record.during})` : '';
+  const during = record.during ? ` (${operationSeenFrom(record.name, record.during)})` : '';
 
   if (color) {
     const c = COLORS[style.color];

@@ -85,7 +85,7 @@ describe('a line says what it was written during', () => {
     await createLocalRunner(app)({ entity: 'post', op: 'publish' }, Invocation.empty);
 
     expect(lines.find((line) => line.includes('price recomputed'))).toContain('(blog:PostHandler.publish)');
-    expect(lines.find((line) => line.includes('author read'))).toContain('(people:AuthorHandler.findById)');
+    expect(lines.find((line) => line.includes('author read'))).toContain('[app:people:AuthorHandler] (findById)');
     expect(around).toEqual(['blog:PostHandler.publish']);
   });
 
