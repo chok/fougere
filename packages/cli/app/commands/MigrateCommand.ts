@@ -8,7 +8,7 @@ import { machineWanted, printMachine } from '../../src/machine.js';
 type Ui = ReturnType<typeof createUi>;
 
 /**
- * Bringing a database up to what the entities declare.
+ * Bringing a database up to what `fougere freeze` recorded — or, with `--latest`, to the entities.
  *
  * Prints by default and moves nothing: what this runs renames and drops columns, so the
  * plan is read before it is agreed to. `--apply` is that agreement.
@@ -22,6 +22,7 @@ export default class MigrateCommand {
       { params: {}, query: {}, input: raw, state: {} },
     )) as MigrationPlan;
 
+    if (result.refusals.length > 0) process.exitCode = 1;
     if (machineWanted(raw)) return printMachine(result);
 
     if (result.refusals.length > 0) {

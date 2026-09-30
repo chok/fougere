@@ -1,8 +1,8 @@
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { Bundle, lowerFirst, type SchemaBundle, type SchemaView, type SetDiff } from '@fougere/schema';
 import ProjectScan from '../services/ProjectScan.js';
-import { VERSIONS, chainOf } from '../versions.js';
+import { VERSIONS, lastVersionOf, shapesOf } from '../versions.js';
 import type Freeze from '../entities/Freeze.js';
 
 export interface FreezeInspection {
@@ -107,11 +107,9 @@ export default class FreezeHandler {
         .filter((frond) => frond.entities.length > 0)
         .map(async (frond) => ({
           path: frond.source.path,
-          bundle: Bundle.fromSchemas(
-            Object.fromEntries(frond.entities.map((e) => [e.name, e.entityClass])),
-          ).descriptor,
+          bundle: shapesOf(frond.entities),
           declared: declaredRenames(frond.entities),
-          previous: await previousOf(frond.source.path, input.version),
+          previous: await lastVersionOf(frond.source.path, input.version),
         })),
     );
   }
@@ -169,15 +167,4 @@ function merge(inspected: readonly Inspected[]): SetDiff | undefined {
     entitiesAdded: steps.flatMap((step) => step.entitiesAdded),
     entitiesRemoved: steps.flatMap((step) => step.entitiesRemoved),
   };
-}
-
-/** The version this one steps from: the tip of the chain, the links read rather than sorted. */
-async function previousOf(root: string, version: string): Promise<{ name: string; bundle: SchemaBundle } | undefined> {
-  const chain = (await chainOf(root)).filter((cut) => cut.name !== version);
-  const last = chain.at(-1)?.name;
-  if (!last) return undefined;
-
-  const raw = await readFile(join(root, VERSIONS, last, 'shape.json'), 'utf8').catch(() => undefined);
-
-  return raw ? { name: last, bundle: JSON.parse(raw) as SchemaBundle } : undefined;
 }

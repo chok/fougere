@@ -1,9 +1,9 @@
 import { loadConfig } from '@fougere/core/node';
 import type { App } from '@fougere/core';
 import type { Plan, StepChange } from '@fougere/adapter-sql';
-import { Card, lowerFirst, type Change, type SetDiff } from '@fougere/schema';
+import { Bundle, Card, lowerFirst, type Change, type SchemaView, type SetDiff } from '@fougere/schema';
 import ProjectScan from '../services/ProjectScan.js';
-import { chainOf } from '../versions.js';
+import { chainOf, lastVersionOf, shapesOf } from '../versions.js';
 import type Migrate from '../entities/Migrate.js';
 
 export interface MigrationPlan {
@@ -21,7 +21,11 @@ export interface MigrationPlan {
 }
 
 /**
- * Bringing the database up to what the entities declare — the one place a schema is written.
+ * Bringing the database up to what `fougere freeze` recorded — the one place a schema is written.
+ *
+ * A frond whose entities are not its last frozen version is refused before any database is
+ * opened: a database another person or process shares receives what was frozen, reviewed and
+ * committed, never what happens to be on disk. `latest` lifts that for a local database.
  *
  * The app is booted as its host would boot it, with the schema check and the seeds left out:
  * the check would refuse the very database this is here to bring up, and a migration plants no
@@ -45,6 +49,9 @@ export default class MigrateHandler {
     const perFrond = await Promise.all(scan.fronds.map((frond) => stepsOf(frond.source.path)));
     const steps = perFrond.flat();
     const chain = versionsOf(steps);
+
+    const unfrozen = input.latest ? [] : await unfrozenIn(scan.fronds);
+    if (unfrozen.length > 0) return { chain, changes: [], added: [], warnings: [], ran: [], refusals: unfrozen };
 
     const config = await loadConfig(scan.root);
     const { bootApp, resolveStorage } = await import('@fougere/defaults');
@@ -115,6 +122,28 @@ export default class MigrateHandler {
       await storage.close?.();
     }
   }
+}
+
+/** What was never frozen, or moved since its last version — one refusal per frond or per entity. */
+async function unfrozenIn(
+  fronds: readonly { name: string; source: { path: string }; entities: readonly { name: string; entityClass: SchemaView }[] }[],
+): Promise<Plan['refusals']> {
+  const refusals: Plan['refusals'] = [];
+  for (const frond of fronds.filter((one) => one.entities.length > 0)) {
+    const last = await lastVersionOf(frond.source.path);
+    if (!last) {
+      refusals.push({ entity: frond.name, field: '*', reason: 'never frozen — fougere freeze v1, or migrate --latest on a local database' });
+      continue;
+    }
+
+    const step = Bundle.fromDescriptor(last.bundle).diff(Bundle.fromDescriptor(shapesOf(frond.entities)));
+    const moved = [...Object.keys(step.entities), ...step.entitiesAdded, ...step.entitiesRemoved];
+    for (const entity of moved) {
+      refusals.push({ entity, field: '*', reason: `changed since ${last.name} — freeze it (fougere freeze <version>), or migrate --latest on a local database` });
+    }
+  }
+
+  return refusals;
 }
 
 /**

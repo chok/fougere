@@ -1,6 +1,6 @@
 import { readFile, readdir } from 'node:fs/promises';
 import { join } from 'node:path';
-import type { SetDiff } from '@fougere/schema';
+import { Bundle, type SchemaBundle, type SchemaView, type SetDiff } from '@fougere/schema';
 
 /**
  * Where a FROND keeps what its shapes used to be — beside `entities/`, not under a dot.
@@ -56,4 +56,20 @@ export async function chainOf(frondPath: string): Promise<Version[]> {
   }
 
   return chain;
+}
+
+/** The tip of a frond's chain and its shapes there — `except` leaves out the version being cut. */
+export async function lastVersionOf(frondPath: string, except?: string): Promise<{ name: string; bundle: SchemaBundle } | undefined> {
+  const chain = (await chainOf(frondPath)).filter((cut) => cut.name !== except);
+  const last = chain.at(-1)?.name;
+  if (!last) return undefined;
+
+  const raw = await readFile(join(frondPath, VERSIONS, last, 'shape.json'), 'utf8').catch(() => undefined);
+
+  return raw ? { name: last, bundle: JSON.parse(raw) as SchemaBundle } : undefined;
+}
+
+/** A frond's shapes today, keyed as a version records them. */
+export function shapesOf(entities: readonly { name: string; entityClass: SchemaView }[]): SchemaBundle {
+  return Bundle.fromSchemas(Object.fromEntries(entities.map((entry) => [entry.name, entry.entityClass]))).descriptor;
 }
