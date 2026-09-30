@@ -88,7 +88,7 @@ async function main() {
     if (!author) fail('Author entity not in identity card');
     // Hosting means answering: the card carries the ops, not just the shape.
     if (!post.ops?.some((o: { name: string }) => o.name === 'list')) fail('Post ops missing from identity card');
-    if (!post.schema?.properties) fail('Post schema missing from identity card');
+    if (!blogFrond.entities.find((e: any) => e.name === 'post')?.schema?.properties) fail('Post schema missing from identity card');
     pass(`rpc.discover returns ${blogFrond.facades.length} facades with their ops, and ${blogFrond.facts.length} fact(s)`);
 
     // 3. Test REST API works

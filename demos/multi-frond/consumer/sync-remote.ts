@@ -22,7 +22,8 @@ const CWD = import.meta.dirname;
 interface IdentityCard {
   fronds: {
     name: string;
-    facades: { name: string; ops: { name: string }[]; schema?: SchemaDescriptor }[];
+    entities: { name: string; schema: SchemaDescriptor }[];
+    facades: { name: string; ops: { name: string }[] }[];
     facts?: { name: string; schema?: SchemaDescriptor }[];
   }[];
 }
@@ -35,7 +36,7 @@ async function sync() {
   console.log(`Syncing from ${REMOTE_URL}/_fougere/call (rpc.discover) ...`);
 
   // The envelope every consumer already speaks — no side endpoint. It answers
-  // with what the host SERVES: an entity with no façade is absent, so a synced
+  // with what the host SERVES: an entity no operation reaches is absent, so a synced
   // schema always has something to call on it.
   const res = await fetch(`${REMOTE_URL}/_fougere/call`, {
     method: 'POST',
@@ -54,10 +55,9 @@ async function sync() {
 
     const entityNames: string[] = [];
 
-    // Facades and facts alike: both give a class when they carry a shape. A facade with none
-    // is a health check or a search across shapes; a fact with none announces a type the
-    // host does not store. Neither produces a file.
-    const shaped = [...frond.facades, ...(frond.facts ?? [])]
+    // Entities and facts alike give a class. A fact with no shape announces a type the host
+    // does not store, and produces no file.
+    const shaped = [...frond.entities, ...(frond.facts ?? [])]
       .flatMap(({ schema }) => (schema ? [schema] : []));
 
     for (const descriptor of shaped) {

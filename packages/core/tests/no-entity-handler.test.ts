@@ -60,7 +60,7 @@ describe('a handler with no entity', () => {
 
     expect(health?.ops.map((op) => op.name)).toEqual(['check']);
     // No shape, and that is the fact rather than an empty one: nothing is stored.
-    expect(health?.schema).toBeUndefined();
+    expect(card.fronds[0].entities).toEqual([]);
   });
 
   it('carries its named surface into the card too', async () => {

@@ -92,16 +92,17 @@ describe('card → TypeScript type', () => {
 });
 
 describe('card → façade type', () => {
+  const post = { type: 'object', title: 'post', properties: {} } as never;
   const ops = [
-    { name: 'list', cardinality: 'page' as const, description: 'Every post.' },
-    { name: 'findById', cardinality: 'maybe' as const },
-    { name: 'create', cardinality: 'one' as const },
+    { name: 'list', cardinality: 'page' as const, description: 'Every post.', output: post },
+    { name: 'findById', cardinality: 'maybe' as const, output: post },
+    { name: 'create', cardinality: 'one' as const, output: post },
     { name: 'delete', cardinality: 'none' as const },
-    { name: 'search', cardinality: 'many' as const },
+    { name: 'search', cardinality: 'many' as const, output: post },
   ];
 
   it('says how much comes back, not only what shape', () => {
-    const source = FacadeTypes.of(ops).render({ name: 'PostFacade', rowType: 'Post' });
+    const source = FacadeTypes.of(ops).render({ name: 'PostFacade', rows: { post: 'Post' } });
 
     // The trap this field exists to avoid: `list` does NOT return `Post[]`.
     // `ListResult<T> extends Array<T>` — an array carrying its own totals.
@@ -115,12 +116,12 @@ describe('card → façade type', () => {
   });
 
   it('carries the operation\'s own doc sentence', () => {
-    expect(FacadeTypes.of(ops).render({ rowType: 'Post' })).toContain('/** Every post. */');
+    expect(FacadeTypes.of(ops).render({ rows: { post: 'Post' } })).toContain('/** Every post. */');
   });
 
   it('does not guess when the card gives no cardinality', () => {
     // A silent card must produce `unknown`, not a guess that compiles.
-    expect(FacadeTypes.of([{ name: 'weekly' }]).render({ rowType: 'Post' }))
+    expect(FacadeTypes.of([{ name: 'weekly' }]).render({ rows: { post: 'Post' } }))
       .toContain('weekly(invocation?: Invocation): Promise<unknown>;');
   });
 });
@@ -155,7 +156,7 @@ describe('a description cannot stop being a comment', () => {
 
   it('escapes the terminator in an operation description', () => {
     const source = FacadeTypes.of([{ name: 'list', cardinality: 'many', description: payload }]).render({
-      rowType: 'Post',
+      rows: { post: 'Post' },
     });
 
     expect(source).toContain('/** *\\/ } console.log("pwned"); interface X { */');

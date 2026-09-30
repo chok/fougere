@@ -122,7 +122,8 @@ describe('createLocalRunner', () => {
     const catalog = card.fronds.find((f) => f.name === 'catalog')!;
     const product = catalog.facades.find((e) => e.name === 'product')!;
     expect(product.ops.map((o) => o.name)).toEqual(expect.arrayContaining(['list', 'findById', 'search']));
-    expect(product.schema).toBeTruthy();
+    // Every op of `product` answers a view, never the entity: its shape is not published.
+    expect(catalog.entities).toEqual([]);
 
     // An op carries its terms, not just its name: what it is for (the author's own
     // doc sentence), what it takes, and whether it reads or writes.

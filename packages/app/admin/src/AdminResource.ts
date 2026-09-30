@@ -68,7 +68,14 @@ export function capabilitiesOf(operations: readonly Pick<AdminOperation, 'name'>
   };
 }
 
-/** A facade with no schema is not a resource. */
+/** The entity a facade's rows are — what its `list`, else its `findById`, answers. */
+function rowsOf(facade: IdentityCard['fronds'][number]['facades'][number]): string | undefined {
+  const reads = facade.ops.find((op) => op.name === 'list') ?? facade.ops.find((op) => op.name === 'findById');
+
+  return reads?.output?.title;
+}
+
+/** A facade that answers no entity's rows is not a resource. */
 export function resourcesOf(card: IdentityCard): AdminResource[] {
   const out: AdminResource[] = [];
   // Every schema first, so a reference is resolved to the entity it names — its fields say which one
@@ -76,13 +83,14 @@ export function resourcesOf(card: IdentityCard): AdminResource[] {
   const schemas = new Map<string, SchemaView>();
   const resolve = (name: string) => schemas.get(lowerFirst(name)) as never;
   for (const frond of card.fronds) {
-    for (const facade of frond.facades) {
-      if (facade.schema) schemas.set(facade.name, Card.fromDescriptor(facade.schema).toSchema(resolve) as unknown as SchemaView);
+    for (const stored of frond.entities) {
+      schemas.set(stored.name, Card.fromDescriptor(stored.schema).toSchema(resolve) as unknown as SchemaView);
     }
   }
   for (const frond of card.fronds) {
     for (const facade of frond.facades) {
-      const entity = schemas.get(facade.name);
+      const rows = rowsOf(facade);
+      const entity = rows === undefined ? undefined : schemas.get(rows);
       if (!entity) continue;
       const primary = FieldSet.of(entity.getFields()).primary;
       // No primary means no row identity — a list could be drawn, but nothing could be

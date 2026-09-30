@@ -24,9 +24,8 @@ describe('remote frond sync', () => {
       result: {
         fronds: [{
           name: 'blog',
-          facades: [{
+          entities: [{
             name: 'post',
-            ops: [],
             schema: {
               title: "Post; await import('node:fs')",
               type: 'object',
@@ -35,6 +34,7 @@ describe('remote frond sync', () => {
               'x-fougere-vendor': 'fougere',
             },
           }],
+          facades: [{ name: 'post', ops: [] }],
         }],
       },
     }), { status: 200 })));
@@ -64,21 +64,21 @@ describe('remote frond sync', () => {
       result: {
         fronds: [{
           name: 'ops',
+          entities: [{
+            name: 'ticket',
+            schema: {
+              type: 'object',
+              properties: { id: { type: 'string' } },
+              'x-fougere-version': 1,
+              'x-fougere-vendor': 'fougere',
+            },
+          }],
           facades: [
-            // A health check owns no rows, so the card publishes ops and no schema. This
+            // A health check owns no rows, so the card publishes ops and no entity. This
             // used to throw `has no valid schema descriptor` and take the card with it,
             // so ONE entity-less handler on the host made `sync` useless for the rest.
             { name: 'health', ops: [{ name: 'check', kind: 'query' }] },
-            {
-              name: 'ticket',
-              ops: [{ name: 'list', kind: 'query' }],
-              schema: {
-                type: 'object',
-                properties: { id: { type: 'string' } },
-                'x-fougere-version': 1,
-                'x-fougere-vendor': 'fougere',
-              },
-            },
+            { name: 'ticket', ops: [{ name: 'list', kind: 'query' }] },
           ],
         }],
       },
@@ -112,11 +112,8 @@ describe('remote frond sync', () => {
       result: {
         fronds: [{
           name: 'blog',
-          facades: [{
-            name: '../../escape',
-            ops: [],
-            schema: { type: 'object', properties: {}, 'x-fougere-version': 1, 'x-fougere-vendor': 'fougere' },
-          }],
+          entities: [],
+          facades: [{ name: '../../escape', ops: [] }],
         }],
       },
     }), { status: 200 })));
@@ -170,6 +167,9 @@ describe('remote frond sync', () => {
               { name: 'create', kind: 'command', input: { type: 'object', properties: {} } },
               { name: 'publish', kind: 'command', description: 'Make the post public.' },
             ],
+          }],
+          entities: [{
+            name: 'post',
             schema: {
               title: 'Post',
               type: 'object',
@@ -213,6 +213,9 @@ describe('remote frond sync', () => {
               { name: 'list', kind: 'query' },
               { name: 'publish', kind: 'command', errors: ['CONFLICT', 'FORBIDDEN', 'MADE_UP_CODE'] },
             ],
+          }],
+          entities: [{
+            name: 'post',
             schema: { title: 'Post', type: 'object', properties: {}, 'x-fougere-version': 1, 'x-fougere-vendor': 'fougere' },
           }],
         }],
@@ -238,6 +241,31 @@ describe('remote frond sync', () => {
     }
   });
 
+  it('types each operation by what IT answers, not by the name of its address', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'fougere-sync-'));
+    process.chdir(root);
+    const post = { title: 'post', type: 'object', properties: {}, 'x-fougere-version': 1, 'x-fougere-vendor': 'fougere' };
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({
+      result: {
+        fronds: [{
+          name: 'blog',
+          entities: [{ name: 'post', schema: post }],
+          facades: [{ name: 'article', ops: [{ name: 'list', kind: 'query', cardinality: 'many', output: post }] }],
+        }],
+      },
+    }), { status: 200 })));
+
+    try {
+      await new SyncHandler().execute({ frond: 'blog', from: 'https://example.test' });
+      const handler = readFileSync(join(root, '.fougere', 'remotes', 'blog', 'handlers', 'ArticleHandler.ts'), 'utf8');
+
+      expect(handler).toContain("import type { Post } from '../entities/Post.js';");
+      expect(handler).toContain('list(invocation?: Invocation): Promise<Post[]>;');
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
   /**
    * What the host stops serving stops being importable.
    *
@@ -254,7 +282,8 @@ describe('remote frond sync', () => {
       result: {
         fronds: [{
           name: 'blog',
-          facades: names.map((name) => ({ name, ops: [{ name: 'list', kind: 'query' }], schema: shape })),
+          entities: names.map((name) => ({ name, schema: shape })),
+          facades: names.map((name) => ({ name, ops: [{ name: 'list', kind: 'query' }] })),
           facts: [],
         }],
       },
@@ -308,7 +337,8 @@ describe('remote frond sync', () => {
       result: {
         fronds: [{
           name: 'blog',
-          facades: [{ name: 'post', ops: [{ name: 'list', kind: 'query' }], schema: shape({ id: { type: 'string' } }) }],
+          entities: [{ name: 'post', schema: shape({ id: { type: 'string' } }) }],
+          facades: [{ name: 'post', ops: [{ name: 'list', kind: 'query' }] }],
           facts: [
             { name: 'postPublished', schema: shape({ id: { type: 'string' }, title: { type: 'string' } }) },
             // Announced without a declared shape: legal, and nothing to write. A class

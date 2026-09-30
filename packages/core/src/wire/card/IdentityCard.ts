@@ -7,18 +7,19 @@ import type { CardOp } from './CardOp.js';
 export interface IdentityCard {
   fronds: {
     name: string;
-    facades: {
-      name: string;
-      ops: CardOp[];
-      /** The shape stored under this name — **absent when nothing is**. */
-      schema?: SchemaDescriptor;
-    }[];
+    /** What the frond STORES — one schema per entity, under the entity's name. */
+    entities: { name: string; schema: SchemaDescriptor }[];
+    /**
+     * What the frond ANSWERS — one entry per address, each op carrying its own input and output.
+     * An output that IS an entity is titled with the entity's name.
+     */
+    facades: { name: string; ops: CardOp[] }[];
     /** The facts this frond ANNOUNCES — one entry per `Emit<T>` its handlers inject. */
     facts: { name: string; schema?: SchemaDescriptor }[];
   }[];
 }
 
-/** The shape a card must have to be walked — `fronds`, and each frond's `facades`. */
+/** The shape a card must have to be walked — `fronds`, and each frond's `entities` and `facades`. */
 export function assertIdentityCard(value: unknown, source: string): IdentityCard {
   const card = value as IdentityCard | undefined;
   const fronds = Array.isArray(card?.fronds) ? card.fronds : undefined;
@@ -26,6 +27,7 @@ export function assertIdentityCard(value: unknown, source: string): IdentityCard
   for (const frond of fronds) {
     if (!frond || typeof frond.name !== 'string') throw cardRefusal(source, 'a frond with no name');
     if (!Array.isArray(frond.facades)) throw cardRefusal(source, `frond '${frond.name}' has no valid facades array`);
+    if (!Array.isArray(frond.entities)) throw cardRefusal(source, `frond '${frond.name}' has no valid entities array`);
   }
 
   return card as IdentityCard;

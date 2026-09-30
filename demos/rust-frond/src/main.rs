@@ -158,11 +158,11 @@ fn identity_card(state: &AppState) -> Value {
     json!({
         "fronds": [{
             "name": "telemetry",
-            // Deux listes, duales : ce qu'on peut APPELER, et ce qui SORT tout seul.
+            // Ce qu'on STOCKE, ce qu'on peut APPELER, et ce qui SORT tout seul.
+            "entities": [{ "name": "sensor", "schema": sensor_card() }],
             "facades": [{
                 "name": "sensor",
-                "ops": state.ops.clone(),
-                "schema": sensor_card()
+                "ops": state.ops.clone()
             }],
             // Ce frond n'annonce aucun fait. Le dire vaut mieux que l'omettre : la liste
             // vide est une réponse, l'absence est un doute sur la version d'en face.
@@ -335,9 +335,9 @@ async fn main() {
             Sensor::record("cuve-sud".into(), 5.1),
         ]),
         ops: json!([
-            { "name": "list",     "kind": "query",   "description": "Toutes les mesures connues, la plus récente d'abord." },
-            { "name": "findById", "kind": "query",   "description": "Une mesure, désignée par son identifiant." },
-            { "name": "record",   "kind": "command", "description": "Enregistre une mesure. Le frond estampille l'instant et le checksum." }
+            { "name": "list",     "kind": "query",   "output": sensor_card(), "description": "Toutes les mesures connues, la plus récente d'abord." },
+            { "name": "findById", "kind": "query",   "output": sensor_card(), "description": "Une mesure, désignée par son identifiant." },
+            { "name": "record",   "kind": "command", "output": sensor_card(), "description": "Enregistre une mesure. Le frond estampille l'instant et le checksum." }
         ]),
     });
 

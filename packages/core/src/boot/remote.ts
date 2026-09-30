@@ -14,7 +14,7 @@ import { Invocation } from '../wire/Invocation.js';
 import { type InvocationContext } from '../wire/InvocationContext.js';
 import { ErrorCode } from '../wire/ErrorCode.js';
 import { FougereError } from '../wire/FougereError.js';
-import { Card, type SchemaView, type SchemaDescriptor } from '@fougere/schema';
+import { Card, type SchemaView } from '@fougere/schema';
 import { dynamicOperations } from '../entry/facade.js';
 import { decoded } from '../dispatch/decoded.js';
 
@@ -22,23 +22,26 @@ interface Route {
   frond: string;
   transport: Transport;
   /**
-   * The entity's schema, rebuilt from the identity card — the same `SchemaConstructor` shape
-   * `entity({...})` produces, live validation included.
+   * What each operation answers, rebuilt from the identity card — the same `SchemaConstructor`
+   * shape `entity({...})` produces, live validation included.
    */
-  schema?: SchemaView;
+  outputs: Map<string, SchemaView>;
 }
 
 export interface RemoteRouter {
   route(address: string): Promise<Route>;
+  /** The schema a remote STORES under an entity's name — `undefined` when none does. */
+  schemaOf(entity: string): Promise<SchemaView | undefined>;
 }
 
 export function createRemoteRouter(
   remotes: Record<string, string>,
   makeTransport: (url: string) => Transport,
 ): RemoteRouter {
-  const byEntity = new Map<string, Route>();
+  const byAddress = new Map<string, Route>();
+  const stored = new Map<string, SchemaView>();
   // The remotes config key is a label for the address — the identity card is
-  // what decides which entities live behind it.
+  // what decides which addresses answer behind it.
   const pending = new Map(Object.entries(remotes));
   const transports = new Map<string, Transport>();
 
@@ -70,14 +73,20 @@ export function createRemoteRouter(
       if (!answered) continue;
 
       pending.delete(answered.label);
-      claimFacades(answered, byEntity, claimedBy);
+      claimFacades(answered, byAddress, claimedBy);
+      storedBy(answered, stored);
     }
   };
 
   return {
+    async schemaOf(entity) {
+      if (!stored.has(entity) && pending.size > 0) await discover();
+
+      return stored.get(entity);
+    },
     async route(address) {
-      if (!byEntity.has(address) && pending.size > 0) await discover();
-      const hit = byEntity.get(address);
+      if (!byAddress.has(address) && pending.size > 0) await discover();
+      const hit = byAddress.get(address);
       if (hit) return hit;
       if (pending.size > 0) {
         throw new FougereError({
@@ -107,7 +116,7 @@ export function createRemoteFacade(
   shape: StateShape,
 ): Facade {
   const opFn = (op: string) => async (received: InvocationContext = Invocation.empty) => {
-    const { frond, transport, schema } = await router.route(address);
+    const { frond, transport, outputs } = await router.route(address);
     const call: FrondCall = { frond, address, op };
     const state = received.crossed ? { ...received.state } : shape.judge(received.state, address, op);
     const invocation = { ...received, state };
@@ -119,11 +128,9 @@ export function createRemoteFacade(
       transport(call, { ...(ctx.invocation ?? invocation), state: shape.judge(ctx.state, address, op, entered) }))
       .catch((error: unknown) => { throw error instanceof FougereError ? error.at(address, op) : error; });
 
-    // The schema the card carried, put to work: a row crosses as data and comes back through
-    // the same codecs a local facade applies, so a placement does not decide what a caller
-    // holds. It is the ENTITY's — an op serving a narrower view is the far side's business,
-    // and what this card names is the shape it publishes.
-    return decoded(schema, answer);
+    // What the op says it answers, put to work: a row crosses as data and comes back through
+    // the same codecs a local facade applies, so a placement does not decide what a caller holds.
+    return decoded(outputs.get(op), answer);
   };
 
   return dynamicOperations(opFn) as Facade;
@@ -144,7 +151,7 @@ interface Answered {
  */
 function claimFacades(
   { label, url, transport, answer }: Answered,
-  byEntity: Map<string, Route>,
+  byAddress: Map<string, Route>,
   claimedBy: Map<string, string>,
 ): void {
   const card = assertIdentityCard(answer, `Remote '${label}' (${url})`);
@@ -165,11 +172,19 @@ function claimFacades(
       }
 
       claimedBy.set(facade.name, label);
-      byEntity.set(facade.name, {
+      byAddress.set(facade.name, {
         frond: frond.name,
         transport,
-        ...(facade.schema ? { schema: Card.fromDescriptor(facade.schema as SchemaDescriptor).toSchema() } : {}),
+        outputs: new Map(facade.ops.flatMap((op) =>
+          op.output ? [[op.name, Card.fromDescriptor(op.output).toSchema()] as const] : [])),
       });
     }
+  }
+}
+
+/** What each remote stores, by entity name — what `schemaFor` answers for a row kept elsewhere. */
+function storedBy({ label, url, answer }: Answered, stored: Map<string, SchemaView>): void {
+  for (const frond of assertIdentityCard(answer, `Remote '${label}' (${url})`).fronds) {
+    for (const entity of frond.entities) stored.set(entity.name, Card.fromDescriptor(entity.schema).toSchema());
   }
 }

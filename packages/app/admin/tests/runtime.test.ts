@@ -9,10 +9,10 @@ class Post extends entity({ id: primary(), title: text() }) {}
 const card: IdentityCard = {
   fronds: [{
     name: 'blog',
+    entities: [{ name: 'post', schema: Card.fromSchema(Post, 'post').descriptor }],
     facades: [{
       name: 'post',
-      schema: Card.fromSchema(Post, 'post').descriptor,
-      ops: [{ name: 'list', kind: 'query', cardinality: 'page' }],
+      ops: [{ name: 'list', kind: 'query', cardinality: 'page', output: Card.fromSchema(Post, 'post').descriptor }],
     }],
     facts: [],
   }],

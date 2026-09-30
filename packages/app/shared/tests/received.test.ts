@@ -16,7 +16,14 @@ const card = {
   app: 'test',
   fronds: [{
     name: 'blog',
-    facades: [{ name: 'post', ops: [], schema: Card.fromSchema(Post).descriptor }],
+    entities: [{ name: 'post', schema: Card.fromSchema(Post, 'post').descriptor }],
+    facades: [{
+      name: 'post',
+      ops: [
+        { name: 'list', kind: 'query', output: Card.fromSchema(Post, 'post').descriptor },
+        { name: 'findById', kind: 'query', output: Card.fromSchema(Post, 'post').descriptor },
+      ],
+    }],
     facts: [],
   }],
 };

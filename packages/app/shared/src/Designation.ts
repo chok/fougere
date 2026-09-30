@@ -16,7 +16,7 @@ import { frameCall, unframeResponse, type RpcResponse } from '@fougere/transport
 import type { EntityClass } from './EntityClass.js';
 import type { CallInput } from './CallInput.js';
 import type { Fetcher } from './Fetcher.js';
-import { Card, type SchemaView, type SchemaDescriptor } from '@fougere/schema';
+import { Card, type SchemaView } from '@fougere/schema';
 
 /**
  * One facade, built from its address alone — what a project that never generated `@fronds/facade`
@@ -98,13 +98,15 @@ async function postCall(
  */
 const schemas = new Map<string, Promise<Map<string, SchemaView>>>();
 
-/** A card read as the schemas it carries, indexed the way a call names its facade. */
+/** A card read as what each operation answers, indexed the way a call names it — `post.list`. */
 function schemasIn(answer: unknown, endpoint: string): Map<string, SchemaView> {
   const found = new Map<string, SchemaView>();
   const card = assertIdentityCard(answer, `The app at ${endpoint}`);
   for (const frond of card.fronds) {
     for (const facade of frond.facades) {
-      if (facade.schema) found.set(facade.name, Card.fromDescriptor(facade.schema as SchemaDescriptor).toSchema());
+      for (const op of facade.ops) {
+        if (op.output) found.set(`${facade.name}.${op.name}`, Card.fromDescriptor(op.output).toSchema());
+      }
     }
   }
 
@@ -146,7 +148,7 @@ export async function sendCall(
     return answer;
   }
 
-  return decoded((await schemasOf(fetcher, endpoint)).get(call.address), answer);
+  return decoded((await schemasOf(fetcher, endpoint)).get(`${call.address}.${call.op}`), answer);
 }
 
 // ── The link ─────────────────────────────────────

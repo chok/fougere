@@ -35,9 +35,13 @@ class User extends entity({
   createdAt: created(),
 }) {}
 
-const crud = [
-  { name: 'list', kind: 'query' as const, cardinality: 'page' as const },
-  { name: 'findById', kind: 'query' as const, cardinality: 'maybe' as const },
+const post = Card.fromSchema(Post, 'post').descriptor;
+const user = Card.fromSchema(User, 'user').descriptor;
+
+/** What a Crud facade publishes: its reads answer the entity, under the entity's name. */
+const crud = (rows: typeof post) => [
+  { name: 'list', kind: 'query' as const, cardinality: 'page' as const, output: rows },
+  { name: 'findById', kind: 'query' as const, cardinality: 'maybe' as const, output: rows },
   { name: 'create', kind: 'command' as const, cardinality: 'one' as const },
   { name: 'update', kind: 'command' as const, cardinality: 'one' as const },
   { name: 'delete', kind: 'command' as const, cardinality: 'none' as const },
@@ -46,12 +50,12 @@ const crud = [
 const card: IdentityCard = {
   fronds: [{
     name: 'cms',
+    entities: [{ name: 'post', schema: post }, { name: 'user', schema: user }],
     facades: [
       {
         name: 'post',
-        schema: Card.fromSchema(Post, 'post').descriptor,
         ops: [
-          ...crud,
+          ...crud(post),
           {
             name: 'publish',
             kind: 'command',
@@ -60,7 +64,7 @@ const card: IdentityCard = {
           },
         ],
       },
-      { name: 'user', schema: Card.fromSchema(User, 'user').descriptor, ops: crud },
+      { name: 'user', ops: crud(user) },
     ],
     facts: [],
   }],

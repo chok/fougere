@@ -256,30 +256,31 @@ describe('remote façade (repli)', () => {
 
   it('schemaFor reconstructs a live, validating schema for an entity with no local class', async () => {
     const host = await bootHost();
-    // emptyRoot: the consumer scans NOTHING — no Product.ts exists anywhere in
-    // this app. Everything it knows about 'product' comes off the wire.
+    // emptyRoot: the consumer scans NOTHING — no Item.ts exists anywhere in
+    // this app. Everything it knows about 'item' comes off the wire.
     const consumer = await bootConsumer(host);
 
     // `schemaFor` promises `SchemaView` — the minimum an adapter needs, and all a
     // hand-rolled `{ getFields() }` entity can honour. This one came off the wire and
     // through `Card.toSchema()`, which builds a real schema constructor, so it validates.
-    const Product = await consumer.schemaFor('product') as SchemaView;
+    const Item = await consumer.schemaFor('item') as SchemaView;
 
-    // Not just present — actually exploitable: same field set as the host's
-    // real entity, and the reconstructed shape rules (min: 0 on price) still validator.
-    expect(Object.keys(Product.getFields())).toEqual(['id', 'name', 'price']);
+    expect(Object.keys(Item.getFields())).toEqual(['id', 'name', 'quantity']);
 
-    const tooCheap = Product.validate({ name: 'Fern', price: -5 });
-    expect(tooCheap.success).toBe(false);
-    if (!tooCheap.success) expect(tooCheap.errors[0]).toMatchObject({ path: ['price'] });
+    const nameless = Item.validate({ quantity: 1 });
+    expect(nameless.success).toBe(false);
+    if (!nameless.success) expect(nameless.errors[0]).toMatchObject({ path: ['name'] });
 
-    const strayField = Product.validate({ name: 'Fern', price: 5, color: 'green' });
+    const strayField = Item.validate({ name: 'Fern', quantity: 5, color: 'green' });
     expect(strayField.success).toBe(false);
     if (!strayField.success) expect(strayField.errors[0].message).toMatch(/Unknown field/);
 
     // id is auto-generated ({generate}) — a create payload need not supply it.
-    const valid = Product.validate({ name: 'Fern', price: 5 });
+    const valid = Item.validate({ name: 'Fern', quantity: 5 });
     expect(valid.success).toBe(true);
+
+    // `product` is stored there too, and no operation takes or answers it: its shape stays home.
+    await expect(consumer.schemaFor('product')).rejects.toThrow(/No remote stores 'product'/);
 
     await consumer.dispose();
     await host.dispose();
@@ -335,7 +336,7 @@ describe('two remotes serving one entity', () => {
   /** A remote that answers `rpc.discover` with one facade of the given name, and nothing else. */
   const serving = (frond: string, facade: string): Transport => async (call) => {
     if (call.address === 'rpc') {
-      return { fronds: [{ name: frond, facades: [{ name: facade, ops: [{ name: 'list', kind: 'query' }] }], facts: [] }] };
+      return { fronds: [{ name: frond, entities: [], facades: [{ name: facade, ops: [{ name: 'list', kind: 'query' }] }], facts: [] }] };
     }
 
     return [];

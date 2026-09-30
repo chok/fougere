@@ -866,9 +866,10 @@ compares two `rpc.discover` cards through `Card.diff`.
 whatever host called `generateRoutes`, so one surface was named beside the operation and
 the other three files away. The PREFIX stays the host's — naming is the frond's, mounting
 is not — and a host's `overrides:` still wins, since it is deciding for someone else's
-frond. A route is one op at one ADDRESS: `generateRoutes` walks the handlers, never the
-entities, so a handler with no entity (`checkout.pay`) has its route and the fields come from
-the op's own contract. Pinned by `adapter/rest/tests/stated.test.ts` and `routes.test.ts`.
+frond. A route or a root field is one op at one ADDRESS: `generateRoutes` and `registerAll`
+walk the handlers, never the entities, so a handler with no entity (`checkout.pay`) is served
+and the fields come from the op's own contract. A GraphQL TYPE is built from a schema an op
+returns, once per entity. Pinned by `adapter/rest/tests/stated.test.ts` and `routes.test.ts`.
 
 **Operation contract, three producers** — the façade consumes `OperationContract` and
 nothing else. A prefab DECLARES (`Crud.__ops`, runtime), the scan DERIVES from source,
@@ -878,7 +879,9 @@ method's own doc sentence, read from the AST (`compiler/src/scan/handler-parser.
 
 **Call contract** (`core/src/wire/call.ts`) — a Frond call is a value `(address, op,
 invocation)`. `createLocalRunner` (`boot/runner.ts`) executes locally, `createAppRunner`
-follows the topology, `identityCardOf` (`boot/card.ts`) answers `rpc.discover`. Transports
+follows the topology, `identityCardOf` (`boot/card.ts`) answers `rpc.discover`: per frond, the `entities` a served op
+takes or answers (never the rest, the auth tables included), and the `facades` by address, each
+op carrying its own output — titled with the entity's name when it IS one. Transports
 move the value, never reshape it. Browser-safe surface: `@fougere/core/contract`.
 
 **`Emit<T, A>` — the SECOND type is what makes an announcement wait.** `Emit<T>` hands the

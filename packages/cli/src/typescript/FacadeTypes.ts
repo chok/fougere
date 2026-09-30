@@ -11,7 +11,8 @@ export interface OpDescriptor {
 export interface FacadeTypesOptions {
   name?: string;
   exported?: boolean;
-  rowType?: string;
+  /** The row class of each entity, by its name — what an op answering that entity returns. */
+  rows?: Record<string, string>;
 }
 
 /** So a consumer sees the cardinality in the type, not in a doc line. */
@@ -36,9 +37,9 @@ export class FacadeTypes {
   render(options: FacadeTypesOptions = {}): string {
     const name = options.name ?? 'Facade';
     const exported = options.exported === false ? '' : 'export ';
-    const rowType = options.rowType ?? 'unknown';
     const members = this.operations.map((operation) => {
       const doc = docCommentOf(operation.description, '  ');
+      const rowType = options.rows?.[operation.output?.title ?? ''] ?? 'unknown';
 
       return `${doc}  ${propertyKey(operation.name)}(invocation?: Invocation): Promise<${returnTypeOf(operation, rowType)}>;`;
     });

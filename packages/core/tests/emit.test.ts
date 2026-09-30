@@ -123,7 +123,7 @@ describe('a listener that lives in another process', () => {
       remotes: { search: 'http://127.0.0.1:9' },
       remoteTransport: () => async (call) => {
         if (call.address === 'rpc') {
-          return { fronds: [{ name: 'search', facades: [{ name: 'index', ops: [{ name: 'reindex', kind: 'command' }] }], facts: [] }] };
+          return { fronds: [{ name: 'search', entities: [], facades: [{ name: 'index', ops: [{ name: 'reindex', kind: 'command' }] }], facts: [] }] };
         }
         wire.push(`${call.frond}:${call.address}.${call.op}`);
 

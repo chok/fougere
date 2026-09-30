@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { Card, email, entity, oneOf, primary, readOnly, text } from '@fougere/schema';
+import { Card, email, entity, oneOf, primary, readOnly, text, type SchemaDescriptor } from '@fougere/schema';
 import type { CardOp, IdentityCard } from '@fougere/core/contract';
 import { applyAdminExtensions, defineAdminExtension, type AdminExtension } from '../src/AdminExtension.js';
 import { actionsOf } from '../src/AdminResource.js';
@@ -15,31 +15,26 @@ class Post extends entity({
 class Author extends entity({ id: primary(), name: text() }) {}
 class User extends entity({ id: primary(), name: text(), email: email(), role: oneOf('admin', 'editor') }) {}
 
-const ops = (...names: string[]): CardOp[] => names.map((name) => ({
+/** What a Crud facade publishes: its reads answer the entity, under the entity's name. */
+const ops = (rows: SchemaDescriptor | undefined, ...names: string[]): CardOp[] => names.map((name) => ({
   name,
   kind: name === 'list' || name === 'findById' ? 'query' : 'command',
+  ...(rows && (name === 'list' || name === 'findById') ? { output: rows } : {}),
 }));
+
+const post = Card.fromSchema(Post, 'post').descriptor;
+const author = Card.fromSchema(Author, 'author').descriptor;
+const user = Card.fromSchema(User, 'user').descriptor;
 
 const card: IdentityCard = {
   fronds: [{
     name: 'blog',
+    entities: [{ name: 'post', schema: post }, { name: 'author', schema: author }, { name: 'user', schema: user }],
     facades: [
-      {
-        name: 'post',
-        schema: Card.fromSchema(Post, 'post').descriptor,
-        ops: ops('list', 'findById', 'create', 'update', 'delete', 'publish'),
-      },
-      {
-        name: 'author',
-        schema: Card.fromSchema(Author, 'author').descriptor,
-        ops: ops('list', 'findById'),
-      },
-      {
-        name: 'user',
-        schema: Card.fromSchema(User, 'user').descriptor,
-        ops: ops('list', 'findById', 'create', 'update'),
-      },
-      { name: 'health', ops: ops('get') },
+      { name: 'post', ops: ops(post, 'list', 'findById', 'create', 'update', 'delete', 'publish') },
+      { name: 'author', ops: ops(author, 'list', 'findById') },
+      { name: 'user', ops: ops(user, 'list', 'findById', 'create', 'update') },
+      { name: 'health', ops: ops(undefined, 'get') },
     ],
     facts: [],
   }],

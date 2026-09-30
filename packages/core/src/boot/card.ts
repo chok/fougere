@@ -12,6 +12,9 @@ type AnyFacade = Record<string, (invocation?: InvocationContext) => Promise<unkn
 /** Serialize what the app hosts, for one audience. */
 export function identityCardOf(app: App, surface?: string): IdentityCard {
   const declared = app.fronds.schemas();
+  // An op's output that IS an entity travels under the entity's name, so a reader of the card
+  // ties it to that entity instead of guessing from the address.
+  const entityNames = new Map([...declared].map(([name, schema]) => [schema, name]));
 
   return {
     // What this app SERVES, never what instruments it. A frond an extension BROUGHT is a
@@ -20,31 +23,26 @@ export function identityCardOf(app: App, surface?: string): IdentityCard {
     // facade and routing refused: `Two remotes serve 'export'`. `FrondDescriptor.brought` is
     // the mark `calls`' panel and `rpc.topology` already read.
     fronds: app.fronds.filter((frond) => !frond.brought).map((frond) => {
-      // What the frond answers to, not what it stores. This walked `frond.entities`, so a
-      // handler carrying no entity — a health check, a search across shapes — was built,
-      // served, and absent from the card: `sync` could not generate its facade and a remote
-      // consumer had no way to know it existed. The boot has said "pointing at nothing is
-      // legal" since handlers became the subject; the card had not caught up.
-      const byEntity = new Map(frond.entities.map((entity) => [entity.name, entity]));
-      const addresses = [...new Set([
-        ...frond.entities.map((entity) => entity.name),
-        ...frond.handlers.map((handler) => handler.address),
-      ])];
+      // What the frond answers to, and apart from it what it stores: an address is where a
+      // call goes, an entity is the shape of a row, and a handler may carry none.
+      const addresses = [...new Set(frond.handlers.map((handler) => handler.address))];
+
+      // An entity no served op takes or answers stays off the card: publishing it would give
+      // away the shape of a table nobody can reach — the auth tables, typically.
+      const reached = new Set<string>();
+      const facades = addresses.flatMap((address) => {
+        const ops = facadeOps(app, address, entityNames, reached, surface);
+
+        return ops.length === 0 ? [] : [{ name: address, ops }];
+      });
 
       return {
         name: frond.name,
-        facades: addresses.flatMap((address) => {
-          const ops = facadeOps(app, address, surface);
-          if (ops.length === 0) return [];
-          const entity = byEntity.get(address);
-
-          return [{
-            name: address,
-            ops,
-            // Absent when nothing of that name is stored. A facade is still a facade.
-            ...(entity ? { schema: Card.fromSchema(entity.entityClass, address).descriptor } : {}),
-          }];
-        }),
+        entities: frond.entities.filter((entity) => reached.has(entity.name)).map((entity) => ({
+          name: entity.name,
+          schema: Card.fromSchema(entity.entityClass, entity.name).descriptor,
+        })),
+        facades,
         /** What leaves on its own — the same list on every surface, deliberately. */
         facts: factsAnnouncedBy(frond.handlers).map((name) => {
           const entityClass = declared.get(name);
@@ -56,19 +54,25 @@ export function identityCardOf(app: App, surface?: string): IdentityCard {
   };
 }
 
-function facadeOps(app: App, entityName: string, surface?: string): CardOp[] {
+function facadeOps(
+  app: App,
+  address: string,
+  entityNames: Map<unknown, string>,
+  reached: Set<string>,
+  surface?: string,
+): CardOp[] {
   let facade: AnyFacade;
   try {
-    facade = app.container.resolve<AnyFacade>(facadeKeyOf(entityName, surface));
+    facade = app.container.resolve<AnyFacade>(facadeKeyOf(address, surface));
   } catch {
     return [];
   }
 
   // The façade is the list of names; the model is the resolved terms.
-  const effective = app.operationsFor(entityName, surface);
+  const effective = app.operationsFor(address, surface);
   if (!effective) {
     throw new Error(
-      `Facade '${facadeKeyOf(entityName, surface)}' exists without an effective operation table. `
+      `Facade '${facadeKeyOf(address, surface)}' exists without an effective operation table. `
       + 'A facade and its table are built together, so no declaration can produce this.',
     );
   }
@@ -77,16 +81,21 @@ function facadeOps(app: App, entityName: string, surface?: string): CardOp[] {
     const contract = effective.get(name);
     if (!contract) {
       throw new Error(
-        `Facade '${facadeKeyOf(entityName, surface)}' serves '${name}' without an effective contract. `
+        `Facade '${facadeKeyOf(address, surface)}' serves '${name}' without an effective contract. `
         + 'A facade and its table are built together, so no declaration can produce this.',
       );
+    }
+
+    for (const view of [contract.input, contract.output]) {
+      const entity = entityNames.get(view);
+      if (entity) reached.add(entity);
     }
 
     return {
       name,
       ...(contract?.description && { description: contract.description }),
-      ...(contract?.input && { input: Card.fromSchema(contract.input, name).descriptor }),
-      ...(contract?.output && { output: Card.fromSchema(contract.output, name).descriptor }),
+      ...(contract?.input && { input: Card.fromSchema(contract.input, entityNames.get(contract.input) ?? name).descriptor }),
+      ...(contract?.output && { output: Card.fromSchema(contract.output, entityNames.get(contract.output) ?? name).descriptor }),
       ...(contract?.cardinality && { cardinality: contract.cardinality }),
       ...(contract.errors?.length ? { errors: contract.errors } : {}),
       kind: contract.kind,
