@@ -7,7 +7,7 @@
     "start": "next start -p 3100",
     "typecheck": "tsc -p fronds",
     "build": "next build",
-    "migrate": "fougere migrate --apply"
+    "migrate": "fougere migrate --latest --apply"
   },
   "dependencies": {
     "@fougere/log": "workspace:*",

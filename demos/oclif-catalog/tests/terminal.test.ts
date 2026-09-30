@@ -22,7 +22,7 @@ async function fougere(...argv: string[]): Promise<string> {
 }
 
 /** The boot reads the schema and never writes it — a database is brought up by `fougere migrate`. */
-const migrated = () => run('npx', ['fougere', 'migrate', '--apply'], { cwd: root });
+const migrated = () => run('npx', ['fougere', 'migrate', '--latest', '--apply'], { cwd: root });
 
 beforeAll(migrated, 60_000);
 

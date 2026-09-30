@@ -6,7 +6,7 @@
     "dev": "react-router dev --port 3400",
     "typecheck": "tsc -p fronds",
     "build": "react-router build",
-    "migrate": "fougere migrate --apply"
+    "migrate": "fougere migrate --latest --apply"
   },
   "dependencies": {
     "@fougere/log": "workspace:*",

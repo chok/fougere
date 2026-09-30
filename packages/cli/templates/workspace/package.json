@@ -6,7 +6,7 @@
   "scripts": {
     "build": "pnpm --filter './apps/*' -r build",
     "typecheck": "tsc -p fronds",
-    "migrate": "fougere migrate --apply"
+    "migrate": "fougere migrate --latest --apply"
   },
   "dependencies": {
     "@fougere/core": "latest",

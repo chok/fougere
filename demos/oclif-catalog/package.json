@@ -7,7 +7,7 @@
     "dev": "tsx src/main.ts",
     "test": "vitest run",
     "typecheck": "tsc -p . --noEmit && tsc -p fronds",
-    "migrate": "fougere migrate --apply"
+    "migrate": "fougere migrate --latest --apply"
   },
   "dependencies": {
     "@fougere/log": "workspace:*",

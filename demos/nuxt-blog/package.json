@@ -9,7 +9,7 @@
     "build": "nuxt build",
     "preview": "nuxt preview",
     "dev:blog": "node serve-blog.ts",
-    "migrate": "fougere migrate --apply"
+    "migrate": "fougere migrate --latest --apply"
   },
   "dependencies": {
     "@fougere/log": "workspace:*",

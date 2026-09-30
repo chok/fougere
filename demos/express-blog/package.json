@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "node --experimental-strip-types server.ts",
     "typecheck": "tsc -p fronds",
-    "migrate": "fougere migrate --apply"
+    "migrate": "fougere migrate --latest --apply"
   },
   "dependencies": {
     "@fougere/log": "workspace:*",

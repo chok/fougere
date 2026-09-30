@@ -6,7 +6,7 @@
     "dev": "vite dev --port 3200",
     "typecheck": "tsc -p fronds",
     "build": "vite build",
-    "migrate": "fougere migrate --apply"
+    "migrate": "fougere migrate --latest --apply"
   },
   "dependencies": {
     "@fougere/log": "workspace:*",

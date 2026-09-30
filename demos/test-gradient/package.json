@@ -9,7 +9,7 @@
     "load:gen": "tsx gen-load.ts",
     "e2e": "playwright test",
     "dev": "tsx server.ts",
-    "migrate": "fougere migrate --apply"
+    "migrate": "fougere migrate --latest --apply"
   },
   "dependencies": {
     "@fougere/log": "workspace:*",

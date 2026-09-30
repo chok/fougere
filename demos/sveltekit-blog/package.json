@@ -7,7 +7,7 @@
     "dev": "vite dev --port 3500",
     "typecheck": "tsc -p fronds",
     "build": "vite build",
-    "migrate": "fougere migrate --apply"
+    "migrate": "fougere migrate --latest --apply"
   },
   "devDependencies": {
     "@sveltejs/adapter-auto": "^7.0.1",
