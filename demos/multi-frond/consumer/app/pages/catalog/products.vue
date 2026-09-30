@@ -5,7 +5,7 @@
  * Direct import of the Entity class for client-side validation.
  * Same Entity that drives the DB schema and REST API on the server.
  */
-import Product from '@fronds/catalog/entities/Product';
+import Product from '@fronds/catalog/entities/Product.js';
 
 const CreateProduct = Product.omit('id');
 

@@ -6,7 +6,7 @@
  * The Entity was generated from remote metadata at build time.
  * Validation, pick/omit, Standard Schema v1 — all identical.
  */
-import Post from '@fronds/blog/entities/Post';
+import Post from '@fronds/blog/entities/Post.js';
 
 const CreatePost = Post.omit('id', 'createdAt');
 

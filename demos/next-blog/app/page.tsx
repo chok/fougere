@@ -1,6 +1,6 @@
 import type { Page } from '@fougere/core';
 import { invoke } from '@fougere/next';
-import Post from '@fronds/blog/entities/Post';
+import Post from '@fronds/blog/entities/Post.js';
 
 /**
  * A server component reading a Frond directly — no fetch, no endpoint, no route.

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import Category from '@fronds/blog/entities/Category';
+import Category from '@fronds/blog/entities/Category.js';
 import { category } from '@fronds/facade';
 
 const { items: stats, loading: pending } = await useQuery(category, 'stats');

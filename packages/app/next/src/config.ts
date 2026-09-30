@@ -5,6 +5,7 @@ import TerserPlugin from 'terser-webpack-plugin';
 import type { NextConfig } from 'next';
 
 import { RUNTIME_PACKAGES } from '@fougere/compiler';
+import { resolveConventions } from '@fougere/core';
 import { projectRootOf } from '@fougere/core/node';
 
 /** Where the facades land, and what a page imports them by. */
@@ -73,9 +74,14 @@ export function withFougere(config: NextConfig = {}, options: { root?: string } 
 
       void written;
       base.resolve ??= {};
-      base.resolve.alias = { ...base.resolve.alias, [SPECIFIER]: join(app, FACADE) };
+      // `@fronds/*` as the tsconfig maps it, but as an alias: Next applies `paths` through a plugin
+      // `extensionAlias` never reaches, so `@fronds/blog/entities/Post.js` found no `.ts` there.
+      // The facade first — it is the one specifier under `@fronds` that names no directory.
+      base.resolve.alias = { [SPECIFIER]: join(app, FACADE), ...base.resolve.alias, '@fronds': join(root, resolveConventions().fronds) };
       // A frond is ESM TypeScript, so one entity imports another as `./Author.js` and the file is `.ts`.
-      base.resolve.extensionAlias = { ...base.resolve.extensionAlias, '.js': ['.ts', '.tsx', '.js'] };
+      // `.js` is tried first: a frond package's `exports` may map `./entities/*.js` itself, and a
+      // request rewritten to `.ts` before reaching them matches none of its keys.
+      base.resolve.extensionAlias = { ...base.resolve.extensionAlias, '.js': ['.js', '.ts', '.tsx'] };
 
       base.optimization ??= {};
       // ONLY the JS minifier is replaced. Next's minimizers are plain functions with

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import Author from '@fronds/blog/entities/Author';
+import Author from '@fronds/blog/entities/Author.js';
 import { author as authorFacade } from '@fronds/facade';
 
 const { items: authors, loading: pending } = await useQuery(authorFacade, 'list');

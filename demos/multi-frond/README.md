@@ -5,7 +5,7 @@ Two apps. `remote-blog` hosts the `blog` frond and serves its identity card on
 `blog` from the wire — and the import reads the same either way:
 
 ```ts
-import Post from '@fronds/blog/entities/Post';   // generated from remote metadata
+import Post from '@fronds/blog/entities/Post.js';   // generated from remote metadata
 
 const CreatePost = Post.omit('id', 'createdAt');
 ```

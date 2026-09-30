@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import Post from '@fronds/blog/entities/Post';
+import Post from '@fronds/blog/entities/Post.js';
 
 const { t } = useI18n();
 const localePath = useLocalePath();

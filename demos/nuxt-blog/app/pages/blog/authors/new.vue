@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import Author from '@fronds/blog/entities/Author';
+import Author from '@fronds/blog/entities/Author.js';
 
 // `fieldsByName` carries what the browser enforces — type, required, bounds — read off
 // the entity. The page lays the form out; it states no rule.

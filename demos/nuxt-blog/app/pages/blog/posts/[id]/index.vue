@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ErrorCode } from '@fougere/core/contract';
-import Post from '@fronds/blog/entities/Post';
+import Post from '@fronds/blog/entities/Post.js';
 import { post as postFacade } from '@fronds/facade';
 
 const route = useRoute();

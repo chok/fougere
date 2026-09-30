@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useFormFor } from '@fougere/react';
-import Post from '@fronds/blog/entities/Post';
+import Post from '@fronds/blog/entities/Post.js';
 
 /**
  * The form contract, not a form widget. `fields` comes from the entity's own axes:

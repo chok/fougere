@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import Post from '@fronds/blog/entities/Post';
+import Post from '@fronds/blog/entities/Post.js';
 // `fieldsByName` carries what the browser enforces — type, required, bounds — read off
 // the entity. The page lays the form out; it states no rule.
 const { fieldsByName, values, errors, choices, search, submit, loading, error } = useFormFor(Post);
