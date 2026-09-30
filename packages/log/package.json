@@ -1,6 +1,6 @@
 {
   "name": "@fougere/log",
-  "version": "0.16.8-alpha.0",
+  "version": "0.17.0-alpha.0",
   "description": "Logging for Fougere: two lines for every call, in every process, and a file destination for the lines.",
   "keywords": [
     "fougere",
