@@ -38,11 +38,11 @@ export default class CallCommand {
   async run(raw: Record<string, unknown>) {
     const target = raw.operation as string | undefined;
     if (!target || !target.includes('.')) {
-      this.ui.error('Usage: fougere call <entity>.<op> [--field value …]');
+      this.ui.error('Usage: fougere call <address>.<op> [--field value …] — post.list, post.create --title …');
 
       return;
     }
-    const [entityName, op] = target.split('.');
+    const [address, op] = target.split('.');
 
     // Flags → invocation, by the same rule the framework's binding uses:
     // a primitive param (like `id`) resolves from `params`, an object from
@@ -59,7 +59,7 @@ export default class CallCommand {
     const app = await bootApp(process.cwd(), {});
     try {
       const result = await createAppRunner(app)(
-        { entity: lowerFirst(entityName), op },
+        { entity: lowerFirst(address), op },
         { params, query: {}, input, state: {} },
       );
       this.ui.note(JSON.stringify(result, null, 2), target);
