@@ -2,7 +2,7 @@
   import { onDestroy } from 'svelte';
   import { useCommand, useFormFor, useQuery } from '@fougere/svelte';
   import { post } from '@fronds/facade';
-  import Post from '@fronds/__frond__/entities/Post';
+  import Post from '@fronds/__frond__/entities/Post.js';
 
   const posts = useQuery(post, 'list');
   const publish = useCommand(post, 'publish');

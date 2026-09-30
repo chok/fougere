@@ -232,7 +232,7 @@ describe('an app is the host\u2019s own shell, and Fougere adds its part', () =>
     try {
       await writer().write({ name: 'shop', fronds: [{ template: 'blog', name: 'news' }], apps: [{ template: 'nuxt', name: 'web' }, { template: 'react', name: 'spa' }] }, root);
 
-      expect(readFileSync(join(root, 'apps/web/app/pages/posts.vue'), 'utf8')).toContain("from '@fronds/news/entities/Post'");
+      expect(readFileSync(join(root, 'apps/web/app/pages/posts.vue'), 'utf8')).toContain("from '@fronds/news/entities/Post.js'");
       expect(readFileSync(join(root, 'apps/spa/src/App.tsx'), 'utf8')).toContain("location.pathname === '/posts'");
     } finally { rmSync(parent, { recursive: true, force: true }); }
   });

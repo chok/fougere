@@ -4,7 +4,7 @@ import { Fragment } from 'react';
 import { useCommand, useFormFor, useQuery } from '@fougere/react';
 import './posts.css';
 import { post } from '@fronds/facade';
-import Post from '@fronds/__frond__/entities/Post';
+import Post from '@fronds/__frond__/entities/Post.js';
 
 export default function Posts() {
   const { items } = useQuery(post, 'list');

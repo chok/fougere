@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import Post from '@fronds/blog/entities/Post';
+import Post from '@fronds/blog/entities/Post.js';
 
 interface PostValues { id: string; title: string; status: 'draft' | 'published' }
 const { items: posts, loading } = await useQuery<PostValues>(Post, 'list');

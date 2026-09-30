@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { post } from '@fronds/facade';
-import Post from '@fronds/__frond__/entities/Post';
+import Post from '@fronds/__frond__/entities/Post.js';
 
 const { items } = await useQuery(post, 'list');
 const { fields, values, errors, choices, searchable, search, submit } = useFormFor(Post);
