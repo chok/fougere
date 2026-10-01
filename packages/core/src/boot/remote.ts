@@ -92,14 +92,14 @@ export function createRemoteRouter(
         throw new FougereError({
           code: ErrorCode.SERVICE_UNAVAILABLE,
           message: `No reachable remote serves '${address}' — unreachable: ${[...pending.keys()].join(', ')}.\n`
-          + '  Named in `remotes:`, and did not answer.',
+          + '  Placed in `fronds:` with an address, and did not answer.',
           address,
         });
       }
       throw new FougereError({
         code: ErrorCode.NOT_FOUND,
         message: `No declared remote serves '${address}'.\n`
-          + '  Nothing here serves it either — add its frond to `fronds:`/`scan:`, or name the frond that does in `remotes:`.',
+          + '  Nothing here serves it either — add its frond to `fronds:`/`scan:`, or give the frond that does an address in `fronds:`.',
         address,
       });
     },

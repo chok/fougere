@@ -117,7 +117,7 @@ export function observability(options: ObservabilityOptions = {}): Extension {
         app.container.resolve<Logger>('Logger').child(service).warn(
           'no async context: a call that crosses no wire starts its own trace '
           + '(an emission subscriber, a handler reaching another frond in this process). '
-          + 'An arriving call and a call to a frond behind `remotes:` are unaffected — both carry '
+          + 'An arriving call and a call to a frond placed elsewhere in `fronds:` are unaffected — both carry '
           + 'traceparent on the invocation. Add "nodejs_als" to compatibility_flags to restore the rest.',
         );
       }
