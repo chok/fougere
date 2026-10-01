@@ -92,10 +92,10 @@ export default class MigrateHandler {
         refusals.push(...plan.refusals);
         plans.push({ plan, db });
 
-        const renamed = new Set(plan.changes.flatMap((change) => change.kind === 'renameColumn' ? [`${change.table}.${change.from}`] : []));
+        const planned = new Set(plan.changes.map((change) => `${change.table}.${change.kind === 'renameColumn' ? change.from : change.column}`));
         const mine = tables.filter((table) => actual.has(table.name));
         for (const { table, columns, added } of undeclaredColumns(mine, actual)) {
-          const left = columns.filter((column) => !renamed.has(`${table}.${column}`));
+          const left = columns.filter((column) => !planned.has(`${table}.${column}`));
           if (left.length === 0) continue;
           warnings.push(
             `${table} keeps ${left.join(', ')}, which no field declares, while ${added.join(', ')} is added — `
