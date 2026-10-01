@@ -1049,6 +1049,33 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
   `const <Class>_base` is lost. `@fougere/log` states its frond rather than being scanned,
   which is the right form for a published package anyway — so this is a trap for a frond
   inside a workspace package, not a blocker.
+- **A `Logger` wrapper loses what it does not override, in silence** — `builtin/Logger.ts`. A
+  wrapper extends `Logger` and asks for `inner`, but its own base is built by `super()` with
+  nothing: no carry, no `during`, the default name. Every method it does not override runs on that
+  empty base — `debug` prints and reaches no destination, `child()` hands back a bare logger that
+  skips the wrapper's own code (`RedactingLogger.child('x').info('token=abc')` is not masked).
+  Measured 2026-10-01. Two halves, closed separately: a REQUIRED first constructor argument makes
+  `super(inner)` the only form that compiles and the base shares the real logger's state, so
+  nothing is lost; a single `write(line)` every level and every child funnels through is what makes
+  nothing BYPASS the wrapper. `OwnLoggers` already avoids `child()` on a replaced logger.
+- **Three implicit rules pass the boot in silence when they are broken** — read in the code
+  2026-10-01, each checkable at boot since the declaration is read there. (1) A file in a convention
+  directory that is not of its FORM is dropped: `collect` (`compiler/src/scan/scanner.ts`) filters
+  every `null` a reader answers, so a class in `middlewares/` without `around` is simply not one,
+  and nothing says so. (2) A class in `handlers/` without the `Handler` suffix answers at its whole
+  name (`addressOf`, `wire/Facade.ts`): `Posts` answers `posts`, where `PostHandler` answers `post`.
+  (3) A handler accepting `Fact<T>` for a fact nothing announces is a subscription to nothing — no
+  code names it; `drift.ts` only reads a fact gone between two CARDS. A dependency nothing
+  registers is the fourth, and it is LATE rather than silent: `verify()` leaves an unresolved name
+  to the container (`core/src/verify.ts`, rule 1), which answers `'X' is not registered` at the
+  first call — see the sibling-repository entry above.
+- **The level decides what is COLLECTED, not only what is printed** — `Logger.log`
+  (`builtin/Logger.ts`) returns on the threshold BEFORE `carry.push`, so a line under it reaches no
+  destination either. The CLI sets `FOUGERE_LOG_LEVEL=warn` (`cli/src/main.ts`) to keep its output
+  readable, and `applyConfig` lets the environment win over `logLevel:`: under `fougere call`, an
+  audit destination loses every `info` a service writes. What a destination receives then depends
+  on the command that started the process. Measured 2026-10-01. The fix is one line: push to the
+  carry first and test the threshold only before `console[method]`.
 - **A type alias of a port does not bind** — `type Log = Emit<LogLine>` then
   `constructor(private log: Log)` resolves to the key `Log`, and the boot refuses
   `'Log' is not registered`. The checker keeps the OUTER alias symbol and drops
