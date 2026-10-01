@@ -7,7 +7,7 @@
   const posts = useQuery(post, 'list');
   const publish = useCommand(post, 'publish');
   const remove = useCommand(post, 'delete');
-  const { fields, values, errors, choices, searchable, search, submit } = useFormFor(Post);
+  const { fields, values, errors, choices, searchable, search, submit, command } = useFormFor(Post);
   onDestroy(() => posts.dispose());
 </script>
 
@@ -48,8 +48,8 @@
       </li>
     {/each}
   </ul>
-  {#each [$publish, $remove] as command}
-    {#if command.error}<p class="refused">{command.error.message}</p>{/if}
+  {#each [$posts, $command, $publish, $remove] as state}
+    {#if state.error}<p class="refused">{state.error.message}</p>{/if}
   {/each}
 </main>
 

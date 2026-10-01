@@ -5,8 +5,8 @@ import { post } from '@fronds/facade';
 import Post from '@fronds/__frond__/entities/Post.js';
 
 export default function Posts() {
-  const { items } = useQuery(post, 'list');
-  const { fields, values, setValue, errors, choices, searchable, search, submit } = useFormFor(Post);
+  const { items, error: listed } = useQuery(post, 'list');
+  const { fields, values, setValue, errors, choices, searchable, search, submit, error: submitted } = useFormFor(Post);
   const publish = useCommand(post, 'publish');
   const remove = useCommand(post, 'delete');
 
@@ -52,7 +52,7 @@ export default function Posts() {
           </li>
         ))}
       </ul>
-      {[publish, remove].map((command, index) => command.error && <p key={index} className="refused">{command.error.message}</p>)}
+      {[listed, submitted, publish.error, remove.error].map((refusal, index) => refusal && <p key={index} className="refused">{refusal.message}</p>)}
     </main>
   );
 }

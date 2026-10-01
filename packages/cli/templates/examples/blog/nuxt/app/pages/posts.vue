@@ -2,8 +2,8 @@
 import { post } from '@fronds/facade';
 import Post from '@fronds/__frond__/entities/Post.js';
 
-const { items } = await useQuery(post, 'list');
-const { fields, values, errors, choices, searchable, search, submit } = useFormFor(Post);
+const { items, error: listed } = await useQuery(post, 'list');
+const { fields, values, errors, choices, searchable, search, submit, error: submitted } = useFormFor(Post);
 const publish = useCommand(post, 'publish');
 const remove = useCommand(post, 'delete');
 </script>
@@ -38,8 +38,8 @@ const remove = useCommand(post, 'delete');
         <button class="delete" @click="remove.execute({ params: { id: row.id } })">Delete</button>
       </li>
     </ul>
-    <template v-for="(command, index) in [publish, remove]" :key="index">
-      <p v-if="command.error.value" class="refused">{{ command.error.value.message }}</p>
+    <template v-for="(refusal, index) in [listed, submitted, publish.error.value, remove.error.value]" :key="index">
+      <p v-if="refusal" class="refused">{{ refusal.message }}</p>
     </template>
   </main>
 </template>
