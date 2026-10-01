@@ -933,7 +933,12 @@ operation costs **813 ns**, its span through a plain list of takers **53 ns**, a
 when it crosses a boundary, not when it stays in one process. A ring is
 refused, a diamond is legal. Announcing returns once every subscriber has been HANDED the
 fact; `app.deliver` waits for them all and REJECTS with an `AggregateError`. A fact is
-validated strictly. Pinned by `tests/emit.test.ts`.
+validated strictly. A listener whose code this process never READ is found on its card:
+`CardOp.listens`, indexed by `RemoteRouter.listenersOf` (`boot/remote.ts`) and called through
+the same remote facade, so `fougere serve blog` reaches `mail` and an `Emit<T, A>` gets its
+answers back. It used to reach nobody in silence: the served process scanned `only:` its
+frond, and `topology: false` — an option now gone — dropped every address besides. Pinned by
+`tests/emit.test.ts` and `tests/emit-await.test.ts`.
 
 **A family cycle is a check** — `tools/cycle-check.ts`, `pnpm arch:cycles`, run in CI beside
 `pnpm arch`. `arch` asks what a file REACHES, this asks where it LIVES. It reports type-only
@@ -1001,6 +1006,30 @@ X), `useFormFor` (contract, not rendering; local validator = remote validator), 
 ## Known issues
 
 Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
+
+- **A remote's listeners are read once.** `listenersOf` (`boot/remote.ts`) indexes the cards at
+  the first `discover`, like the routes, so a subscriber added to a running remote is not seen
+  until the announcer restarts. Stated 2026-10-02, the day cards began to carry `listens`.
+- **A listener in a process `fronds:` gives no address is unreachable from a served frond.**
+  The announcer calls a listener, and nothing calls a Nuxt app: `blog` behind `fougere serve`
+  and `search` hosted by Nuxt reach each other in no direction. Measured 2026-10-01 on a
+  scratch `shop`. Placing `search` at an address, or `blog` back in the Nuxt process, is the
+  answer; a carrier is the other.
+- **A remote that never answered is a hole only `Emit<T, A>` refuses.** Asked at the first
+  announcement and unreachable, its listeners are unknown: `Emit<T>` warns that the fact did not
+  reach it and goes on, `Emit<T, A>` refuses the announcement (`listenersElsewhere`,
+  `boot/Emissions.ts`). Once reached, a remote that stops is a subscriber that fails — `ERR …
+  unreachable`, the announcement goes on. Nothing is queued in either case: that is a carrier's.
+- **A `Pipe<T>` link in a frond the announcer did not read is not found.** The card states the
+  `Fact<T>` an op listens to and never a link (`facadeOps`, `boot/card.ts`): a link is ordered by
+  the fact's owner and stops the announcement when it throws, which a card read late cannot
+  promise.
+- **The declared topology and an op's `reach` count the listeners read from CODE, never those
+  read off a card** — `declaredTopologyOf` (`boot/declared.ts`) and `reachOf`. A served frond
+  reaching `mail` through its card draws no edge to it.
+- **A log line never crosses** — `listenersElsewhere` leaves `logLine` out, since delivering it
+  is a call and a call writes lines. A destination in another process receives that process's
+  lines only.
 
 - **An op's `reach` does not see a fact, where the declared topology now does.** `servedBy`
   indexes a dep key to ONE frond and an announcement reaches every listener, so `reachOf`
