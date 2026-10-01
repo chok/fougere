@@ -28,10 +28,21 @@ interface Route {
   outputs: Map<string, SchemaView>;
 }
 
+/** An op another process serves that is handed a fact when it is announced. */
+export interface RemoteListener {
+  address: string;
+  op: string;
+}
+
 export interface RemoteRouter {
   route(address: string): Promise<Route>;
   /** The schema a remote STORES under an entity's name — `undefined` when none does. */
   schemaOf(entity: string): Promise<SchemaView | undefined>;
+  /**
+   * Who listens to a fact elsewhere, read off the cards — and which remotes could not be asked,
+   * since a remote that did not answer may listen too.
+   */
+  listenersOf(fact: string): Promise<{ listeners: RemoteListener[]; unreachable: string[] }>;
 }
 
 export function createRemoteRouter(
@@ -40,6 +51,7 @@ export function createRemoteRouter(
 ): RemoteRouter {
   const byAddress = new Map<string, Route>();
   const stored = new Map<string, SchemaView>();
+  const byFact = new Map<string, RemoteListener[]>();
   // The remotes config key is a label for the address — the identity card is
   // what decides which addresses answer behind it.
   const pending = new Map(Object.entries(remotes));
@@ -75,6 +87,7 @@ export function createRemoteRouter(
       pending.delete(answered.label);
       claimFacades(answered, byAddress, claimedBy);
       storedBy(answered, stored);
+      listenedBy(answered, byFact);
     }
   };
 
@@ -83,6 +96,11 @@ export function createRemoteRouter(
       if (!stored.has(entity) && pending.size > 0) await discover();
 
       return stored.get(entity);
+    },
+    async listenersOf(fact) {
+      if (pending.size > 0) await discover();
+
+      return { listeners: byFact.get(fact) ?? [], unreachable: [...pending.keys()] };
     },
     async route(address) {
       if (!byAddress.has(address) && pending.size > 0) await discover();
@@ -187,5 +205,17 @@ function claimFacades(
 function storedBy({ label, url, answer }: Answered, stored: Map<string, SchemaView>): void {
   for (const frond of assertIdentityCard(answer, `Remote '${label}' (${url})`).fronds) {
     for (const entity of frond.entities) stored.set(entity.name, Card.fromDescriptor(entity.schema).toSchema());
+  }
+}
+
+/** Who listens to what on each remote — the `listens` an op states on the card it serves. */
+function listenedBy({ label, url, answer }: Answered, byFact: Map<string, RemoteListener[]>): void {
+  for (const frond of assertIdentityCard(answer, `Remote '${label}' (${url})`).fronds) {
+    for (const facade of frond.facades) {
+      for (const op of facade.ops) {
+        if (!op.listens) continue;
+        byFact.set(op.listens, [...(byFact.get(op.listens) ?? []), { address: facade.name, op: op.name }]);
+      }
+    }
   }
 }

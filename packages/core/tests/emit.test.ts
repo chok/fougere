@@ -140,6 +140,61 @@ describe('a listener that lives in another process', () => {
   });
 });
 
+describe('a listener whose code this process never read', () => {
+  beforeEach(() => { (globalThis as any).__heard = []; });
+
+  const search = emitted.filter((one) => one.name === 'search');
+
+  it('is found on the card its process serves, and reached', async () => {
+    // What `fougere serve blog` is: one frond read, the others only placed. The listener's
+    // signature is not on this side, so its card is what says it listens.
+    await using far = await createApp({ fronds: search, createContainer });
+    await using near = await createApp({
+      fronds: [blog],
+      createContainer,
+      remotes: { search: 'http://127.0.0.1:9' },
+      remoteTransport: () => createLocalRunner(far),
+    });
+
+    await createLocalRunner(near)({ address: 'post', op: 'publish' }, { ...Invocation.empty, params: { id: '7' } });
+    await settle();
+
+    expect(heard()).toEqual(['search:7']);
+  });
+
+  it('is reached once when its code was read here as well', async () => {
+    const wire: string[] = [];
+    await using far = await createApp({ fronds: search, createContainer });
+    await using near = await createApp({
+      fronds: emitted,
+      createContainer,
+      remotes: { search: 'http://127.0.0.1:9' },
+      remoteTransport: () => (call, invocation) => {
+        if (call.address !== 'rpc') wire.push(`${call.address}.${call.op}`);
+
+        return createLocalRunner(far)(call, invocation);
+      },
+    });
+
+    await createLocalRunner(near)({ address: 'post', op: 'publish' }, { ...Invocation.empty, params: { id: '8' } });
+    await settle();
+
+    expect(wire).toEqual(['index.reindex']);
+  });
+
+  it('leaves the announcement standing when its process does not answer', async () => {
+    await using near = await createApp({
+      fronds: [blog],
+      createContainer,
+      remotes: { search: 'http://127.0.0.1:9' },
+      remoteTransport: () => async () => { throw new Error('ECONNREFUSED'); },
+    });
+
+    await expect(createLocalRunner(near)({ address: 'post', op: 'publish' }, { ...Invocation.empty, params: { id: '9' } }))
+      .resolves.toEqual({ id: '9' });
+  });
+});
+
 describe('a fact on the identity card', () => {
   /**
    * What made a fact stop at the repository boundary.
@@ -149,6 +204,13 @@ describe('a fact on the identity card', () => {
    * hand-written copy of it (`demos/emit-multirepo`), which is the drift the card exists
    * to prevent everywhere else.
    */
+  it('says which fact an op listens to, on the op itself', async () => {
+    await using app = await createApp({ fronds: emitted, createContainer });
+    const search = identityCardOf(app).fronds.find((frond) => frond.name === 'search')!;
+
+    expect(search.facades[0].ops).toMatchObject([{ name: 'reindex', listens: 'postPublished' }]);
+  });
+
   it('publishes what a frond announces, next to what it serves', async () => {
     await using app = await createApp({ fronds: emitted, createContainer });
     const card = identityCardOf(app);

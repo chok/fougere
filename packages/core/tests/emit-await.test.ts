@@ -10,7 +10,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { createContainer } from '@fougere/container';
-import { createApp, frond } from '../src/index.js';
+import { createApp, createLocalRunner, frond } from '../src/index.js';
 import { entity, text, bool, optional, created } from '@fougere/schema';
 
 class CanBook extends entity({
@@ -121,5 +121,35 @@ describe('an announcement that waits', () => {
       createContainer,
       onEmit: async () => {},
     })).rejects.toThrow(/'canBook' is announced with an answer type, and this app has a carrier/);
+  });
+});
+
+describe('an announcement that waits on another process', () => {
+  const asked = () => createApp({
+    fronds: [frond('booking', { entities: [CanBook, Verdict], handlers: [booking] })],
+    createContainer,
+    remotes: { s0: 'http://127.0.0.1:9' },
+    remoteTransport: () => async () => { throw new Error('ECONNREFUSED'); },
+  });
+
+  it('gives back what the far subscribers answered', async () => {
+    await using far = await app(Rooms, Billing);
+    await using near = await createApp({
+      fronds: [frond('booking', { entities: [CanBook, Verdict], handlers: [booking] })],
+      createContainer,
+      remotes: { s0: 'http://127.0.0.1:9' },
+      remoteTransport: () => createLocalRunner(far),
+    });
+
+    const answers = await announce(near)({ room: 'atrium' });
+
+    expect(answers.map((one) => `${one.from}:${one.ok}`).sort()).toEqual(['billing:false', 'rooms:true']);
+  });
+
+  it('refuses when a process that may listen could not be asked', async () => {
+    await using near = await asked();
+
+    // Who should answer is unknown, and an empty answer would read as nobody objecting.
+    await expect(announce(near)({ room: 'library' })).rejects.toThrow(/s0 did not answer, so who listens there is unknown/);
   });
 });

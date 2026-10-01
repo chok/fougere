@@ -316,6 +316,7 @@ function whatTheAppKnows(
   container: Container,
   options: CreateAppOptions,
   refused: Diagnostic[],
+  remoteRouter: RemoteRouter | undefined,
 ): { entityByName: Map<string, SchemaView>; frondOf: Map<string, string>; emissions: Emissions } {
   // By name, so a fact can be validated where it LANDS and a `reads:` clause can name a
   // neighbour's entity.
@@ -337,6 +338,7 @@ function whatTheAppKnows(
       new Logger('boot:app'),
       refused,
       options.onEmit,
+      remoteRouter,
     ),
   };
 }
@@ -669,7 +671,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     keyClaims(fronds, options.remotes, refused);
     refuseWhatDoesNotHold(refused);
 
-    const { entityByName, frondOf, emissions } = whatTheAppKnows(fronds, container, options, refused);
+    const { entityByName, frondOf, emissions } = whatTheAppKnows(fronds, container, options, refused, remoteRouter);
     const effectiveByKey = new Map<string, EffectiveOperationsMap>();
     const storageFor = <T = Record<string, unknown>>(entity: string): Storage<T> | undefined =>
       ownedBy<Storage<T>>(fronds, container, entity, storageKeyOf(entity));

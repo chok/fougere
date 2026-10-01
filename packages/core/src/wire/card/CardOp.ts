@@ -19,4 +19,6 @@ export interface CardOp {
   cardinality?: 'one' | 'maybe' | 'many' | 'page' | 'none';
   /** What this op can REFUSE, beyond what `kind` and `input` already imply. */
   errors?: ErrorCode[];
+  /** The fact this op is handed when it is announced — its `Fact<T>`, which IS the subscription. */
+  listens?: string;
 }

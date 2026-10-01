@@ -86,6 +86,8 @@ function facadeOps(
       );
     }
 
+    const listens = contract.binding.flatMap((bound) => (bound.source.kind === 'fact' ? [bound.source.factName] : []))[0];
+
     for (const view of [contract.input, contract.output]) {
       const entity = entityNames.get(view);
       if (entity) reached.add(entity);
@@ -98,6 +100,7 @@ function facadeOps(
       ...(contract?.output && { output: Card.fromSchema(contract.output, entityNames.get(contract.output) ?? name).descriptor }),
       ...(contract?.cardinality && { cardinality: contract.cardinality }),
       ...(contract.errors?.length ? { errors: contract.errors } : {}),
+      ...(listens && { listens }),
       kind: contract.kind,
     };
   });

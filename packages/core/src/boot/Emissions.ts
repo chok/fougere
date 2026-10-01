@@ -9,6 +9,8 @@ import { Invocation } from '../wire/Invocation.js';
 import type { Logger } from '../builtin/Logger.js';
 import type { Fronds } from '../descriptor/Fronds.js';
 import type { OperationsMap } from '../wire/OperationsMap.js';
+import type { RemoteRouter } from './remote.js';
+import { LOG_LINE } from '../builtin/LogLine.js';
 
 /** A facade and the op on it that accepts a fact. */
 interface Listener {
@@ -50,6 +52,7 @@ export class Emissions {
     private readonly log: Logger,
     private readonly refused: Diagnostic[],
     private readonly carry?: Carrier,
+    private readonly elsewhere?: Pick<RemoteRouter, 'listenersOf'>,
   ) {
     for (const frond of fronds) {
       this.fileOf.set(frond.name, frond.source.path);
@@ -188,7 +191,7 @@ export class Emissions {
           subject: fact,
           message: `'${fact}' is announced with an answer type, and this app has a carrier `
             + '(`onEmit`). Waiting means knowing who answers; a carrier reaches whoever subscribed '
-            + `elsewhere and brings nothing back. Name the subscribers in \`remotes:\`, or drop the `
+            + `elsewhere and brings nothing back. Place the subscribers' fronds in \`fronds:\` with an address, or drop the `
             + `second type of \`Emit<${fact}, …>\`.`,
         });
         continue;
@@ -210,12 +213,13 @@ export class Emissions {
     await ambient.beforeAnnounce(fact);
 
     const payload = await this.finished(fact, this.stamped(fact, raw));
+    const listeners = [...(this.subscribers.get(fact) ?? []), ...await this.listenersElsewhere(fact, waiting)];
 
     /** Whoever is not in this process — and it is the ONLY way to reach them. */
     const delivery = this.carry?.(fact, payload);
     if (delivery) void Promise.resolve(delivery).catch((cause) => this.log.error(`${fact} — carrier refused it`, cause));
 
-    const handed = this.handToListeners(fact, payload);
+    const handed = this.handToListeners(fact, payload, listeners);
     if (!waiting) {
       for (const { facade, op, done } of handed) {
         void done.catch((cause) => this.log.error(`${fact} → ${facade}.${op}`, this.describeRefusal(fact, cause) ?? cause));
@@ -325,8 +329,35 @@ export class Emissions {
       : raw;
   }
 
-  /** Hand the fact to every listener in THIS process, and give back one promise each. */
-  private handToListeners(fact: string, payload: unknown): (Listener & { done: Promise<unknown> })[] {
+  /**
+   * The listeners another process serves, read off its card — minus those already noted here,
+   * since a remote frond whose code this process read is noted twice.
+   *
+   * A line never crosses: delivering it is a call, and a call writes lines.
+   */
+  private async listenersElsewhere(fact: string, waiting: boolean): Promise<Listener[]> {
+    if (!this.elsewhere || fact === LOG_LINE) return [];
+
+    const { listeners, unreachable } = await this.elsewhere.listenersOf(fact);
+    if (unreachable.length > 0) {
+      const unknown = `${fact} — ${unreachable.join(', ')} did not answer, so who listens there is unknown`;
+      if (waiting) throw new Error(`${unknown}. An announcement with an answer type waits for everyone: a partial answer would look like a complete one.`);
+      this.log.warn(`${unknown}, and the fact did not reach it.`);
+    }
+
+    const here = new Set((this.subscribers.get(fact) ?? []).map(({ facade, op }) => `${facade}.${op}`));
+
+    return listeners
+      .map(({ address, op }) => ({ facade: facadeKeyOf(address), op }))
+      .filter(({ facade, op }) => !here.has(`${facade}.${op}`));
+  }
+
+  /** Hand the fact to every listener named, those of THIS process when none are, and give back one promise each. */
+  private handToListeners(
+    fact: string,
+    payload: unknown,
+    listeners: Listener[] = this.subscribers.get(fact) ?? [],
+  ): (Listener & { done: Promise<unknown> })[] {
     const walked = ambient.currentChain();
     if (walked.includes(fact)) {
       throw new Error(
@@ -336,9 +367,8 @@ export class Emissions {
       );
     }
 
-    const listeners = this.subscribers.get(fact) ?? [];
     if (listeners.length === 0) {
-      this.log.debug(`${fact} — nobody listens in this process`);
+      this.log.debug(`${fact} — nobody listens`);
 
       return [];
     }
