@@ -1038,6 +1038,11 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
   through the facade, not through the rows) and it is LATE: a collector in the wrong frond
   refuses the boot, this one answers `'AuthorRepository' is not registered` at the first call.
   Pinned as the behaviour it is by `defaults/tests/gradient.test.ts`, measured 2026-09-14.
+- **A frame opens an owned entity to anyone** — `refuseStorageReached` (`boot/ownership.ts`) reads
+  `<E>Storage` keys only (`entityOfStorageKey`), and a frame's key is `<E>Together`
+  (`togetherKeyOf`, `storage/Storage.ts`). Measured 2026-10-01 beside `Repository(Account, Ledger)`:
+  a handler asking `LedgerStorage` is refused `aggregate-storage-reached`, the same handler asking
+  `Together<[Ledger]>` boots and writes the ledger alone. The aggregate guards one of its two doors.
 - **A process carrying only its own frond cannot MIGRATE a table whose key names an entity it
   has never seen** — `ref(User): no source hosts it`, measured 2026-09-14 while writing
   `defaults/tests/on-delete.test.ts`. It can CHECK it: `pending` reads names and leaves `elsewhere`
