@@ -17,11 +17,6 @@ export interface BootAppOptions {
   /** @deprecated The name `only:` now carries. */
   fronds?: string[];
   /**
-   * Follow `remotes:` from config (default true). A host process (`serve`)
-   * passes false — it *is* the frond, it doesn't route back out.
-   */
-  topology?: boolean;
-  /**
    * What this app takes on beyond its fronds — `observability()` is the first one.
    * Appended after the framework's own members, or replacing one by naming it.
    */
@@ -44,7 +39,7 @@ export async function bootApp(root: string, opts: BootAppOptions = {}): Promise<
   // `fougere serve blog` refused to start on a config that places `blog` at an address.
   const served = new Set(opts.only ?? opts.fronds ?? []);
   const elsewhere = Object.fromEntries(Object.entries(remotesOf(config)).filter(([frond]) => !served.has(frond)));
-  const useRemotes = (opts.topology ?? true) && Object.keys(elsewhere).length > 0;
+  const useRemotes = Object.keys(elsewhere).length > 0;
   let storage: ResolvedStorage | undefined;
 
   return boot({

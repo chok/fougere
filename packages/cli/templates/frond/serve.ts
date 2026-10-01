@@ -26,9 +26,8 @@ setModuleLoader((filePath: string) => jiti.import(filePath) as Promise<Record<st
 
 const log = new Logger('frond-host');
 
-// `topology: false` — this process *is* the frond, it doesn't route back out.
 // Storage comes from fougere.config.ts; this host names no engine.
-const app = await bootApp(process.cwd(), { topology: false });
+const app = await bootApp(process.cwd());
 
 const { port } = await serve(createLocalRunner(app), { port: Number(process.env.PORT ?? 4000) });
 log.info(`frond served — POST http://127.0.0.1:${port}/_fougere/call`);

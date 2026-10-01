@@ -1,4 +1,5 @@
 import { createLocalRunner, envLevel, identityFromEnv, setLogLevel } from '@fougere/core';
+import { loadConfig, remotesOf } from '@fougere/core/node';
 import { installLoader } from '../../src/loader.js';
 
 import { serve } from '@fougere/transport-http';
@@ -16,12 +17,23 @@ const SETTLE_MS = 60;
 
 /**
  * The host end of the gradient: one frond, alone in this process, reachable
- * over HTTP. `topology: false` — a served frond IS the host, it never routes
- * back out through `remotes:`. The same fronds/** an app runs in-process;
- * only the runtime moves.
+ * over HTTP, and reaching the fronds `fronds:` places elsewhere. The same
+ * fronds/** an app runs in-process; only the runtime moves.
  */
 export default class ServeCommand {
+  static DEFAULT_PORT = 4100;
+
   constructor(private app: App, private ui: Ui) {}
+
+  /** Where `fronds:` places this frond, so the process listens where its callers will look. */
+  static async portStated(root: string, frond: string): Promise<number> {
+    const address = remotesOf(await loadConfig(root))[frond];
+    if (!address) return ServeCommand.DEFAULT_PORT;
+
+    const url = new URL(address);
+
+    return Number(url.port || (url.protocol === 'https:' ? 443 : 80));
+  }
 
   async run(raw: Record<string, unknown>) {
     const frond = raw.frond as string | undefined;
@@ -40,7 +52,7 @@ export default class ServeCommand {
     const { bootApp } = await import('@fougere/defaults');
 
     setLogLevel(envLevel() ?? 'info');
-    let hosted = await bootApp(root, { only: [frond], topology: false });
+    let hosted = await bootApp(root, { only: [frond] });
     if (!hosted.fronds.some((f) => f.name === frond)) {
       this.ui.error(`Frond '${frond}' introuvable dans ce projet.`);
 
@@ -51,7 +63,7 @@ export default class ServeCommand {
     // `current` moves under it, so nothing on the wire learns the app was replaced.
     let current: Transport = createLocalRunner(hosted);
 
-    const port = raw.port != null ? Number(raw.port) : 4100;
+    const port = raw.port != null ? Number(raw.port) : await ServeCommand.portStated(root, frond);
     // A served frond admits what it can establish. With no root injected it takes the
     // state it is handed, which is why the loopback default is the other half.
     const { verify, requireIdentity } = await identityFromEnv();
@@ -70,7 +82,7 @@ export default class ServeCommand {
       const started = Date.now();
       let next: App;
       try {
-        next = await bootApp(root, { only: [frond], topology: false });
+        next = await bootApp(root, { only: [frond] });
       } catch (error) {
         // The previous app keeps serving: a dev loop that dies on a typo is worse than
         // one that holds the last state which booted.
