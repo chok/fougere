@@ -8,6 +8,7 @@ import { loadCascadedConfig, remotesOf, setModuleLoader, statedModules } from '@
 
 import type { App, CreateAppOptions, FougereConfig, Transport } from '@fougere/core';
 import { layerOf, type ResolvedStorage } from '@fougere/defaults';
+import { executor } from './graphql.js';
 
 // ── Public types ─────────────────────────────────
 
@@ -133,6 +134,7 @@ async function boot(): Promise<App> {
   // and did nothing with it: the file said `debug` and the threshold stayed where the
   // module had left it.
   applyConfig(fileConfig);
+  if (fileConfig.adapters?.graphql) await executor();
 
   const conventions = resolveConventions(fileConfig.conventions);
   // `frondAliases` reads a directory listing, so it is asked only when the loader it

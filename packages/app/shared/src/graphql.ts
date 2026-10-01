@@ -20,7 +20,7 @@ type ExecuteOn = (app: unknown, request: {
   state?: Record<string, unknown>;
 }) => Promise<unknown>;
 
-async function executor(): Promise<ExecuteOn> {
+export async function executor(): Promise<ExecuteOn> {
   try {
     const { executeOn } = await import('@fougere/adapter-graphql');
 
