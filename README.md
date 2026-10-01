@@ -47,11 +47,6 @@ reviewable whoever wrote it: you, a colleague, or an agent.
 
 ## Quick start
 
-```bash
-npm create fougere@latest -- shop --frond blog --app nuxt
-cd shop && pnpm install && pnpm migrate && pnpm dev   # :3000
-```
-
 With pnpm, a version published too recently is held back by its `minimum-release-age`. To try the
 latest one right away:
 
