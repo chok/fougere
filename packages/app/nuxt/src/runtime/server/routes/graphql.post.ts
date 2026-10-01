@@ -8,7 +8,9 @@ export default defineEventHandler(async (event) => {
   const body = ((await readBody(event)) ?? {}) as { query?: string; variables?: Record<string, unknown>; operationName?: string };
   const outcome = await serveGraphQL(app, { ...body, state: stateOf(event) });
 
-  if (outcome.kind === 'pass') return;
+  if (outcome.kind === 'pass') {
+    throw createError({ statusCode: 404, message: 'GraphQL is not served by this app' });
+  }
 
   if (outcome.kind === 'error') {
     throw createError({ statusCode: outcome.status, message: outcome.body.message, data: outcome.body });

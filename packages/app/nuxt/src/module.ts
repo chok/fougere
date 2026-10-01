@@ -257,10 +257,12 @@ const module = defineNuxtModule<FougereModuleOptions>({
     });
     // Session hydration — the page ships with its user, no round-trip
     addPlugin({ src: runtimeResolve('plugins/session.server'), mode: 'server' });
-    addServerHandler({
-      route: '/api/**',
-      handler: runtimeResolve('server/api/crud'),
-    });
+    if (config.adapters?.rest) {
+      addServerHandler({
+        route: '/api/**',
+        handler: runtimeResolve('server/api/crud'),
+      });
+    }
     // What `adapters: { graphql: true }` publishes — Express mounted it, and here it was
     // ignored without a word.
     if (config.adapters?.graphql) {

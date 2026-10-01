@@ -17,8 +17,9 @@ export default defineEventHandler(async (event) => {
     state: stateOf(event),
   });
 
-  // Nothing here is ours — an app's own /api/* routes must still reach their handler.
-  if (outcome.kind === 'pass') return;
+  if (outcome.kind === 'pass') {
+    throw createError({ statusCode: 404, message: `No route for ${method} ${event.path}` });
+  }
 
   if (outcome.kind === 'error') {
     if (outcome.headers) setResponseHeaders(event, outcome.headers);
