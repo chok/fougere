@@ -10,10 +10,9 @@ const terminal = ui();
 container.registerValue('ui', terminal);
 container.registerValue('cwd', process.cwd());
 
-// The CLI is a Fougere app — silence its boot chatter unless explicitly asked. The
-// threshold is SET, not only announced: a static import evaluates the logger module,
-// its env read included, before this line runs.
-process.env.FOUGERE_LOG_LEVEL ??= 'warn';
+// The CLI is a Fougere app — silence its boot chatter unless explicitly asked. Set on the
+// threshold and never in the environment, which an app the CLI boots would read as the
+// operator's word over its own `logLevel:`.
 setLogLevel(envLevel() ?? 'warn');
 
 const app = await createApp({ scan, createContainer: () => container });

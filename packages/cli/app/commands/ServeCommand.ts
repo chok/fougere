@@ -1,4 +1,4 @@
-import { createLocalRunner, identityFromEnv } from '@fougere/core';
+import { createLocalRunner, envLevel, identityFromEnv, setLogLevel } from '@fougere/core';
 import { installLoader } from '../../src/loader.js';
 
 import { serve } from '@fougere/transport-http';
@@ -39,6 +39,7 @@ export default class ServeCommand {
     await installLoader(root, watching);
     const { bootApp } = await import('@fougere/defaults');
 
+    setLogLevel(envLevel() ?? 'info');
     let hosted = await bootApp(root, { only: [frond], topology: false });
     if (!hosted.fronds.some((f) => f.name === frond)) {
       this.ui.error(`Frond '${frond}' introuvable dans ce projet.`);
