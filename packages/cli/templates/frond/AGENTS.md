@@ -9,6 +9,6 @@ After every change to handlers, entities, Fronds, configuration, or topology:
 
 1. Run `fougere check`.
 2. Fix every deterministic error it reports before continuing.
-3. Run the relevant tests, then run `npx tsc -p fronds --noEmit`.
+3. Run the relevant tests, then run `pnpm exec tsc -p fronds --noEmit`.
 
 `fougere check` is the Fougere model barrier; tests and TypeScript come after it passes.

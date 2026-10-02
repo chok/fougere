@@ -4,7 +4,7 @@
  * Fetches entity metadata from the remote server and generates
  * local Entity files that can be imported as @fronds/blog.
  *
- * Run: npx tsx sync-remote.ts
+ * Run: pnpm dlx tsx sync-remote.ts
  * Requires: remote-blog server running on port 4001
  */
 import { mkdirSync, writeFileSync, readFileSync, existsSync } from 'node:fs';

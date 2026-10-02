@@ -6,7 +6,7 @@ the declaration lives in `src/main.rs`.
 
 ```bash
 cargo run --release     # the Rust frond, :4200
-npx tsx consumer.ts     # the TS consumer, in another terminal
+pnpm dlx tsx consumer.ts     # the TS consumer, in another terminal
 ```
 
 ## What it proves

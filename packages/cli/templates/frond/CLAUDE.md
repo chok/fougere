@@ -81,7 +81,7 @@ After every change to handlers, entities, Fronds, configuration, or topology:
 
 ```bash
 fougere check
-npx tsc -p fronds --noEmit
+pnpm exec tsc -p fronds --noEmit
 ```
 
 `fougere check` is the Fougere model barrier; tests and TypeScript come after it passes.

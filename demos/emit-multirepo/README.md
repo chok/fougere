@@ -12,7 +12,7 @@ cd blog   && pnpm serve                     # repository A, standing still, :430
 cd search && pnpm sync                      # writes .fougere/remotes/blog/ — generated, gitignored
 
 # three terminals
-npx tsx broker.ts                           # the stand-in carrier, :4300
+pnpm dlx tsx broker.ts                      # the stand-in carrier, :4300
 cd search && pnpm dev                       # repository B — subscribes
 cd blog   && pnpm dev                       # repository A — publishes twice
 ```

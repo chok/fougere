@@ -2,7 +2,7 @@
 ## Production — two things to know
 
 `pnpm build` must be run **from the workspace root** (`pnpm -r build`) or through
-`npx nuxt build`. This demo declares its own nested `pnpm-workspace.yaml` for
+`pnpm exec nuxt build`. This demo declares its own nested `pnpm-workspace.yaml` for
 `fronds/*`, so `pnpm build` from inside resolves dependencies against that inner
 workspace and fails on `@fougere/container`.
 
