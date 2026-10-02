@@ -6,8 +6,8 @@
  *   fronds/invoice/       handlers/InvoiceHandler.ts
  *
  * Neither handler names `billing`. What says they resolve its code is one line of
- * `fougere.config.ts` — comment the nesting out and the first call answers
- * `'Money' is not registered`, which `fougere check` warns about before it happens.
+ * `fougere.config.ts` — comment the nesting out and the boot refuses, naming the handler that
+ * asks for `Money`.
  *
  *   pnpm dev
  */

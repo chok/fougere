@@ -138,6 +138,38 @@ describe('Container', () => {
     });
   });
 
+  describe('unresolved()', () => {
+    it('names what a constructor asks for and nothing answers, building nothing', () => {
+      let built = 0;
+      class Counted { constructor() { built++; } }
+      const container = createContainer();
+      container.register('Logger', Counted);
+      container.register('UserService', UserService, { deps: ['UserRepository', 'Logger'] });
+
+      expect(container.unresolved()).toEqual([{ name: 'UserService', ctor: UserService, missing: 'UserRepository' }]);
+      expect(built).toBe(0);
+    });
+
+    it('reads every scope below, each against its own parents', () => {
+      const root = createContainer();
+      root.register('UserRepository', UserRepository);
+      const scope = root.createScope();
+      scope.register('UserService', UserService, { deps: ['UserRepository', 'Logger'] });
+
+      expect(root.unresolved().map(({ missing }) => missing)).toEqual(['Logger']);
+    });
+
+    it('counts what the fallback would make, and keeps none of it', () => {
+      const container = createContainer();
+      container.setFallback((name) => (name === 'UserRepository' ? new UserRepository() : undefined));
+      container.register('Logger', Logger);
+      container.register('UserService', UserService, { deps: ['UserRepository', 'Logger'] });
+
+      expect(container.unresolved()).toEqual([]);
+      expect(container.has('UserRepository')).toBe(false);
+    });
+  });
+
   describe('dispose', () => {
     it('tells the singletons it kept, most recent first', async () => {
       const log: string[] = [];

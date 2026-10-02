@@ -7,6 +7,7 @@ import { describe, it, expect } from 'vitest';
 import { createContainer } from '@fougere/container';
 import { entity, primary, text } from '@fougere/schema';
 import { createApp, Crud, frond, type FrondDeclaration } from '../src/index.js';
+import { memory } from './memory.js';
 
 class Post extends entity({ id: primary(), title: text() }) {}
 
@@ -38,6 +39,7 @@ const boot = (handlers: FrondDeclaration['handlers']) =>
   createApp({
     fronds: [frond('blog', { entities: [Post], providers: [Clock], handlers })],
     createContainer,
+    storageFactory: memory,
   });
 
 describe('a constructor asking for more than it is declared', () => {

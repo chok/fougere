@@ -285,13 +285,16 @@ function registerProviders(
   ownLogger: OwnLogger,
   frondLog: Logger,
 ): Map<string, ProviderEntry[]> {
-  for (const provider of frond.providers) {
-    scope.register(nameOf(provider), provider.ctor, { deps: ownLogger(nameOf(provider), provider.deps), ...lifetimeOf(provider.ctor) });
-  }
   // What this frond puts in front of one of the framework's own ports. Its own, like every
   // provider — a link goes where its frond goes, which is what a frond behind `remotes:`
-  // takes with it.
+  // takes with it. A link is built by `wrapping`, never by the container: it asks for the seam,
+  // and nothing answers that name.
   const seams = seamChains(frond.providers, ports, refused);
+  const links = new Set([...seams.values()].flat());
+  for (const provider of frond.providers) {
+    if (links.has(provider)) continue;
+    scope.register(nameOf(provider), provider.ctor, { deps: ownLogger(nameOf(provider), provider.deps), ...lifetimeOf(provider.ctor) });
+  }
   for (const [seam, links] of seams) {
     boundPorts.add(seam);
     frondLog.debug(`seam ${seam} → ${links.map((one) => one.ctor.name).join(' → ')} → the realization`);

@@ -1061,12 +1061,6 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
   break it, and `drift` is where it would be said — it reads nullability today and the engine's
   introspection carries no foreign key (`ColumnMetadata`, measured 2026-09-14). The fix is one
   statement by hand, or a fresh table. `fougere migrate` does not add it either.
-- **A service reaching another frond's repository fails at the CALL, not at the boot** — a scope
-  sees its parent and never its siblings, so `AuthorRepository` registered by the frond that
-  owns the entity is unreachable from a neighbour. The refusal is right (a neighbour goes
-  through the facade, not through the rows) and it is LATE: a collector in the wrong frond
-  refuses the boot, this one answers `'AuthorRepository' is not registered` at the first call.
-  Pinned as the behaviour it is by `defaults/tests/gradient.test.ts`, measured 2026-09-14.
 - **A frame opens an owned entity to anyone** — `refuseStorageReached` (`boot/ownership.ts`) reads
   `<E>Storage` keys only (`entityOfStorageKey`), and a frame's key is `<E>Together`
   (`togetherKeyOf`, `storage/Storage.ts`). Measured 2026-10-01 beside `Repository(Account, Ledger)`:
@@ -1099,10 +1093,7 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
   and nothing says so. (2) A class in `handlers/` without the `Handler` suffix answers at its whole
   name (`addressOf`, `wire/Facade.ts`): `Posts` answers `posts`, where `PostHandler` answers `post`.
   (3) A handler accepting `Fact<T>` for a fact nothing announces is a subscription to nothing — no
-  code names it; `drift.ts` only reads a fact gone between two CARDS. A dependency nothing
-  registers is the fourth, and it is LATE rather than silent: `verify()` leaves an unresolved name
-  to the container (`core/src/verify.ts`, rule 1), which answers `'X' is not registered` at the
-  first call — see the sibling-repository entry above.
+  code names it; `drift.ts` only reads a fact gone between two CARDS.
 - **The level decides what is COLLECTED, not only what is printed** — `Logger.log`
   (`builtin/Logger.ts`) returns on the threshold BEFORE `carry.push`, so a line under it reaches no
   destination either. The CLI sets `FOUGERE_LOG_LEVEL=warn` (`cli/src/main.ts`) to keep its output
@@ -1241,6 +1232,11 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
 
 One line each, kept because a past version of this file asserted the opposite.
 
+- **A dependency nothing answers refuses the BOOT, not the first call** — `Container.unresolved()`
+  asks every registration's `deps` without building one, read after the ascent since `up` registers
+  too (`boot/unregistered.ts`, `dependency-unregistered`). A neighbour's `AuthorRepository` used to
+  answer `'AuthorRepository' is not registered` at the first call; the check found a seam link
+  registered under its own name, which nothing could ever resolve, and it no longer is.
 - **A Nuxt server build keeps what a `@fougere/*` package runs at load** — Nitro reads every module
   as free of side effects but its own, so `import '@fougere/adapter-sql/sqlite'` was dropped and a
   built site answered `Unknown source 'sql' … answers memory`. `@fougere/nuxt` widens Nitro's rule

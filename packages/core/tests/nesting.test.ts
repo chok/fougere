@@ -24,7 +24,7 @@ const codesOf = (refused: { code: string }[]): string[] => refused.map((one) => 
 describe('a child resolves what its parent declared', () => {
   it('answers when the tree puts it under the frond that holds the service', async () => {
     await using app = await createApp({
-      fronds: await hosted(['shop', 'cart', 'blog']),
+      fronds: await hosted(['shop', 'cart']),
       under: family,
       createContainer,
     });
@@ -34,15 +34,12 @@ describe('a child resolves what its parent declared', () => {
     expect(out).toBe('12.50 EUR');
   });
 
-  it('refuses the same dependency from outside the family', async () => {
-    await using app = await createApp({
+  it('refuses the same dependency from outside the family, at boot', async () => {
+    await expect(createApp({
       fronds: await hosted(['shop', 'cart', 'blog']),
       under: family,
       createContainer,
-    });
-
-    await expect(createLocalRunner(app)({ address: 'post', op: 'quote' }, Invocation.empty))
-      .rejects.toThrow(/Money/);
+    })).rejects.toThrow(/PostHandler asks for Money/);
   });
 });
 

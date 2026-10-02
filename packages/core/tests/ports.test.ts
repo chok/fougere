@@ -13,6 +13,7 @@ import overridden from './fixtures-logger-override/fronds.js';
 import wrappedLogger from './fixtures-logger-wrapped/fronds.js';
 import { billing, CardPayment, Payment, RetryingCardPayment, StripePayment } from './fixtures-ports-deep/fronds.js';
 import repository from './fixtures-repository/fronds.js';
+import { memory } from './memory.js';
 import { describe, it, expect, vi } from 'vitest';
 import { createContainer, type Container } from '@fougere/container';
 import { createApp, createLocalRunner, type FrondDescriptor } from '../src/index.js';
@@ -146,7 +147,7 @@ describe('a framework builtin is a port too', () => {
   });
 
   it('never treats a prefab base as a port — a repository is not one', async () => {
-      await using app = await createApp({ fronds: repository, createContainer });
+    await using app = await createApp({ fronds: repository, createContainer, storageFactory: memory });
     const scope = app.resolve<Container>('frond:mesures');
 
     expect(scope.has('RepositoryBase')).toBe(false);

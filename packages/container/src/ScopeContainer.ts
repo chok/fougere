@@ -3,11 +3,14 @@ import { ContainerError } from './ContainerError.js';
 import type { Constructor } from './registration/Constructor.js';
 import type { Lifetime } from './registration/Lifetime.js';
 import type { RegisterOptions } from './registration/RegisterOptions.js';
+import type { Unresolved } from './Unresolved.js';
 
 interface Entry {
   factory: (container: Container) => unknown;
   lifetime: Lifetime;
   instance?: unknown;
+  ctor?: Constructor;
+  deps: readonly string[];
 }
 
 /** A scope reaches its parent and its children through members only a scope can read. */
@@ -31,6 +34,8 @@ export class ScopeContainer implements Container {
     this.registry.set(name, {
       factory: (c) => new ctor(...deps.map((d) => c.resolve(d))),
       lifetime,
+      ctor,
+      deps,
     });
   }
 
@@ -39,6 +44,7 @@ export class ScopeContainer implements Container {
       factory: () => value,
       lifetime: 'singleton',
       instance: value,
+      deps: [],
     });
   }
 
@@ -58,6 +64,14 @@ export class ScopeContainer implements Container {
 
   has(name: string): boolean {
     return this.registry.has(name) || (this.parent?.has(name) ?? false);
+  }
+
+  unresolved(): Unresolved[] {
+    const own = [...this.registry].flatMap(([name, { ctor, deps }]) => (ctor === undefined ? [] : deps
+      .filter((dep) => !this.has(dep) && !this.fallbackAnswers(dep))
+      .map((missing) => ({ name, ctor, missing }))));
+
+    return [...own, ...this.children.flatMap((child) => child.unresolved())];
   }
 
   createScope(): Container {
@@ -159,6 +173,13 @@ export class ScopeContainer implements Container {
     this.registerValue(name, made);
 
     return made as T;
+  }
+
+  /** Asked, never kept: `resolve` registers what the fallback made, a question must leave no trace. */
+  private fallbackAnswers(name: string): boolean {
+    if (this.parent) return this.parent.fallbackAnswers(name);
+
+    return this.fallback?.(name) !== undefined;
   }
 
   private forget(child: ScopeContainer): void {

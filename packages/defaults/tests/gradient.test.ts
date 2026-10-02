@@ -331,11 +331,7 @@ describe('the cut holds when the code moves', () => {
     // A scope sees its parent and never its siblings, so `AuthorRepository` — registered by the
     // frond that owns the entity — is not reachable from another one. That is the ownership
     // boundary doing its job: a neighbour goes through the facade, not through the rows.
-    const one = await world({ moved: true });
-    await ask(one, 'author', 'create', { name: 'Ada', email: 'a@b.co' });
-
-    await expect(ask(one, 'census', 'count', {})).rejects.toThrow(/'AuthorRepository' is not registered/);
-    await one.dispose();
+    await expect(world({ moved: true })).rejects.toThrow(/Directory asks for AuthorRepository/);
   });
 
   it.each(cases)('a reference across the cut is written and read the same — %s', async (_name, where) => {

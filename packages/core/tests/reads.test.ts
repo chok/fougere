@@ -51,30 +51,27 @@ describe('a frond that declares what it reads', () => {
 describe('a frond that declares none', () => {
   const root = shop();
 
-  it('gets no reader, and nothing is attached on its behalf', async () => {
+  it('gets no reader, so a handler asking for one refuses the boot', async () => {
     const sourcesFactory = vi.fn(async () => ({ tag: 'reader' }));
-    const app = await createApp({ fronds: root, createContainer, sourcesFactory });
 
+    await expect(createApp({ fronds: root, createContainer, sourcesFactory }))
+      .rejects.toThrow(/Report asks for Reads/);
     expect(sourcesFactory).not.toHaveBeenCalled();
-    expect(() => app.resolve('Reads')).toThrow();
-    await app.dispose();
   });
 });
 
 describe('a boot that ignores the clause', () => {
   const root = shop(['Order', 'Line']);
 
-  it('says so — otherwise the handler dies later on a message naming neither', async () => {
+  it('says so, and refuses only because a handler asks for the reader', async () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    // No `sourcesFactory`: legitimate — a boot that hosts no reader is ordinary, and
-    // refusing it would make the clause a hard dependency on a storage package.
-    const app = await createApp({ fronds: root, createContainer });
+
+    await expect(createApp({ fronds: root, createContainer })).rejects.toThrow(/Report asks for Reads/);
 
     const said = warn.mock.calls.map((c) => c.join(' ')).join('\n');
     expect(said).toMatch(/\[reads\] Order, Line/);
     expect(said).toMatch(/sourcesFactory/);
     warn.mockRestore();
-    await app.dispose();
   });
 });
 

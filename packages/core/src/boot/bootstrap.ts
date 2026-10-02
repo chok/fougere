@@ -1,4 +1,5 @@
 import { createContainer, type Container } from '@fougere/container';
+import { unregistered } from './unregistered.js';
 import { lowerFirst, type SchemaView } from '@fougere/schema';
 
 import type { HandlerEntry } from '../descriptor/HandlerEntry.js';
@@ -740,6 +741,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
 
     built = app;
     await appLifecycle.up(app);
+    refuseWhatDoesNotHold(unregistered(container, fronds));
     stopAnnouncing = announceLines(emissions, container, carry);
 
     return app;

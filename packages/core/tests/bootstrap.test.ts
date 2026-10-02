@@ -36,19 +36,19 @@ function fakeStorage(overrides: Partial<Storage> = {}): Storage {
 
 describe('createApp', () => {
   it('registers builtins', async () => {
-    await using app = await createApp({ fronds, createContainer });
+    await using app = await createApp({ fronds, createContainer, storageFactory: () => fakeStorage() });
     expect(app.container.has('Logger')).toBe(true);
     expect(app.container.has('Config')).toBe(true);
   });
 
   it('discovers fronds', async () => {
-    await using app = await createApp({ fronds, createContainer });
+    await using app = await createApp({ fronds, createContainer, storageFactory: () => fakeStorage() });
     const names = app.fronds.map((f) => f.name).sort();
     expect(names).toEqual(['catalog', 'inventory', 'orders']);
   });
 
   it('registers frond scopes accessible from root', async () => {
-    await using app = await createApp({ fronds, createContainer });
+    await using app = await createApp({ fronds, createContainer, storageFactory: () => fakeStorage() });
     const ordersScope = app.resolve<Container>('frond:orders');
     expect(ordersScope).toBeDefined();
     expect(ordersScope.has('OrderService')).toBe(true);
@@ -56,7 +56,7 @@ describe('createApp', () => {
   });
 
   it('resolves providers from frond scope with builtins', async () => {
-    await using app = await createApp({ fronds, createContainer });
+    await using app = await createApp({ fronds, createContainer, storageFactory: () => fakeStorage() });
     const ordersScope = app.resolve<Container>('frond:orders');
     const service = ordersScope.resolve('OrderService');
     expect(service).toBeDefined();
@@ -78,7 +78,7 @@ describe('createApp', () => {
   });
 
   it('resolve shortcut delegates to container', async () => {
-    await using app = await createApp({ fronds, createContainer });
+    await using app = await createApp({ fronds, createContainer, storageFactory: () => fakeStorage() });
     const logger = app.resolve('Logger');
     expect(logger).toBeDefined();
   });
@@ -114,11 +114,9 @@ describe('createApp + storageFactory', () => {
     expect(names).toEqual(['brand', 'item', 'product']);
   });
 
-  it('skips storage registration when no storageFactory provided', async () => {
-    await using app = await createApp({ fronds, createContainer });
-    const catalogScope = app.resolve<Container>('frond:catalog');
-
-    expect(catalogScope.has('BrandStorage')).toBe(false);
+  it('refuses the boot when no storageFactory leaves a handler without its repository', async () => {
+    await expect(createApp({ fronds, createContainer }))
+      .rejects.toThrow(/ProductHandler asks for ProductRepository/);
   });
 });
 
