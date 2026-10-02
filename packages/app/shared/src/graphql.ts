@@ -20,9 +20,11 @@ type ExecuteOn = (app: unknown, request: {
   state?: Record<string, unknown>;
 }) => Promise<unknown>;
 
-export async function executor(): Promise<ExecuteOn> {
+export async function executor(
+  load: () => Promise<{ executeOn: unknown }> = () => import('@fougere/adapter-graphql'),
+): Promise<ExecuteOn> {
   try {
-    const { executeOn } = await import('@fougere/adapter-graphql');
+    const { executeOn } = await load();
 
     return executeOn as unknown as ExecuteOn;
   } catch (cause) {
