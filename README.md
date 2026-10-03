@@ -63,7 +63,7 @@ export default class PostHandler extends Crud(Post) {
     super(posts);
   }
 
-  async publish(id: string): Promise<Post> {
+  async publish(id: Post['id']): Promise<Post> {
     const post = await super.findById(id);
     if (!post) {
       throw new FougereError({
@@ -192,7 +192,7 @@ export default class PostHandler extends Crud(Post, { list: PostCard }) {
   }
 
   /** Validate: the author, a draft, a body worth publishing. Realize: stamp the pair. */
-  async publish(id: string, user?: User): Promise<Post> {
+  async publish(id: Post['id'], user?: User): Promise<Post> {
     const author = requireUser(user, 'publish');
     const post = await requireOwn(this.posts, id, author, 'publish');
     if (post.status === 'published') {
