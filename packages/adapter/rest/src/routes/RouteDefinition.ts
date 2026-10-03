@@ -2,6 +2,7 @@ import type { Fields } from '@fougere/schema';
 import { Visibility } from '@fougere/schema';
 import type { HttpMethod } from '@fougere/http';
 import type { HandlerEntry as CoreHandlerEntry } from '@fougere/core';
+import type { BindingPlan } from '@fougere/core/descriptor';
 import type { OperationMeta } from './OperationMeta.js';
 import type { GenerateRoutesOptions } from './GenerateRoutesOptions.js';
 
@@ -62,9 +63,8 @@ type HandlerFacade = Record<string, Function>;
 
 // ─── Naming conventions ─────────────────────────
 
-function hasById(name: string): boolean {
-  return name.includes('ById') || name === 'findById' || name === 'update' || name === 'delete';
-}
+/** The five a Crud handler brings answer at the collection or the row, never under their own name. */
+const CRUD = new Set(['list', 'findById', 'create', 'update', 'delete']);
 
 function pluralize(name: string): string {
   return name.endsWith('y')
@@ -91,23 +91,23 @@ function deriveMethod(
   return 'POST';
 }
 
-/** Derive route path from the address + operation name. */
-function derivePath(address: string, opName: string): string {
-  const base = `/${pluralize(address)}`;
+/**
+ * Read off the signature: what designates a row comes before the op, the other required values
+ * after it, and an optional one is left to the query string.
+ * `publish(id: Post['id'])` → `/posts/:id/publish`, `move(id: Post['id'], position: number)` →
+ * `/posts/:id/move/:position`, `byTag(tag: string)` → `/posts/by-tag/:tag`.
+ */
+function derivePath(address: string, opName: string, binding: BindingPlan = []): string {
+  const required = binding.flatMap(({ source, optional }) => source.kind === 'param' && !optional ? [source] : []);
+  const designating = required.filter((param) => param.identifies);
+  const following = required.filter((param) => !param.identifies);
+  const named = CRUD.has(opName) ? [] : [opName.replace(/[A-Z]/g, (letter) => '-' + letter.toLowerCase())];
 
-  // Standard CRUD
-  if (opName === 'list') return base;
-  if (opName === 'findById') return `${base}/:id`;
-  if (opName === 'create') return base;
-  if (opName === 'update') return `${base}/:id`;
-  if (opName === 'delete') return `${base}/:id`;
+  return ['', pluralize(address), ...designating.map(segmentOf), ...named, ...following.map(segmentOf)].join('/');
+}
 
-  // Remaining operations (convention-based)
-  const withId = hasById(opName);
-  const cleanName = opName.replace('ById', '');
-  const segment = cleanName.replace(/[A-Z]/g, (c) => '-' + c.toLowerCase());
-
-  return withId ? `${base}/:id/${segment}` : `${base}/${segment}`;
+function segmentOf({ name }: { name: string }): string {
+  return `:${name}`;
 }
 
 // ─── Route generation helpers ───────────────────
@@ -194,7 +194,7 @@ function routeFor({ address, frond, facade, opName, meta, options }: Projecting)
 
   return {
     method: override.method ?? deriveMethod(opName, meta.kind),
-    path: (options.prefix ?? '') + (override.path ?? derivePath(address, opName)),
+    path: (options.prefix ?? '') + (override.path ?? derivePath(address, opName, meta.binding)),
     operationName: opName,
     address,
     handler: (invocation) => op(invocation),

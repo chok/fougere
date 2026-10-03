@@ -39,7 +39,7 @@ export default class PostHandler extends Crud(Post, { list: PostCard }) {
   }
 
   /** A post is visible when published, or when it's the author's own. */
-  async findById(id: string, user?: User): Promise<Post | undefined> {
+  async findById(id: Post['id'], user?: User): Promise<Post | undefined> {
     const post = await this.posts.findById(id);
     if (!post) return undefined;
     const own = user && post.authorId === user.id;
@@ -70,7 +70,7 @@ export default class PostHandler extends Crud(Post, { list: PostCard }) {
   }
 
   /** Validate: the author only, free slug if it changes. */
-  async update(id: string, input: PostDraft, user?: User): Promise<Post> {
+  async update(id: Post['id'], input: PostDraft, user?: User): Promise<Post> {
     const author = requireUser(user);
     const post = await requireOwn(this.posts, id, author);
     if (input.slug && input.slug !== post.slug) await requireFreeSlug(this.posts, input.slug, id);
@@ -83,7 +83,7 @@ export default class PostHandler extends Crud(Post, { list: PostCard }) {
    * Validate: the author, a draft, a body worth publishing. Realize: the
    * server stamps the pair.
    */
-  async publish(id: string, user?: User): Promise<Post> {
+  async publish(id: Post['id'], user?: User): Promise<Post> {
     const author = requireUser(user);
     const post = await requireOwn(this.posts, id, author);
     if (post.status === 'published') {
@@ -97,7 +97,7 @@ export default class PostHandler extends Crud(Post, { list: PostCard }) {
   }
 
   /** Validate: the author only. */
-  async delete(id: string, user?: User): Promise<boolean> {
+  async delete(id: Post['id'], user?: User): Promise<boolean> {
     const author = requireUser(user);
     await requireOwn(this.posts, id, author);
 

@@ -1,4 +1,4 @@
-import { lowerFirst, type EntityConstructor, type SchemaView } from '@fougere/schema';
+import { FieldSet, lowerFirst, type EntityConstructor, type SchemaView } from '@fougere/schema';
 import type { ListOptions } from '../storage/ListOptions.js';
 import type { Storage } from '../storage/Storage.js';
 import type { OperationContract } from '../wire/OperationContract.js';
@@ -29,13 +29,15 @@ export function subjectOf(ctor: unknown, address: string): string {
   return target?.name ? lowerFirst(target.name) : address;
 }
 
-/** The id of the row an op acts on — a route segment, or a query fallback. */
-const byId = { name: 'id', source: { kind: 'param' as const, name: 'id' }, optional: false };
+/** The id of the row an op acts on — `id: Post['id']`, which a route places before the op. */
+const byId = (entity: string) =>
+  ({ name: 'id', source: { kind: 'param' as const, name: 'id', identifies: entity }, optional: false });
 
 const fromBody = { name: 'input', source: { kind: 'input' as const }, optional: false };
 
 /** The same five, written as the scan would have written them. */
-const idParam = { name: 'id', type: { raw: 'string', name: 'string' } };
+const idParam = (entity: string, field: string) =>
+  ({ name: 'id', type: { raw: `${entity}['${field}']`, name: 'string', identifies: { entity, field } } });
 
 const inputParam = (entity: string) => ({ name: 'input', type: { raw: `Partial<${entity}>`, name: entity } });
 
@@ -50,6 +52,8 @@ const returns = (raw: string, name: string, extra?: { array?: boolean; nullable?
 function crudOps(entity: SchemaView & { partial?: () => SchemaView }): Record<string, OperationContract> {
   const name = (entity as { name?: string }).name ?? 'Entity';
   const input = inputParam(name);
+  const id = byId(name);
+  const idSignature = idParam(name, FieldSet.of(entity.getFields()).primary ?? 'id');
 
   return {
     list: {
@@ -61,8 +65,8 @@ function crudOps(entity: SchemaView & { partial?: () => SchemaView }): Record<st
       },
     },
     findById: {
-      output: entity, cardinality: 'maybe', binding: [byId],
-      signature: { name: 'findById', returnType: returns(`${name} | undefined`, name, { nullable: true }), params: [idParam] },
+      output: entity, cardinality: 'maybe', binding: [id],
+      signature: { name: 'findById', returnType: returns(`${name} | undefined`, name, { nullable: true }), params: [idSignature] },
     },
     create: {
       input: entity, output: entity, cardinality: 'one', binding: [fromBody],
@@ -71,12 +75,12 @@ function crudOps(entity: SchemaView & { partial?: () => SchemaView }): Record<st
     // The patch view carries its own mode: an absent field is untouched, an
     // immutable one re-supplied is refused.
     update: {
-      input: entity.partial?.(), output: entity, cardinality: 'one', binding: [byId, fromBody],
-      signature: { name: 'update', returnType: returns(name, name), params: [idParam, input] },
+      input: entity.partial?.(), output: entity, cardinality: 'one', binding: [id, fromBody],
+      signature: { name: 'update', returnType: returns(name, name), params: [idSignature, input] },
     },
     delete: {
-      cardinality: 'none', binding: [byId],
-      signature: { name: 'delete', returnType: returns('boolean', 'boolean'), params: [idParam] },
+      cardinality: 'none', binding: [id],
+      signature: { name: 'delete', returnType: returns('boolean', 'boolean'), params: [idSignature] },
     },
   };
 }

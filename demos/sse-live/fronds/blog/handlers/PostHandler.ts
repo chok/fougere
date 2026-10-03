@@ -7,9 +7,9 @@ import type User from '../entities/User.js';
 
 declare class PostRepository {
   list(): Promise<Post[]>;
-  findById(id: string): Promise<Post | undefined>;
+  findById(id: Post['id']): Promise<Post | undefined>;
   create(input: Partial<Post>): Promise<Post>;
-  update(id: string, input: Partial<Post>): Promise<Post>;
+  update(id: Post['id'], input: Partial<Post>): Promise<Post>;
 }
 
 /**
@@ -47,7 +47,7 @@ export default class PostHandler {
   }
 
   /** Send it out, and say so. */
-  async publish(id: string): Promise<Post> {
+  async publish(id: Post['id']): Promise<Post> {
     const post = await this.posts.update(id, { status: 'published' });
     await this.changed({ id: post.id, author: post.author, status: post.status, at: new Date() });
 

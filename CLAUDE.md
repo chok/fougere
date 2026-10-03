@@ -871,6 +871,17 @@ walk the handlers, never the entities, so a handler with no entity (`checkout.pa
 and the fields come from the op's own contract. A GraphQL TYPE is built from a schema an op
 returns, once per entity. Pinned by `adapter/rest/tests/stated.test.ts` and `routes.test.ts`.
 
+**A REST path is read off the signature, never off the op's name** — `derivePath`
+(`adapter/rest/src/routes/RouteDefinition.ts`) over the binding plan. A primitive typed by an
+entity's primary (`id: Post['id']`) DESIGNATES a row and comes before the op —
+`/posts/:id/publish`; another required primitive comes after it, an optional one is left to the
+query string. The checker answers `string` for `Post['id']`, so the parser reads the SYNTAX
+(`identified`, `handler-parser.ts`) and the scan holds it to the entity's primary
+(`identifying`, `scanner.ts`), warning `parameter-identifies-non-primary` otherwise; the
+binding carries it as `identifies`. `Crud` declares it on its three `byId`. A `ById` in a name
+used to decide, so `publish(id: string)` and `publishById` answered different paths for one
+signature. Pinned by `adapter/rest/tests/routes.test.ts` and `compiler/tests/identifies.test.ts`.
+
 **Operation contract, three producers** — the façade consumes `OperationContract` and
 nothing else. A prefab DECLARES (`Crud.__ops`, runtime), the scan DERIVES from source,
 `frond.config.ts` STATES and wins over both. Config also creates an op neither producer

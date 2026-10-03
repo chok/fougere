@@ -8,7 +8,7 @@ export default class PostHandler extends Crud(Post) {
   }
 
   /** The draft→published transition. */
-  async publish(id: string): Promise<Post> {
+  async publish(id: Post['id']): Promise<Post> {
     const post = await super.findById(id);
     if (!post) {
       throw new FougereError({ code: ErrorCode.NOT_FOUND, message: `Post '${id}' not found` });

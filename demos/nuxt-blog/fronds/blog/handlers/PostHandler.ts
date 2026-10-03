@@ -14,7 +14,7 @@ export default class PostHandler extends Crud(Post) {
   }
 
   /** A post is visible when published, or when it's the reader's own draft. */
-  async findById(id: string, user?: User): Promise<Post | undefined> {
+  async findById(id: Post['id'], user?: User): Promise<Post | undefined> {
     const post = await super.findById(id);
     if (!post) return undefined;
     const own = user && post.authorId === user.id;
@@ -26,7 +26,7 @@ export default class PostHandler extends Crud(Post) {
    * The draft→published transition.
    * Validate: author only, draft only. Realise: the server stamps the pair.
    */
-  async publish(id: string, user?: User): Promise<Post> {
+  async publish(id: Post['id'], user?: User): Promise<Post> {
     if (!user) {
       throw new FougereError({ code: ErrorCode.UNAUTHORIZED, message: 'Login required to publish' });
     }

@@ -8,7 +8,7 @@ export class TaskCard extends Task.pick('id', 'title', 'status') {}
 // 'complete' is the business contract: a state transition.
 export default class TaskHandler extends Crud(Task) {
   /** open→done. Validate: open only. */
-  async complete(id: string): Promise<Task> {
+  async complete(id: Task['id']): Promise<Task> {
     const task = await super.findById(id);
     if (!task) {
       throw new FougereError({ code: ErrorCode.NOT_FOUND, message: `Task '${id}' not found` });

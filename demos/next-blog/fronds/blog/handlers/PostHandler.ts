@@ -27,7 +27,7 @@ export default class PostHandler extends Crud(Post) {
    * `readOnly`, so no client can reach it through create or update; this is the one
    * facade, and it states its own rules.
    */
-  async publish(id: string): Promise<Post> {
+  async publish(id: Post['id']): Promise<Post> {
     const post = await super.findById(id);
     if (!post) {
       throw new FougereError({ code: ErrorCode.NOT_FOUND, message: `Post '${id}' not found` });

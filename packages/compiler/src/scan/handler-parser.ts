@@ -28,6 +28,13 @@ const ANNOUNCED = new Set(['Fact', 'Pipe']);
 
 /** Parse a TypeScript type node into a TypeRef. */
 function parseTypeNode(node: ts.TypeNode, source: ts.SourceFile, checker?: ts.TypeChecker): TypeRef {
+  const parsed = readTypeNode(node, source, checker);
+  const identifies = identified(node);
+
+  return identifies ? { ...parsed, identifies } : parsed;
+}
+
+function readTypeNode(node: ts.TypeNode, source: ts.SourceFile, checker?: ts.TypeChecker): TypeRef {
   const ts = getTS();
   const raw = node.getText(source);
 
@@ -42,6 +49,20 @@ function parseTypeNode(node: ts.TypeNode, source: ts.SourceFile, checker?: ts.Ty
   }
 
   return fromKeyword(node, raw) ?? { raw, name: raw };
+}
+
+/**
+ * `Post['id']` names where the type comes from, which the checker forgets once it answers
+ * `string`. Read from the syntax, then held to the entity's primary by the scan.
+ */
+function identified(node: ts.TypeNode): TypeRef['identifies'] {
+  const ts = getTS();
+  if (!ts.isIndexedAccessTypeNode(node)) return undefined;
+  const { objectType, indexType } = node;
+  if (!ts.isTypeReferenceNode(objectType) || !ts.isIdentifier(objectType.typeName)) return undefined;
+  if (!ts.isLiteralTypeNode(indexType) || !ts.isStringLiteral(indexType.literal)) return undefined;
+
+  return { entity: objectType.typeName.text, field: indexType.literal.text };
 }
 
 /**

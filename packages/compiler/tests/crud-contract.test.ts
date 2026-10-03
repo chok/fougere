@@ -109,7 +109,10 @@ describe('as an installed app — the scan finds nothing, the façade validates 
     const ops = app.fronds[0].handlers[0].operations;
     expect([...ops.keys()].sort()).toEqual(['create', 'delete', 'findById', 'list', 'update']);
     // Each carries the TYPES a GraphQL argument needs — `binding` only says where from.
-    expect(ops.get('findById')!.signature!.params).toEqual([{ name: 'id', type: { raw: 'string', name: 'string' } }]);
+    expect(ops.get('findById')!.signature!.params).toEqual([{
+      name: 'id',
+      type: { raw: "Note['id']", name: 'string', identifies: { entity: 'Note', field: 'id' } },
+    }]);
     // The ops themselves still arrive by prototype, as they always did.
     expect(Object.keys(app.resolve('noteHandler') as object).sort())
       .toEqual(['create', 'delete', 'findById', 'list', 'update']);

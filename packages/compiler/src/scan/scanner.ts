@@ -2,12 +2,12 @@ import { DEFAULT_CONVENTIONS, frondDirsOf, frondPackage, providerDirsOf, resolve
 import { Fronds, addressOf, awaitKeyOf, cardinalityOf, computeBindingPlan, emitKeyOf, getPresenterFields, outputOf, ownedBy, repositoryKeyOf, storageKeyOf, targetOf, type CollectorEntry, type EntityEntry, type FrondDescriptor, type HandlerEntry, type MiddlewareEntry, type OperationContract, type OperationsMap, type PresenterEntry, type ProviderEntry, type SeedEntry, type TypeRef, viewsOf, isExtension, type ExtensionEntry } from '@fougere/core/descriptor';
 import { getModuleLoader, loadFrondConfig } from '@fougere/core/node';
 import type { FrondConfig, ErrorCode } from '@fougere/core';
-import type { Signature } from '@fougere/core/descriptor';
+import type { Param, Signature } from '@fougere/core/descriptor';
 import { readdir, readFile } from 'node:fs/promises';
 import { existsSync, type Dirent } from 'node:fs';
 import { join, dirname, basename, resolve as resolvePath } from 'node:path';
 
-import { ANONYMOUS_SCHEMA_NAME, type SchemaView } from '@fougere/schema';
+import { ANONYMOUS_SCHEMA_NAME, FieldSet, type SchemaView } from '@fougere/schema';
 
 import {
   parseAllHandlerMethods,
@@ -380,7 +380,8 @@ interface Reading {
  * Leaving it only on the signature meant every consumer had to look one level down, and only
  * the façade did.
  */
-function contractOf(method: Signature, read: Reading): OperationContract {
+function contractOf(parsed: Signature, read: Reading): OperationContract {
+  const method = { ...parsed, params: parsed.params.map((param) => identifying(param, parsed, read)) };
   const meta: OperationContract = {
     signature: method,
     ...(method.description && { description: method.description }),
@@ -399,6 +400,30 @@ function contractOf(method: Signature, read: Reading): OperationContract {
   }
 
   return meta;
+}
+
+/**
+ * `id: Post['id']` designates a row only when `id` IS Post's primary — `Post['title']` is a
+ * string borrowed from the entity, and stays an ordinary value.
+ */
+function identifying(param: Param, method: Signature, read: Reading): Param {
+  const { identifies, ...type } = param.type;
+  if (!identifies) return param;
+
+  const entity = read.moduleExports[identifies.entity] as SchemaView | undefined;
+  const primary = typeof entity?.getFields === 'function' ? FieldSet.of(entity.getFields()).primary : undefined;
+  if (primary === identifies.field) return param;
+
+  record({
+    severity: 'warning',
+    code: 'parameter-identifies-non-primary',
+    filePath: read.filePath,
+    subject: `${read.handlerName}.${method.name}`,
+    message: `'${param.name}: ${param.type.raw}' does not designate a row: `
+      + (primary ? `${identifies.entity}'s primary is '${primary}'.` : `'${identifies.entity}' is not an entity this scan holds.`),
+  });
+
+  return { ...param, type };
 }
 
 /** Parse ALL method signatures for unified binding. */

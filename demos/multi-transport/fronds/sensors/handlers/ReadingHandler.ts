@@ -3,7 +3,7 @@ import type Reading from '../entities/Reading.js';
 
 declare class ReadingRepository {
   list(): Promise<Reading[]>;
-  findById(id: string): Promise<Reading | undefined>;
+  findById(id: Reading['id']): Promise<Reading | undefined>;
   create(input: Partial<Reading>): Promise<Reading>;
 }
 
@@ -19,7 +19,7 @@ export default class ReadingHandler {
   async list() { return this.readings.list(); }
 
   /** One reading by id. */
-  async findById(id: string) { return this.readings.findById(id); }
+  async findById(id: Reading['id']) { return this.readings.findById(id); }
 
   /** Record a reading — validated by the façade before it lands here. */
   async create(input: Reading) { return this.readings.create(input); }

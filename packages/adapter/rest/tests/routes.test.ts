@@ -38,13 +38,23 @@ const operationKinds: Record<string, 'query' | 'command'> = {
   archiveById: 'command',
 };
 
+const designating = { name: 'id', source: { kind: 'param', name: 'id', identifies: 'Post' }, optional: false };
+const body = { name: 'input', source: { kind: 'input' }, optional: false };
+
+/** What `Crud` declares for the three ops that act on one row. */
+const bindings: Record<string, unknown[]> = {
+  findById: [designating],
+  update: [designating, body],
+  delete: [designating],
+};
+
 /** Build an OperationsMap from op names + optional ops with meta. */
 function opsMap(
   ops: string[],
   custom?: Record<string, { input?: any; output?: any }>,
 ): Map<string, any> {
   const map = new Map<string, any>();
-  for (const op of ops) map.set(op, { kind: operationKinds[op] });
+  for (const op of ops) map.set(op, { kind: operationKinds[op], binding: bindings[op] });
   if (custom) {
     for (const [name, meta] of Object.entries(custom)) {
       map.set(name, { kind: operationKinds[name], ...meta });
@@ -94,7 +104,7 @@ function fakeApp(
 
       return new Map(Object.keys(facade).map((name) => [
         name,
-        { kind: operationKinds[name], ...handler?.operations.get(name) },
+        { kind: operationKinds[name], binding: bindings[name], ...handler?.operations.get(name) },
       ]));
     },
   };
@@ -201,20 +211,32 @@ describe('generateRoutes', () => {
     ]);
   });
 
-  it('custom ById operations get :id in path', () => {
+  it('reads the path off the signature, never off the name', () => {
+    const param = (name: string, extra: object = {}) =>
+      ({ name, source: { kind: 'param', name, ...extra }, optional: false });
+    const ops = {
+      publish: [param('id', { identifies: 'Post' })],
+      move: [param('id', { identifies: 'Post' }), param('position', { coerce: 'number' })],
+      byTag: [param('tag')],
+      search: [{ ...param('term'), optional: true }],
+      archiveById: [param('id')],
+    };
+    const facade = Object.fromEntries(Object.keys(ops).map((name) => [name, vi.fn(async () => ({}))]));
     const app = fakeApp(
-      { postHandler: { ...fakeCrud(), archiveById: vi.fn(async () => ({})) } },
+      { postHandler: facade },
       [{
         address: 'post',
-        operations: opsMap(['list'], { archiveById: { input: Post.pick('id') } }),
+        operations: new Map(Object.entries(ops).map(([name, binding]) => [name, { kind: 'command', binding }])),
       }],
     );
 
-    const routes = generateRoutes(app);
-    const archive = routes.find((r) => r.operationName === 'archiveById');
-
-    expect(archive?.method).toBe('POST');
-    expect(archive?.path).toBe('/posts/:id/archive');
+    expect(generateRoutes(app).map((r) => r.path)).toEqual([
+      '/posts/:id/publish',
+      '/posts/:id/move/:position',
+      '/posts/by-tag/:tag',
+      '/posts/search',
+      '/posts/archive-by-id/:id',
+    ]);
   });
 
   it('supports route overrides', () => {

@@ -8,7 +8,7 @@ export class UserCard extends User.pick('id', 'name', 'status') {}
 // 'deactivate' is the business contract: a state transition.
 export default class UserHandler extends Crud(User) {
   /** active→inactive. Validate: active only. */
-  async deactivate(id: string): Promise<User> {
+  async deactivate(id: User['id']): Promise<User> {
     const user = await super.findById(id);
     if (!user) {
       throw new FougereError({ code: ErrorCode.NOT_FOUND, message: `User '${id}' not found` });
