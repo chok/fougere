@@ -117,15 +117,14 @@ const publish = useCommand(post, 'publish');
 </tr>
 </table>
 
-That's all! All data coming to your handler are validated throw your schema definition and the output is defined to JSON RPC by default but you can enable REST or Graphql.
+That's all! Everything your handler receives is validated against your schema, and it is served over JSON-RPC by default. You can enable REST or GraphQL as well.
 
 > [!TIP]
-> If you need full controll on routes for example, you can specify it in config or throw extension.
+> If you need full control over routes, for example, you can set them in config.
 
 ## Quick start
 
-With pnpm, a version published too recently is held back by its `minimum-release-age`. To try the
-latest one right away:
+For now, only pnpm is fully supported. As Fougere is in quick changes, you test latest release :
 
 ```bash
 pnpm --config.minimum-release-age=0 create fougere
