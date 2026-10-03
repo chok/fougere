@@ -2,12 +2,12 @@
 
 # 🌿 Fougere
 
-**Write the domain. Everything else is a projection of it — including the wire.**
+**Fougere is focused on your business only. Create it.**
+**Decide later which infrastructure topology you want**
+**And which technology you want in front of it (GraphQL, REST, ...)**
 
-One class declares the business object. From it come the TypeScript type, the validator,
-the SQL table, the form contract and the API surface — and because the declaration is
-JSON on the wire, the domain can move to its own process, or to another language, while
-the code calling it does not change.
+With one entity class, everything is derived (Validation, Table, API,...).
+No DTOs to write, nothing to keep in sync. It's the same class!
 
 [![CI](https://github.com/chok/fougere/actions/workflows/ci.yml/badge.svg)](https://github.com/chok/fougere/actions/workflows/ci.yml)
 [![npm](https://img.shields.io/npm/v/@fougere/schema/alpha.svg)](https://www.npmjs.com/package/@fougere/schema)
@@ -19,31 +19,108 @@ the code calling it does not change.
 
 ---
 
+<table>
+<tr>
+<th>Entity</th>
+<th>Repository</th>
+<th>Handler</th>
+</tr>
+<tr>
+<td valign="top">
+
 ```ts
-// fronds/blog/entities/Post.ts — this project's own blog, trimmed of three fields
+// entities/Post.ts
 export default class Post extends entity({
   id: primary(),
-  title: text({ min: 1, max: 160 }),
-  body: optional(text()),
-  authorId: readOnly(ref(User)),                                // a User of another frond
+  title: text({ min: 1, max: 200 }),
+  body: text(),
   createdAt: created(),
   status: readOnly(oneOf('draft', 'published', { default: 'draft' })),
-  publishedAt: readOnly(optional(date())),
 }) {}
 ```
 
-`readOnly` is not a note about intent: it removes the field from what a client may ever
-send, so publishing cannot be a field write — it has to be an operation.
+</td>
+<td valign="top">
 
-`ref` reaches into another frond. Both share one database today, so a foreign key holds it
-and costs nothing; give the blog its own database and no key can — two of them share no
-constraint — so the write reads the row instead, and refuses the same insert. What neither
-can reach is the third answer, and the boot names it rather than letting you find out.
+```ts
+// repositories/PostRepository.ts
+export class PostCard extends Post.pick('id', 'title', 'status') {}
 
-One field changes, and there is one place to read. The table, the validator, the GraphQL
-type and the form contract are derived from it, so they cannot disagree with it — and a
-declaration the framework can prove wrong is refused at boot, naming it. A diff stays
-reviewable whoever wrote it: you, a colleague, or an agent.
+export default class PostRepository extends Repository(Post) {
+  published(): Promise<PostCard[]> {
+    return this.output(PostCard).findAllBy({ status: 'published' });
+  }
+}
+```
+
+</td>
+<td valign="top">
+
+```ts
+// handlers/PostHandler.ts
+export default class PostHandler extends Crud(Post) {
+  constructor(private posts: PostRepository) {
+    super(posts);
+  }
+
+  async publish(id: string): Promise<Post> {
+    const post = await super.findById(id);
+    if (!post) {
+      throw new FougereError({
+        code: ErrorCode.NOT_FOUND,
+        message: `Post '${id}' not found`,
+      });
+    }
+
+    return super.update(id, { status: 'published' });
+  }
+
+  listPublished(): Promise<PostCard[]> {
+    return this.posts.published();
+  }
+}
+```
+
+</td>
+</tr>
+<tr>
+<th colspan="3">Nuxt page</th>
+</tr>
+<tr>
+<td colspan="3">
+
+```vue
+<!-- app/pages/posts.vue -->
+<script setup lang="ts">
+import { post } from '@fronds/facade';
+
+const { items } = await useQuery(post, 'list');
+const publish = useCommand(post, 'publish');
+</script>
+
+<template>
+  <ul>
+    <li v-for="row in items" :key="row.id">
+      {{ row.title }} — {{ row.status }}
+      <button
+        v-if="row.status === 'draft'"
+        @click="publish.execute({ params: { id: row.id } })"
+      >
+        Publish
+      </button>
+    </li>
+  </ul>
+</template>
+```
+
+</td>
+</tr>
+</table>
+
+That's all! All data coming to your handler are validated throw your schema definition and the output is defined to JSON RPC by default but you can enable REST or Graphql.
+
+> [!TIP]
+> If you need full controll on routes for example, you can specify it in config or throw extension.
 
 ## Quick start
 
@@ -68,7 +145,7 @@ Fougere in your app.
 ```ts
 export class PostDraft extends Post.pick('title', 'summary', 'body') {}
 
-PostDraft['~standard'].validate({ title: '' });  // { issues: [{ message, path: [{ key: 'title' }] }] }
+PostDraft['~standard'].validate({ title: '' }); // { issues: [{ message, path: [{ key: 'title' }] }] }
 ```
 
 Be clear about what crosses: **the validator, and only the validator**. The other three axes stay
@@ -82,14 +159,14 @@ through the hole; the reason to come back for the rest is `getFields()`.
   <img alt="The Frond in the middle, two rings around it. The outer ring is the public surface, publishing outward as the call envelope, REST and GraphQL. The inner ring is the ports it traverses, where SQL, a remote Frond and a mirrored API arrive. Nothing touches the Frond." src="./docs/img/core-and-arcs.light.svg" width="100%">
 </picture>
 
-| | |
-| --- | --- |
-| **Validation** | the same validator in the browser and at the façade — unknown keys refused |
-| **Storage** | the SQL table and additive schema sync |
-| **Forms** | `useFormFor(Post)` — fields, rules, per-field error mapping |
-| **API surface** | `post.list`, `post.create`, `post.publish`… |
-| **GraphQL · REST** | the types, the inputs, the routes — from the same operations |
-| **Types** | the class *is* the type |
+|                    |                                                                            |
+| ------------------ | -------------------------------------------------------------------------- |
+| **Validation**     | the same validator in the browser and at the façade — unknown keys refused |
+| **Storage**        | the SQL table and additive schema sync                                     |
+| **Forms**          | `useFormFor(Post)` — fields, rules, per-field error mapping                |
+| **API surface**    | `post.list`, `post.create`, `post.publish`…                                |
+| **GraphQL · REST** | the types, the inputs, the routes — from the same operations               |
+| **Types**          | the class _is_ the type                                                    |
 
 No codegen step, no `dist/generated`, no watcher. The declaration is the artefact.
 
@@ -100,7 +177,14 @@ validator — the only code on this page Fougere does not derive.
 
 ```ts
 // fronds/blog/handlers/PostHandler.ts
-export class PostCard extends Post.pick('id', 'slug', 'title', 'summary', 'authorName', 'publishedAt') {}
+export class PostCard extends Post.pick(
+  'id',
+  'slug',
+  'title',
+  'summary',
+  'authorName',
+  'publishedAt',
+) {}
 
 export default class PostHandler extends Crud(Post, { list: PostCard }) {
   constructor(private posts: PostRepository) {
