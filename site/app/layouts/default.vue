@@ -28,6 +28,14 @@ async function logout() {
         </nav>
         <div class="ml-auto flex items-center gap-2">
           <UButton
+            to="https://github.com/chok/fougere"
+            target="_blank"
+            variant="ghost"
+            size="sm"
+            icon="i-lucide-github"
+            aria-label="GitHub"
+          />
+          <UButton
             :to="switchLocalePath(otherLocale)"
             variant="ghost"
             size="sm"
