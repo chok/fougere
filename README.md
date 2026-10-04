@@ -18,6 +18,8 @@ You split your app into [fronds](https://fougere.dev/docs/concepts/frond), one p
 
 </div>
 
+---
+
 > [!IMPORTANT]
 > Fougere is in alpha, so use it with caution: APIs and conventions may still change.<br/>
 > There are also many [known issues](./KNOWN_ISSUES.md).
