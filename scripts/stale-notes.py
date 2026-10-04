@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Order the `## Known issues` entries by the RECENCY of the code they cite.
+"""Order the `KNOWN_ISSUES.md` entries by the RECENCY of the code they cite.
 
 Measured 2026-08-24 over 31 entries: 6 were false or half false, and all six cited code
 touched in the last seven days. Nothing older than 13 August was wrong. An entry is written
@@ -75,10 +75,10 @@ def last_touched(path: str) -> tuple[str, str] | None:
 
 
 def entries() -> list[str]:
-    text = (REPO / 'CLAUDE.md').read_text()
-    if '## Known issues' not in text:
-        raise SystemExit('CLAUDE.md has no `## Known issues` section')
-    return re.findall(r'^- (.+?)(?=\n- |\Z)', text.split('## Known issues', 1)[1], re.S | re.M)
+    text = (REPO / 'KNOWN_ISSUES.md').read_text()
+    if '# Known issues' not in text:
+        raise SystemExit('KNOWN_ISSUES.md has no `# Known issues` heading')
+    return re.findall(r'^- (.+?)(?=\n- |\Z)', text.split('# Known issues', 1)[1], re.S | re.M)
 
 
 def main() -> int:
