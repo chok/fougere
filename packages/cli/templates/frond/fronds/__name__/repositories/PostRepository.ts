@@ -1,7 +1,6 @@
 import { Repository } from '@fougere/core';
 import Post from '../entities/Post.js';
-
-export class PostCard extends Post.pick('id', 'title', 'status') {}
+import PostCard from '../entities/PostCard.js';
 
 export default class PostRepository extends Repository(Post) {
   published(): Promise<PostCard[]> {
