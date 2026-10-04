@@ -4,7 +4,7 @@
 
 **Fougere is focused on your business only. Create it.**<br/>
 **Decide later which infrastructure topology you want,**<br/>
-**and which technology you want in front of it (GraphQL, REST…).**
+**And which technology you want in front of it (GraphQL, REST…).**
 
 With one entity class, everything is derived (validation, table, API…).<br/>
 No DTOs to write. It's the same class derived for your needs!<br/>
@@ -21,14 +21,13 @@ You split your app into [fronds](https://fougere.dev/docs/concepts/frond), one p
 ---
 
 > [!IMPORTANT]
-> Fougere is in alpha, so use it with caution: APIs and conventions may still change.
+> Fougere is in alpha, so use it with caution: APIs and conventions may still change.<br/>
 > There are also many [known issues](./KNOWN_ISSUES.md).
 
 <table>
 <tr>
-<th>Entity</th>
-<th>Repository</th>
-<th>Handler</th>
+<th width="50%">Entity</th>
+<th width="50%">Repository</th>
 </tr>
 <tr>
 <td valign="top">
@@ -40,7 +39,11 @@ export default class Post extends entity({
   title: text({ min: 1, max: 200 }),
   body: text(),
   createdAt: created(),
-  status: readOnly(oneOf('draft', 'published', { default: 'draft' })),
+  status: readOnly(
+    oneOf('draft', 'published', {
+      default: 'draft',
+    }),
+  ),
 }) {}
 ```
 
@@ -59,6 +62,12 @@ export default class PostRepository extends Repository(Post) {
 ```
 
 </td>
+</tr>
+<tr>
+<th>Handler</th>
+<th>Nuxt page</th>
+</tr>
+<tr>
 <td valign="top">
 
 ```ts
@@ -77,7 +86,9 @@ export default class PostHandler extends Crud(Post) {
       });
     }
 
-    return super.update(id, { status: 'published' });
+    return super.update(id, {
+      status: 'published',
+    });
   }
 
   listPublished(): Promise<PostCard[]> {
@@ -87,12 +98,7 @@ export default class PostHandler extends Crud(Post) {
 ```
 
 </td>
-</tr>
-<tr>
-<th colspan="3">Nuxt page</th>
-</tr>
-<tr>
-<td colspan="3">
+<td valign="top">
 
 ```vue
 <!-- app/pages/posts.vue -->
@@ -109,7 +115,11 @@ const publish = useCommand(post, 'publish');
       {{ row.title }} — {{ row.status }}
       <button
         v-if="row.status === 'draft'"
-        @click="publish.execute({ params: { id: row.id } })"
+        @click="
+          publish.execute({
+            params: { id: row.id },
+          })
+        "
       >
         Publish
       </button>
