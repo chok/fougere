@@ -3,21 +3,25 @@
 # 🌿 Fougere
 
 **Fougere is focused on your business only. Create it.**
-**Decide later which infrastructure topology you want**
-**And which technology you want in front of it (GraphQL, REST, ...)**
+**Decide later which infrastructure topology you want,**
+**and which technology you want in front of it (GraphQL, REST…).**
 
-With one entity class, everything is derived (Validation, Table, API,...).
+With one entity class, everything is derived (validation, table, API…).
 No DTOs to write, nothing to keep in sync. It's the same class!
 
 [![CI](https://github.com/chok/fougere/actions/workflows/ci.yml/badge.svg)](https://github.com/chok/fougere/actions/workflows/ci.yml)
 [![npm](https://img.shields.io/npm/v/@fougere/schema/alpha.svg)](https://www.npmjs.com/package/@fougere/schema)
-[![Status](https://img.shields.io/badge/status-alpha-orange.svg)](#alpha-today)
+[![Status](https://img.shields.io/badge/status-alpha-orange.svg)](./KNOWN_ISSUES.md)
 
 **[Documentation →](https://fougere.dev/)**
 
 </div>
 
 ---
+
+> [!IMPORTANT]
+> Fougere is in alpha, so use it with caution: APIs and conventions may still change.
+> There are also many [known issues](./KNOWN_ISSUES.md).
 
 <table>
 <tr>
@@ -124,134 +128,42 @@ That's all! Everything your handler receives is validated against your schema, a
 
 ## Quick start
 
-For now, only pnpm is fully supported. As Fougere is in quick changes, you test latest release :
+For now, only pnpm is fully supported. Fougere changes quickly, so to try the latest release:
 
 ```bash
 pnpm --config.minimum-release-age=0 create fougere
 ```
 
-You now have a running app: the table created, the form contract, the REST and GraphQL
-surfaces, and pages calling operations through `useQuery` / `useCommand`. Nothing above
-was generated into a file you have to keep.
+With no arguments, it walks you through creating a new app in an interactive terminal UI.
 
-## Or adopt nothing
+> [!NOTE]
+> It runs `fougere new` from the [CLI](https://fougere.dev/docs/cli).
 
-An entity is a [Standard Schema](https://standardschema.dev/), so it is accepted wherever
-one is — tRPC, Hono, TanStack Form, and the server frameworks adopting the spec for
-route-level validation. One `npm i @fougere/schema`, no adapter package, nothing else of
-Fougere in your app.
+→ [Getting started](https://fougere.dev/docs/getting-started)
 
-```ts
-export class PostDraft extends Post.pick('title', 'summary', 'body') {}
+## Philosophy
 
-PostDraft['~standard'].validate({ title: '' }); // { issues: [{ message, path: [{ key: 'title' }] }] }
-```
+Fougere is heavily inspired by DDD and hexagonal architecture, but doesn't follow them strictly. Think of Fougere as a core around your business logic. Primary adapters, like REST or GraphQL, can be attached to your business logic, but Fougere doesn't know about them. In the same way, the core handles storage without knowing what it is. Implementations are provided for these adapters, but you can write your own to support any kind of input or output.
 
-Be clear about what crosses: **the validator, and only the validator**. The other three axes stay
-home — no table, no GraphQL type, no form contract. The entity is the piece that fits
-through the hole; the reason to come back for the rest is `getFields()`.
+The one primitive to know is the Frond, the fractal leaf of a fern (_fougère_ in French). It is like a bounded context: you can't call another frond's services directly, only the public code its handlers expose. In return, calling that code is made simple, with several ways to reach a frond's code.
 
-## What derives from it
+→ [Philosophy](https://fougere.dev/docs/concepts/philosophy)
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./docs/img/core-and-arcs.dark.svg">
-  <img alt="The Frond in the middle, two rings around it. The outer ring is the public surface, publishing outward as the call envelope, REST and GraphQL. The inner ring is the ports it traverses, where SQL, a remote Frond and a mirrored API arrive. Nothing touches the Frond." src="./docs/img/core-and-arcs.light.svg" width="100%">
-</picture>
+## Features
 
-|                    |                                                                            |
-| ------------------ | -------------------------------------------------------------------------- |
-| **Validation**     | the same validator in the browser and at the façade — unknown keys refused |
-| **Storage**        | the SQL table and additive schema sync                                     |
-| **Forms**          | `useFormFor(Post)` — fields, rules, per-field error mapping                |
-| **API surface**    | `post.list`, `post.create`, `post.publish`…                                |
-| **GraphQL · REST** | the types, the inputs, the routes — from the same operations               |
-| **Types**          | the class _is_ the type                                                    |
-
-No codegen step, no `dist/generated`, no watcher. The declaration is the artefact.
-
-## What stays yours
-
-The interesting part is never `update()`. It is the transition, and a transition has a
-validator — the only code on this page Fougere does not derive.
-
-```ts
-// fronds/blog/handlers/PostHandler.ts
-export class PostCard extends Post.pick(
-  'id',
-  'slug',
-  'title',
-  'summary',
-  'authorName',
-  'publishedAt',
-) {}
-
-export default class PostHandler extends Crud(Post, { list: PostCard }) {
-  constructor(private posts: PostRepository) {
-    super(posts);
-  }
-
-  /** Validate: the author, a draft, a body worth publishing. Realize: stamp the pair. */
-  async publish(id: Post['id'], user?: User): Promise<Post> {
-    const author = requireUser(user, 'publish');
-    const post = await requireOwn(this.posts, id, author, 'publish');
-    if (post.status === 'published') {
-      throw new FougereError({ code: ErrorCode.CONFLICT, message: 'Already published' });
-    }
-    return this.posts.update(id, { status: 'published', publishedAt: new Date() });
-  }
-}
-```
-
-`user?: User` is the injection: the signature is matched **by type** against the
-collector that resolves the session. No decorator, no container lookup to write.
-
-## The domain travels
-
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./docs/img/gradient.dark.svg">
-  <img alt="Four pairs of nodes — your page and the Frond. Only the link between them changes: a direct call, then a hop, then a hop across a repository boundary, then one where the Frond is not TypeScript." src="./docs/img/gradient.light.svg" width="100%">
-</picture>
-
-A **Frond** is a domain — its entities, handlers, collectors, seeds. Where it runs is one
-line, and it is the only line that changes:
-
-```ts
-// fougere.config.ts
-remotes: { blog: 'http://blog-node:4100' },  // delete this line → same app, in-process
-```
-
-In-process, a call is direct memory execution, not a loopback request. Split, a host going
-down is a typed `503` in your pages, and they recover when it returns. The far side does
-not have to be TypeScript: [`demos/rust-frond`](./demos/rust-frond) is a domain written in
-Rust whose rules — not just its types — are enforced by the TypeScript validator.
-
-## Alpha today
-
-Published on npm under the `alpha` tag. The version is the whole promise: the surface can
-still move. Seen running, not planned — a validated draft→publish exercised in a
-browser, the split lived daily, identical user code either side through a production
-build, and [this site](./site) is itself a Fougere app.
-
-Known limits, because you would find them anyway: the boot never writes a schema —
-`fougere migrate` applies what `fougere freeze` recorded — tables, columns, renames, drops — and a type
-change needs a migration you write; a computed field costs
-one read per row unless you name a view. A split receiver binds to loopback by default;
-widening it requires signed envelopes, or an explicit `allowUnsigned` when an upstream mesh
-already authenticated the caller. The full list is in
-[`CLAUDE.md`](./CLAUDE.md#known-issues), kept honest rather than short.
+- **App**: it's not a standalone framework. You can embed it in the one you already use (Nuxt, Next…), or serve a frond on its own with an existing HTTP framework. Fougere is not an HTTP framework at heart.
+- **Schema**: it is the center. Validation, SQL tables, REST, GraphQL and forms are all derived from it.
+- **Errors**: they are typed. A frontend knows exactly which errors each operation can return, without declaring them.
+- **Events**: no listener to register. Ask for an `Emit<PostPublished>` to announce a fact, and accept a `Fact<PostPublished>` to subscribe to it. Across processes, it goes over HTTP by default, or through Kafka or anything else you plug in.
+- **Migrations**: `fougere freeze` saves each version of your schema as extended JSON Schema. Migrations are deduced from that chain of versions: no SQL to write, and the whole history of changes is kept.
+- **Deployment**: fronds can run together inside your app, or each in its own process. Moving one is a single line of config:
+- **Observability**: you can observe every process, because the framework owns the input and output of every frond, even when they run in separate processes. One trace follows a call across all of them (optional).
+- **Convention over configuration**: Fougere relies on conventions, and you can override them. An optional compiler reads your code and derives the configuration from it, but you can also declare it by hand: the compiler isn't needed to run your app.
+- **Standards**: a frond can be written in any language. Fougere follows standards (extended JSON Schema, JSON-RPC, Standard Schema), and there is a Rust frond in the demos. SDKs for other languages may follow.
+- **CLI**: your operations are available from the command line, with nothing to write. It's derived too.
 
 ## Learn more
 
-- [Getting started](https://fougere.dev/docs/getting-started)
-- [Philosophy](https://fougere.dev/docs/concepts/philosophy)
-- [Entities and the four axes](https://fougere.dev/docs/schema/entities)
+- [Schema](https://fougere.dev/docs/schema/entities)
 - [The gradient](https://fougere.dev/docs/infra/gradient)
-- [Adopting it in an existing app](https://fougere.dev/docs/existing-app)
-
-[`demos/`](./demos) isolates one idea per project; `nuxt-blog` is the flagship.
-
----
-
-<div align="center">
-<sub>MIT · built by <a href="https://github.com/chok">chok</a></sub>
-</div>
+- [`Demos`](./demos)
