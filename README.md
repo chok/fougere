@@ -25,6 +25,7 @@ You split your app into [fronds](https://fougere.dev/docs/concepts/frond), one p
 > There are also many [known issues](./KNOWN_ISSUES.md).
 
 <!-- prettier-ignore-start -->
+
 <table>
 <tr>
 <th width="50%">Entity</th>
@@ -38,14 +39,13 @@ You split your app into [fronds](https://fougere.dev/docs/concepts/frond), one p
 export default class Post
   extends entity({
     id: primary(),
-    title: text({ min: 1, max: 200 }),
+    title: text({ max: 200 }),
     body: text(),
     createdAt: created(),
-    status: readOnly(
-      oneOf('draft', 'published', {
-        default: 'draft',
-      }),
-    ),
+    status: readOnly(oneOf(
+      'draft', 'published',
+      { default: 'draft' },
+    )),
   }) {}
 ```
 
@@ -54,13 +54,14 @@ export default class Post
 
 ```ts
 // repositories/PostRepository.ts
-export class PostCard extends Post.pick(
-  'id', 'title', 'status',
-) {}
+export class PostCard
+  extends Post.pick(
+    'id', 'title', 'status',
+  ) {}
 
 export default class PostRepository
   extends Repository(Post) {
-  published(): Promise<PostCard[]> {
+  published() {
     return this.output(PostCard)
       .findAllBy({
         status: 'published',
@@ -89,8 +90,9 @@ export default class PostHandler
   }
 
   async publish(id: Post['id']) {
-    const post =
-      await super.findById(id);
+    const post = await this.posts
+      .findById(id);
+
     if (!post) {
       throw new FougereError({
         code: ErrorCode.NOT_FOUND,
@@ -98,7 +100,7 @@ export default class PostHandler
       });
     }
 
-    return super.update(id, {
+    return this.posts.update(id, {
       status: 'published',
     });
   }
@@ -115,7 +117,8 @@ export default class PostHandler
 ```vue
 <!-- app/pages/posts.vue -->
 <script setup lang="ts">
-import { post } from '@fronds/facade';
+import { post }
+  from '@fronds/facade';
 
 const { items } =
   await useQuery(post, 'list');
@@ -124,28 +127,27 @@ const publish =
 </script>
 
 <template>
-  <ul>
-    <li
-      v-for="row in items"
-      :key="row.id"
+  <p
+    v-for="row in items"
+    :key="row.id"
+  >
+    {{ row.title }}
+    <button
+      v-if="row.status === 'draft'"
+      @click="publish.execute({
+        params: { id: row.id },
+      })"
     >
-      {{ row.title }}
-      <button
-        v-if="row.status === 'draft'"
-        @click="publish.execute({
-          params: { id: row.id },
-        })"
-      >
-        Publish
-      </button>
-    </li>
-  </ul>
+      Publish
+    </button>
+  </p>
 </template>
 ```
 
 </td>
 </tr>
 </table>
+
 <!-- prettier-ignore-end -->
 
 That's all! Everything your handler receives is validated against your schema, and it is served over JSON-RPC by default. You can enable REST or GraphQL as well.
