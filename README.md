@@ -107,10 +107,6 @@ export default class PostHandler
       status: 'published',
     });
   }
-
-  listPublished() {
-    return this.posts.published();
-  }
 }
 ```
 
@@ -125,7 +121,7 @@ import { post }
 
 const { items } =
   await useQuery(post, 'list');
-const publish =
+const { execute: publish, error } =
   useCommand(post, 'publish');
 </script>
 
@@ -137,12 +133,15 @@ const publish =
     {{ row.title }}
     <button
       v-if="row.status === 'draft'"
-      @click="publish.execute({
+      @click="publish({
         params: { id: row.id },
       })"
     >
       Publish
     </button>
+  </p>
+  <p v-if="error">
+    {{ error.message }}
   </p>
 </template>
 ```
@@ -184,7 +183,7 @@ The one primitive to know is the Frond, the fractal leaf of a fern (_fougère_ i
 ## Features
 
 - **App**: it's not a standalone framework. You can embed it in the one you already use (Nuxt, Next…), or serve a frond on its own with an existing HTTP framework. Fougere is not an HTTP framework at heart.
-- **Schema**: it is the center. Validation, SQL tables, REST, GraphQL and forms are all derived from it.
+- **Schema**: it is the center. Validation, Forms, SQL tables, REST, GraphQL and forms are all derived from it.
 - **Errors**: they are typed. A frontend knows exactly which errors each operation can return, without declaring them.
 - **Events**: no listener to register. Ask for an `Emit<PostPublished>` to announce a fact, and accept a `Fact<PostPublished>` to subscribe to it. Across processes, it goes over HTTP by default, or through Kafka or anything else you plug in.
 - **Migrations**: `fougere freeze` saves each version of your schema as extended JSON Schema. Migrations are deduced from that chain of versions: no SQL to write, and the whole history of changes is kept.
