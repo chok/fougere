@@ -845,11 +845,12 @@ names the view ONE op emits: the handler keeps its full-row storage, and the fa�
 
 **No handler holds a storage, a `Crud` one included** — `Crud` receives the entity's REPOSITORY
 (`depsOf`, `dispatch/HandlerFacade.ts`) and keeps it private (`#rows`, `prefab/CrudConstructor.ts`),
-so `CrudOps` has no `storage`. A subclass reaches rows through the five ops it inherits —
-`super.findById(id)`, `(await super.list(options)).items` — and `super`, never `this`, because a
-handler that redefines `list` would otherwise call its own. A query worth a name lives on the
-repository, which the handler asks for in its constructor and hands to `super()`, the form the boot
-already required of a `Crud` handler with a constructor. `this.storage` used to be the one place a
+so `CrudOps` has no `storage`. The five ops it inherits are the handler's SURFACE — what a caller
+reaches — and rows are read and written through the repository, which the handler asks for in its
+constructor and hands to `super()`, the form the boot already required of a `Crud` handler with a
+constructor: `this.posts.findById(id)`, never `super.findById(id)`, which reads a row through a door
+the outside calls and stops meaning the same thing the day the handler redefines that op. A handler
+with no constructor holds no repository, and `super` is then its only way to the rows. `this.storage` used to be the one place a
 handler touched the port directly, and the starter taught it: 22 of 71 `Crud` handlers wrote their
 queries there, filtering a whole `list()` in memory. The frond template `blank` went with it — an
 `Item` with `Crud(Item)` was the first lines of `blog` without its point, and `--bare` is the empty start.

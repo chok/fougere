@@ -9,7 +9,7 @@ export default class PostHandler extends Crud(Post) {
 
   /** The draft→published transition. */
   async publish(id: Post['id']): Promise<Post> {
-    const post = await super.findById(id);
+    const post = await this.posts.findById(id);
     if (!post) {
       throw new FougereError({ code: ErrorCode.NOT_FOUND, message: `Post '${id}' not found` });
     }
@@ -17,7 +17,7 @@ export default class PostHandler extends Crud(Post) {
       throw new FougereError({ code: ErrorCode.CONFLICT, message: 'Already published' });
     }
 
-    return super.update(id, { status: 'published' });
+    return this.posts.update(id, { status: 'published' });
   }
 
   /** Only published posts, projected to the card. */
