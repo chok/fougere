@@ -2,9 +2,12 @@
 
 # 🌿 Fougere
 
-**Fougere is focused on your business only. Create it. Decide later which infrastructure topology you want, and which technology you want in front of it (GraphQL, REST…).**
+**Fougere is focused on your business only. Create it.**<br>
+**Decide later which infrastructure topology you want,**<br>
+**and which technology you want in front of it (GraphQL, REST…).**
 
 With one entity class, everything is derived (validation, table, API…).
+
 No DTOs to write. It's the same class derived for your needs!
 
 [![CI](https://github.com/chok/fougere/actions/workflows/ci.yml/badge.svg)](https://github.com/chok/fougere/actions/workflows/ci.yml)
