@@ -47,6 +47,12 @@ export default class Post
       { default: 'draft' },
     )),
   }) {}
+
+// entities/PostCard.ts
+export default class PostCard
+  extends Post.pick(
+    'id', 'title', 'status',
+  ) {}
 ```
 
 </td>
@@ -54,11 +60,6 @@ export default class Post
 
 ```ts
 // repositories/PostRepository.ts
-export class PostCard
-  extends Post.pick(
-    'id', 'title', 'status',
-  ) {}
-
 export default class PostRepository
   extends Repository(Post) {
   published() {
@@ -74,7 +75,7 @@ export default class PostRepository
 </tr>
 <tr>
 <th>Handler</th>
-<th>Nuxt page</th>
+<th>Nuxt page (example)</th>
 </tr>
 <tr>
 <td valign="top">
