@@ -24,6 +24,10 @@ const facade = {
   delete: () => true,
 };
 
+/** What `Crud` declares for the three ops acting on one row — the path reads it. */
+const byId = [{ name: 'id', source: { kind: 'param', name: 'id', identifies: 'Post' }, optional: false }];
+const bindings: Record<string, unknown> = { findById: byId, update: byId, delete: byId };
+
 function appOf(adapters: Record<string, boolean> = { rest: true }) {
   return {
     adapters,
@@ -38,7 +42,7 @@ function appOf(adapters: Record<string, boolean> = { rest: true }) {
     operationsFor: (name: string) => (name === 'post'
       ? new Map(Object.keys(facade).map((op) => [
         op,
-        { kind: op === 'list' || op === 'findById' ? 'query' : 'command' },
+        { kind: op === 'list' || op === 'findById' ? 'query' : 'command', binding: bindings[op] },
       ]))
       : undefined),
   } as never;

@@ -23,6 +23,10 @@ const facade = {
   bySlug: () => {},
 };
 
+/** What `Crud` declares for the three ops acting on one row — the path reads it. */
+const byId = [{ name: 'id', source: { kind: 'param', name: 'id', identifies: 'Post' }, optional: false }];
+const bindings: Record<string, unknown> = { findById: byId, update: byId, delete: byId };
+
 // The scan registers an entity under its lowercase-first name (`lowerFirst`,
 // scanner.ts:385) — which is what makes the served path `/blog/posts`, as documented.
 function appOf(options: { exposed?: boolean; overrides?: Record<string, { kind?: 'query' | 'command' }> } = {}) {
@@ -45,6 +49,7 @@ function appOf(options: { exposed?: boolean; overrides?: Record<string, { kind?:
         {
           kind: options.overrides?.[op]?.kind
             ?? (op === 'list' || op === 'findById' ? 'query' : 'command'),
+          binding: bindings[op],
         },
       ]))
       : undefined),
