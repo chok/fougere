@@ -26,7 +26,7 @@ You split your app into [fronds](https://fougere.dev/docs/concepts/frond), one p
 
 <!-- prettier-ignore-start -->
 
-<table>
+<table align="center">
 <tr>
 <th width="50%">Entity</th>
 <th width="50%">Repository</th>
