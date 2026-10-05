@@ -54,7 +54,7 @@ export default class ServeCommand {
     setLogLevel(envLevel() ?? 'info');
     let hosted = await bootApp(root, { only: [frond] });
     if (!hosted.fronds.some((f) => f.name === frond)) {
-      this.ui.error(`Frond '${frond}' introuvable dans ce projet.`);
+      this.ui.error(`No frond '${frond}' in this project.`);
 
       return;
     }
@@ -68,11 +68,11 @@ export default class ServeCommand {
     // state it is handed, which is why the loopback default is the other half.
     const { verify, requireIdentity } = await identityFromEnv();
     const { port: bound } = await serve((call, inv) => current(call, inv), { port, verify, requireIdentity });
-    this.ui.step(`frond ${frond} servie — POST http://127.0.0.1:${bound}/_fougere/call`);
+    this.ui.step(`frond ${frond} served — POST http://127.0.0.1:${bound}/_fougere/call`);
     this.ui.info(requireIdentity ? 'signed calls only (FOUGERE_ROOT_KEY is set)' : 'unsigned calls accepted — no FOUGERE_ROOT_KEY');
 
     if (!watching) {
-      this.ui.info('Ctrl-C pour arrêter.');
+      this.ui.info('Ctrl-C to stop.');
 
       // The listening server keeps the event loop alive; the command returns and stays up.
       return;
@@ -115,6 +115,6 @@ export default class ServeCommand {
       }
     }
 
-    this.ui.info(`watching ${watched} path(s) — Ctrl-C pour arrêter.`);
+    this.ui.info(`watching ${watched} path(s) — Ctrl-C to stop.`);
   }
 }
