@@ -184,6 +184,9 @@ importers:
       '@oxlint/plugins':
         specifier: 1.78.0
         version: 1.78.0
+      '@playwright/test':
+        specifier: 1.62.1
+        version: 1.62.1
       '@swc/core':
         specifier: ^1.15.21
         version: 1.15.21

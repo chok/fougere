@@ -26,12 +26,14 @@
     "coverage": "pnpm -r --filter './packages/**' exec vitest run --passWithNoTests --coverage --coverage.provider=v8 --coverage.reporter=text --coverage.include=src/**",
     "changeset": "changeset",
     "version-packages": "changeset version",
-    "build:apps": "pnpm -r --filter \"./demos/**\" --filter ./site build"
+    "build:apps": "pnpm -r --filter \"./demos/**\" --filter ./site build",
+    "clip": "tools/clip/clip.sh"
   },
   "devDependencies": {
     "@arethetypeswrong/cli": "^0.18.5",
     "@changesets/cli": "^2.31.1",
     "@oxlint/plugins": "1.78.0",
+    "@playwright/test": "1.62.1",
     "@swc/core": "^1.15.21",
     "@types/node": "^24.13.3",
     "@typescript/typescript6": "^6.0.2",

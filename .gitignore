@@ -40,3 +40,6 @@ site/public/demo/
 # Rendered by `foundryctl cast` when a demo brings a collector up — local state.
 demos/*/signoz/casting.yaml.lock
 demos/*/signoz/pours/
+
+# What `pnpm clip` films — regenerated from the starter on every run.
+tools/clip/out/
