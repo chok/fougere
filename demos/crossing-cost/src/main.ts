@@ -57,7 +57,7 @@ console.log('\n  Reach — where each op ANSWERS, and where its work GOES\n');
 for (const op of operations) {
   const reached = op.reach.fronds.map((one) => one.frond).join(', ') || '—';
   console.log(
-    `    ${op.operation.padEnd(24)} answers ${op.placement.runtime.padEnd(7)}`
+    `    ${op.operation.padEnd(24)} answers ${op.placement.padEnd(7)}`
     + ` reaches ${reached.padEnd(18)} ${op.reach.hops} hop(s)`,
   );
 }

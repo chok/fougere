@@ -13,7 +13,8 @@ export { tableOf } from './RouteMatch.js';
 
 export { invokeOn, rpcParseError, serveRest, serveRpc, surfaceOf } from './Outcome.js';
 
-export { errorsByField, formFieldsOf, payloadOf, tableColumnsOf, type FormEntity } from './FormEntity.js';
+export { errorsByField, formFieldsOf, payloadOf, tableColumnsOf } from './FormEntity.js';
+export type { SchemaView } from '@fougere/schema';
 export { type FormRow, type FormValues, type FormErrors, type FormFieldName } from './FormRow.js';
 export { type FormField, type FormReference } from './FormField.js';
 export { Choices, type Choice, type Offer } from './Choices.js';

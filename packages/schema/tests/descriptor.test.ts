@@ -21,7 +21,7 @@ import {
 } from '../src/index.js';
 import { type RoleRules } from '../src/axis/role/Role.js';
 import { type RelationDescriptor, type RoleDescriptor } from '../src/projection/card/RoleDescriptor.js';
-import { type EntityConstructor } from '../src/axis/role/EntityConstructor.js';
+import { type Entity } from '../src/entity/Entity.js';
 import { type Relation } from '../src/axis/role/Relation.js';
 
 class Author extends entity({ id: primary() }) {}
@@ -213,7 +213,7 @@ group('Bundle — self-contained $defs map', () => {
     const authorTarget = schemas.post.getFields().author.role!.relation!.to();
     // Not a {name} stand-in: the actual reconstructed Author, with its fields.
     expect(authorTarget).toBe(schemas.author);
-    // `relation.to()` answers an `EntityConstructor` — a bare construct signature,
+    // `relation.to()` answers an `Entity` — a bare construct signature,
     // by design (role.ts must not depend on the carrier). Reading its fields means
     // saying, here, that the reconstructed target does carry them.
     expect(Object.keys((authorTarget as unknown as SchemaView).getFields())).toEqual(['id']);
@@ -232,7 +232,7 @@ group('Bundle — self-contained $defs map', () => {
   it('handles a circular relation by reference (no infinite nesting)', () => {
     // The thunk defers the value, not the type: inferring `Node` would require `Node`.
     // Annotating it cuts the loop — `ref()` answers `Field<string>` whatever its target.
-    class Node extends entity({ id: primary(), parent: optional(ref((): EntityConstructor => Node)) }) {}
+    class Node extends entity({ id: primary(), parent: optional(ref((): Entity => Node)) }) {}
     const set = Bundle.fromDescriptor(
       JSON.parse(JSON.stringify(Bundle.fromSchemas({ node: Node }).descriptor)),
     ).toSchemas();

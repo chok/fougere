@@ -9,23 +9,7 @@ import { FacadeTypes } from '../../../src/typescript/FacadeTypes.js';
 import { assertIdentityCard, type IdentityCard } from '@fougere/core';
 import { resolveConventions, frondPackage } from '@fougere/core';
 import { loadConfig } from '@fougere/core/node';
-import { facadeModule, type Served } from '@fougere/compiler';
-import { ErrorCode } from '@fougere/core/contract';
-
-/**
- * A union of enum MEMBERS, from what the card said this operation refuses.
- *
- * `ErrorCode` is a string enum, so `'CONFLICT'` is not assignable to it: a literal reads as the
- * right thing and then refuses to narrow `FougereError<Code>`, which is the whole point. A code
- * this version does not know is dropped rather than written — the far side may be newer, and a
- * name that resolves to nothing would stop the consumer's build.
- */
-function codesOf(errors: readonly string[] | undefined): string {
-  const known = (errors ?? []).filter((code) => code in ErrorCode);
-  if (known.length === 0) return 'never';
-
-  return known.map((code) => `ErrorCode.${code}`).join(' | ');
-}
+import { codesOf, facadeModule, type Served } from '@fougere/compiler';
 
 function assertSafeName(kind: string, name: string): void {
   if (typeof name !== 'string' || !/^[A-Za-z_$][A-Za-z0-9_$-]*$/.test(name)) {
@@ -218,7 +202,7 @@ export default class SyncHandler {
       served.push({
         at: name,
         handler: `import('./${handlers}/${className}Handler.js').${className}Handler`,
-        ops: (ops ?? []).map((op) => ({ name: op.name, codes: codesOf(op.errors) })),
+        ops: (ops ?? []).map((op) => ({ name: op.name, codes: codesOf({ ...op, remote: true }) })),
       });
 
       /**

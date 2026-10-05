@@ -1,4 +1,6 @@
 import type { OperationContract } from '../wire/OperationContract.js';
+import type { OperationOverride } from '../OperationOverride.js';
+import type { FrondConfig } from '../FrondConfig.js';
 import type { ProviderEntry } from './ProviderEntry.js';
 import type { EntityEntry } from './EntityEntry.js';
 import type { HandlerEntry } from './HandlerEntry.js';
@@ -15,7 +17,7 @@ import type { ExtensionEntry } from './ExtensionEntry.js';
  */
 export const nameOf = (provider: ProviderEntry): string => provider.name ?? provider.ctor.name;
 
-export interface FrondDescriptor {
+export interface FrondDescriptor extends Pick<FrondConfig, 'pipes' | 'surfaces' | 'reads'> {
   name: string;
   source: FrondSource;
   providers: ProviderEntry[];
@@ -41,26 +43,10 @@ export interface FrondDescriptor {
    * flat, and a directory says nothing about who shares its code.
    */
   extends?: string;
-  /** The ops that finish a fact, in order — see `FrondConfig.pipes`. */
-  pipes?: Record<string, string[]>;
-  /**
-   * Per-surface entity lists from frond.config.ts (e.g. { graphql: ['Post'], rest: ['Post',
-   * 'Author'] }).
-   */
-  surfaces?: Record<string, string[]>;
-  /** Entities this frond may read across sources — see `FrondConfig.reads`. */
-  reads?: string[];
   /** Per-operation overrides from frond.config.ts. */
-  operationsOverrides?: Record<string, OperationContract & {
-    kind?: 'query' | 'command';
-    /** Class name to resolve from DI (overrides default `{Entity}Handler` lookup). */
+  operationsOverrides?: Record<string, OperationContract & Omit<OperationOverride, 'handler'> & {
+    /** The handler CLASS of `frond.config.ts`, by the name DI resolves it under. */
     handlerName?: string;
-    /** Method name on the resolved handler (defaults to op name). */
-    method?: string;
-    /** The GraphQL root field this op answers to — read by `adapter/graphql`. */
-    graphql?: string;
-    /** Where it answers over REST — read by `adapter/rest`, the dual of `graphql`. */
-    rest?: { method?: string; path?: string; status?: number };
   }>;
 }
 

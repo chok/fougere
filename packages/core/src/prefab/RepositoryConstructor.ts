@@ -1,4 +1,4 @@
-import { upperFirst, type EntityConstructor } from '@fougere/schema';
+import { upperFirst, type Entity } from '@fougere/schema';
 import type { ListOptions } from '../storage/ListOptions.js';
 import type { ListResult } from '../storage/ListResult.js';
 import type { SelectOption } from '../storage/SelectOption.js';
@@ -14,22 +14,22 @@ export interface RepositoryConstructor<T> {
 }
 
 /** What an aggregate's subclass sees. */
-declare abstract class AggregateShape<E extends readonly EntityConstructor[]> {
+declare abstract class AggregateShape<E extends readonly Entity[]> {
   protected storages: { [K in keyof E]: Storage<InstanceType<E[K]>> };
 }
 
-export function Repository<E extends EntityConstructor>(entity: E): RepositoryConstructor<InstanceType<E>>;
+export function Repository<E extends Entity>(entity: E): RepositoryConstructor<InstanceType<E>>;
 
-export function Repository<E extends readonly [EntityConstructor, EntityConstructor, ...EntityConstructor[]]>(
+export function Repository<E extends readonly [Entity, Entity, ...Entity[]]>(
   ...entities: E
 ): AggregateConstructor<E>;
 
-export function Repository(...entities: EntityConstructor[]): unknown {
+export function Repository(...entities: Entity[]): unknown {
   return entities.length === 1 ? one(entities[0]) : many(entities);
 }
 
 /** The port forwarded, member by member. */
-function one<E extends EntityConstructor>(entity: E): RepositoryConstructor<InstanceType<E>> {
+function one<E extends Entity>(entity: E): RepositoryConstructor<InstanceType<E>> {
   type T = InstanceType<E>;
 
   class RepositoryBase implements Storage<T> {
@@ -56,7 +56,7 @@ function one<E extends EntityConstructor>(entity: E): RepositoryConstructor<Inst
 }
 
 /** The aggregate. */
-function many<E extends readonly EntityConstructor[]>(entities: E): AggregateConstructor<E> {
+function many<E extends readonly Entity[]>(entities: E): AggregateConstructor<E> {
   class AggregateBase {
     static readonly __entity = entities[0];
     static readonly __owns = entities;
@@ -77,6 +77,6 @@ export function repositoryKeyOf(entity: string): string {
 }
 
 /** The entities a class owns — empty for anything that is not an aggregate. */
-export function ownedBy(ctor: unknown): readonly EntityConstructor[] {
-  return (ctor as { __owns?: readonly EntityConstructor[] } | undefined)?.__owns ?? [];
+export function ownedBy(ctor: unknown): readonly Entity[] {
+  return (ctor as { __owns?: readonly Entity[] } | undefined)?.__owns ?? [];
 }

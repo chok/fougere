@@ -29,7 +29,7 @@ let storage: any;
 
 beforeEach(async () => {
   setup = createSqliteSource({ path: ':memory:' });
-  await autoMigrate({ fronds: [{ name: 'test', entities: [{ name: 'post', entityClass: Post }] }] }, setup.sqlite);
+  await autoMigrate({ entities: new Map([['post', Post]]) }, setup.sqlite);
   storage = setup.storageFactory(Post, 'post');
 });
 
@@ -444,7 +444,7 @@ describe('an upsert over a row that exists', () => {
 
 
 
-    const pages = await (async () => { await autoMigrate({ fronds: [{ name: 'test', entities: [{ name: 'page', entityClass: Page }] }] }, setup.sqlite); return setup.storageFactory(Page, 'page') as any; })();
+    const pages = await (async () => { await autoMigrate({ entities: new Map([['page', Page]]) }, setup.sqlite); return setup.storageFactory(Page, 'page') as any; })();
     const first = await pages.create({ slug: 'hello', title: 'A', note: 'kept' });
     await pages.update(first.id, { views: 5 });
 
@@ -462,7 +462,7 @@ describe('an upsert over a row that exists', () => {
 
 
 
-    const pages = await (async () => { await autoMigrate({ fronds: [{ name: 'test', entities: [{ name: 'page', entityClass: Page }] }] }, setup.sqlite); return setup.storageFactory(Page, 'page') as any; })();
+    const pages = await (async () => { await autoMigrate({ entities: new Map([['page', Page]]) }, setup.sqlite); return setup.storageFactory(Page, 'page') as any; })();
     const a = await pages.create({ slug: 'a', title: 'A', note: 'a' });
     const b = await pages.create({ slug: 'b', title: 'B' });
     await pages.update(a.id, { views: 3 });

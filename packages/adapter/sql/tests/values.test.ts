@@ -25,7 +25,7 @@ describe('the values a driver can bind', () => {
 
   beforeEach(async () => {
     const setup = createSqliteSource({ path: ':memory:' });
-    await autoMigrate({ fronds: [{ name: 'app', entities: [{ name: 'task', entityClass: Task }] }] }, setup.sqlite);
+    await autoMigrate({ entities: new Map([['task', Task]]) }, setup.sqlite);
     storage = setup.storageFactory(Task, 'task');
   });
 

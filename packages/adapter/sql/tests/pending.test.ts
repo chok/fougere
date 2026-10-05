@@ -13,7 +13,7 @@ class PostV1 extends entity({ id: primary(), body: text() }) {}
 class PostV2 extends entity({ id: primary(), content: text(), views: number({ default: 0 }), slug: unique(text({ default: '' })) }) {}
 class Comment extends entity({ id: primary(), authorId: ref(Author) }) {}
 
-const appOf = (entityClass: unknown, name = 'post') => ({ fronds: [{ name: 'blog', entities: [{ name, entityClass }] }] });
+const appOf = (entityClass: unknown, name = 'post') => ({ entities: new Map([[name, entityClass]]) });
 
 let source: SqliteSource;
 beforeEach(() => { source = createSqliteSource({ path: ':memory:' }); });

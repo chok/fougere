@@ -1,11 +1,11 @@
-import { type EntityConstructor } from '../../axis/role/EntityConstructor.js';
+import type { Entity } from '../../entity/Entity.js';
 import { Relation } from '../../axis/role/Relation.js';
 import { Field, type Described } from '../../field/Field.js';
 
 /**
  * `many(() => Post)` → `{ type: 'array' }` with `role.relation.kind` `'many'`
  */
-export function many<E extends EntityConstructor>(
+export function many<E extends Entity>(
   target: E | (() => E),
   opts?: Described,
 ): Field<InstanceType<E>[]> {

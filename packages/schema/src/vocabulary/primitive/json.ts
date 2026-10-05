@@ -1,12 +1,12 @@
 import { Field, type Shared } from '../../field/Field.js';
 import type { SchemaView } from '../../SchemaView.js';
+import type { Entity } from '../../entity/Entity.js';
 import { InputValidator } from '../../validator/InputValidator.js';
 import { SchemaError } from '../../SchemaError.js';
 
-type Entity = SchemaView & (new (...args: never[]) => unknown);
 
 export function json<T = unknown>(opts?: Shared<T>): Field<T>;
-export function json<E extends SchemaView & (new (...args: any[]) => any)>(
+export function json<E extends Entity>(
   of: E,
   opts?: Shared<InstanceType<E>>,
 ): Field<InstanceType<E>>;

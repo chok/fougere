@@ -8,7 +8,7 @@ import type { ColumnReference } from './ColumnReference.js';
 import type { RelationResolve } from './RelationResolve.js';
 import type { HostedNames } from './HostedNames.js';
 import type { EntityEntry } from './EntityEntry.js';
-import type { AppLike } from './AppLike.js';
+import type { SourceView } from '@fougere/core';
 
 export interface TableDef {
   name: string;
@@ -184,8 +184,8 @@ function verdictOn(entry: EntityEntry): 'table' | 'answer' {
   return !entityClass.derivation || entityClass.anchored ? 'table' : 'answer';
 }
 
-/** Every entity this app hosts, once each. */
-function collectEntities(app: AppLike): EntityEntry[] {
+/** Every entity this source holds, once each. */
+function collectEntities(view: SourceView): EntityEntry[] {
   const entries: EntityEntry[] = [];
   const seen = new Set<string>();
   const hold = (entry: EntityEntry) => {
@@ -194,10 +194,9 @@ function collectEntities(app: AppLike): EntityEntry[] {
     entries.push(entry);
   };
 
-  for (const frond of app.fronds) {
-    for (const entry of frond.entities) {
-      if (verdictOn(entry) === 'table') hold(entry);
-    }
+  for (const [name, entityClass] of view.entities) {
+    const entry = { name, entityClass };
+    if (verdictOn(entry) === 'table') hold(entry);
   }
 
   return entries;
@@ -207,11 +206,11 @@ function collectEntities(app: AppLike): EntityEntry[] {
  * Every entity an app hosts, as FK-aware tables — the shared middle step behind `generateSQL` (a
  * from-scratch create pass) and `desiredTables` (the diff's target state).
  */
-export function toTables(app: AppLike, resolve: (name: string) => string): TableDef[] {
-  const entries = collectEntities(app);
+export function toTables(view: SourceView, resolve: (name: string) => string): TableDef[] {
+  const entries = collectEntities(view);
   const tableNameOf = new Map<SchemaView, string>(entries.map((entry) => [entry.entityClass, resolve(entry.name)]));
-  const hosted = app.elsewhere
-    ? { here: new Set(entries.map((entry) => lowerFirst(entry.name))), elsewhere: new Set(app.elsewhere.map(lowerFirst)) }
+  const hosted = view.elsewhere
+    ? { here: new Set(entries.map((entry) => lowerFirst(entry.name))), elsewhere: new Set(view.elsewhere.map(lowerFirst)) }
     : undefined;
 
   return entries.map((entry) => toTable(resolve(entry.name), entry.entityClass, { resolve, tableNameOf, hosted }));

@@ -3,11 +3,11 @@ import { reactive, computed, onMounted } from 'vue';
 import { useRequestFetch } from '#imports';
 import { lowerFirst, validationErrorsOf } from '@fougere/core/contract';
 import { useCommand } from './useFougereData.js';
-import { Choices, facadeOf, formFieldsOf, payloadOf, errorsByField, type Choice, type Fetcher, type FormEntity, type FormField, type FormErrors, type FormFieldName, type FormRow, type FormValues, type FormOptions } from '@fougere/app/client';
+import { Choices, facadeOf, formFieldsOf, payloadOf, errorsByField, type Choice, type Fetcher, type SchemaView, type FormField, type FormErrors, type FormFieldName, type FormRow, type FormValues, type FormOptions } from '@fougere/app/client';
 
 export type { FormOptions };
 
-export function useFormFor<E extends FormEntity>(entity: E, options: FormOptions = {}) {
+export function useFormFor<E extends SchemaView>(entity: E, options: FormOptions = {}) {
   const entityKey = lowerFirst(entity.name);
   const fields = formFieldsOf(entity, entityKey);
 

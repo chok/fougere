@@ -1,5 +1,5 @@
 import { loadConfig } from '@fougere/core/node';
-import type { App } from '@fougere/core';
+import { sourceViewOf, type App } from '@fougere/core';
 import type { Plan, StepChange } from '@fougere/adapter-sql';
 import { Bundle, Card, lowerFirst, type Change, type SchemaView, type SetDiff } from '@fougere/schema';
 import ProjectScan from '../services/ProjectScan.js';
@@ -73,7 +73,7 @@ export default class MigrateHandler {
 
     const app = await bootApp(scan.root, { extensions: [{ name: 'schema' }, { name: 'seeds' }] });
     try {
-      const tables = desiredTables(app as never);
+      const tables = desiredTables(sourceViewOf(app.fronds));
       const frozen = collapseChain(perFrond.map((one) => collapseChain(one.map(({ step }) => step))));
       const composed = collapseChain([frozen, declaredStep(app, frozen)]);
       const sourceOf = storage.sourceOf ?? (() => 'db');

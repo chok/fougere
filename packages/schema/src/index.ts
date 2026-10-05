@@ -4,6 +4,7 @@ export * from './vocabulary/index.js';
 
 export { ANONYMOUS_SCHEMA_NAME, Schema } from './Schema.js';
 export { type SchemaConstructor } from './SchemaConstructor.js';
+export { type Entity } from './entity/Entity.js';
 export { type SchemaView } from './SchemaView.js';
 export { Field } from './field/Field.js';
 export { type Fields } from './field/Fields.js';
@@ -13,7 +14,6 @@ export { type ShapeType } from './axis/shape/ShapeType.js';
 export { Shapes } from './axis/shape/Shape.js';
 export { Role } from './axis/role/Role.js';
 export { ON_DELETE, type OnDelete } from './axis/role/Relation.js';
-export { type EntityConstructor } from './axis/role/EntityConstructor.js';
 export { Lifecycle } from './axis/lifecycle/Lifecycle.js';
 export { Boundary } from './axis/boundary/Boundary.js';
 export { applyCreate, applyUpdate } from './axis/lifecycle/apply.js';

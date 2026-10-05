@@ -1,7 +1,6 @@
-import type { BoundaryRef } from '../../axis/boundary/Boundary.js';
-import type { LifecycleRules } from '../../axis/lifecycle/Lifecycle.js';
+import type { FougereFieldAxes } from '../../FougereFieldAxes.js';
 import type { FieldDescriptor } from './FieldDescriptor.js';
-import type { RoleDescriptor } from './RoleDescriptor.js';
+import type { FieldExtension } from './FieldExtension.js';
 import type { TypeSet } from './TypeSet.js';
 
 /** One named difference, at one place. Each kind exists because a reader asks for it. */
@@ -19,6 +18,10 @@ export type Change =
   /** NOT NULL in either direction. Boot: an old writer cannot fill what it never knew. */
   | { kind: 'required'; field: string; from: boolean; to: boolean }
   /** An axis other than shape was restated. */
-  | { kind: 'restated'; field: string; axis: 'role'; from?: RoleDescriptor; to?: RoleDescriptor }
-  | { kind: 'restated'; field: string; axis: 'lifecycle'; from?: LifecycleRules; to?: LifecycleRules }
-  | { kind: 'restated'; field: string; axis: 'boundary'; from?: BoundaryRef; to?: BoundaryRef };
+  | { [Axis in keyof FougereFieldAxes]-?: {
+    kind: 'restated';
+    field: string;
+    axis: Axis;
+    from?: FieldExtension[Axis];
+    to?: FieldExtension[Axis];
+  } }[keyof FougereFieldAxes];

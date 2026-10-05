@@ -1,4 +1,4 @@
-import { FieldSet, lowerFirst, type EntityConstructor, type SchemaView } from '@fougere/schema';
+import { FieldSet, lowerFirst, type Entity, type SchemaView } from '@fougere/schema';
 import type { ListOptions } from '../storage/ListOptions.js';
 import type { Storage } from '../storage/Storage.js';
 import type { OperationContract } from '../wire/OperationContract.js';
@@ -107,7 +107,7 @@ export interface CrudConstructor<T, V = {}> {
  *
  * Documented: [handlers](https://fougere.dev/docs/business/handlers).
  */
-export function Crud<E extends EntityConstructor, V extends CrudViews | EntityConstructor = {}>(
+export function Crud<E extends Entity, V extends CrudViews | Entity = {}>(
   entity: E,
   output?: V,
 ): CrudConstructor<InstanceType<E>, V> {
@@ -116,7 +116,7 @@ export function Crud<E extends EntityConstructor, V extends CrudViews | EntityCo
 
   // A view is a class (it carries fields) ; a map of views is a plain object.
   const perOp = typeof output === 'object' && output !== null ? (output as CrudViews) : undefined;
-  const wholeHandler = typeof output === 'function' ? (output as EntityConstructor) : undefined;
+  const wholeHandler = typeof output === 'function' ? (output as Entity) : undefined;
 
   return asCrudConstructor<T, V>(class CrudHandler {
     static __entity = entity;
@@ -127,7 +127,7 @@ export function Crud<E extends EntityConstructor, V extends CrudViews | EntityCo
      * What this prefab handler declares — read by the façade, merged under the author's own
      * methods.
      */
-    static __ops: Record<string, OperationContract> = crudOps(entity as unknown as SchemaView & { partial?: () => SchemaView });
+    static __ops: Record<string, OperationContract> = crudOps(entity);
 
     // Private: the five ops are how a subclass reaches the rows — `super.findById(id)` — and a
     // query worth a name belongs to the repository, which it asks for like any handler does.

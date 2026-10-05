@@ -1,4 +1,4 @@
-import type { EntityConstructor } from '@fougere/schema';
+import type { Entity } from '@fougere/schema';
 import type { Storage } from '../storage/Storage.js';
 import type { Refreshed } from './Refreshed.js';
 import type { MirrorOf } from './MirrorOf.js';
@@ -8,7 +8,7 @@ export interface MirrorConstructor<T> {
   readonly __entity: unknown;
 }
 
-export function Mirror<E extends EntityConstructor>(shape: E): MirrorConstructor<InstanceType<E>> {
+export function Mirror<E extends Entity>(shape: E): MirrorConstructor<InstanceType<E>> {
   type T = InstanceType<E>;
 
   abstract class MirrorBase implements MirrorOf<T> {

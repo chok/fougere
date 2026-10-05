@@ -52,12 +52,11 @@ export const SHAPE_TYPES = [
   'object',
 ] as const;
 
-type BaseShape =
-  | ({ type: 'string' } & StringConstraints)
-  | ({ type: 'number' | 'integer' } & NumericConstraints)
-  | ({ type: 'boolean' } & Documented)
-  | ({ type: 'array' } & ArrayConstraints)
-  | ({ type: 'object' } & ObjectConstraints);
+
+/** A shape with `null` taken out of its type — what `Shapes` splits a nullable one into. */
+type BaseShape = Shape extends infer Each
+  ? Each extends { type: infer Type } ? Omit<Each, 'type'> & { type: Type extends readonly [infer One, 'null'] ? One : Type } : never
+  : never;
 
 interface ShapeParts {
   base?: BaseShape;

@@ -1,5 +1,5 @@
 import type { Resolver } from '../../axis/Resolver.js';
-import type { EntityConstructor } from '../../axis/role/EntityConstructor.js';
+import type { Entity } from '../../entity/Entity.js';
 import { lowerFirst } from '../../lib/utils.js';
 import type { SchemaView } from '../../SchemaView.js';
 import { Card } from './Card.js';
@@ -9,6 +9,7 @@ import type { Diff } from './Diff.js';
 import type { SetDiff } from './SetDiff.js';
 import type { SetDiffOptions } from './SetDiffOptions.js';
 import { SchemaError } from '../../SchemaError.js';
+import { ENVELOPE } from './Envelope.js';
 
 type SchemaSet = Record<string, SchemaView> | SchemaView[];
 
@@ -38,8 +39,7 @@ export class Bundle {
 
     return new Bundle({
       $defs: definitions,
-      'x-fougere-version': 1,
-      'x-fougere-vendor': 'fougere',
+      ...ENVELOPE,
     });
   }
 
@@ -48,12 +48,12 @@ export class Bundle {
   }
 
   toSchemas(): Record<string, SchemaView> {
-    const byName: Record<string, EntityConstructor> = {};
+    const byName: Record<string, Entity> = {};
     const resolve: Resolver = (name) => byName[name.toLowerCase()];
     const schemas: Record<string, SchemaView> = {};
     for (const [name, descriptor] of Object.entries(this.descriptor.$defs)) {
       const schema = Card.fromDescriptor(descriptor).toSchema(resolve, name);
-      byName[name.toLowerCase()] = schema as unknown as EntityConstructor;
+      byName[name.toLowerCase()] = schema;
       schemas[name] = schema;
     }
 

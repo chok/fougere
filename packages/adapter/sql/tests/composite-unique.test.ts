@@ -25,7 +25,7 @@ let storage: any;
 
 beforeEach(async () => {
   setup = createSqliteSource({ path: ':memory:' });
-  await autoMigrate({ fronds: [{ name: 'test', entities: [{ name: 'listBook', entityClass: ListBook }] }] }, setup.sqlite);
+  await autoMigrate({ entities: new Map([['listBook', ListBook]]) }, setup.sqlite);
   storage = setup.storageFactory(ListBook, 'listBook');
 });
 

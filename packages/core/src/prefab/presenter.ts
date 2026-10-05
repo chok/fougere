@@ -4,16 +4,16 @@
  * Documented: [presenters](https://fougere.dev/docs/business/presenters).
  */
 
-import { upperFirst, type EntityConstructor } from '@fougere/schema';
+import { upperFirst, type Entity } from '@fougere/schema';
 
 /**
  * The view a computed field emits — `OrderItemView` for one, `[OrderItemView]` for many.
  * A view is a schema, so it derives: `Order.pick('id', 'status')`, never a hand-written type.
  */
-export type PresenterViews = Record<string, EntityConstructor | [EntityConstructor]>;
+export type PresenterViews = Record<string, Entity | [Entity]>;
 
 /** `Presenter(Order, { items: [OrderItemView] })` — the views its computed fields emit. */
-export function Presenter<E extends EntityConstructor>(entity: E, views?: PresenterViews) {
+export function Presenter<E extends Entity>(entity: E, views?: PresenterViews) {
   class PresenterBase {
     static readonly __entity = entity;
     static readonly __views = views;

@@ -17,7 +17,7 @@ class Reading extends entity({
   note: text(),
 }) {}
 
-const appOf = () => ({ fronds: [{ entities: [{ name: 'reading', entityClass: Reading }] }] });
+const appOf = () => ({ entities: new Map([['reading', Reading]]) });
 
 describe('a Date primary key survives the round trip', () => {
   let storage: any;

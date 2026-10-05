@@ -1,7 +1,7 @@
 import type { Fields } from '@fougere/schema';
 import { Visibility } from '@fougere/schema';
 import type { HttpMethod } from '@fougere/http';
-import type { HandlerEntry as CoreHandlerEntry } from '@fougere/core';
+import type { HandlerEntry as CoreHandlerEntry, OperationOverride } from '@fougere/core';
 import type { BindingPlan } from '@fougere/core/descriptor';
 import type { OperationMeta } from './OperationMeta.js';
 import type { GenerateRoutesOptions } from './GenerateRoutesOptions.js';
@@ -48,7 +48,7 @@ interface FrondLike {
   presenters: PresenterEntry[];
   surfaces?: Record<string, string[]>;
   /** What `frond.config.ts` said per op — `rest:` is read here, `graphql:` next facade. */
-  operationsOverrides?: Record<string, { rest?: { method?: string; path?: string; status?: number } }>;
+  operationsOverrides?: Record<string, Pick<OperationOverride, 'rest'>>;
 }
 
 interface AppLike {

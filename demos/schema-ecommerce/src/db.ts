@@ -27,7 +27,7 @@ const entities = [
 
 // Bring the schema up to date from the entities — additive, replaces the
 // hand-written CREATE TABLE block.
-await migrate({ fronds: [{ name: 'ecommerce', entities }] }, db, { tableName });
+await migrate({ entities: new Map(entities.map((entry) => [entry.name, entry.entityClass])) }, db, { tableName });
 
 export const categoryStorage = storageFactory(Category, 'category');
 export const productStorage = storageFactory(Product, 'product');

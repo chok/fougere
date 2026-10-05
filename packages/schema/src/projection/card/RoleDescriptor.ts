@@ -1,4 +1,4 @@
-import type { EntityConstructor } from '../../axis/role/EntityConstructor.js';
+import type { Entity } from '../../entity/Entity.js';
 import type { Relation } from '../../axis/role/Relation.js';
 import type { RoleRules } from '../../axis/role/Role.js';
 import type { Resolver } from '../../axis/Resolver.js';
@@ -47,7 +47,7 @@ export const roleOnCard: CardForm<RoleRules, RoleDescriptor> = {
     if (wire.relation) {
       const name = wire.relation.to;
       rules.relation = {
-        to: () => (resolve?.(name) ?? ({ name } as unknown)) as EntityConstructor,
+        to: () => (resolve?.(name) ?? ({ name } as unknown)) as Entity,
         kind: wire.relation.kind,
         ...(wire.relation.onDelete ? { onDelete: wire.relation.onDelete } : {}),
       };

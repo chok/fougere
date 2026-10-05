@@ -1,7 +1,7 @@
 import { betterAuth as betterAuthLib } from 'better-auth';
 import { createId } from '@paralleldrive/cuid2';
 import { AUTH, frond, type App, type AuthRuntime, type FrondDescriptor, type Storage } from '@fougere/core';
-import { json, lowerFirst, type Schema, type SchemaView } from '@fougere/schema';
+import { json, lowerFirst, type Entity, type Schema, type SchemaView } from '@fougere/schema';
 import { AuthUser } from './entity/AuthUser.js';
 import { AuthVerification } from './entity/AuthVerification.js';
 import { authEntities } from './entity/authEntities.js';
@@ -12,7 +12,7 @@ export { AuthUser } from './entity/AuthUser.js';
 
 /** What `fronds: { '@fougere/auth-better': { … } }` hands the factory in fougere.config.ts. */
 export interface BetterAuthOptions {
-  user?: SchemaView;
+  user?: Entity;
   secret: string;
   baseUrl?: string;
   basePath?: string;

@@ -1,7 +1,4 @@
-import { type SchemaView } from '@fougere/schema';
+import type { EntityEntry as ScannedEntity } from '@fougere/core';
 
-export interface EntityEntry {
-  name: string;
-  /** A live class in-process, or one rebuilt from the card of a frond that never crossed. */
-  entityClass: SchemaView;
-}
+/** A live class in-process, or one rebuilt from the card of a frond that never crossed. */
+export type EntityEntry = Pick<ScannedEntity, 'name' | 'entityClass'>;

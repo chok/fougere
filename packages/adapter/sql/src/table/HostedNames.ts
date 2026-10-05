@@ -2,6 +2,6 @@
 export interface HostedNames {
   /** Registration names in THIS batch. */
   here: ReadonlySet<string>;
-  /** Registration names the app hosts in another source — see {@link AppLike.elsewhere}. */
+  /** Registration names the app hosts in another source — see `SourceView.elsewhere`. */
   elsewhere: ReadonlySet<string>;
 }

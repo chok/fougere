@@ -4,6 +4,8 @@ import { Field } from './Field.js';
 import { type FieldName } from './FieldName.js';
 import { type Fields } from './Fields.js';
 import { SchemaError } from '../SchemaError.js';
+import { SchemaConstraints, type ConstraintKind } from '../SchemaConstraints.js';
+import type { EntityDeclarations } from '../entity/EntityDeclarations.js';
 
 export class FieldSet<TFields extends Fields = Fields> {
   private constructor(private readonly fields: TFields) {}
@@ -24,15 +26,15 @@ export class FieldSet<TFields extends Fields = Fields> {
    */
   static declaring<TFields extends Fields>(
     declared: TFields,
-    groups: { unique?: FieldGroups<TFields>; index?: FieldGroups<TFields> } = {},
-  ): { fields: TFields; unique: FieldGroups<TFields>; index: FieldGroups<TFields> } {
+    groups: Pick<EntityDeclarations<TFields>, ConstraintKind> = {},
+  ): { fields: TFields } & Record<ConstraintKind, FieldGroups<TFields>> {
     const fields: Fields = {};
     for (const [key, field] of Object.entries(declared))
       fields[key] = new Field(field, key);
 
-    const composite = { unique: [] as FieldName<TFields>[][], index: [] as FieldName<TFields>[][] };
+    const composite: Record<ConstraintKind, FieldName<TFields>[][]> = { unique: [], index: [] };
 
-    for (const kind of ['unique', 'index'] as const) {
+    for (const kind of SchemaConstraints.kinds) {
       for (const group of groups[kind] ?? []) {
         const missing = group.filter((key) => !Object.hasOwn(fields, key));
         if (missing.length)

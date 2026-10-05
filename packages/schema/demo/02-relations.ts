@@ -1,7 +1,7 @@
 /**
  * Demo 2 — Relations entre entités (ref, many)
  */
-import { entity, primary, text, number, ref, many, oneOf, created, type EntityConstructor } from '../src/index.js';
+import { entity, primary, text, number, ref, many, oneOf, created, type Entity } from '../src/index.js';
 
 class Customer extends entity({
   id: primary(),
@@ -12,7 +12,7 @@ class Customer extends entity({
 class OrderLine extends entity({
   id: primary(),
   // La clé de la relation vit ICI : une ligne nomme sa commande, jamais l'inverse.
-  orderId: ref((): EntityConstructor => Order),
+  orderId: ref((): Entity => Order),
   productId: text(),
   quantity: number({ min: 1, integer: true }),
   unitPrice: number({ min: 0 }),

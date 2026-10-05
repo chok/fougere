@@ -382,7 +382,7 @@ describe('registerOperations', () => {
         },
         binding: [
           { name: 'id', source: { kind: 'param', name: 'id' }, optional: false },
-          { name: 'user', source: { kind: 'collector' }, optional: true },
+          { name: 'user', source: { kind: 'collector', typeName: 'User' }, optional: true },
         ],
       }]]),
     });

@@ -8,11 +8,9 @@
  * rather than left to be discovered: it is the one place the two paths legitimately differ.
  */
 import { describe as suite, it, expect } from 'vitest';
-import {
-  entity, primary, text, number, bool, date, json, oneOf, ref,
+import { entity, primary, text, number, bool, date, json, oneOf, ref,
   created, updated, immutable, optional, nullable, unique, indexed,
-  Bundle, Card,
-} from '@fougere/schema';
+  Bundle, Card, type SchemaView } from '@fougere/schema';
 import { toTable, toTableName, toTables } from '../src/table/TableDef.js';
 
 class Author extends entity({
@@ -80,14 +78,8 @@ suite('a table is described from a card as from a class', () => {
       toTables(app, toTableName).flatMap((t) =>
         t.columns.filter((c) => c.references).map((c) => `${t.name}.${c.name} -> ${c.references!.table}`));
 
-    const live = fks({ fronds: [{ name: 'n', entities: [
-      { name: 'authorUser', entityClass: AuthorUser },
-      { name: 'note', entityClass: Note },
-    ] }] });
-    const card = fks({ fronds: [{ name: 'n', entities: [
-      { name: 'authorUser', entityClass: Card.fromSchema(AuthorUser, 'authorUser').toSchema() },
-      { name: 'note', entityClass: Card.fromSchema(Note, 'note').toSchema() },
-    ] }] });
+    const live = fks({ entities: new Map<string, SchemaView>([['authorUser', AuthorUser], ['note', Note]]) });
+    const card = fks({ entities: new Map<string, SchemaView>([['authorUser', Card.fromSchema(AuthorUser, 'authorUser').toSchema()], ['note', Card.fromSchema(Note, 'note').toSchema()]]) });
 
     expect(live).toEqual(['notes.author_user_id -> author_users']);
     expect(card).toEqual(live);

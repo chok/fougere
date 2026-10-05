@@ -1,5 +1,5 @@
 import { dirname, relative } from 'node:path';
-import { refusalsOf, type ScanResult } from '@fougere/core';
+import { ErrorCode, refusalsOf, type Refusable, type ScanResult } from '@fougere/core';
 import { servedSurfaces } from '@fougere/core/descriptor';
 import type { FacadeOptions } from './FacadeOptions.js';
 
@@ -24,13 +24,15 @@ function specifierOf(filePath: string, outFile: string): string {
  * meet a draining facade.
  *
  * `ErrorCode` is a string enum, so `'CONFLICT'` is not assignable to it — a literal would read
- * as the right thing and refuse to narrow `FougereError<Code>`, which is the whole point.
+ * as the right thing and refuse to narrow `FougereError<Code>`, which is the whole point. A code
+ * this version does not know is dropped rather than written — a card read by `fougere sync` may
+ * come from a newer far side, and a name that resolves to nothing would stop the consumer's build.
  */
-function codesOf(contract: { kind?: 'query' | 'command'; input?: unknown; errors?: readonly string[] }): string {
-  const codes = refusalsOf(contract);
-  if (codes.length === 0) return 'never';
+export function codesOf(contract: Refusable): string {
+  const known = refusalsOf(contract).filter((code) => code in ErrorCode);
+  if (known.length === 0) return 'never';
 
-  return codes.map((code) => `ErrorCode.${code}`).join(' | ');
+  return known.map((code) => `ErrorCode.${code}`).join(' | ');
 }
 
 /**

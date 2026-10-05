@@ -15,6 +15,7 @@ import { toTables, createKyselySource } from '@fougere/adapter-sql';
 import { createSqliteSource } from '@fougere/adapter-sql/sqlite';
 import { SqliteDialect } from 'kysely';
 import Database from 'better-sqlite3';
+import { sourceViewOf } from '@fougere/core';
 import { resolveStorage, storageFrom } from '../src/storage/ResolvedStorage.js';
 
 class Reader extends entity({ id: primary(), name: text() }) {}
@@ -37,7 +38,7 @@ describe('the DDL of one source', () => {
     // `catalog` lives elsewhere: the column stays, the foreign key goes. Two databases
     // share no constraint — that is physics, not a limit of the framework.
     const tables = toTables(
-      { fronds: app.fronds.filter((f) => f.name !== 'catalog'), elsewhere: ['book'] } as never,
+      { ...sourceViewOf(app.fronds.filter((f) => f.name !== 'catalog')), elsewhere: ['book'] },
       (name) => `${name}s`,
     );
 
@@ -51,14 +52,14 @@ describe('the DDL of one source', () => {
     // The dangerous case: a bad registration looks EXACTLY like a cross-source target.
     // Silence would turn a typo into a silently dropped constraint.
     expect(() => toTables(
-      { fronds: app.fronds.filter((f) => f.name !== 'catalog'), elsewhere: [] } as never,
+      { ...sourceViewOf(app.fronds.filter((f) => f.name !== 'catalog')), elsewhere: [] },
       (name) => `${name}s`,
     )).toThrow(/ref\(Book\): no source hosts it/);
   });
 
   it('keeps every constraint when nothing is declared elsewhere', () => {
     // One database, no `sources:` — the behaviour an existing app must keep.
-    const tables = toTables(app as never, (name) => `${name}s`);
+    const tables = toTables(sourceViewOf(app.fronds), (name) => `${name}s`);
     expect(fkOf(tables, 'loans', 'book_id')).toEqual({ table: 'books', column: 'id' });
     expect(fkOf(tables, 'loans', 'reader_id')).toEqual({ table: 'readers', column: 'id' });
   });
@@ -213,12 +214,12 @@ describe('the same entity reached as two class objects', () => {
     class Visit extends entity({ id: primary(), readerId: ref(ReaderTwin) }) {}
 
     const tables = toTables({
-      fronds: [
-        { name: 'people', entities: [{ name: 'reader', entityClass: Reader }] },
-        { name: 'visits', entities: [{ name: 'visit', entityClass: Visit }] },
-      ],
+      ...sourceViewOf([
+        { entities: [{ name: 'reader', entityClass: Reader }] },
+        { entities: [{ name: 'visit', entityClass: Visit }] },
+      ]),
       elsewhere: [],
-    } as never, (name) => `${name}s`);
+    }, (name) => `${name}s`);
 
     expect(fkOf(tables, 'visits', 'reader_id')).toEqual({ table: 'readers', column: 'id' });
   });
@@ -251,7 +252,7 @@ describe('a derivation', () => {
   const named = (tables: any[]) => tables.map((t) => t.name).sort();
 
   it('makes no table — it is a shape, not a source', () => {
-    expect(named(toTables(withCard as never, (n) => `${n}s`))).not.toContain('bookCards');
+    expect(named(toTables(sourceViewOf(withCard.fronds), (n) => `${n}s`))).not.toContain('bookCards');
   });
 
   it("makes one when the ENTITY anchors — never when a source names it", () => {
@@ -260,17 +261,17 @@ describe('a derivation', () => {
       fronds: [...app.fronds, { name: 'views', entities: [{ name: 'archive', entityClass: Archive }] }],
     };
 
-    expect(named(toTables(withArchive as never, (n) => `${n}s`))).toContain('archives');
+    expect(named(toTables(sourceViewOf(withArchive.fronds), (n) => `${n}s`))).toContain('archives');
   });
 
   it('is recognised through the chain, not the file — a class extending one is one too', () => {
     class Deeper extends BookCard.pick('title') {}
     const deep = { fronds: [{ name: 'views', entities: [{ name: 'deeper', entityClass: Deeper }] }] };
-    expect(toTables(deep as never, (n) => `${n}s`)).toHaveLength(0);
+    expect(toTables(sourceViewOf(deep.fronds), (n) => `${n}s`)).toHaveLength(0);
   });
 
   it('leaves an entity alone — it inherits from entity() directly and carries no origin', () => {
-    expect(named(toTables(app as never, (n) => `${n}s`))).toEqual(['books', 'loans', 'readers']);
+    expect(named(toTables(sourceViewOf(app.fronds), (n) => `${n}s`))).toEqual(['books', 'loans', 'readers']);
   });
 });
 

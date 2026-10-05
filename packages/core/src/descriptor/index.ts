@@ -21,6 +21,7 @@ export { type OperationsMap } from '../wire/OperationsMap.js';
 export { type Param } from '../wire/Param.js';
 export { type TypeRef } from '../wire/TypeRef.js';
 export { computeBindingPlan, type BindingPlan } from '../wire/binding.js';
+export { opsOf } from '../prefab/opsOf.js';
 export type { Signature } from '../wire/Signature.js';
 export { awaitKeyOf, emitKeyOf } from '../wire/Emit.js';
 export { addressOf } from '../wire/Facade.js';

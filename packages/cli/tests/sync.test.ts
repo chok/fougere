@@ -226,7 +226,10 @@ describe('remote frond sync', () => {
       await new SyncHandler().execute({ frond: 'blog', from: 'https://example.test' });
       const written = readFileSync(join(root, '.fougere', 'remotes', 'blog', 'facade.ts'), 'utf8');
 
-      expect(written).toContain("'post.publish': { errors: ErrorCode.CONFLICT | ErrorCode.FORBIDDEN };");
+      expect(written).toContain(
+        "'post.publish': { errors: ErrorCode.BAD_GATEWAY | ErrorCode.BAD_REQUEST | ErrorCode.CONFLICT"
+        + ' | ErrorCode.FORBIDDEN | ErrorCode.GATEWAY_TIMEOUT | ErrorCode.SERVICE_UNAVAILABLE };',
+      );
       // The synthetic interface is a NAMED export, not a default: the module must reach it
       // the way the file actually exports it, or `keyof Handler` is empty and no op compiles.
       const handler = readFileSync(join(root, '.fougere', 'remotes', 'blog', 'handlers', 'PostHandler.ts'), 'utf8');

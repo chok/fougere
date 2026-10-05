@@ -6,6 +6,5 @@ export type FieldDescriptor = ShapeKeywords & {
   type?: JSONSchema7TypeName | JSONSchema7TypeName[];
   items?: FieldDescriptor;
   properties?: Record<string, FieldDescriptor>;
-  description?: string;
   'x-fougere'?: FieldExtension;
 };

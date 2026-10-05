@@ -63,6 +63,7 @@ export type { AppMiddleware } from './wire/AppMiddleware.js';
 export type { AppNext } from './wire/AppNext.js';
 export type { OperationContext } from './wire/OperationContext.js';
 export { assertIdentityCard, RPC_ADDRESS, ENVELOPE_BYTES, maxBodyBytes, maxFrameBytes, setMaxBodyBytes } from './contract.js';
+export { OPERATION_KINDS, CARDINALITIES, PLACEMENTS, type OperationKind, type Cardinality, type Placement } from './contract.js';
 export { createLocalRunner, createAppRunner } from './boot/runner.js';
 
 // A frond an app STATES, for a boot that will not scan. No disk, no `typescript` — which
@@ -81,6 +82,7 @@ export { declaredTopologyOf } from './boot/declared.js';
 // Both halves of what a call can refuse, put together where they are READ — the framework's
 // follows from `kind` and `input`, so only the frond's travels.
 export { refusalsOf, type Refusable } from './wire/refusals.js';
+export type { Binding } from './Binding.js';
 // The facades as TYPES — empty here, filled by the `.d.ts` the scan writes beside the app.
 export type { Addresses } from './wire/Addresses.js';
 export type { Answer } from './wire/Answer.js';
@@ -129,7 +131,7 @@ export { Storage, togetherKeyOf } from './storage/Storage.js';
 export type { Constraint } from './Constraint.js';
 export type { Source } from './Source.js';
 export type { SourceConfig } from './SourceConfig.js';
-export type { SourceView } from './SourceView.js';
+export { sourceViewOf, type SourceView } from './SourceView.js';
 export { Sources } from './Source.js';
 export { storageOver } from './storage/Store.js';
 export type { Store } from './storage/Store.js';

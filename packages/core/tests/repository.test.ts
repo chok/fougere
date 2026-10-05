@@ -9,6 +9,7 @@
  * prefab.
  */
 import fronds from './fixtures-repository/fronds.js';
+import { entity, primary } from '@fougere/schema';
 import { describe, it, expect, vi } from 'vitest';
 import { createContainer } from '@fougere/container';
 import { createApp, createLocalRunner, Repository } from '../src/index.js';
@@ -40,7 +41,7 @@ const storageFactory: StorageFactory = (() => makeStorage()) as unknown as Stora
 
 describe('Repository(Entity)', () => {
   it('remembers the entity it is for', () => {
-    class Thing {}
+    class Thing extends entity({ id: primary() }) {}
     class ThingRepository extends Repository(Thing) {}
 
     expect(targetOf(ThingRepository)).toBe(Thing);
@@ -51,7 +52,7 @@ describe('Repository(Entity)', () => {
   });
 
   it('forwards the port, gesture by gesture — the same shape the default has', async () => {
-    class Thing {}
+    class Thing extends entity({ id: primary() }) {}
     const storage = makeStorage() as never;
     const repo = new (Repository(Thing))(storage);
 

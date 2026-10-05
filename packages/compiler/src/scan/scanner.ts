@@ -1,5 +1,5 @@
 import { DEFAULT_CONVENTIONS, frondDirsOf, frondPackage, providerDirsOf, resolveConventions, togetherKeyOf, type Conventions, type ConventionsInput, type Diagnostic, type ScanResult } from '@fougere/core';
-import { Fronds, addressOf, awaitKeyOf, cardinalityOf, computeBindingPlan, emitKeyOf, getPresenterFields, outputOf, ownedBy, repositoryKeyOf, storageKeyOf, targetOf, type CollectorEntry, type EntityEntry, type FrondDescriptor, type HandlerEntry, type MiddlewareEntry, type OperationContract, type OperationsMap, type PresenterEntry, type ProviderEntry, type SeedEntry, type TypeRef, viewsOf, isExtension, type ExtensionEntry } from '@fougere/core/descriptor';
+import { Fronds, addressOf, awaitKeyOf, cardinalityOf, computeBindingPlan, opsOf, emitKeyOf, getPresenterFields, outputOf, ownedBy, repositoryKeyOf, storageKeyOf, targetOf, type CollectorEntry, type EntityEntry, type FrondDescriptor, type HandlerEntry, type MiddlewareEntry, type OperationContract, type OperationsMap, type PresenterEntry, type ProviderEntry, type SeedEntry, type TypeRef, viewsOf, isExtension, type ExtensionEntry } from '@fougere/core/descriptor';
 import { getModuleLoader, loadFrondConfig } from '@fougere/core/node';
 import type { FrondConfig, ErrorCode } from '@fougere/core';
 import type { Param, Signature } from '@fougere/core/descriptor';
@@ -514,14 +514,13 @@ async function toHandlerEntry(
   }
 
   const address = addressOf(ctor.name);
-  const declaredOps = (ctor as { __ops?: Record<string, OperationContract> }).__ops ?? {};
   const operations = await inferOperations(
     filePath,
     ctor.name,
     augmented,
     collectorTypeNames,
     explicitInputs,
-    declaredOps,
+    opsOf(ctor),
     projectRoot,
   );
   const deps = await depsOf(filePath);

@@ -4,11 +4,12 @@
  * Documented: [collectors](https://fougere.dev/docs/business/collectors).
  */
 
-import { FieldValueValidator, dotted, json, upperFirst, type Field, type SchemaView } from '@fougere/schema';
+import type { AbstractCtor } from '../Ctor.js';
+import { FieldValueValidator, dotted, json, upperFirst, type Entity, type Field, type SchemaView } from '@fougere/schema';
 import { ErrorCode } from '../wire/ErrorCode.js';
 import { FougereError } from '../wire/FougereError.js';
 
-export function Collector<T extends abstract new (...args: any[]) => any>(target: T) {
+export function Collector<T extends AbstractCtor>(target: T) {
   class CollectorBase {
     static readonly __entity = target;
   }
@@ -34,7 +35,7 @@ export function collectedAs(collector: object, value: unknown): unknown {
 
   let reader = readers.get(target);
   if (!reader) {
-    reader = json(target as SchemaView & (new () => unknown));
+    reader = json(target as Entity);
     readers.set(target, reader);
   }
 

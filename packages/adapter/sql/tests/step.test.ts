@@ -19,9 +19,7 @@ const between = (before: Fields, after: Fields, options: SetDiffOptions = {}) =>
   bundle(before).diff(bundle(after), options);
 
 /** The app as it stands today — what the tables are built from. */
-const appOf = (fields: Fields) => ({
-  fronds: [{ name: 'blog', entities: [{ name: 'post', entityClass: class extends entity(fields) {} }] }],
-});
+const appOf = (fields: Fields) => ({ entities: new Map([['post', class extends entity(fields) {}]]) });
 
 const V1 = { id: primary(), title: text(), body: text() };
 

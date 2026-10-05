@@ -1,7 +1,6 @@
 import type { SchemaDescriptor } from './SchemaDescriptor.js';
+import type { Envelope } from './Envelope.js';
 
-export interface SchemaBundle {
+export interface SchemaBundle extends Envelope {
   $defs: Record<string, SchemaDescriptor>;
-  'x-fougere-version': 1;
-  'x-fougere-vendor': 'fougere';
 }

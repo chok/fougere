@@ -4,7 +4,7 @@
  * Deux domaines (catalog, orders) avec exports et agrégation.
  * Simule ce que fougere fera en vrai avec les Fronds.
  */
-import { entity, primary, text, number, oneOf, ref, many, created, type EntityConstructor } from '../src/index.js';
+import { entity, primary, text, number, oneOf, ref, many, created, type Entity } from '../src/index.js';
 
 // ─── Frond: catalog ─────────────────────────────
 
@@ -29,7 +29,7 @@ class Customer extends entity({
 class OrderLine extends entity({
   id: primary(),
   // La clé de la relation vit ICI : une ligne nomme sa commande, jamais l'inverse.
-  orderId: ref((): EntityConstructor => Order),
+  orderId: ref((): Entity => Order),
   productId: ref(Product),
   quantity: number({ min: 1, integer: true }),
   unitPrice: number({ min: 0 }),

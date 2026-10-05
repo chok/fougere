@@ -1,4 +1,4 @@
-import { InputValidator, dotted, optional, type Field, type Fields } from '@fougere/schema';
+import { Schema, dotted, optional, type Field, type Fields, type SchemaConstructor, type SchemaView } from '@fougere/schema';
 import { ErrorCode } from './ErrorCode.js';
 import { FougereError } from './FougereError.js';
 
@@ -16,19 +16,16 @@ export interface StateDeclaration {
  * Documented: [collectors](https://fougere.dev/docs/business/collectors).
  */
 export class StateShape {
-  static readonly empty = new StateShape({});
+  static readonly empty = new StateShape(Schema.of({ fields: {} }));
 
-  private readonly validator: InputValidator;
-
-  private constructor(private readonly fields: Fields) {
-    this.validator = InputValidator.of(fields);
-  }
+  private constructor(private readonly schema: SchemaView) {}
 
   /** Two extensions declaring one member refuse: the field that judges it would depend on wiring order. */
   static of(declarations: readonly StateDeclaration[]): StateShape {
-    const fields: Fields = {};
     const owners = new Map<string, string>();
+    let schema: SchemaConstructor<Fields> = Schema.of({ fields: {} as Fields });
     for (const { name, state } of declarations) {
+      const fields: Fields = {};
       for (const [member, field] of Object.entries(state ?? {})) {
         const owner = owners.get(member);
         if (owner) {
@@ -40,9 +37,10 @@ export class StateShape {
         owners.set(member, name);
         fields[member] = optional(field);
       }
+      schema = schema.extend(fields);
     }
 
-    return new StateShape(fields);
+    return new StateShape(schema);
   }
 
   /**
@@ -58,10 +56,10 @@ export class StateShape {
     const written = Object.fromEntries(Object.entries(state).filter(([member, value]) => entered[member] !== value));
     if (Object.keys(written).length === 0) return state;
 
-    const result = this.validator.validate(written);
+    const result = this.schema.validate(written);
     if (result.success) return { ...state, ...result.data };
 
-    const declared = Object.keys(this.fields);
+    const declared = Object.keys(this.schema.getFields());
     const errors = result.errors.map((error) => ({ ...error, path: ['state', ...error.path] }));
 
     throw new FougereError({

@@ -244,8 +244,8 @@ reads BEFORE `entities/`. What stays closed is the MODEL — a field has four ax
 tests admit one. Pinned by `schema/tests/axis-registration.test.ts`.
 
 **An axis IS its class, and the registry key is its name** — `Lifecycle`, `Boundary`, `Role`.
-What it admits is `static format`, what a card needs is `static describe`/`static reconstruct`,
-and what it reads is the instance: `Lifecycle.of(field).immutable()`. A predicate is a METHOD
+What it admits is `static format`, how a card writes it is the card's (`CardForms`, under
+`projection/card/`), and what it reads is the instance: `Lifecycle.of(field).immutable()`. A predicate is a METHOD
 and never a getter — a getter promises that reading does nothing, and `Field.hasAxes` was
 building an object to answer yes or no behind one. The rule needs no judgement of cost, which
 is why it catches what "a getter when it is free" let through. What a type predicate narrows
@@ -259,8 +259,8 @@ FieldDeclaration)[]`, true because a registry answers strings — never on the f
 `as unknown as Record<string, unknown>` at three call sites. `Reflect.get` is the same hole
 under another name and `anti-slop` refuses it. WRITING a member still needs
 `Object.defineProperty`: a union of keys is not assignable, and it passes through no setter,
-which is what had `Object.assign(this, init)` refused over `__proto__`. The two conversions are OPTIONAL and only `role` states
-them: its card carries a NAME where the declaration carries a function, where `lifecycle` and
+which is what had `Object.assign(this, init)` refused over `__proto__`. A card form is OPTIONAL and only `role` has one
+(`roleOnCard`): its card carries a NAME where the declaration carries a function, where `lifecycle` and
 `boundary` travel as themselves and used to write `(value) => value` twice. A class cannot
 `implements` an axis — the axis is its STATIC side — so `Axes.register` is where it is checked.
 Pinned by `schema/tests/axis-registration.test.ts`.
@@ -960,8 +960,8 @@ because that is what moves. It reads pairs, and it does not read a package's ROO
   depends on nothing (`schema/src/lib/validation.ts`, `core/src/storage/`) while the root
   reached back up into it. Three exceptions are stated
 with their reason: `field`↔`validator`, `axis`↔`field`, `entity`↔`field`. A fourth went the day
-`RoleDescriptor` moved beside the axis that converts it: one import ran from `axis` to
-`projection` against twenty the other way, and it was the card form of `role`.
+the card stopped asking an axis how to be written: `roleOnCard` and `RoleDescriptor` sit under
+`projection/card/`, so `projection` reads `axis` and nothing runs the other way.
 
 **An imported name is a check** — `tools/import-check.ts`, `pnpm import:check`, run in CI
 beside `publish:check` and `door:check`. Those two ask about the PACKAGE — what a tarball

@@ -195,7 +195,7 @@ function OperationButton({
   const fields = useMemo(
     () => (
       operation.input
-        ? formFieldsOf(SchemaCard.fromDescriptor(operation.input).toSchema() as never, operation.name)
+        ? formFieldsOf(SchemaCard.fromDescriptor(operation.input).toSchema(), operation.name)
         : []
     ),
     [operation],

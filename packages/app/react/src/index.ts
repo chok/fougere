@@ -10,7 +10,7 @@ export { fetcher, CALL_ENDPOINT } from './transport.js';
 export type {
   CallInput,
   EntityClass,
-  FormEntity,
+  SchemaView,
   FormField,
   SessionView,
 } from '@fougere/app/client';

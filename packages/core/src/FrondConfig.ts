@@ -10,8 +10,6 @@ export interface FrondConfig {
   reads?: NameOf<'entity'>[];
   /** Per-surface entity lists. Overrides default deduction for each named surface. */
   surfaces?: Record<string, NameOf<'entity'>[]>;
-  /** Interface → implementation bindings for DI (e.g. { Database: 'SqliteDatabase' }). */
-  bindings?: Record<string, NameOf<'provider'>>;
   /**
    * The ops that FINISH a fact, in the order they run — by class name, keyed by fact.
    *

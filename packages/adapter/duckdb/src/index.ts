@@ -1,9 +1,8 @@
 /** Read across an app's sources — one SQL query over what can be attached. */
 import { DuckDBInstance } from '@duckdb/node-api';
-import { lowerFirst, type SchemaView } from '@fougere/schema';
+import { lowerFirst, type Entity, type SchemaView } from '@fougere/schema';
 import { toTable, toTableName, toSnakeCase, codecsOf } from '@fougere/adapter-sql';
 
-type ShapeClass = abstract new (...args: any[]) => any;
 
 /** The engines DuckDB can attach — and the reason the list is short. */
 export type Attachable = 'sqlite' | 'postgres' | 'mysql';
@@ -25,7 +24,7 @@ export interface ConnectOptions {
   /** The other places, exactly as `fougere.config.ts` states them. */
   sources?: Record<string, SourceDeclaration>;
   /** What this scope may read — and therefore what gets attached at all. */
-  reads: readonly ShapeClass[];
+  reads: readonly Entity[];
   /** Same resolver the storage uses, when an app renames tables. */
   tableName?: (name: string) => string;
 }
@@ -33,7 +32,7 @@ export interface ConnectOptions {
 /** A query's answer: the rows, projected onto the shape that was named. */
 export interface Reads {
   /** Name the shape the answer takes, then write the query. */
-  read<E extends ShapeClass>(shape: E): (sql: TemplateStringsArray, ...refs: unknown[]) => Promise<InstanceType<E>[]>;
+  read<E extends Entity>(shape: E): (sql: TemplateStringsArray, ...refs: unknown[]) => Promise<InstanceType<E>[]>;
   /** The attached sources, by alias — what the scope actually opened. */
   attached: ReadonlyMap<string, string>;
   close(): Promise<void>;
@@ -80,7 +79,7 @@ export async function connectSources(options: ConnectOptions): Promise<Reads> {
 
   // Only what this scope reads is attached — the declaration IS the environment.
   const wanted = new Set<string>();
-  const placed = new Map<ShapeClass, { alias: string; table: string }>();
+  const placed = new Map<Entity, { alias: string; table: string }>();
   for (const shape of options.reads) {
     const name = lowerFirst((shape as { name?: string }).name ?? '');
     const alias = home.get(name) ?? DEFAULT_ALIAS;
@@ -114,8 +113,8 @@ export async function connectSources(options: ConnectOptions): Promise<Reads> {
   return {
     attached,
     close: async () => { db.closeSync(); },
-    read<E extends ShapeClass>(shape: E) {
-      const schema = shape as unknown as SchemaView;
+    read<E extends Entity>(shape: E) {
+      const schema: SchemaView = shape;
       const fields = schema.getFields();
       const codecs = codecsOf(toTable('x', schema).columns);
       const names = Object.keys(fields);
@@ -132,8 +131,8 @@ export async function connectSources(options: ConnectOptions): Promise<Reads> {
 }
 
 /** `${Book}` becomes `archive.books` — the alias AND the table, from one declaration. */
-function qualify(ref: unknown, placed: Map<ShapeClass, { alias: string; table: string }>): string {
-  const found = placed.get(ref as ShapeClass);
+function qualify(ref: unknown, placed: Map<Entity, { alias: string; table: string }>): string {
+  const found = placed.get(ref as Entity);
   if (found) return `${quote(found.alias)}.${quote(found.table)}`;
   const name = (ref as { name?: string } | undefined)?.name;
   if (name) {
@@ -153,7 +152,7 @@ function qualify(ref: unknown, placed: Map<ShapeClass, { alias: string; table: s
 const quote = (identifier: string): string => `"${identifier.replace(/"/g, '""')}"`;
 
 /** The column set, checked ONCE against the shape. */
-function refuseMismatch(shape: ShapeClass, names: string[], row: Record<string, unknown>, sql: string): void {
+function refuseMismatch(shape: Entity, names: string[], row: Record<string, unknown>, sql: string): void {
   const missing = names.filter((name) => !(toSnakeCase(name) in row) && !(name in row));
   if (missing.length === 0) return;
   throw new Error(

@@ -4,6 +4,7 @@ import type SchemaBuilder from '@pothos/core';
 import type { Fields, SchemaView } from '@fougere/schema';
 import { Shapes } from '@fougere/schema';
 import { type OperationMeta } from './OperationMeta.js';
+import type { EntityEntry as CoreEntityEntry, HandlerEntry as CoreHandlerEntry, OperationOverride } from '@fougere/core';
 import { registerOperations, registerType } from './OperationsConfig.js';
 
 type HandlerFacade = Record<string, Function>;
@@ -97,24 +98,13 @@ function loadByKey<R>(
 
 // ─── Types ──────────────────────────────────────
 
-interface EntityEntry {
-  name: string;
-  /** A live class in-process, a card from a frond whose class never crossed. */
-  entityClass: SchemaView;
-}
+type EntityEntry = Pick<CoreEntityEntry, 'name' | 'entityClass'>;
 
-interface HandlerEntry {
-  /**
-   * The name the facade answers to — `PostHandler` → `post`. NOT an entity name: a handler may carry
-   * none.
-   */
-  address: string;
+/** The effective table, not the scanned contracts — and `ctor` only for its name, in a claim's message. */
+type HandlerEntry = Pick<CoreHandlerEntry, 'address' | 'surface' | 'exposed'> & {
   operations: Map<string, OperationMeta>;
-  surface?: string;
-  exposed?: boolean;
-  /** `name` is the class's own — it names the handler when two ops claim one root field. */
   ctor?: { name?: string };
-}
+};
 
 interface PresenterFieldMeta {
   name: string;
@@ -138,9 +128,7 @@ interface FrondLike {
   handlers: HandlerEntry[];
   presenters: PresenterEntry[];
   surfaces?: Record<string, string[]>;
-  operationsOverrides?: Record<string, {
-    graphql?: string;
-  }>;
+  operationsOverrides?: Record<string, Pick<OperationOverride, 'graphql'>>;
 }
 
 interface AppLike {

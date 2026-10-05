@@ -1,24 +1,18 @@
 import {
   addressOf,
   resolveEffectiveOperations,
+  type Binding,
+  type Cardinality,
   type EffectiveOperation,
-  type OperationContract,
+  type OperationKind,
+  type Placement,
 } from '@fougere/core';
 import { relative } from 'node:path';
 import ProjectScan from '../services/ProjectScan.js';
 import { ANONYMOUS_SCHEMA_NAME, type SchemaView } from '@fougere/schema';
 import { remotesOf } from '@fougere/core/node';
 
-type Cardinality = NonNullable<OperationContract['cardinality']>;
-type Binding = EffectiveOperation['binding'][number];
-
-export type ExplainedBinding =
-  | { kind: 'collector'; typeName: string }
-  | { kind: 'fact'; factName: string }
-  | { kind: 'param'; name: string; coerce?: 'number' | 'boolean' }
-  | { kind: 'input' }
-  | { kind: 'context' }
-  | { kind: 'query' };
+export type ExplainedBinding = Binding['source'];
 
 export interface ExplainedParameter {
   name: string;
@@ -44,7 +38,7 @@ export interface ExplainResult {
     method: string;
     file: string | null;
   };
-  kind: 'query' | 'command';
+  kind: OperationKind;
   description: string | null;
   input: string | null;
   output: { type: string; cardinality: Cardinality | null } | null;
@@ -56,23 +50,18 @@ export interface ExplainResult {
     surfaces: string[];
     adapters: string[];
   };
-  placement: {
-    frond: string;
-    runtime: 'local' | 'remote';
-    remote: string | null;
-  };
+  frond: string;
+  placement: Placement;
+  remote: string | null;
   /** Where the work GOES, next to where it answers — and how much of it leaves the process. */
-  reach: {
-    fronds: { frond: string; runtime: 'local' | 'remote' }[];
-    hops: number;
-  };
+  reach: EffectiveOperation['reach'];
 }
 
 /** What this project serves, when no single operation was named. */
 export interface ExplainListing {
   fronds: {
     name: string;
-    runtime: 'local' | 'remote';
+    placement: Placement;
     remote: string | null;
     operations: number;
   }[];
@@ -96,14 +85,14 @@ export default class ExplainHandler {
     const remotes = remotesOf(scan.config);
     const counted = new Map<string, number>();
     for (const operation of model.operations) {
-      const frond = operation.placement.frond;
+      const frond = operation.frond;
       counted.set(frond, (counted.get(frond) ?? 0) + 1);
     }
 
     return {
       fronds: scan.fronds.map((frond) => ({
         name: frond.name,
-        runtime: remotes[frond.name] ? 'remote' as const : 'local' as const,
+        placement: remotes[frond.name] ? 'remote' as const : 'local' as const,
         remote: remotes[frond.name] ?? null,
         operations: counted.get(frond.name) ?? 0,
       })).sort((a, b) => a.name.localeCompare(b.name)),
@@ -196,11 +185,9 @@ function project(operation: EffectiveOperation, root: string): ExplainResult {
     contexts: operation.contexts,
     semantics: operation.semantics,
     exposure: operation.exposure,
-    placement: {
-      frond: operation.placement.frond,
-      runtime: operation.placement.runtime,
-      remote: operation.placement.remote ?? null,
-    },
+    frond: operation.frond,
+    placement: operation.placement,
+    remote: operation.remote ?? null,
     reach: operation.reach,
   };
 }
@@ -229,7 +216,7 @@ function parseSelector(value: string): Selector {
 function matches(operation: EffectiveOperation, selector: Selector): boolean {
   return operation.handler.address.toLowerCase() === selector.address.toLowerCase()
     && operation.name === selector.op
-    && (!selector.frond || operation.placement.frond === selector.frond)
+    && (!selector.frond || operation.frond === selector.frond)
     && (!selector.surface || operation.exposure.surfaces.includes(selector.surface));
 }
 
@@ -259,5 +246,5 @@ function parsedOutput(raw: string | undefined): string | undefined {
 }
 
 function bindingOf(binding: Binding): ExplainedBinding {
-  return { ...binding.source } as ExplainedBinding;
+  return { ...binding.source };
 }

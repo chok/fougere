@@ -19,6 +19,8 @@ import type { SchemaDescriptor } from './SchemaDescriptor.js';
 import { compare, type Diff } from './Diff.js';
 import { type DiffOptions } from './DiffOptions.js';
 import { SchemaError } from '../../SchemaError.js';
+import type { ConstraintKind } from '../../SchemaConstraints.js';
+import { ENVELOPE } from './Envelope.js';
 
 type FieldsOf<T> = { [K in keyof T]-?: Field<T[K]> };
 
@@ -42,15 +44,14 @@ export class Card<T = Values<Fields>> {
       properties[key] = describeField(field, key);
       if (validator.requires(field)) required.push(key);
     }
-    for (const kind of ['unique', 'index'] as const)
+    for (const kind of SchemaConstraints.kinds)
       for (const group of kind === 'unique' ? schema.getUnique() : schema.getIndex())
         for (const member of group) carryGroup(properties[member], kind, group);
 
     const descriptor: SchemaDescriptor = {
       type: 'object',
       properties,
-      'x-fougere-version': 1,
-      'x-fougere-vendor': 'fougere',
+      ...ENVELOPE,
     };
     const title = name ?? Card.titleOf(schema);
     if (title) descriptor.title = title;
@@ -98,7 +99,7 @@ export class Card<T = Values<Fields>> {
     }
 
     const fields: Fields = {};
-    const groups: { unique: string[][]; index: string[][] } = { unique: [], index: [] };
+    const groups: Record<ConstraintKind, string[][]> = { unique: [], index: [] };
     for (const [key, property] of Object.entries(descriptor.properties)) {
       if (!isObject(property)) {
         refuse(
@@ -107,7 +108,7 @@ export class Card<T = Values<Fields>> {
         );
       }
       fields[key] = reconstructField(property, key, resolve);
-      for (const kind of ['unique', 'index'] as const)
+      for (const kind of SchemaConstraints.kinds)
         for (const group of property['x-fougere']?.role?.[kind] ?? [])
           if (group.length > 1) groups[kind].push([...group]);
     }

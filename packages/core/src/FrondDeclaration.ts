@@ -15,9 +15,10 @@ import type { OperationContract } from './wire/OperationContract.js';
 import type { DeclaredSubject } from './DeclaredSubject.js';
 import type { DeclaredHandler } from './DeclaredHandler.js';
 import type { Declared } from './Declared.js';
+import { opsOf } from './prefab/opsOf.js';
+import type { Ctor } from './Ctor.js';
+import type { FrondConfig } from './FrondConfig.js';
 
-/** A class, as a declaration hands it over: the constructor itself. */
-type Ctor = new (...args: never[]) => unknown;
 
 const ctorOf = (d: Declared): Ctor => (typeof d === 'function' ? d : d.ctor) as Ctor;
 
@@ -47,7 +48,7 @@ const depsOf = (d: Declared): string[] => (typeof d === 'function' ? [] : d.deps
  */
 function statedOperations(h: Ctor | DeclaredHandler): Map<string, OperationContract> {
   const declared = typeof h === 'function' ? undefined : h.operations;
-  const own = (ctorOf(h) as { __ops?: Record<string, OperationContract> }).__ops ?? {};
+  const own = opsOf(ctorOf(h));
   const merged = new Map<string, OperationContract>(Object.entries(own));
   for (const [op, contract] of declared instanceof Map ? declared : Object.entries(declared ?? {})) {
     merged.set(op, contract as OperationContract);
@@ -57,7 +58,7 @@ function statedOperations(h: Ctor | DeclaredHandler): Map<string, OperationContr
 }
 
 /** What a declaration states about one frond. Everything else is derived from the classes. */
-export interface FrondDeclaration {
+export interface FrondDeclaration extends Pick<FrondConfig, 'pipes' | 'surfaces'> {
   entities?: SchemaView[];
   handlers?: (Ctor | DeclaredHandler)[];
   presenters?: (Ctor | DeclaredSubject)[];
@@ -66,10 +67,6 @@ export interface FrondDeclaration {
   seeds?: { entityName: string; data: SeedEntry['data'] }[];
   /** What runs around this frond's operations, and around those of the fronds under it. */
   middlewares?: (Ctor | DeclaredSubject)[];
-  /** The ops that finish a fact, in order — the same key `frond.config.ts` states. */
-  pipes?: Record<string, string[]>;
-  /** Per-surface entity lists — the same key `frond.config.ts` states. */
-  surfaces?: Record<string, string[]>;
   /** The import scope this frond answers under. Defaults to the conventional one. */
   scope?: string;
   /** What `frond.config.ts` states — the third producer of an operation contract. */

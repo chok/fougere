@@ -1,4 +1,4 @@
-import { Card, FieldSet, lowerFirst, type SchemaView } from '@fougere/schema';
+import { Card, FieldSet, lowerFirst, type Entity, type SchemaView } from '@fougere/schema';
 import {
   CALL_ENDPOINT,
   fetcher as browserFetcher,
@@ -80,11 +80,11 @@ export function resourcesOf(card: IdentityCard): AdminResource[] {
   const out: AdminResource[] = [];
   // Every schema first, so a reference is resolved to the entity it names — its fields say which one
   // names a row — rather than to a bare name, which left a choice showing its key.
-  const schemas = new Map<string, SchemaView>();
-  const resolve = (name: string) => schemas.get(lowerFirst(name)) as never;
+  const schemas = new Map<string, Entity>();
+  const resolve = (name: string) => schemas.get(lowerFirst(name));
   for (const frond of card.fronds) {
     for (const stored of frond.entities) {
-      schemas.set(stored.name, Card.fromDescriptor(stored.schema).toSchema(resolve) as unknown as SchemaView);
+      schemas.set(stored.name, Card.fromDescriptor(stored.schema).toSchema(resolve));
     }
   }
   for (const frond of card.fronds) {

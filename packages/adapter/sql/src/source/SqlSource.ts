@@ -16,7 +16,7 @@ export interface SqlSource extends Source {
   /** Runs raw statements — what `autoMigrate` writes through. */
   sink: SqlSink;
   /**
-   * The Kysely instance, for what precedes any entity: `migrate(app, setup)` writes the schema
+   * The Kysely instance, for what precedes any entity: `migrate(view, setup)` writes the schema
    * through it, and a script may need it before a container exists.
    */
   db: Kysely<any>;
@@ -35,8 +35,8 @@ export const sqlEnforces = ['unique', 'relation'] as const;
 function migrating(db: Kysely<any>, dialect: DialectName, opts: SqlSourceOptions) {
   return async (view: SourceView): Promise<void | string> => {
     const options = { dialect, tableName: opts.storageFactoryOptions?.tableName ?? toTableName };
-    await migrate(view as never, db, options);
-    const found = await drift(db, desiredTables(view as never, options));
+    await migrate(view, db, options);
+    const found = await drift(db, desiredTables(view, options));
 
     return found.length ? driftReport(found) : undefined;
   };
@@ -61,7 +61,7 @@ export function createKyselySource(
     storageFactory: createStorageFactory(db, opts.storageFactoryOptions, dialect),
     sink: sqlSink(db),
     migrate: migrating(db, dialect, opts),
-    pending: (view) => pendingOf(view as never, db, { dialect, tableName: opts.storageFactoryOptions?.tableName ?? toTableName }),
+    pending: (view) => pendingOf(view, db, { dialect, tableName: opts.storageFactoryOptions?.tableName ?? toTableName }),
     close: () => db.destroy(),
     name: opts.name ?? dialect,
     enforces: sqlEnforces,

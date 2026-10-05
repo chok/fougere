@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { Card, entity, primary, text, number, bool, created, optional, many, ON_DELETE, ref, unique, indexed, type EntityConstructor } from '@fougere/schema';
+import { Card, entity, primary, text, number, bool, created, optional, many, ON_DELETE, ref, unique, indexed, type Entity } from '@fougere/schema';
 import { createTableSQL, toTable } from '../src/index.js';
 import { addForeignKeyConstraintSQL, createIndexSQL, generateSQL } from '../src/ddl/SqlSink.js';
+import { sourceViewOf } from '@fougere/core';
 
 // ─── Fixtures ──────────────────────────────────────
 
@@ -9,7 +10,7 @@ class Author extends entity({
   id: primary(),
   name: text({ min: 1 }),
   email: text(),
-  posts: many((): EntityConstructor => Post),
+  posts: many((): Entity => Post),
 }) {}
 
 class Post extends entity({
@@ -48,7 +49,7 @@ class Product extends entity({
 class Club extends entity({
   id: primary(),
   name: text({ min: 1 }),
-  captainId: ref((): EntityConstructor => Captain),
+  captainId: ref((): Entity => Captain),
 }) {}
 
 class Captain extends entity({
@@ -57,9 +58,7 @@ class Captain extends entity({
   clubId: ref(Club),
 }) {}
 
-const fakeApp = (entities: { name: string; entityClass: any }[]) => ({
-  fronds: [{ name: 'test', entities }],
-});
+const fakeApp = (entities: { name: string; entityClass: any }[]) => sourceViewOf([{ entities }]);
 
 const ddl = (name: string, e: any, dialect: any = 'sqlite') => createTableSQL(toTable(name, e), dialect);
 
@@ -185,7 +184,7 @@ describe('createTableSQL — foreign keys', () => {
 
   it('a self-reference stays inline — no ordering or deferral needed', () => {
     // Self-reference: same inference loop as Club/Captain, one entity instead of two.
-    class Node extends entity({ id: primary(), parentId: optional(ref((): EntityConstructor => Node)) }) {}
+    class Node extends entity({ id: primary(), parentId: optional(ref((): Entity => Node)) }) {}
     const table = toTable('nodes', Node);
     expect(createTableSQL(table, 'pg')).toContain('references "nodes" ("id")');
   });
@@ -211,7 +210,7 @@ describe('addForeignKeyConstraintSQL', () => {
 // ─── generateSQL — FK ordering across engines ──────
 
 describe('generateSQL — FK ordering', () => {
-  const shopApp = (entities: { name: string; entityClass: any }[]) => ({ fronds: [{ name: 'shop', entities }] });
+  const shopApp = (entities: { name: string; entityClass: any }[]) => sourceViewOf([{ entities }]);
 
   it('SQLite keeps declaration order — lazy FK resolution needs no sort', () => {
     // Declared in reverse dependency order: Product before its Category.
@@ -245,7 +244,7 @@ describe('generateSQL — FK ordering', () => {
 });
 
 describe('generateSQL — a relation cycle', () => {
-  const clubApp = (entities: { name: string; entityClass: any }[]) => ({ fronds: [{ name: 'club', entities }] });
+  const clubApp = (entities: { name: string; entityClass: any }[]) => sourceViewOf([{ entities }]);
 
   it('SQLite inlines both FKs — no cycle-breaking needed', () => {
     const statements = generateSQL(clubApp([
@@ -370,7 +369,7 @@ describe('unique and index reach the DDL', () => {
   });
 
   it('generateSQL ships the indexes after the tables', () => {
-    const app = { fronds: [{ name: 'a', entities: [{ name: 'account', entityClass: Account }] }] };
+    const app = { entities: new Map([['account', Account]]) };
     const statements = generateSQL(app as never);
     expect(statements[0]).toMatch(/create table/i);
     expect(statements.at(-1)).toMatch(/create index/i);

@@ -8,7 +8,7 @@ import {
   MssqlAdapter, MssqlQueryCompiler, MssqlIntrospector,
   type ColumnDefinitionBuilder,
 } from 'kysely';
-import { type AppLike } from '../table/AppLike.js';
+import type { SourceView } from '@fougere/core';
 import { type ColumnDef } from '../table/ColumnDef.js';
 import { isKeyed, toTableName, toTables, type TableDef } from '../table/TableDef.js';
 import { orderTables } from '../order/TableOrder.js';
@@ -136,14 +136,11 @@ export function addForeignKeyConstraintSQL(table: TableDef, column: ColumnDef, d
 
 // ─── App-wide generation ───────────────────────────
 
-/**
- * `CREATE TABLE` for every entity the app hosts — scanned frond entities plus auth runtime
- * entities when present.
- */
-export function generateSQL(app: AppLike, options?: GenerateOptions): string[] {
+/** `CREATE TABLE` for every entity a source holds. */
+export function generateSQL(view: SourceView, options?: GenerateOptions): string[] {
   const resolve = options?.tableName ?? toTableName;
   const dialect = options?.dialect ?? 'sqlite';
-  const tables = toTables(app, resolve);
+  const tables = toTables(view, resolve);
 
   if (dialect === 'sqlite') {
     return [
@@ -184,8 +181,8 @@ function runOn(sink: SqlSink, statement: string): unknown {
 }
 
 /** Create every missing table. */
-export function autoMigrate(app: AppLike, sink: SqlSink, options?: GenerateOptions): void | Promise<void> {
-  const pending = generateSQL(app, options)
+export function autoMigrate(view: SourceView, sink: SqlSink, options?: GenerateOptions): void | Promise<void> {
+  const pending = generateSQL(view, options)
     .map((statement) => runOn(sink, statement))
     .filter((result): result is Promise<unknown> => typeof (result as any)?.then === 'function');
 

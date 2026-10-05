@@ -1,21 +1,16 @@
-import { entity, primary, text, date, created, ref, optional, type SchemaView } from '@fougere/schema';
+import { entity, primary, text, date, created, ref, optional, type Entity, type SchemaView } from '@fougere/schema';
 
-/** A `ref()` target is fixed at field-declaration time. */
-type LiveEntity = abstract new (...args: any[]) => unknown;
-
-export function authEntities(User: SchemaView): {
+export function authEntities(User: Entity): {
   AuthSession: SchemaView;
   AuthAccount: SchemaView;
 } {
-  const target = User as unknown as LiveEntity;
-
   /**
    * Session entity — better-auth shape.
    * `token` carries the opaque session secret (cookie value).
    */
   class Session extends entity({
     id: primary(),
-    userId: ref(target),
+    userId: ref(User),
     token: text(),
     expiresAt: date(),
     ipAddress: optional(text()),
@@ -32,7 +27,7 @@ export function authEntities(User: SchemaView): {
     id: primary(),
     accountId: text(),
     providerId: text(),
-    userId: ref(target),
+    userId: ref(User),
     accessToken: optional(text()),
     refreshToken: optional(text()),
     idToken: optional(text()),
