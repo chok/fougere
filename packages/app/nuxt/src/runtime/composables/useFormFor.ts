@@ -3,7 +3,7 @@ import { reactive, computed, onMounted } from 'vue';
 import { useRequestFetch } from '#imports';
 import { lowerFirst, validationErrorsOf } from '@fougere/core/contract';
 import { useCommand } from './useFougereData.js';
-import { Choices, facadeOf, formFieldsOf, payloadOf, errorsByField, type Choice, type Fetcher, type FormEntity, type FormField, type FormErrors, type FormFieldName, type FormRow, type FormValues, type FormOptions } from '@fougere/app/client';
+import { Choices, facadeOf, formFieldsOf, openingOf, payloadOf, errorsByField, type Choice, type Fetcher, type FormEntity, type FormField, type FormErrors, type FormFieldName, type FormRow, type FormValues, type FormOptions } from '@fougere/app/client';
 
 export type { FormOptions };
 
@@ -11,13 +11,7 @@ export function useFormFor<E extends FormEntity>(entity: E, options: FormOptions
   const entityKey = lowerFirst(entity.name);
   const fields = formFieldsOf(entity, entityKey);
 
-  // `initial` wins over the declared default: editing a row shows the row, including a
-  // value the author deliberately changed away from that default. On a create form
-  // there is no `initial`, so the field opens on what is about to be written — the
-  // schema's own literal, shown rather than guessed by the page.
-  const values = reactive<Record<string, unknown>>(
-    Object.fromEntries(fields.map((f) => [f.name, options.initial?.[f.name] ?? f.default])),
-  );
+  const values = reactive<Record<string, unknown>>(openingOf(fields, options.initial));
   const errors = reactive<Record<string, string>>({});
   // A form is designated by its ENTITY — it is a set of fields — so the facade it submits to is
   // an address with no handler type behind it, and what it answers is the entity's row.
@@ -63,6 +57,7 @@ export function useFormFor<E extends FormEntity>(entity: E, options: FormOptions
     const answer = await command.execute({ params: options.params, input: payloadOf(entity, values) });
     const refusals = command.error.value && validationErrorsOf(command.error.value);
     if (refusals) Object.assign(errors, errorsByField<E>(refusals));
+    if (answer !== null && !options.initial) Object.assign(values, openingOf(fields));
 
     return answer as FormRow<E> | null;
   }

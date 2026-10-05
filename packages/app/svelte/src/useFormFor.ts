@@ -8,6 +8,7 @@ import {
   facadeOf,
   errorsByField,
   formFieldsOf,
+  openingOf,
   payloadOf,
   type Choice,
   type FormEntity,
@@ -26,11 +27,7 @@ export function useFormFor<E extends FormEntity>(entity: E, options: FormOptions
   const entityKey = entityKeyOf(entity);
   const fields = formFieldsOf(entity, entityKey);
 
-  // `initial` wins over the declared default: editing a row shows the row. On a
-  // create form there is none, so the field opens on what is about to be written.
-  const values: Writable<FormValues<E>> = writable(
-    Object.fromEntries(fields.map((field) => [field.name, options.initial?.[field.name] ?? field.default])) as FormValues<E>,
-  );
+  const values: Writable<FormValues<E>> = writable(openingOf(fields, options.initial) as FormValues<E>);
   const errors = writable<FormErrors<E>>({});
   // A form is designated by its ENTITY — it is a set of fields — so the facade it submits to is
   // an address with no handler type behind it, and what it answers is the entity's row.
@@ -69,6 +66,7 @@ export function useFormFor<E extends FormEntity>(entity: E, options: FormOptions
     const failure = get(command).error;
     const refusals = failure && validationErrorsOf(failure);
     if (refusals) errors.set(errorsByField<E>(refusals));
+    if (answer !== null && !options.initial) values.set(openingOf(fields) as FormValues<E>);
 
     return answer as FormRow<E> | null;
   }

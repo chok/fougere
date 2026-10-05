@@ -120,6 +120,16 @@ export function formFieldsOf<E extends FormEntity>(entity: E, entityKey: string)
   return fields as FormField<FormFieldName<E>>[];
 }
 
+/**
+ * What a form opens on. `initial` wins over the declared default: editing a row shows the row,
+ * including a value the author deliberately changed away from that default. With no `initial` the
+ * form creates, so it opens on what is about to be written — and opens on it again once a row is
+ * answered, since the next submission is another row.
+ */
+export function openingOf(fields: FormField[], initial?: Record<string, unknown>): Record<string, unknown> {
+  return Object.fromEntries(fields.map((field) => [field.name, initial?.[field.name] ?? field.default]));
+}
+
 /** Asked of the relation before the shape: a reference's own shape is a bare string. */
 const RENDER_BY_TYPE: Record<ShapeType, TableColumn['render']> = {
   number: 'number',

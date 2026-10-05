@@ -8,6 +8,7 @@ import {
   errorsByField,
   facadeOf,
   formFieldsOf,
+  openingOf,
   payloadOf,
   type Choice,
   type FormEntity,
@@ -27,13 +28,7 @@ export function useFormFor<E extends FormEntity>(entity: E, options: FormOptions
   const entityKey = entityKeyOf(entity);
   const fields = useMemo(() => formFieldsOf(entity, entityKey), [entity, entityKey]);
 
-  // `initial` wins over the declared default: editing a row shows the row, including
-  // a value the author deliberately changed away from that default. On a create form
-  // there is no `initial`, so the field opens on what is about to be written — the
-  // schema's own literal, shown rather than guessed by the page.
-  const [values, setValues] = useState<FormValues<E>>(() =>
-    Object.fromEntries(fields.map((field) => [field.name, options.initial?.[field.name] ?? field.default])) as FormValues<E>,
-  );
+  const [values, setValues] = useState<FormValues<E>>(() => openingOf(fields, options.initial) as FormValues<E>);
   const [errors, setErrors] = useState<FormErrors<E>>({});
   // A form is designated by its ENTITY — it is a set of fields — so the facade it submits to is
   // an address with no handler type behind it, and what it answers is the entity's row.
@@ -73,9 +68,11 @@ export function useFormFor<E extends FormEntity>(entity: E, options: FormOptions
   /** Validate locally, then send through the command. */
   const submit = useCallback(async (): Promise<FormRow<E> | null> => {
     if (!validator()) return null;
+    const answer = await command.execute({ params: options.params, input: payloadOf(entity, values) });
+    if (answer !== null && !options.initial) setValues(openingOf(fields) as FormValues<E>);
 
-    return (await command.execute({ params: options.params, input: payloadOf(entity, values) })) as FormRow<E> | null;
-  }, [validator, command, options.params, values]);
+    return answer as FormRow<E> | null;
+  }, [validator, command, options.params, options.initial, fields, values]);
 
   // What the server refused lands per field too, read off the command's own state: its `execute` resolves
   // before React has rendered the refusal, so it cannot be handed over at the call.

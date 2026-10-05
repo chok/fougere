@@ -211,6 +211,19 @@ describe('useFormFor', () => {
     expect(calls[0]!.params.input).toEqual({ title: 'ok', body: 'b' });
   });
 
+  it('opens again on a fresh row once one is created, and keeps what a refusal sent back', async () => {
+    wire(() => ({ id: 'new' }));
+    const form = useFormFor(Post);
+
+    form.values.set({ title: 'ok', body: 'b' });
+    await form.submit();
+    expect(get(form.values)).toEqual({ title: undefined, body: undefined });
+
+    form.values.set({ title: '', body: 'b' });
+    await form.submit();
+    expect(get(form.values)).toEqual({ title: '', body: 'b' });
+  });
+
   it('lands a remote refusal per field, so the form never knows who validated', async () => {
     wire(() =>
       Object.assign(new Error('title: too short'), {
@@ -233,6 +246,7 @@ describe('useFormFor', () => {
     await form.submit();
     expect(calls[0]!.method).toBe('post.update');
     expect(calls[0]!.params.params).toEqual({ id: 'a' });
+    expect(get(form.values).title).toBe('was');
   });
 });
 
@@ -243,7 +257,7 @@ describe('the packaging decision', () => {
 
     // A `.svelte.ts` file needs the Svelte compiler, so a library written with runes
     // ships SOURCE and forces every consumer's bundler to compile it. Stores are
-    // plain TypeScript — which is why the 14 tests above run with no compiler and no
+    // plain TypeScript — which is why the tests above run with no compiler and no
     // DOM at all. That is the decision, and this is what would catch its reversal.
     const sources = readdirSync('src').filter((f) => f.endsWith('.ts'));
     expect(sources.length).toBeGreaterThan(0);
