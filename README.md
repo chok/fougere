@@ -26,133 +26,21 @@ You split your app into [fronds](https://fougere.dev/docs/concepts/frond), one p
 
 ---
 
-<!-- prettier-ignore-start -->
+A picture (or an animation) is worth a thousand words, so:
 
-<table align="center">
-<tr>
-<th width="50%">Entity</th>
-<th width="50%">Repository</th>
-</tr>
-<tr>
-<td valign="top">
+<div align="center">
 
-```ts
-// entities/Post.ts
-export default class Post
-  extends entity({
-    id: primary(),
-    title: text({ max: 200 }),
-    body: text(),
-    createdAt: created(),
-    status: readOnly(oneOf(
-      'draft', 'published',
-      { default: 'draft' },
-    )),
-  }) {}
+<img src="docs/img/schema.gif" width="800" alt="A field is added to an entity in vim. The page refuses until the database is migrated, then the form and the API refuse the same short value." />
 
-// entities/PostCard.ts
-export default class PostCard
-  extends Post.pick(
-    'id', 'title', 'status',
-  ) {}
-```
+**Add a field.** The database, the form and the API follow, and they refuse the same values.
 
-</td>
-<td valign="top">
+<img src="docs/img/gradient.gif" width="800" alt="One line of config moves the blog frond to its own process. The page fails until that process starts, then works again with the same code." />
 
-```ts
-// repositories/PostRepository.ts
-export default class PostRepository
-  extends Repository(Post) {
-  published() {
-    return this.output(PostCard)
-      .findAllBy({
-        status: 'published',
-      });
-  }
-}
-```
+**Move a frond to its own process.** One line of config, and the code stays the same.
 
-</td>
-</tr>
-<tr>
-<th>Handler</th>
-<th>Nuxt page (example)</th>
-</tr>
-<tr>
-<td valign="top">
+</div>
 
-```ts
-// handlers/PostHandler.ts
-export default class PostHandler
-  extends Crud(Post) {
-  constructor(
-    private posts: PostRepository,
-  ) {
-    super(posts);
-  }
-
-  async publish(id: Post['id']) {
-    const post = await this.posts
-      .findById(id);
-
-    if (!post) {
-      throw new FougereError({
-        code: ErrorCode.NOT_FOUND,
-        message: `No post '${id}'`,
-      });
-    }
-
-    return this.posts.update(id, {
-      status: 'published',
-    });
-  }
-}
-```
-
-</td>
-<td valign="top">
-
-```vue
-<!-- app/pages/posts.vue -->
-<script setup lang="ts">
-import { post }
-  from '@fronds/facade';
-
-const { items } =
-  await useQuery(post, 'list');
-const { execute: publish, error } =
-  useCommand(post, 'publish');
-</script>
-
-<template>
-  <p
-    v-for="row in items"
-    :key="row.id"
-  >
-    {{ row.title }}
-    <button
-      v-if="row.status === 'draft'"
-      @click="publish({
-        params: { id: row.id },
-      })"
-    >
-      Publish
-    </button>
-  </p>
-  <p v-if="error">
-    {{ error.message }}
-  </p>
-</template>
-```
-
-</td>
-</tr>
-</table>
-
-<!-- prettier-ignore-end -->
-
-That's all! Everything your handler receives is validated against your schema, and it is served over JSON-RPC by default. You can enable REST or GraphQL as well.
+Everything your handler receives is validated against your schema, and it is served over JSON-RPC by default. You can enable REST or GraphQL as well.
 
 > [!TIP]
 > If you need full control over routes, for example, you can set them in config.
@@ -187,7 +75,7 @@ The one primitive to know is the Frond, the fractal leaf of a fern (_fougère_ i
 - **Errors**: they are typed. A frontend knows exactly which errors each operation can return, without declaring them.
 - **Events**: no listener to register. Ask for an `Emit<PostPublished>` to announce a fact, and accept a `Fact<PostPublished>` to subscribe to it. Across processes, it goes over HTTP by default, or through Kafka or anything else you plug in.
 - **Migrations**: `fougere freeze` saves each version of your schema as extended JSON Schema. Migrations are deduced from that chain of versions: no SQL to write, and the whole history of changes is kept.
-- **Deployment**: fronds can run together inside your app, or each in its own process. Moving one is a single line of config:
+- **Deployment**: fronds can run together inside your app, or each in its own process. Moving one is a single line of config.
 - **Observability**: you can observe every process, because the framework owns the input and output of every frond, even when they run in separate processes. One trace follows a call across all of them (optional).
 - **Convention over configuration**: Fougere relies on conventions, and you can override them. An optional compiler reads your code and derives the configuration from it, but you can also declare it by hand: the compiler isn't needed to run your app.
 - **Standards**: a frond can be written in any language. Fougere follows standards (extended JSON Schema, JSON-RPC, Standard Schema), and there is a Rust frond in the demos. SDKs for other languages may follow.
