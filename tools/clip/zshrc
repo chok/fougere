@@ -1,8 +1,6 @@
 unsetopt PROMPT_SP
 cd "$CLIP_PROJECT"
-# The boot's own lines name the machine's paths, and the clip is about the calls.
-fougere() { FORCE_COLOR=1 npx fougere "$@" 2>&1 | grep --line-buffered -vE 'boot|root:'; }
-pnpm() { FORCE_COLOR=1 command pnpm "$@" 2>&1 | grep --line-buffered -E 'Nuxt |Local:|app:blog|remote'; }
-alias vim='vim -u DEFAULTS -i NONE'
+path=("$CLIP_PROJECT/node_modules/.bin" $path)
+alias vim="vim -u DEFAULTS -i NONE --cmd 'set re=2'"
 PS1='$ '
 clear

@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
-# The gradient as a GIF: the terminal above, the page below, filmed by one browser so they share a clock.
-# The starter `fougere new` writes, one line of config, and its blog frond in another process.
-# Needs ttyd, tmux and ffmpeg (`brew install ttyd tmux ffmpeg`). Writes tools/clip/out/gradient.gif.
+# A scenario as a GIF: the terminal above, the page below, filmed by one browser so they share a clock.
+# Each runs on the starter `fougere new` writes. `pnpm clip schema` films tools/clip/scenario/schema.ts.
+# Needs ttyd, tmux, httpie and ffmpeg (`brew install ttyd tmux httpie ffmpeg`). Writes docs/img/<scenario>.gif, the one the README shows.
 set -euo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"
 ROOT="$(cd "$HERE/../.." && pwd)"
-OUT="$HERE/out"
+SCENARIO="${1:-gradient}"
+OUT="$HERE/out/$SCENARIO"
 WORK="$(mktemp -d)"
 rm -rf "$OUT" && mkdir -p "$OUT"
 release() {
@@ -18,6 +19,7 @@ release
 ( cd "$WORK" && node "$ROOT/packages/cli/dist/src/bin.js" new shop --frond blog --app nuxt --local >/dev/null )
 PROJECT="$WORK/shop"
 sed -i '' 's/devtools: { enabled: true }/devtools: { enabled: false }/' "$PROJECT/apps/nuxt/nuxt.config.ts"
+sed -i '' 's/  fronds: {/  adapters: { rest: true },\n  fronds: {/' "$PROJECT/fougere.config.ts"
 ( cd "$PROJECT" && pnpm install >/dev/null && pnpm migrate >/dev/null )
 
 mkdir -p "$WORK/zdot" && cp "$HERE/zshrc" "$WORK/zdot/.zshrc"
@@ -31,9 +33,9 @@ until ! lsof -ti tcp:3100 >/dev/null; do sleep 0.2; done
 ttyd -W -p 7681 -t fontSize=13 -t 'theme={"background":"#151c18"}' tmux -L clip attach -t clip >"$OUT/ttyd.log" 2>&1 &
 until curl -s -o /dev/null http://localhost:7681; do sleep 0.2; done
 
-OFFSET=$(node "$HERE/record.ts" "$OUT")
+OFFSET=$(node "$HERE/scenario/$SCENARIO.ts" "$OUT")
 ffmpeg -y -loglevel error -i "$OUT"/terminal/*.webm -i "$OUT"/page/*.webm -filter_complex "
   [1:v]tpad=start_duration=${OFFSET}:start_mode=add:color=0x151c18[page];
   [0:v][page]vstack=shortest=1,fps=12,split[a][b];
-  [a]palettegen=stats_mode=diff[palette];[b][palette]paletteuse=dither=bayer:bayer_scale=4" "$OUT/gradient.gif"
-echo "$OUT/gradient.gif"
+  [a]palettegen=stats_mode=diff[palette];[b][palette]paletteuse=dither=bayer:bayer_scale=4" "$ROOT/docs/img/$SCENARIO.gif"
+echo "$ROOT/docs/img/$SCENARIO.gif"
