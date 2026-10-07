@@ -26,19 +26,15 @@ You split your app into [fronds](https://fougere.dev/docs/concepts/frond), one p
 
 ---
 
-A picture (or an animation!) is worth a thousand words, so:
+A picture (or an animation!) is worth a thousand words!
 
-<div align="center">
+So first, **add a field** to an entity and everything derives from it (form, validation, APIs, SQL):
 
-<img src="docs/img/schema.gif" width="800" alt="A field is added to an entity in vim. The page refuses until the database is migrated, then the form and the API refuse the same short value." />
+<p align="center"><img src="docs/img/schema.gif" width="800" alt="A field is added to an entity in vim. The page refuses until the database is migrated, then the form and the API refuse the same short value." /></p>
 
-**Add a field.** The database, the form and the API follow, and they refuse the same values.
+Secondly, **move a frond to its own process.** One line of config, and the code stays the same.
 
-<img src="docs/img/gradient.gif" width="800" alt="One line of config moves the blog frond to its own process. The page fails until that process starts, then works again with the same code." />
-
-**Move a frond to its own process.** One line of config, and the code stays the same.
-
-</div>
+<p align="center"><img src="docs/img/gradient.gif" width="800" alt="One line of config moves the blog frond to its own process. The page fails until that process starts, then works again with the same code." /></p>
 
 Everything your handler receives is validated against your schema, and it is served over JSON-RPC by default. You can enable REST or GraphQL as well.
 
