@@ -3,7 +3,7 @@
  * to a Frond, in Vue.
  */
 import { useAsyncData, useRequestFetch, refreshNuxtData } from '#imports';
-import { ref, computed, toValue, onScopeDispose, type MaybeRefOrGetter, type Ref } from 'vue';
+import { ref, computed, toValue, onScopeDispose, type MaybeRefOrGetter } from 'vue';
 import type { FougereError } from '@fougere/core/contract';
 import {
   callOf,
@@ -49,8 +49,9 @@ export async function useQuery<
 
   const { data, pending, error, refresh } = await useAsyncData(
     key,
-    () => sendCall(fetcher, call, invocationOf(toValue(input))),
+    () => sendCall(fetcher, call, invocationOf(toValue(input))) as Promise<Answered>,
     {
+      default: () => null,
       ...(input === undefined ? {} : { watch: [() => toValue(input)] }),
       ...(opts?.immediate === false ? { immediate: false } : {}),
     },
@@ -61,7 +62,7 @@ export async function useQuery<
   const hasMore = computed(() => pageOf(data.value).hasMore);
 
   return {
-    data: data as Ref<Answered | null>,
+    data,
     items,
     total,
     hasMore,

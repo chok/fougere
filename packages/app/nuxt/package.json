@@ -46,10 +46,10 @@
     "@fougere/compiler": "workspace:*"
   },
   "devDependencies": {
-    "@nuxt/schema": "^4.5.1",
+    "@nuxt/schema": "^4.6.0",
     "h3": "^1.15.11",
     "nitropack": "^2.13.2",
-    "nuxt": "^4.5.1",
+    "nuxt": "^4.6.0",
     "vue": "^3.5.40",
     "vitest": "^4.1.0"
   },
