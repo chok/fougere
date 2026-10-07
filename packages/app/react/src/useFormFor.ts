@@ -11,7 +11,7 @@ import {
   openingOf,
   payloadOf,
   type Choice,
-  type FormEntity,
+  type SchemaView,
   type FormErrors,
   type FormField,
   type FormFieldName,
@@ -24,7 +24,7 @@ import { fetcher } from './transport.js';
 
 export type { FormOptions };
 
-export function useFormFor<E extends FormEntity>(entity: E, options: FormOptions = {}) {
+export function useFormFor<E extends SchemaView>(entity: E, options: FormOptions = {}) {
   const entityKey = entityKeyOf(entity);
   const fields = useMemo(() => formFieldsOf(entity, entityKey), [entity, entityKey]);
 

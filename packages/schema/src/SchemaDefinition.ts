@@ -9,6 +9,7 @@ import { type ValidateOptions } from './validator/ValidateOptions.js';
 import type { SchemaView } from './SchemaView.js';
 import { SchemaConstraints } from './SchemaConstraints.js';
 import { SchemaError } from './SchemaError.js';
+import type { ConstraintKind } from './SchemaConstraints.js';
 
 /**
  * Everything a definition is made of, every member required.
@@ -17,15 +18,10 @@ import { SchemaError } from './SchemaError.js';
  * `anchored: false` are the two a derivation decides, and positionally they were an
  * `undefined` and a `false` a reader had to count arguments to name.
  */
-interface SchemaState {
-  fields: Fields;
-  adapterSet: EntityAdapterSet;
-  opts: ValidateOptions;
-  previous: PreviousNames<Fields> | undefined;
-  derivation: SchemaDerivation | undefined;
-  anchored: boolean;
-  constraints: SchemaConstraints;
-}
+type SchemaState = Pick<
+  SchemaDefinition,
+  'fields' | 'adapterSet' | 'opts' | 'previous' | 'derivation' | 'anchored' | 'constraints'
+>;
 
 /** What a schema is built from; the rest is stated by `declares` or inherited by a derivation. */
 export interface SchemaDeclaration<TFields extends Fields> {
@@ -183,8 +179,7 @@ export class SchemaDefinition {
   static merged(views: readonly SchemaView[]): SchemaDefinition {
     const fields: Fields = {};
     let opts: ValidateOptions = {};
-    const groups: { unique: (readonly string[])[]; index: (readonly string[])[] } =
-      { unique: [], index: [] };
+    const groups: Record<ConstraintKind, (readonly string[])[]> = { unique: [], index: [] };
     for (const view of views) {
       Object.assign(fields, view.getFields());
       opts = { ...opts, ...view.getOpts() };

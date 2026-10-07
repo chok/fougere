@@ -73,15 +73,13 @@ export function createFileSource(opts: FileSourceOptions): Source {
     // A directory IS the shape, so bringing it up to date is making it exist. `elsewhere`
     // is not read: nothing here emits a constraint, so a cross-source `ref()` costs nothing.
     migrate: async (view: SourceView) => {
-      for (const frond of view.fronds) {
-        for (const entry of frond.entities) {
-          await mkdir(join(opts.path, lowerFirst(entry.name)), { recursive: true });
-        }
+      for (const name of view.entities.keys()) {
+        await mkdir(join(opts.path, lowerFirst(name)), { recursive: true });
       }
     },
     pending: async (view: SourceView) =>
-      view.fronds
-        .flatMap((frond) => frond.entities.map((entry) => lowerFirst(entry.name)))
+      [...view.entities.keys()]
+        .map(lowerFirst)
         .filter((name) => !existsSync(join(opts.path, name)))
         .map((name) => `${join(opts.path, name)} — no directory`),
   };

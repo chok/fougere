@@ -11,7 +11,7 @@
  */
 import SchemaBuilder from '@pothos/core';
 import { describe as suite, expect, it } from 'vitest';
-import { Card, entity, primary, ref, many, text, number, type EntityConstructor } from '@fougere/schema';
+import { Card, entity, primary, ref, many, text, number, type Entity } from '@fougere/schema';
 import { registerAll } from '../src/auto-register.js';
 import { served } from './served.js';
 
@@ -19,8 +19,8 @@ class Author extends entity({
   id: primary(),
   name: text(),
   // The thunk defers the VALUE, not the type — annotating it cuts the inference cycle
-  // `Author.posts` ↔ `Post.authorId` (see `EntityConstructor`'s note in @fougere/schema).
-  posts: many((): EntityConstructor => Post),
+  // `Author.posts` ↔ `Post.authorId` (see `Entity`'s note in @fougere/schema).
+  posts: many((): Entity => Post),
 }) {}
 
 class Post extends entity({

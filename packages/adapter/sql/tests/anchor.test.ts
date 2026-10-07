@@ -6,14 +6,12 @@
  * entities is a table.
  */
 import { describe, it, expect } from 'vitest';
-import { entity, primary, text } from '@fougere/schema';
+import { entity, primary, text, type SchemaView } from '@fougere/schema';
 import { toTables } from '../src/index.js';
 
 class Book extends entity({ id: primary(), title: text(), isbn: text() }) {}
 
-const hosting = (name: string, entityClass: unknown) => ({
-  fronds: [{ name: 'catalog', entities: [{ name, entityClass }] }],
-});
+const hosting = (name: string, entityClass: unknown) => ({ entities: new Map([[name, entityClass]]) });
 
 const tablesOf = (app: unknown) => toTables(app as never, (n) => `${n}s`).map((t) => t.name);
 
@@ -74,24 +72,14 @@ describe('one entity registered twice', () => {
   class User extends entity({ id: primary(), email: text() }) {}
 
   it('makes one table, not two', () => {
-    const app = {
-      fronds: [
-        { name: 'account', entities: [{ name: 'user', entityClass: User }] },
-        { name: 'auth', entities: [{ name: 'user', entityClass: User }] },
-      ],
-    };
+    const app = { entities: new Map([['user', User], ['user', User]]) };
 
     expect(tablesOf(app)).toEqual(['users']);
   });
 
   it('brings in what a frond an extension brought holds', () => {
     class Session extends entity({ id: primary(), userId: text() }) {}
-    const app = {
-      fronds: [
-        { name: 'account', entities: [{ name: 'user', entityClass: User }] },
-        { name: 'auth', entities: [{ name: 'session', entityClass: Session }] },
-      ],
-    };
+    const app = { entities: new Map<string, SchemaView>([['user', User], ['session', Session]]) };
 
     expect(tablesOf(app).sort()).toEqual(['sessions', 'users']);
   });

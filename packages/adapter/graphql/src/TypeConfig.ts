@@ -1,4 +1,4 @@
-import type { EntityClass } from './EntityClass.js';
+import type { Entity } from '@fougere/schema';
 import type { PresenterInstance } from './PresenterInstance.js';
 import type { SchemaView } from '@fougere/schema';
 import type { RelationConfig } from './RelationConfig.js';
@@ -22,7 +22,7 @@ export interface TypeConfig {
    * The view a computed field emits, when the presenter declared one — the object type to build
    * for it.
    */
-  presenterViews?: Record<string, EntityClass | [EntityClass]>;
+  presenterViews?: Record<string, Entity | [Entity]>;
   /** Builds (or reuses) the GraphQL object type for a declared view. */
-  viewType?: (view: EntityClass, fieldName: string) => any;
+  viewType?: (view: Entity, fieldName: string) => any;
 }

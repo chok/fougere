@@ -5,6 +5,7 @@ import type { TypeRef } from './TypeRef.js';
 import type { ErrorCode } from './ErrorCode.js';
 import type { OperationKind } from './OperationKind.js';
 import type { OperationKindInference } from './OperationKindInference.js';
+import type { Cardinality } from './Cardinality.js';
 
 /** The contract of one operation — everything the façade needs to serve a call. */
 export interface OperationContract {
@@ -17,7 +18,7 @@ export interface OperationContract {
   /** The operation in words, for a caller that meets it over the wire and has to choose. */
   description?: string;
   /** How MUCH comes back — the half of the return type that `output` cannot say. */
-  cardinality?: 'one' | 'maybe' | 'many' | 'page' | 'none';
+  cardinality?: Cardinality;
   /** The argument names and TYPES — the one thing `binding` cannot say. */
   signature?: Signature;
   /**

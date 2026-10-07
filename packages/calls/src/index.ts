@@ -53,7 +53,7 @@ function servedModel(app: App): unknown {
           })),
           surfaces: op.exposure.surfaces,
           adapters: op.exposure.adapters,
-          placement: op.placement.runtime,
+          placement: op.placement,
           file: op.implementation.filePath,
         }));
       }),

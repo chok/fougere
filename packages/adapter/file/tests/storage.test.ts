@@ -117,7 +117,7 @@ describe('rows as files', () => {
     const { path, source } = open();
     expect(source.transacted).toBeUndefined();
 
-    await source.migrate!({ fronds: [{ name: 'archive', entities: [{ name: 'Snapshot' }] }], elsewhere: [] });
+    await source.migrate!({ entities: new Map([['Snapshot', Snapshot]]), elsewhere: [] });
     expect(await readdir(path)).toContain('snapshot');
   });
 });

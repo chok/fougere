@@ -1,12 +1,9 @@
 import { describe, it, expect } from 'vitest';
+import { entity, primary, text } from '@fougere/schema';
 import { Presenter, getPresenterFields } from '../src/prefab/presenter.js';
 import { targetOf } from '../src/prefab/prefab.js';
 
-class FakeEntity {
-  static getFields() {
-    return { id: { type: 'id' }, name: { type: 'text' } };
-  }
-}
+class FakeEntity extends entity({ id: primary(), name: text() }) {}
 
 class ProductPresenter extends Presenter(FakeEntity) {
   excerpt(products: any[]) {

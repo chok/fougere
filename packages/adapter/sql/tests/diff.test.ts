@@ -5,11 +5,12 @@
  * The old create-if-not-exists pass ignored it silently.
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { entity, primary, text, number, optional, ref, unique, type EntityConstructor } from '@fougere/schema';
+import { entity, primary, text, number, optional, ref, unique, type Entity } from '@fougere/schema';
 import { sql } from 'kysely';
 import { createSqliteSource, type SqliteSource } from '../src/sqlite/SqliteSource.js';
 import { changeSQL, delta, desiredTables, migrate, orderChanges, planMigration } from '../src/diff/Change.js';
 import { actualState } from '../src/diff/SchemaState.js';
+import { sourceViewOf } from '@fougere/core';
 
 class PostV1 extends entity({
   id: primary(),
@@ -24,9 +25,7 @@ class PostV2 extends entity({
   note: optional(text()),
 }) {}
 
-const appOf = (entityClass: any) => ({
-  fronds: [{ name: 'test', entities: [{ name: 'post', entityClass }] }],
-});
+const appOf = (entityClass: any) => ({ entities: new Map([['post', entityClass]]) });
 
 let setup: SqliteSource;
 
@@ -197,9 +196,7 @@ class Product extends entity({
   name: text({ min: 1 }),
 }) {}
 
-const shopApp = (entities: { name: string; entityClass: any }[]) => ({
-  fronds: [{ name: 'shop', entities }],
-});
+const shopApp = (entities: { name: string; entityClass: any }[]) => sourceViewOf([{ entities }]);
 
 describe('foreign keys, enforced', () => {
   it('an invalid reference is now rejected on insert — it silently passed before this constraint existed', async () => {
@@ -247,7 +244,7 @@ describe('foreign keys, enforced', () => {
 class Club extends entity({
   id: primary(),
   name: text({ min: 1 }),
-  captainId: optional(ref((): EntityConstructor => Captain)),
+  captainId: optional(ref((): Entity => Captain)),
 }) {}
 
 class Captain extends entity({

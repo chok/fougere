@@ -35,15 +35,15 @@ export function createSqliteSource(opts: SqliteSourceOptions = {}): SqliteSource
     sink: sqlSink(db),
     migrate: async (view: SourceView) => {
       const options = { dialect: 'sqlite' as const, tableName: opts.storageFactoryOptions?.tableName ?? toTableName };
-      await migrate(view as never, db, options);
+      await migrate(view, db, options);
       // What the additive pass left alone and the entity no longer agrees with. Asked
       // AFTER, so a column it just created is judged against what it just wrote.
-      const found = await drift(db, desiredTables(view as never, options));
+      const found = await drift(db, desiredTables(view, options));
 
       return found.length ? driftReport(found) : undefined;
     },
     pending: (view: SourceView) =>
-      pendingOf(view as never, db, { dialect: 'sqlite', tableName: opts.storageFactoryOptions?.tableName ?? toTableName }),
+      pendingOf(view, db, { dialect: 'sqlite', tableName: opts.storageFactoryOptions?.tableName ?? toTableName }),
     close: () => db.destroy(),
     name: opts.name ?? path,
     enforces: sqlEnforces,

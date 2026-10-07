@@ -1,18 +1,18 @@
-import type { EntityConstructor } from '@fougere/schema';
+import type { Entity } from '@fougere/schema';
 import type { PresenterViews } from './presenter.js';
 
 /** What a prefab class declares about ITSELF, at runtime. */
 interface Prefab {
   /** The shape this class was built on. `Mirror` calls it a shape; it is the same slot. */
-  readonly __entity?: EntityConstructor;
+  readonly __entity?: Entity;
   /** The view each computed field emits — `Presenter(Order, { items: [OrderItemView] })`. */
   readonly __views?: PresenterViews;
   /** The view the whole handler speaks — `Crud(Post, PostPublic)`. Same slot, one level up. */
-  readonly __output?: EntityConstructor;
+  readonly __output?: Entity;
 }
 
 /** The shape a prefab was built on, or `undefined` when the class is not one. */
-export function targetOf(ctor: unknown): EntityConstructor | undefined {
+export function targetOf(ctor: unknown): Entity | undefined {
   return (ctor as Prefab | undefined)?.__entity;
 }
 
@@ -22,6 +22,6 @@ export function viewsOf(ctor: unknown): PresenterViews | undefined {
 }
 
 /** The handler-wide view a prefab declares, same rule. */
-export function outputOf(ctor: unknown): EntityConstructor | undefined {
+export function outputOf(ctor: unknown): Entity | undefined {
   return (ctor as Prefab | undefined)?.__output;
 }

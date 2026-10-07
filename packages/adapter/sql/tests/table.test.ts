@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { Card, entity, primary, text, number, bool, created, oneOf, ref, optional, many, json, type EntityConstructor } from '@fougere/schema';
+import { Card, entity, primary, text, number, bool, created, oneOf, ref, optional, many, json, type Entity } from '@fougere/schema';
 import { toTable, dialects } from '../src/index.js';
 import { type ColumnDef } from '../src/table/ColumnDef.js';
 import { isKeyed } from '../src/table/TableDef.js';
@@ -10,7 +10,7 @@ class Category extends entity({
   id: primary(),
   name: text({ min: 1, max: 100 }),
   slug: text({ pattern: '^[a-z0-9-]+$' }),
-  products: many((): EntityConstructor => Product),
+  products: many((): Entity => Product),
 }) {}
 
 class Product extends entity({

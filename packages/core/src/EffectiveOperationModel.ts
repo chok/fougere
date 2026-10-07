@@ -18,8 +18,10 @@ import type { EffectiveParameter } from './EffectiveParameter.js';
 import type { EffectiveOperation } from './EffectiveOperation.js';
 import type { EffectiveOperationsMap } from './EffectiveOperationsMap.js';
 import type { EffectiveOperationOptions } from './EffectiveOperationOptions.js';
+import type { Placement } from './wire/Placement.js';
+import type { Binding } from './Binding.js';
+import { opsOf } from './prefab/opsOf.js';
 
-type Binding = BindingPlan[number];
 
 /** A contract whose parameters are all bound. */
 type BoundContract = OperationContract & { binding: BindingPlan };
@@ -39,9 +41,9 @@ function reachOf(
 ): EffectiveOperation['reach'] {
   const fronds = reachedBy(deps, from, index)
     .sort()
-    .map((frond) => ({ frond, runtime: (remotes[frond] ? 'remote' : 'local') as 'local' | 'remote' }));
+    .map((frond) => ({ frond, placement: (remotes[frond] ? 'remote' : 'local') as Placement }));
 
-  return { fronds, hops: fronds.filter((one) => one.runtime === 'remote').length };
+  return { fronds, hops: fronds.filter((one) => one.placement === 'remote').length };
 }
 
 
@@ -193,7 +195,9 @@ function resolveOperation(resolving: Resolving, name: string, rawContract: Opera
     contexts: parameters
       .filter((parameter) => parameter.binding.source.kind === 'context')
       .map((parameter) => parameter.name),
-    placement: { frond: frond.name, runtime: remote ? 'remote' : 'local', ...(remote ? { remote } : {}) },
+    frond: frond.name,
+    placement: remote ? 'remote' : 'local',
+    ...(remote ? { remote } : {}),
     reach: reachOf(handler.deps, frond.name, served, options.remotes ?? {}),
     exposure: {
       surfaces: servedSurfaces(frond, handler).map((surface) => surface ?? 'default'),
@@ -388,7 +392,7 @@ function validateProvenance(
   diagnostics: Diagnostic[],
 ): boolean {
   let valid = true;
-  const declared = (handler.ctor as { __ops?: Record<string, OperationContract> }).__ops?.[name];
+  const declared = opsOf(handler.ctor)[name];
   const explicitBinding = declared?.binding !== undefined
     || handler.operations.get(name)?.binding !== undefined
     || frond.operationsOverrides?.[name]?.binding !== undefined;
@@ -519,7 +523,7 @@ function implementationOf(
   const method = override?.method ?? name;
   const declared = implementation.operations.has(method)
     || typeof (implementation.ctor as { prototype?: Record<string, unknown> }).prototype?.[method] === 'function'
-    || method in ((implementation.ctor as { __ops?: Record<string, unknown> }).__ops ?? {});
+    || method in opsOf(implementation.ctor);
   if (!declared) {
     diagnostics.push({
       severity: 'blocking',
@@ -592,7 +596,7 @@ function resolveContracts(
   overrides: FrondDescriptor['operationsOverrides'],
   collectorTypeNames: Set<string>,
 ): OperationsMap {
-  const declared = (handler.ctor as { __ops?: Record<string, OperationContract> }).__ops ?? {};
+  const declared = opsOf(handler.ctor);
   const contracts: OperationsMap = new Map(Object.entries(declared));
 
   for (const [opName, scanned] of handler.operations) {

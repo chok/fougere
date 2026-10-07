@@ -1,6 +1,7 @@
 import { type FieldName } from './field/FieldName.js';
 import { type Fields } from './field/Fields.js';
 import { type FieldGroups } from './entity/FieldGroups.js';
+import type { EntityDeclarations } from './entity/EntityDeclarations.js';
 
 /**
  * What a schema states beyond any single field: groups of names. `unique` constrains the
@@ -9,7 +10,11 @@ import { type FieldGroups } from './entity/FieldGroups.js';
  * spanning two fields — a check, an exclusion — is a member here, not an eighth positional
  * argument in a list that has already lost one.
  */
+export type ConstraintKind = (typeof SchemaConstraints.kinds)[number];
+
 export class SchemaConstraints<TFields extends Fields = Fields> {
+  static readonly kinds = ['unique', 'index'] as const;
+
   private constructor(
     readonly unique: FieldGroups<TFields>,
     readonly index: FieldGroups<TFields>,
@@ -23,7 +28,7 @@ export class SchemaConstraints<TFields extends Fields = Fields> {
    * `SchemaConstraints.of([['a','b'], ['a','b']])` → `unique` holds one group
    */
   static of<TFields extends Fields>(
-    groups: { unique?: FieldGroups<TFields>; index?: FieldGroups<TFields> },
+    groups: Pick<EntityDeclarations<TFields>, ConstraintKind>,
   ): SchemaConstraints<TFields> {
     return new SchemaConstraints(deduped(groups.unique), deduped(groups.index));
   }

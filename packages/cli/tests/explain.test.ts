@@ -18,7 +18,9 @@ describe('explain', () => {
       input: 'Post',
       output: { type: 'Post', cardinality: 'one' },
       exposure: { surfaces: ['default', 'public'], adapters: ['graphql', 'rest'] },
-      placement: { frond: 'blog', runtime: 'local', remote: null },
+      frond: 'blog',
+      placement: 'local',
+      remote: null,
     });
     expect(renderExplain(result)).toContain('PostHandler.publish');
   });
@@ -32,14 +34,15 @@ describe('explain', () => {
       kind: 'command',
       handler: { class: 'PostHandler', method: 'publish' },
       exposure: { surfaces: ['default', 'public'] },
-      placement: { frond: 'blog' },
+      frond: 'blog',
       // Where the work GOES, beside where it answers. This handler reaches nothing outside its
       // own frond, and that is a fact worth stating: zero hops is a number, not an absence.
       reach: { fronds: [], hops: 0 },
     });
     expect(Object.keys(parsed)).toEqual([
       'operation', 'handler', 'kind', 'description', 'input', 'output',
-      'parameters', 'collectors', 'contexts', 'semantics', 'exposure', 'placement', 'reach',
+      'parameters', 'collectors', 'contexts', 'semantics', 'exposure', 'frond', 'placement', 'remote',
+      'reach',
     ]);
     expect(parsed.semantics).toEqual({
       optional: 'undefined',

@@ -6,9 +6,6 @@ import type { FormErrors, FormFieldName } from './FormRow.js';
 import { rowNameOf } from './RowName.js';
 import type { TableColumn } from './TableColumn.js';
 
-/** What an entity class exposes to a form — the schema statics it already has. */
-export type FormEntity = SchemaView;
-
 /** The literal a field is born with, when it declares one. */
 function defaultOf(field: Field): unknown {
   return Lifecycle.of(field).literal?.value;
@@ -96,7 +93,7 @@ function labelOf(name: string, entityKey: string): Pick<FormField, 'labelKey' | 
 }
 
 /** The fields a create form is made of. */
-export function formFieldsOf<E extends FormEntity>(entity: E, entityKey: string): FormField<FormFieldName<E>>[] {
+export function formFieldsOf<E extends SchemaView>(entity: E, entityKey: string): FormField<FormFieldName<E>>[] {
   const fields = Object.entries(Visibility.of(entity.getFields()).input).map(([name, field]) => {
     const f = field;
     const control = controlOf(f);
@@ -150,7 +147,7 @@ function renderOf(field: Field): TableColumn['render'] {
 }
 
 /** The columns a list is made of. */
-export function tableColumnsOf(entity: FormEntity, entityKey: string): TableColumn[] {
+export function tableColumnsOf(entity: SchemaView, entityKey: string): TableColumn[] {
   return Object.entries(Visibility.of(entity.getFields()).output)
     .filter(([, field]) => !Role.of(field).isCollection())
     .map(([name, field]) => {
@@ -171,7 +168,7 @@ export function tableColumnsOf(entity: FormEntity, entityKey: string): TableColu
  * and an empty string would be judged as a present bad value.
  */
 export function payloadOf(
-  entity: FormEntity,
+  entity: SchemaView,
   values: Record<string, unknown>,
 ): Record<string, unknown> {
   const fields = entity.getFields();

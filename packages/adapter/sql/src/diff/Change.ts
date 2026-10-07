@@ -4,7 +4,7 @@ import { addForeignKeyConstraintSQL, compiler, createTableSQL, indexSQL } from '
 import { checkFor } from '../check.js';
 import { columnTypeFor, resolveDialect } from '../dialect/Dialect.js';
 import { type DialectName } from '../dialect/DialectName.js';
-import { type AppLike } from '../table/AppLike.js';
+import type { SourceView } from '@fougere/core';
 import { type ColumnDef } from '../table/ColumnDef.js';
 import { isKeyed, toTableName, toTables, type TableDef } from '../table/TableDef.js';
 import { orderTables } from '../order/TableOrder.js';
@@ -21,9 +21,9 @@ export async function actualState(db: Kysely<any>): Promise<SchemaState> {
   return state;
 }
 
-/** Project the app's entities into the tables they ask for. */
-export function desiredTables(app: AppLike, options?: GenerateOptions): TableDef[] {
-  return toTables(app, options?.tableName ?? toTableName);
+/** Project a source's entities into the tables they ask for. */
+export function desiredTables(view: SourceView, options?: GenerateOptions): TableDef[] {
+  return toTables(view, options?.tableName ?? toTableName);
 }
 
 export type Change =
@@ -139,24 +139,24 @@ export function changeSQL(change: Change, dialectName: DialectName): string {
 
 /** Everything the database is missing, as statements ready to run. */
 export async function planMigration(
-  app: AppLike,
+  view: SourceView,
   db: Kysely<any>,
   options?: GenerateOptions,
 ): Promise<{ changes: Change[]; statements: string[] }> {
   const dialect = options?.dialect ?? 'sqlite';
-  const changes = orderChanges(delta(desiredTables(app, options), await actualState(db)), dialect);
+  const changes = orderChanges(delta(desiredTables(view, options), await actualState(db)), dialect);
 
   return { changes, statements: changes.map((change) => changeSQL(change, dialect)) };
 }
 
 /** Bring the database up to what the entities describe — additively. */
 export async function migrate(
-  app: AppLike,
+  view: SourceView,
   target: Kysely<any> | { db: Kysely<any> },
   options?: GenerateOptions,
 ): Promise<Change[]> {
   const db = (target as { db?: Kysely<any> }).db ?? (target as Kysely<any>);
-  const { changes, statements } = await planMigration(app, db, options);
+  const { changes, statements } = await planMigration(view, db, options);
   for (const statement of statements) {
     await sql.raw(statement).execute(db);
   }
@@ -169,11 +169,11 @@ export async function migrate(
  * column. Indexes are left out: this pass reads names, and `CREATE INDEX IF NOT EXISTS` is
  * what `migrate` proposes every time precisely because nothing here can see one.
  */
-export async function pendingOf(app: AppLike, db: Kysely<any>, options?: GenerateOptions): Promise<string[]> {
+export async function pendingOf(view: SourceView, db: Kysely<any>, options?: GenerateOptions): Promise<string[]> {
   // Names only, so `elsewhere` is left out: it decides which relations get a foreign key, and
   // a process carrying only its own frond refers to entities it has never seen — which a
   // question about names has no reason to refuse.
-  const desired = desiredTables({ ...app, elsewhere: undefined }, options);
+  const desired = desiredTables({ entities: view.entities }, options);
 
   return delta(desired, await actualState(db)).flatMap((change) => {
     if (change.kind === 'createTable') return [`${change.table.name} — no table`];

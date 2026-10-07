@@ -31,7 +31,8 @@ describe('EffectiveOperation as the shared runtime contract', () => {
       kindSource: 'explicit',
       handler: { className: 'PostHandler', address: 'post' },
       implementation: { className: 'PostHandler', method: 'collectorFirst' },
-      placement: { frond: 'blog', runtime: 'local' },
+      frond: 'blog',
+      placement: 'local',
       exposure: { surfaces: ['default'], adapters: ['rest'] },
       contexts: [],
       semantics: EFFECTIVE_OPERATION_SEMANTICS,
@@ -191,9 +192,9 @@ describe('deterministic operation resolution', () => {
 
     expect(operation.binding.map((binding) => binding.name)).toEqual(['input', 'id']);
     expect(operation.binding.map((binding) => binding.source.kind)).toEqual(['input', 'param']);
-    expect(operation.placement).toEqual({
+    expect(operation).toMatchObject({
       frond: 'blog',
-      runtime: 'remote',
+      placement: 'remote',
       remote: 'https://blog.internal',
     });
     expect(operation.exposure).toEqual({

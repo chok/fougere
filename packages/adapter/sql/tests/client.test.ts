@@ -15,7 +15,7 @@ class Product extends entity({ id: primary(), name: text(), price_cents: number(
 
 async function app() {
   const setup = createSqliteSource({ path: ':memory:' });
-  const fake = { fronds: [{ name: 'shop', entities: [{ name: 'product', entityClass: Product }] }] };
+  const fake = { entities: new Map([['product', Product]]) };
   // `migrate` prend le setup : le cas normal n'a plus besoin d'atteindre l'instance brute.
   await migrate(fake as never, setup);
 

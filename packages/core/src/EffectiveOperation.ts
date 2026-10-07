@@ -4,6 +4,7 @@ import { type OperationContract } from './wire/OperationContract.js';
 import { type OperationKind } from './wire/OperationKind.js';
 import type { EffectiveParameter } from './EffectiveParameter.js';
 import type { EffectiveCollector } from './EffectiveCollector.js';
+import type { Placement } from './wire/Placement.js';
 
 export interface EffectiveOperation extends OperationContract {
   /** Stable qualified identity: `blog/public/Post.publish`. */
@@ -30,11 +31,11 @@ export interface EffectiveOperation extends OperationContract {
   parameters: EffectiveParameter[];
   collectors: EffectiveCollector[];
   contexts: string[];
-  placement: {
-    frond: string;
-    runtime: 'local' | 'remote';
-    remote?: string;
-  };
+  /** The frond that answers it, and where — `placement` says where it ANSWERS, `reach` where it GOES. */
+  frond: string;
+  placement: Placement;
+  /** The address it is reached at, when it answers a process away. */
+  remote?: string;
   /**
    * What running this op reaches, and how much of that crosses a process.
    *
@@ -48,7 +49,7 @@ export interface EffectiveOperation extends OperationContract {
    * saying otherwise would dress a structural fact as a precise effect.
    */
   reach: {
-    fronds: { frond: string; runtime: 'local' | 'remote' }[];
+    fronds: { frond: string; placement: Placement }[];
     /** How many of them are a process away — zero when everything it reaches runs here. */
     hops: number;
   };

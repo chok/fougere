@@ -1,1 +1,3 @@
-export type Resolver = (name: string) => (abstract new (...args: never[]) => unknown) | undefined;
+import type { Entity } from '../entity/Entity.js';
+
+export type Resolver = (name: string) => Entity | undefined;

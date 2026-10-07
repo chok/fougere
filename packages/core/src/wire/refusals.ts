@@ -14,10 +14,11 @@
  * Documented: [observability](https://fougere.dev/docs/infra/observability).
  */
 import { ErrorCode } from './ErrorCode.js';
+import type { OperationKind } from './OperationKind.js';
 
 /** The little of an operation this reads — so a card op and an effective one both fit. */
 export interface Refusable {
-  kind?: 'query' | 'command';
+  kind?: OperationKind;
   input?: unknown;
   errors?: readonly string[];
   /** Absent on a card op read from a frond that answers in this process. */

@@ -171,8 +171,8 @@ const module = defineNuxtModule<FougereModuleOptions>({
 
     // ── 1b-bis. Keep entity names through minification ──────────────────────
     //
-    // Designation is class + verb: `useQuery(Post, 'list')` reads `Post.name`, and
-    // that name travels — it is the JSON-RPC method (`post.list`) and the REST path.
+    // A form is designated by its entity: `useFormFor(Post)` reads `Post.name`, and
+    // that name travels — it is the address the form submits to (`post.create`).
     //
     // Rollup cannot keep `class Post extends entity({…})` as a hoisted declaration
     // (its heritage clause is a CALL), so it emits `var Post = class extends …`.

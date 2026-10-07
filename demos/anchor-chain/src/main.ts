@@ -5,7 +5,7 @@
  * separates them is `.anchor()`, and the two walks it makes possible do NOT have the same
  * length: whose rows stops at the nearest anchor, what it was cut from keeps going.
  */
-import { entity, primary, text, created } from '@fougere/schema';
+import { entity, primary, text, created, type SchemaView } from '@fougere/schema';
 import { toTables, createTableSQL } from '@fougere/adapter-sql';
 
 class Post extends entity({
@@ -25,16 +25,13 @@ class ArchivedPost extends Post.extend({ archivedBy: text(), archivedAt: created
 /** A shape of ArchivedPost's rows — cut from an anchor, so it answers for that one. */
 class ArchivedCard extends ArchivedPost.pick('id', 'title', 'archivedBy') {}
 
-const app = {
-  fronds: [{
-    name: 'blog',
-    entities: [
-      { name: 'Post', entityClass: Post },
-      { name: 'PostCard', entityClass: PostCard },
-      { name: 'ArchivedPost', entityClass: ArchivedPost },
-      { name: 'ArchivedCard', entityClass: ArchivedCard },
-    ],
-  }],
+const blog = {
+  entities: new Map<string, SchemaView>([
+    ['Post', Post],
+    ['PostCard', PostCard],
+    ['ArchivedPost', ArchivedPost],
+    ['ArchivedCard', ArchivedCard],
+  ]),
 };
 
 const line = (title: string) => console.log(`\n\x1b[1m${title}\x1b[0m`);
@@ -59,7 +56,7 @@ say('ArchivedCard', ['ArchivedCard', ...chain(ArchivedCard)].join(' → '));
 console.log('  Two walks over one field, and only one of them stops at the first anchor.');
 
 line('What SQL emits — an anchor is an entity, so it gets an entity\'s table');
-for (const table of toTables(app as never, (name) => name.toLowerCase())) {
+for (const table of toTables(blog, (name) => name.toLowerCase())) {
   console.log(`  ${createTableSQL(table, 'sqlite').replace(/\s+/g, ' ')}`);
 }
 console.log('  No foreign key between them: two anchors are two entities that share a shape,');
@@ -67,12 +64,12 @@ console.log('  never a hierarchy. A relation between them is `ref()`, declared l
 
 line('A shape may widen too — nothing is asked of it');
 class Excerpted extends Post.extend({ excerpt: text() }) {}
-say('Excerpted', `${toTables({ fronds: [{ name: 'blog', entities: [{ name: 'Excerpted', entityClass: Excerpted }] }] } as never, (n) => n).length} table — a presenter fills \`excerpt\``);
+say('Excerpted', `${toTables({ entities: new Map([['Excerpted', Excerpted]]) }, (n) => n).length} table — a presenter fills \`excerpt\``);
 
 line('An anchor need not be addressable — a key is a separate question');
 class Membership extends entity({ userId: text(), groupId: text() }, { unique: [['userId', 'groupId']] }) {}
 class MemberOf extends Membership.pick('userId') {}
-for (const table of toTables({ fronds: [{ name: 'blog', entities: [{ name: 'Membership', entityClass: Membership }] }] } as never, (n) => n.toLowerCase())) {
+for (const table of toTables({ entities: new Map([['Membership', Membership]]) }, (n) => n.toLowerCase())) {
   console.log(`  ${createTableSQL(table, 'sqlite').replace(/\s+/g, ' ')}`);
 }
 say('MemberOf', `answers ${MemberOf.derivation!.anchor.name} all the same`);

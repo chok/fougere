@@ -1,10 +1,12 @@
-import type { EntityConstructor, SchemaView } from '@fougere/schema';
+import type { SchemaView } from '@fougere/schema';
+import type { Ctor } from './Ctor.js';
 import type { BindingPlan } from './wire/binding.js';
+import type { OperationKind } from './wire/OperationKind.js';
 
 /** Per-operation override. */
 export interface OperationOverride {
   /** Force operation kind, over the naming convention (`isReadOp`). */
-  kind?: 'query' | 'command';
+  kind?: OperationKind;
   /** The GraphQL root field this op answers to. */
   graphql?: string;
   /**
@@ -17,7 +19,7 @@ export interface OperationOverride {
    * Handler class to delegate to (overrides the default `{Entity}Handler` lookup).
    * Class name is used to resolve from DI. E.g. `ArchiveHandler` → `app.resolve('ArchiveHandler')`.
    */
-  handler?: EntityConstructor;
+  handler?: Ctor;
   /** Method name on `handler` (defaults to the operation name). */
   method?: string;
   /** CASL ability check (e.g. */

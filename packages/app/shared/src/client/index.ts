@@ -37,7 +37,8 @@ export type {
 // The form contract is host-independent too, and a form is client code — so it
 // reaches the browser through this subpath rather than through the package root,
 // which carries the boot.
-export { errorsByField, formFieldsOf, openingOf, payloadOf, tableColumnsOf, type FormEntity } from '../FormEntity.js';
+export { errorsByField, formFieldsOf, openingOf, payloadOf, tableColumnsOf } from '../FormEntity.js';
+export type { SchemaView } from '@fougere/schema';
 export { type FormRow, type FormValues, type FormErrors, type FormFieldName } from '../FormRow.js';
 export { type FormField, type FormReference } from '../FormField.js';
 export { type FormOptions } from '../FormOptions.js';

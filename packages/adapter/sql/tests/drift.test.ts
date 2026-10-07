@@ -12,9 +12,7 @@ import { entity, number, optional, primary, text } from '@fougere/schema';
 import { desiredTables, drift, migrate } from '../src/index.js';
 import { createSqliteSource } from '../src/sqlite/SqliteSource.js';
 
-const viewOf = (entityClass: unknown, name: string) => ({
-  fronds: [{ name: 'test', entities: [{ name, entityClass }] }],
-});
+const viewOf = (entityClass: unknown, name: string) => ({ entities: new Map([[name, entityClass]]) });
 
 /** Une base née d'une déclaration, puis relue contre une autre. */
 async function moved(before: unknown, after: unknown) {

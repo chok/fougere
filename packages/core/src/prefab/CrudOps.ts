@@ -1,5 +1,5 @@
 import type { CrudOpName } from './CrudOpName.js';
-import type { EntityConstructor } from '@fougere/schema';
+import type { Entity } from '@fougere/schema';
 import type { ListOptions } from '../storage/ListOptions.js';
 import type { Page } from '../wire/Page.js';
 
@@ -8,8 +8,8 @@ type OutOf<V, K extends CrudOpName, T> =
   // Bracketed on purpose: a naked `V extends …` DISTRIBUTES, and the no-view default
   // is the empty map, whose `keyof` is `never` — distribution would then collapse
   // every op's output to `never` instead of falling through to the entity.
-  [V] extends [EntityConstructor] ? InstanceType<V & EntityConstructor>
-  : K extends keyof V ? (V[K] extends EntityConstructor ? InstanceType<V[K]> : T)
+  [V] extends [Entity] ? InstanceType<V & Entity>
+  : K extends keyof V ? (V[K] extends Entity ? InstanceType<V[K]> : T)
   : T;
 
 /** The five ops, typed from the entity and its views. */

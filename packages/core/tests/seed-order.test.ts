@@ -7,7 +7,7 @@
  * so this is named, not refused.
  */
 import { describe, it, expect } from 'vitest';
-import { entity, primary, ref, text, type EntityConstructor } from '@fougere/schema';
+import { entity, primary, ref, text, type Entity } from '@fougere/schema';
 import { orderSeeds } from '../src/boot/seed.js';
 import type { EntityEntry } from '../src/descriptor/EntityEntry.js';
 import type { FrondDescriptor } from '../src/descriptor/FrondDescriptor.js';
@@ -18,7 +18,7 @@ class Note extends entity({ id: primary(), body: text(), tag: ref(Tag) }) {}
 
 // A circular relation wants the thunk's return annotated, or the two base expressions
 // wait on each other — `schema/demo/06-circular-relations.ts` states the rule.
-class Author extends entity({ id: primary(), name: text(), latest: ref((): EntityConstructor => Post) }) {}
+class Author extends entity({ id: primary(), name: text(), latest: ref((): Entity => Post) }) {}
 class Post extends entity({ id: primary(), title: text(), author: ref(Author) }) {}
 
 const held: Record<string, unknown> = { tag: Tag, note: Note, author: Author, post: Post };

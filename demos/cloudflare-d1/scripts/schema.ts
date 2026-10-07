@@ -12,7 +12,7 @@
  * the log and the DDL is a schema that fails at the driver on line one.
  */
 import { writeFile, mkdir } from 'node:fs/promises';
-import { createApp, type Storage } from '@fougere/core';
+import { createApp, sourceViewOf, type Storage } from '@fougere/core';
 import { scanProject, frondAliases } from '@fougere/compiler';
 import { setModuleLoader } from '@fougere/core/node';
 import { createContainer } from '@fougere/container';
@@ -31,8 +31,8 @@ const app = await createApp({
   storageFactory: () => ({}) as unknown as Storage,
 });
 
-const sql = generateSQL(app, { dialect: 'sqlite' }).map((statement) => `${statement};`).join('\n');
+const sql = generateSQL(sourceViewOf(app.fronds), { dialect: 'sqlite' }).map((statement) => `${statement};`).join('\n');
 const out = new URL('../.fougere/schema.sql', import.meta.url).pathname;
 await mkdir(new URL('../.fougere/', import.meta.url).pathname, { recursive: true });
 await writeFile(out, `${sql}\n`);
-console.log(`\n  .fougere/schema.sql — ${generateSQL(app, { dialect: 'sqlite' }).length} statement(s), derived from the entities\n`);
+console.log(`\n  .fougere/schema.sql — ${generateSQL(sourceViewOf(app.fronds), { dialect: 'sqlite' }).length} statement(s), derived from the entities\n`);

@@ -1,6 +1,6 @@
 {
   "name": "@fougere/adapter-graphql",
-  "version": "0.17.4-alpha.0",
+  "version": "0.18.0-alpha.0",
   "description": "Entity \u2192 GraphQL types, inputs and CRUD, through Pothos.",
   "keywords": [
     "fougere",
@@ -41,6 +41,7 @@
     "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
+    "@fougere/core": "workspace:*",
     "@fougere/schema": "workspace:*",
     "@fougere/http": "workspace:*"
   },

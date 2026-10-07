@@ -1,15 +1,15 @@
 import { upperFirst, Role } from '@fougere/schema';
 import type SchemaBuilder from '@pothos/core';
 import { Shapes, Schema, type Shape } from '@fougere/schema';
-import type { Field, SchemaView } from '@fougere/schema';
+import type { Entity, Field, SchemaView } from '@fougere/schema';
 import { Boundary, Card, Lifecycle, Visibility } from '@fougere/schema';
 import type { TypeConfig } from './TypeConfig.js';
 import type { InputConfig } from './InputConfig.js';
-import type { ParsedSignature } from './ParsedSignature.js';
+import type { OperationOverride } from '@fougere/core';
+import type { Signature } from '@fougere/core/descriptor';
 import type { OperationMeta } from './OperationMeta.js';
 import type { ObjectFieldDef } from './ObjectFieldDef.js';
 
-type EntityClass = SchemaView & (abstract new (...args: any[]) => any);
 
 /** Presenter instance — each method is a computed field resolver. */
 type PresenterInstance = Record<string, (parent: any) => any>;
@@ -24,7 +24,7 @@ export interface OperationsConfig {
   /** Operations metadata from scanner (signature + resolved schemas). */
   operations: Map<string, OperationMeta>;
   /** Per-op kind overrides from frond.config.ts (optional). */
-  operationsOverrides?: Record<string, { kind?: 'query' | 'command'; graphql?: string }>;
+  operationsOverrides?: Record<string, Pick<OperationOverride, 'kind' | 'graphql'>>;
   /**
    * Who is registering — `catalog/ChapterHandler`, for the message when two ops claim
    * one root field. Absent when a caller builds a type by hand.
@@ -455,7 +455,7 @@ export function registerType(builder: InstanceType<typeof SchemaBuilder>, config
           const declared = config.presenterViews?.[name];
           if (declared && config.viewType) {
             const isList = Array.isArray(declared);
-            const view = (isList ? declared[0] : declared) as EntityClass;
+            const view = (isList ? declared[0] : declared) as Entity;
             const viewRef = config.viewType(view, name);
             result[name] = t.field({ type: isList ? [viewRef] : viewRef, nullable, resolve });
             continue;
@@ -588,7 +588,7 @@ interface ArgsResult {
 }
 
 function buildArgsFromSignature(
-  sig: ParsedSignature,
+  sig: Signature,
   meta: OperationMeta,
   builder: InstanceType<typeof SchemaBuilder>,
   opName: string,
@@ -729,7 +729,7 @@ function buildArgsFromSignature(
 // ─── Output type resolution ──────────────────────
 
 function resolveOutputType(
-  sig: ParsedSignature,
+  sig: Signature,
   config: OperationsConfig,
   meta?: OperationMeta,
   opName?: string,

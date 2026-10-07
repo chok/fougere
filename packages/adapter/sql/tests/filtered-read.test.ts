@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { entity, number, primary, ref, text } from '@fougere/schema';
+import { entity, number, primary, ref, text, type SchemaView } from '@fougere/schema';
 import { migrate } from '../src/index.js';
 import { createSqliteSource } from '../src/sqlite/SqliteSource.js';
 
@@ -19,10 +19,7 @@ class Line extends entity({
 
 async function seed() {
   const { db, storageFactory } = createSqliteSource({ path: ':memory:' });
-  const app = { fronds: [{ name: 'test', entities: [
-    { name: 'order', entityClass: Order },
-    { name: 'line', entityClass: Line },
-  ] }] };
+  const app = { entities: new Map<string, SchemaView>([['order', Order], ['line', Line]]) };
   await migrate(app as never, db);
 
   const orders = storageFactory(Order, 'order');

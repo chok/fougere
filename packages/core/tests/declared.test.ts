@@ -141,14 +141,14 @@ describe('what an op reaches', () => {
     const { operations } = resolveEffectiveOperations(fronds, { remotes: { stock: 'http://127.0.0.1:4100' } });
     const servable = operations.find((op) => op.name === 'servable')!;
 
-    expect(servable.reach).toEqual({ fronds: [{ frond: 'stock', runtime: 'remote' }], hops: 1 });
+    expect(servable.reach).toEqual({ fronds: [{ frond: 'stock', placement: 'remote' }], hops: 1 });
   });
 
   it('counts none when everything it reaches runs here', async () => {
     const { operations } = resolveEffectiveOperations(crossFrond, {});
     const servable = operations.find((op) => op.name === 'servable')!;
 
-    expect(servable.reach).toEqual({ fronds: [{ frond: 'stock', runtime: 'local' }], hops: 0 });
+    expect(servable.reach).toEqual({ fronds: [{ frond: 'stock', placement: 'local' }], hops: 0 });
   });
 
   /** Answering from elsewhere is not reaching elsewhere — `placement` already says the first. */
@@ -156,7 +156,7 @@ describe('what an op reaches', () => {
     const { operations } = resolveEffectiveOperations(crossFrond, { remotes: { stock: 'http://127.0.0.1:4100' } });
     const onHand = operations.find((op) => op.name === 'onHand')!;
 
-    expect(onHand.placement.runtime).toBe('remote');
+    expect(onHand.placement).toBe('remote');
     expect(onHand.reach).toEqual({ fronds: [], hops: 0 });
   });
 });

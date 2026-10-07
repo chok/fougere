@@ -7,7 +7,7 @@
  */
 import { describe, it, expect, vi } from 'vitest';
 import { createContainer, type Container } from '@fougere/container';
-import { entity, many, primary, ref, text, type EntityConstructor, type SchemaView } from '@fougere/schema';
+import { entity, many, primary, ref, text, type Entity, type SchemaView } from '@fougere/schema';
 import { createApp, frond, storageOver, togetherKeyOf, type Storage, type Store } from '../src/index.js';
 
 interface Frame {
@@ -215,7 +215,7 @@ describe('a many() whose target references nothing back', () => {
   it('says nothing once the far side carries the key', async () => {
     // Declared in this order on purpose: each side names the other through a thunk, and
     // writing both as one expression is what TypeScript cannot infer.
-    class Label extends entity({ id: primary(), pieceId: ref((): EntityConstructor => Piece) }) {}
+    class Label extends entity({ id: primary(), pieceId: ref((): Entity => Piece) }) {}
     class Piece extends entity({ id: primary(), title: text(), tags: many(Label) }) {}
 
     await using app = await booted([Piece, Label]);

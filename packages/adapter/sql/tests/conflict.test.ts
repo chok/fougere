@@ -18,7 +18,7 @@ let setup: SqliteSource;
 
 beforeEach(async () => {
   setup = createSqliteSource({ path: ':memory:' });
-  await autoMigrate({ fronds: [{ name: 't', entities: [{ name: 'Member', entityClass: Member }] }] } as never, setup.sink);
+  await autoMigrate({ entities: new Map([['Member', Member]]) } as never, setup.sink);
 });
 
 describe('a duplicate', () => {

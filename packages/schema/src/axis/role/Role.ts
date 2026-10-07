@@ -1,5 +1,5 @@
 import type { Relation } from './Relation.js';
-import type { EntityConstructor } from './EntityConstructor.js';
+import type { Entity } from '../../entity/Entity.js';
 import { isObject } from '../../lib/utils.js';
 import { Shapes, type Shape } from '../shape/Shape.js';
 import type { ValidationError } from '../../lib/ValidationError.js';
@@ -14,7 +14,7 @@ export class Role {
     .key(
       'relation',
       Format.of()
-        .key('to', Format.anything.as<() => EntityConstructor>())
+        .key('to', Format.anything.as<() => Entity>())
         .key('kind', Format.tokens(RELATION_KINDS))
         .key('onDelete', Format.tokens(ON_DELETE))
         .needs('to', 'kind')
@@ -86,7 +86,7 @@ export class Role {
   }
 
   /** Calls `() => Post` so no caller has to. */
-  get target(): EntityConstructor | undefined {
+  get target(): Entity | undefined {
     return this.rules.relation?.to();
   }
 

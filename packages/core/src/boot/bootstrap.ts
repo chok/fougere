@@ -574,7 +574,7 @@ function answerRemotes(
   { container, routeRegistry, dispatcher, getMiddlewares, options, state }: Pick<Assembly, 'container' | 'routeRegistry' | 'dispatcher' | 'getMiddlewares' | 'options' | 'state'>,
   remoteRouter: RemoteRouter,
   fronds: Fronds,
-): void {
+): (name: string) => boolean {
   // Only for what another process may serve: an entity a frond hosts HERE and gives no handler
   // is served by nobody, and a stand-in for it had GraphQL project an entity with no operation.
   const servedElsewhere = (address: string): boolean => {
@@ -582,9 +582,8 @@ function answerRemotes(
 
     return owner === undefined || owner.name in (options.remotes ?? {});
   };
-  container.setFallback((name) => (isFacadeKey(name) && servedElsewhere(addressOf(name))
-    ? facadeOperations(dispatcher, addressOf(name))
-    : undefined));
+  const answeredElsewhere = (name: string): boolean => isFacadeKey(name) && servedElsewhere(addressOf(name));
+  container.setFallback((name) => (answeredElsewhere(name) ? facadeOperations(dispatcher, addressOf(name)) : undefined));
 
   const remoteFacades = new Map<string, Record<string, Function>>();
   routeRegistry.addResolver(remoteRoutes((address) => {
@@ -595,6 +594,8 @@ function answerRemotes(
 
     return facade;
   }));
+
+  return answeredElsewhere;
 }
 
 /** Refused rather than replaced: two declarations of one name would make the answer depend on wiring order. */
@@ -700,7 +701,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     refuseWhatDoesNotHold(refused);
     markLineCarriers(emissions);
 
-    if (remoteRouter) answerRemotes(assembly, remoteRouter, fronds);
+    const answeredElsewhere = remoteRouter ? answerRemotes(assembly, remoteRouter, fronds) : () => false;
 
     const { resolve, schemaFor, facadeFor, operationsFor, presenterFor } = readings({
       container, fronds, remoteRouter, localDispatcher, routeRegistry, effectiveByKey, log,
@@ -741,7 +742,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
 
     built = app;
     await appLifecycle.up(app);
-    refuseWhatDoesNotHold(unregistered(container, fronds));
+    refuseWhatDoesNotHold(unregistered(container, fronds, answeredElsewhere));
     stopAnnouncing = announceLines(emissions, container, carry);
 
     return app;

@@ -239,9 +239,11 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
 
 One line each, kept because a past version of this file asserted the opposite.
 
-- **A dependency nothing answers refuses the BOOT, not the first call** — `Container.unresolved()`
-  asks every registration's `deps` without building one, read after the ascent since `up` registers
-  too (`boot/unregistered.ts`, `dependency-unregistered`). A neighbour's `AuthorRepository` used to
+- **A dependency nothing answers refuses the BOOT, not the first call** — the boot reads what each
+  class DECLARES against `has()` in the scope of its frond, after the ascent since `up` registers
+  too (`boot/unregistered.ts`, `dependency-unregistered`). A seam is answered by its link and a
+  facade another process serves by its stand-in, so neither refuses. The rule is the boot's: the
+  container answers `has()` and knows no policy. Pinned by `core/tests/unregistered.test.ts`. A neighbour's `AuthorRepository` used to
   answer `'AuthorRepository' is not registered` at the first call; the check found a seam link
   registered under its own name, which nothing could ever resolve, and it no longer is.
 - **A Nuxt server build keeps what a `@fougere/*` package runs at load** — Nitro reads every module

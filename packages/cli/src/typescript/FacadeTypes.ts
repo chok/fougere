@@ -1,12 +1,7 @@
-import type { SchemaDescriptor } from '@fougere/schema';
+import type { CardOp } from '@fougere/core';
 import { docCommentOf, propertyKey } from './syntax.js';
 
-export interface OpDescriptor {
-  name: string;
-  description?: string;
-  output?: SchemaDescriptor;
-  cardinality?: 'one' | 'maybe' | 'many' | 'page' | 'none';
-}
+export type OpDescriptor = Pick<CardOp, 'name' | 'description' | 'output' | 'cardinality'>;
 
 export interface FacadeTypesOptions {
   name?: string;

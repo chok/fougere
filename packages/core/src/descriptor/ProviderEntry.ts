@@ -1,5 +1,6 @@
+import type { Subject } from './Subject.js';
 /** A discovered provider — a class under `services/` or `repositories/`, injected by type. */
-export interface ProviderEntry {
+export interface ProviderEntry extends Subject {
   /**
    * The container key — the class name as the SOURCE spells it.
    *
@@ -9,12 +10,6 @@ export interface ProviderEntry {
    * A name a tool may rewrite is written down, for the same reason `deps` is.
    */
   name?: string;
-  /** The class constructor (default export of the file). */
-  ctor: new (...args: never[]) => unknown;
-  /** Constructor dependency type names (from AST scan). */
-  deps: string[];
-  /** Absolute file path (for debugging). */
-  filePath: string;
   /**
    * What the source said and the runtime erased: a port, which a class below answers for and
    * nothing may instantiate — never a candidate for the ports above it.

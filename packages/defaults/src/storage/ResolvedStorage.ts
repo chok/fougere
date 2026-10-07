@@ -1,15 +1,14 @@
 import '@fougere/adapter-sql/sqlite';
 import type { App } from '@fougere/core';
-import { Fronds, type FrondDescriptor } from '@fougere/core';
 import { lowerFirst } from '@fougere/core/contract';
 import { existsSync } from 'node:fs';
 import { isAbsolute, resolve } from 'node:path';
-import { Logger, Sources, type Constraint, type Source, type SourceView } from '@fougere/core';
+import { Logger, Sources, sourceViewOf, type Constraint, type Source } from '@fougere/core';
 import { createMemorySource } from '@fougere/adapter-memory';
 import { declaresStorage } from './DeclaredStorage.js';
 import type { DbConfig } from './DbConfig.js';
 import type { SourcesConfig } from './SourcesConfig.js';
-import type { Placement } from './Placement.js';
+import type { SourceEntities } from './SourceEntities.js';
 import type { DeclaredStorage } from './DeclaredStorage.js';
 
 export interface ResolvedStorage {
@@ -46,26 +45,6 @@ export interface ResolvedStorage {
   /** Raw synchronous handle, when the engine exposes one. */
 }
 
-/** The app as ONE source sees it. */
-function viewOf(
-  app: App,
-  holds: (name: string) => boolean,
-): SourceView {
-  const typed = app as unknown as {
-    fronds: { name: string; entities: { name: string }[] }[];
-  };
-  const fronds = typed.fronds
-    .map((frond) => ({ ...frond, entities: frond.entities.filter((entry) => holds(entry.name)) }))
-    .filter((frond) => frond.entities.length > 0);
-
-  return {
-    fronds,
-    // Lifted, because this function reads its app structurally on purpose — a caller
-    // may hand it a shape that is app-LIKE, and the question is still the same one.
-    elsewhere: Fronds.hosting(typed.fronds as FrondDescriptor[]).entityNames().filter((name) => !holds(name)),
-  };
-}
-
 /** Resolve the data layer. */
 export function resolveStorage(
   dbConf: DbConfig,
@@ -87,7 +66,7 @@ export function resolveStorage(
     return storageFrom({ db: createMemorySource() });
   }
 
-  const named: Record<string, Placement> = {};
+  const named: Record<string, SourceEntities> = {};
   for (const [name, conf] of Object.entries(sources ?? {})) {
     named[name] = { source: built(conf, `sources.${name}`, root), entities: conf.entities };
   }
@@ -192,9 +171,9 @@ export function storageFrom(declared: DeclaredStorage): ResolvedStorage {
     // which is what makes a cross-source `ref()` a miss rather than a constraint against a
     // stranger. What a pass DOES is the source's own: it knows its engine, this does not.
     migrate: async (app) => {
-      const said = [await base.migrate?.(viewOf(app, (name) => !home.has(lowerFirst(name))))];
+      const said = [await base.migrate?.(sourceViewOf(app.fronds, (name) => !home.has(lowerFirst(name))))];
       for (const [name, engine] of engines) {
-        said.push(await engine.migrate?.(viewOf(app, (e) => home.get(lowerFirst(e)) === name)));
+        said.push(await engine.migrate?.(sourceViewOf(app.fronds, (e) => home.get(lowerFirst(e)) === name)));
       }
       const reports = said.filter((report): report is string => Boolean(report));
 
@@ -203,9 +182,9 @@ export function storageFrom(declared: DeclaredStorage): ResolvedStorage {
     // The same partition `migrate` writes through, read — so what the boot refuses is exactly
     // what the command would create. A named source says its name; the default one needs none.
     pending: async (app) => {
-      const lines = [...(await base.pending?.(viewOf(app, (name) => !home.has(lowerFirst(name)))) ?? [])];
+      const lines = [...(await base.pending?.(sourceViewOf(app.fronds, (name) => !home.has(lowerFirst(name)))) ?? [])];
       for (const [name, engine] of engines) {
-        const behind = await engine.pending?.(viewOf(app, (e) => home.get(lowerFirst(e)) === name)) ?? [];
+        const behind = await engine.pending?.(sourceViewOf(app.fronds, (e) => home.get(lowerFirst(e)) === name)) ?? [];
         lines.push(...behind.map((line) => `${name}: ${line}`));
       }
 

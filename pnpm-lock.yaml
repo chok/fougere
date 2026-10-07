@@ -1621,6 +1621,9 @@ importers:
 
   packages/adapter/graphql:
     dependencies:
+      '@fougere/core':
+        specifier: workspace:*
+        version: link:../../core
       '@fougere/http':
         specifier: workspace:*
         version: link:../../http
