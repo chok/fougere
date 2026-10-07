@@ -43,3 +43,4 @@ demos/*/signoz/pours/
 
 # What `pnpm clip` films — regenerated from the starter on every run.
 tools/clip/out/
+.DS_Store
