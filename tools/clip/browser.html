@@ -1,0 +1,23 @@
+<!doctype html>
+<meta charset="utf-8" />
+<style>
+  body { margin: 0; height: 100vh; display: flex; flex-direction: column; background: #151c18; font: 13px system-ui, sans-serif; }
+  header { display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: #202a23; border-bottom: 1px solid #303c32; }
+  .light { width: 12px; height: 12px; border-radius: 50%; }
+  button { all: unset; color: #9ca99e; font-size: 16px; padding: 0 6px; cursor: pointer; }
+  input { flex: 1; padding: 6px 12px; border: 0; border-radius: 6px; background: #151c18; color: #e0e8df; font: inherit; outline: none; }
+  iframe { flex: 1; border: 0; }
+</style>
+<header>
+  <span class="light" style="background: #ff5f57"></span>
+  <span class="light" style="background: #febc2e"></span>
+  <span class="light" style="background: #28c840"></span>
+  <button aria-label="Reload">↻</button>
+  <input aria-label="Address" spellcheck="false" />
+</header>
+<iframe></iframe>
+<script>
+  const [address, frame, reload] = [document.querySelector('input'), document.querySelector('iframe'), document.querySelector('button')];
+  address.addEventListener('keydown', (event) => event.key === 'Enter' && (frame.src = `http://${address.value}`));
+  reload.addEventListener('click', () => (frame.src = frame.src));
+</script>
