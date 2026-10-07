@@ -11,7 +11,7 @@ export { authOf, useFougereAuth } from './auth.js';
 
 export { tableOf } from './RouteMatch.js';
 
-export { invokeOn, rpcParseError, serveRest, serveRpc, surfaceOf } from './Outcome.js';
+export { invokeOn, refusedRpc, rpcParseError, serveRest, serveRpc, surfaceOf } from './Outcome.js';
 
 export { errorsByField, formFieldsOf, openingOf, payloadOf, tableColumnsOf } from './FormEntity.js';
 export type { SchemaView } from '@fougere/schema';

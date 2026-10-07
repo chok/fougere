@@ -16,7 +16,7 @@ import repository from './fixtures-repository/fronds.js';
 import { memory } from './memory.js';
 import { describe, it, expect, vi } from 'vitest';
 import { createContainer, type Container } from '@fougere/container';
-import { createApp, createLocalRunner, type FrondDescriptor } from '../src/index.js';
+import { BootRefusal, createApp, createLocalRunner, type FrondDescriptor } from '../src/index.js';
 import { Invocation } from '../src/wire/Invocation.js';
 
 
@@ -73,6 +73,7 @@ describe('a port under a port', () => {
     const fronds = billing([Payment, CardPayment, StripePayment]);
 
     await expect(createApp({ fronds, createContainer })).rejects.toThrow(/CardPayment and StripePayment both extend Payment/);
+    await expect(createApp({ fronds, createContainer })).rejects.toBeInstanceOf(BootRefusal);
 
     await using app = await createApp({ fronds, createContainer, ports: { Payment: 'StripePayment' } });
 

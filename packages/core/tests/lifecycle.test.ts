@@ -9,7 +9,7 @@
 import fronds from './fixtures-ports/fronds.js';
 import { describe, it, expect } from 'vitest';
 import { createContainer } from '@fougere/container';
-import { AppLifecycle, checking, createApp, frond, migrating } from '../src/index.js';
+import { AppLifecycle, BootRefusal, checking, createApp, frond, migrating } from '../src/index.js';
 import type { Extension } from '../src/index.js';
 
 
@@ -232,6 +232,18 @@ describe('the conventional ascent', () => {
     });
 
     await expect(booting).rejects.toThrow(/behind the entities \(2\):\n  products — no table\n  orders\.total — no column\n.*fougere migrate --apply/);
+    await expect(booting).rejects.toBeInstanceOf(BootRefusal);
+  });
+
+  it('lets a failure that is not a refusal through as itself', async () => {
+    const booting = createApp({
+      fronds: [frond('empty', {})],
+      createContainer,
+      pending: async () => { throw new TypeError('the engine is gone'); },
+    });
+
+    await expect(booting).rejects.toThrow(TypeError);
+    await expect(booting).rejects.not.toBeInstanceOf(BootRefusal);
   });
 
   it('writes the schema only when a process states it, replacing the check by name', async () => {

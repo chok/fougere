@@ -1,6 +1,7 @@
 import type { App } from './App.js';
 import type { Extension } from './Extension.js';
 import { StateShape } from '../wire/StateShape.js';
+import { BootRefusal } from '../BootRefusal.js';
 
 /** Runs application extensions up in order and down in reverse order. */
 export class AppLifecycle {
@@ -72,7 +73,7 @@ export function checking(pending?: (app: App) => Promise<readonly string[]>): Ex
       const behind = await pending(app);
       if (behind.length === 0) return;
 
-      throw new Error(
+      throw new BootRefusal(
         `Fougere boot refused: the database is behind the entities (${behind.length}):\n`
         + behind.map((line) => `  ${line}`).join('\n')
         + '\n  Your database: fougere migrate --latest --apply — a shared one: fougere freeze, then fougere migrate --apply',

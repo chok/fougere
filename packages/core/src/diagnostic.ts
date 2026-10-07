@@ -1,3 +1,5 @@
+import { BootRefusal } from './BootRefusal.js';
+
 /**
  * One thing that does not hold, in the terms of whoever has to fix it — raised by the scan,
  * by a boot rule, or by `fougere check`, which is why it belongs to no phase.
@@ -30,12 +32,12 @@ export interface Diagnostic {
  * Every blocking diagnostic in ONE refusal, so a boot names all of them rather than the
  * first — the shape `fougere check` renders, read back by whoever has to fix it.
  */
-export function refusalOf(diagnostics: readonly Diagnostic[], what: string): Error | undefined {
+export function refusalOf(diagnostics: readonly Diagnostic[], what: string): BootRefusal | undefined {
   const blocking = diagnostics.filter((one) => one.severity === 'blocking');
   if (blocking.length === 0) return undefined;
 
   const lines = blocking.map((one) =>
     `  [${one.code}]${one.subject ? ` ${one.subject}` : ''}\n    ${one.message}\n    ${one.filePath}`);
 
-  return new Error(`Fougere boot refused: ${blocking.length} ${what}:\n${lines.join('\n')}`);
+  return new BootRefusal(`Fougere boot refused: ${blocking.length} ${what}:\n${lines.join('\n')}`);
 }

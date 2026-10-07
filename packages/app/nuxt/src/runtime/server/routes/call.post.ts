@@ -1,7 +1,7 @@
 /** Receiving end for the browser — the h3 half. */
 import { defineEventHandler } from 'h3';
-import { serveRpc, rpcParseError, useFougereApp } from '@fougere/app';
-import { maxBodyBytes } from '@fougere/core';
+import { refusedRpc, serveRpc, rpcParseError, useFougereApp } from '@fougere/app';
+import { BootRefusal, maxBodyBytes } from '@fougere/core';
 import { stateOf } from '../stateOf.js';
 
 type NodeReq = {
@@ -108,7 +108,15 @@ async function readJsonBody(event: { req?: unknown; node?: { req?: unknown } }):
 }
 
 export default defineEventHandler(async (event) => {
-  const app = await useFougereApp();
+  const app = await useFougereApp().catch((failure: unknown) => {
+    if (failure instanceof BootRefusal) return failure;
+    throw failure;
+  });
+  if (app instanceof BootRefusal) {
+    console.error(app.message);
+
+    return refusedRpc(app, await readJsonBody(event), import.meta.dev);
+  }
   try {
     return await serveRpc(app, {
       path: event.path,

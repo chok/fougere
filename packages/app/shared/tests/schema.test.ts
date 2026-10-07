@@ -4,12 +4,13 @@
  */
 import { describe, it, expect } from 'vitest';
 import { entity, primary, text } from '@fougere/schema';
-import { frond } from '@fougere/core';
+import { BootRefusal, frond } from '@fougere/core';
 import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { resolveStorage } from '@fougere/defaults';
 import { configureFougere, useFougereApp } from '../src/boot.js';
+import { refusedRpc } from '../src/Outcome.js';
 
 class Note extends entity({ id: primary(), title: text() }) {}
 
@@ -21,6 +22,22 @@ describe('the schema on a web host', () => {
     configureFougere({ fronds, config });
 
     await expect(useFougereApp()).rejects.toThrow(/behind the entities \(1\):\n {2}notes — no table/);
+  });
+
+  it('answers a call with the refusal, under the id it was asked with', async () => {
+    configureFougere({ fronds, config });
+    const refusal = await useFougereApp().catch((failure: unknown) => failure);
+    expect(refusal).toBeInstanceOf(BootRefusal);
+    const call = { jsonrpc: '2.0', id: 7, method: 'note.list', params: {} };
+
+    expect(await refusedRpc(refusal as BootRefusal, call, true)).toMatchObject({
+      id: 7,
+      error: { data: { code: 'SERVICE_UNAVAILABLE', message: expect.stringMatching(/notes — no table/) } },
+    });
+    expect(await refusedRpc(refusal as BootRefusal, call, false)).toMatchObject({
+      id: 7,
+      error: { data: { code: 'SERVICE_UNAVAILABLE', message: 'The app refused to start.' } },
+    });
   });
 
   it('boots at the next call once the database caught up — a refusal is not kept', async () => {

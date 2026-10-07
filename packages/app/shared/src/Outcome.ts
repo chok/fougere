@@ -1,8 +1,11 @@
 import {
   createAppRunner,
   callValueOf,
+  ErrorCode,
+  FougereError,
   toHttpError,
   type App,
+  type BootRefusal,
   type FrondCall,
   type InvocationContext,
 } from '@fougere/core';
@@ -35,6 +38,16 @@ export async function serveRpc(app: App, request: Pick<DoorRequest, 'path' | 'bo
   const runner = createAppRunner(app, surfaceOf(request.path));
 
   return handleRpc((call, invocation) => runner(call, { ...invocation, state: request.state }), request.body);
+}
+
+/**
+ * Every call while the boot is refused, framed like any refused op so a page shows it where it
+ * shows one. Its words name tables and columns, so they leave the process only when `disclosed`.
+ */
+export function refusedRpc(refusal: BootRefusal, body: unknown, disclosed: boolean): Promise<unknown> {
+  const message = disclosed ? refusal.message : 'The app refused to start.';
+
+  return handleRpc(async () => { throw new FougereError({ code: ErrorCode.SERVICE_UNAVAILABLE, message }); }, body);
 }
 
 /** The answer a host returns when it could not even parse the payload. */

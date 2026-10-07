@@ -140,6 +140,7 @@ export type { App } from './boot/App.js';
 export type { CreateAppOptions } from './boot/CreateAppOptions.js';
 export type { ScanResult } from './scan.js';
 export type { Diagnostic } from './diagnostic.js';
+export { BootRefusal } from './BootRefusal.js';
 export { DEFAULT_CONVENTIONS, frondDirsOf, frondPackage, providerDirsOf, resolveConventions, type Conventions } from './Conventions.js';
 export { type ConventionsInput } from './ConventionsInput.js';
 export type { CollectorEntry } from './descriptor/CollectorEntry.js';
