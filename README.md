@@ -26,7 +26,7 @@ You split your app into [fronds](https://fougere.dev/docs/concepts/frond), one p
 
 ---
 
-A picture (or an animation) is worth a thousand words, so:
+A picture (or an animation!) is worth a thousand words, so:
 
 <div align="center">
 
