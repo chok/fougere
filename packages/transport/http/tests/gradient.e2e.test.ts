@@ -9,8 +9,8 @@ import { scanProject } from '@fougere/compiler';
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { spawn, type ChildProcess } from 'node:child_process';
 import { join } from 'node:path';
-import { createApp, createLocalRunner, FougereError, ErrorCode } from '@fougere/core';
-import type { App, InvocationContext, Transport } from '@fougere/core';
+import { createApp, FougereError, ErrorCode } from '@fougere/core';
+import type { App } from '@fougere/core';
 import { createContainer } from '@fougere/container';
 import { createHttpTransport } from '../src/index.js';
 import { createStorageFactory, PRODUCTS } from './fixtures/data.js';
@@ -18,10 +18,7 @@ import { createStorageFactory, PRODUCTS } from './fixtures/data.js';
 const fixturesDir = join(import.meta.dirname, 'fixtures');
 const emptyRoot = '/tmp/fougere-gradient-consumer';
 
-type Facade = Record<string, (invocation?: InvocationContext) => Promise<unknown>>;
-
-const inv = (over: Partial<InvocationContext> = {}): InvocationContext =>
-  ({ params: {}, query: {}, input: undefined, state: {}, ...over });
+type Facade = Record<string, (...args: unknown[]) => Promise<unknown>>;
 
 function startHost(): Promise<{ child: ChildProcess; port: number }> {
   return new Promise((resolve, reject) => {
@@ -51,14 +48,14 @@ function startHost(): Promise<{ child: ChildProcess; port: number }> {
 let child: ChildProcess;
 let port: number;
 let control: App;
-let localRun: Transport;
+let local: Facade;
 let consumer: App;
 let facade: Facade;
 
 beforeAll(async () => {
   ({ child, port } = await startHost());
   control = await createApp({ scan: await scanProject(fixturesDir), createContainer, storageFactory: createStorageFactory() });
-  localRun = createLocalRunner(control);
+  local = control.resolve<Facade>('productHandler');
   consumer = await createApp({
     scan: await scanProject(emptyRoot),
     createContainer,
@@ -89,19 +86,19 @@ async function outcomeOf(run: () => Promise<unknown>): Promise<unknown> {
 }
 
 describe('gradient — the moved Frond behaves identically', () => {
-  const cases: [string, string, InvocationContext][] = [
-    ['list', 'list', inv()],
-    ['findById (hit)', 'findById', inv({ params: { id: 'p1' } })],
-    ['findById (miss)', 'findById', inv({ params: { id: 'ghost' } })],
-    ['create (valid)', 'create', inv({ input: { title: 'Ivy', stock: 5 } })],
-    ['create (invalid — validated where the handler lives)', 'create', inv({ input: { stock: -2 } })],
-    ['reserve (business failure)', 'reserve', inv()],
+  const cases: [string, string, unknown[]][] = [
+    ['list', 'list', []],
+    ['findById (hit)', 'findById', ['p1']],
+    ['findById (miss)', 'findById', ['ghost']],
+    ['create (valid)', 'create', [{ title: 'Ivy', stock: 5 }]],
+    ['create (invalid — validated where the handler lives)', 'create', [{ stock: -2 }]],
+    ['reserve (business failure)', 'reserve', []],
   ];
 
-  it.each(cases)('parity on %s', async (_label, op, invocation) => {
-    const local = await outcomeOf(() => localRun({ address: 'product', op }, invocation));
-    const remote = await outcomeOf(() => facade[op](invocation));
-    expect(remote).toEqual(JSON.parse(JSON.stringify(local)));
+  it.each(cases)('parity on %s', async (_label, op, args) => {
+    const here = await outcomeOf(() => local[op](...args));
+    const moved = await outcomeOf(() => facade[op](...args));
+    expect(moved).toEqual(JSON.parse(JSON.stringify(here)));
   }, 15_000);
 
   it('sanity: the dataset actually crossed', async () => {
@@ -109,7 +106,7 @@ describe('gradient — the moved Frond behaves identically', () => {
   });
 
   it('the validation verdict happens handler-side and crosses typed', async () => {
-    const failure = facade.create(inv({ input: { stock: -2 } }));
+    const failure = facade.create({ stock: -2 });
     await expect(failure).rejects.toBeInstanceOf(FougereError);
     await expect(failure).rejects.toMatchObject({ code: ErrorCode.VALIDATION_FAILED, address: 'product', operation: 'create' });
   });

@@ -167,7 +167,7 @@ describe('a receiver that establishes nothing', () => {
     const answer = await ask({ params: {}, query: {}, body: { title: 'x' } });
 
     expect(answer.error.data).toMatchObject({ code: 'BAD_REQUEST' });
-    expect(answer.error.message).toMatch(/'body' — one of params, query, input, state, trace, identity, runAt/);
+    expect(answer.error.message).toMatch(/'body' — one of params, query, input, args, state, trace, identity, runAt/);
   });
 
   it('leaves it absent when the name hides inside state', async () => {

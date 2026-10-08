@@ -27,7 +27,7 @@ import { createStorageFactory, PRODUCTS } from './fixtures/data.js';
 const fixturesDir = join(import.meta.dirname, 'fixtures');
 const emptyRoot = '/tmp/fougere-socket-consumer';
 
-type Facade = Record<string, (invocation?: InvocationContext) => Promise<unknown>>;
+type Facade = Record<string, (...args: unknown[]) => Promise<unknown>>;
 
 const inv = (over: Partial<InvocationContext> = {}): InvocationContext =>
   ({ params: {}, query: {}, input: undefined, state: {}, ...over });

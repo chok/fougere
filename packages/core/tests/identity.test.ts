@@ -96,6 +96,15 @@ describe('caller identity', () => {
     await expect(verifyEnvelope(envelope, root.publicKey, { ...CALL, input: { title: 'defaced' } })).rejects.toThrow(/signed for a different call/);
   });
 
+  it('refuses it replayed with other arguments', async () => {
+    // `restock('a1', 3, reader)` must not become `restock('a1', 3, admin)`.
+    const blog = issue(root, 'blog');
+    const envelope = await signEnvelope(blog, { ...CALL, args: ['a1', { quantity: 3 }, { id: 'reader' }] });
+
+    await expect(verifyEnvelope(envelope, root.publicKey, { ...CALL, args: ['a1', { quantity: 3 }, { id: 'admin' }] })).rejects.toThrow(/signed for a different call/);
+    await expect(verifyEnvelope(envelope, root.publicKey, CALL)).rejects.toThrow(/signed for a different call/);
+  });
+
   it('refuses it replayed against another row', async () => {
     // `post.get id=1` must not become `post.get id=2`.
     const blog = issue(root, 'blog');

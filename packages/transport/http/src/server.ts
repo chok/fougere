@@ -50,6 +50,7 @@ export async function handleRpc(runner: Transport, raw: unknown, options: Receiv
         params: sent.params ?? {},
         query: sent.query ?? {},
         input: sent.input,
+        args: sent.args,
         runAt: sent.runAt,
       }));
     } catch (err) {
@@ -65,6 +66,7 @@ export async function handleRpc(runner: Transport, raw: unknown, options: Receiv
     params: sent.params ?? {},
     query: sent.query ?? {},
     input: sent.input,
+    ...(sent.args === undefined ? {} : { args: sent.args }),
     state,
     trace: sent.trace,
     ...(sent.runAt === undefined ? {} : { runAt: sent.runAt }),
@@ -96,7 +98,7 @@ export async function handleRpc(runner: Transport, raw: unknown, options: Receiv
  * with no input and no validation.
  */
 const SENT = {
-  params: true, query: true, input: true, state: true, trace: true, identity: true, runAt: true, caller: false,
+  params: true, query: true, input: true, args: true, state: true, trace: true, identity: true, runAt: true, caller: false,
   crossed: false,
 } satisfies Record<keyof InvocationContext, boolean>;
 
