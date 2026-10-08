@@ -10,7 +10,7 @@ export default class PriceHandler {
 
   /** What the shelf is worth, in cents. */
   async total(): Promise<number> {
-    const products = await this.productFacade.list() as { cents: number }[];
+    const products = await this.productFacade.list();
 
     return products.reduce((sum, product) => sum + product.cents, 0);
   }

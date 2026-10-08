@@ -12,8 +12,8 @@ export default class CartHandler {
 
   /** What is on the shelf, and what it costs to take it. */
   async checkout(): Promise<{ items: number; cents: number }> {
-    const products = await this.productFacade.list() as { id: string }[];
-    const cents = await this.productFacade.charge() as number;
+    const products = await this.productFacade.list();
+    const cents = await this.productFacade.charge();
 
     return { items: products.length, cents };
   }
