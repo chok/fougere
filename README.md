@@ -2,7 +2,7 @@
 
 # 🌿 Fougere
 
-**Fougere is focused on your business only. Create it.**<br/>
+**Fougere is focused on your business only. Build it.**<br/>
 **Decide later which infrastructure topology you want,**<br/>
 **And which technology you want in front of it (GraphQL, REST…).**
 
@@ -67,9 +67,9 @@ The one primitive to know is the Frond, the fractal leaf of a fern (_fougère_ i
 ## Features
 
 - **App**: it's not a standalone framework. You can embed it in the one you already use (Nuxt, Next…), or serve a frond on its own with an existing HTTP framework. Fougere is not an HTTP framework at heart.
-- **Schema**: it is the center. Validation, Forms, SQL tables, REST, GraphQL and forms are all derived from it.
+- **Schema**: it is the center. Validation, forms, SQL tables, REST and GraphQL are all derived from it.
 - **Errors**: they are typed. A frontend knows exactly which errors each operation can return, without declaring them.
-- **Events**: no listener to register. Ask for an `Emit<PostPublished>` to announce a fact, and accept a `Fact<PostPublished>` to subscribe to it. Across processes, it goes over HTTP by default, or through Kafka or anything else you plug in.
+- **Events**: no listener to register. Ask for an `Emit<PostPublished>` to announce a fact, and accept a `Fact<PostPublished>` to subscribe to it. Across processes, it goes over HTTP by default, or through a broker you plug in (Kafka, NATS…).
 - **Migrations**: `fougere freeze` saves each version of your schema as extended JSON Schema. Migrations are deduced from that chain of versions: no SQL to write, and the whole history of changes is kept.
 - **Deployment**: fronds can run together inside your app, or each in its own process. Moving one is a single line of config.
 - **Observability**: you can observe every process, because the framework owns the input and output of every frond, even when they run in separate processes. One trace follows a call across all of them (optional).
