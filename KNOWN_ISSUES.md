@@ -45,6 +45,13 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
   figure that was true before it. Depth is a LOCAL fact and it composes — a process answers for
   what it knows and the caller adds — which is the shape `holds` and `release` already have,
   `visited` trail included, since two fronds naming each other need one.
+- **A fact received with a field its reader does not declare is refused** — `deliver`
+  (`boot/Emissions.ts`) hands it to the local dispatch, whose validator refuses unknown keys
+  (`InputValidator.unknownIn`): strict like an input, where a fact read off a wire would rather
+  be tolerant. Hence the order `wire/drift.ts` asks for — readers first, then the sender — even
+  for a field ADDED. Measured 2026-10-08 on `demos/emit-multirepo/search`: `postPublished` with
+  one key more → `extra: Unknown field`, 1 of 1 listener refused. Met on a Debezium envelope,
+  whose top-level keys vary with the Debezium version.
 - **A `ref()` added to a table that already exists gets no foreign key, and the boot believes
   it has one.** The additive pass has no `addForeignKey` (`diff/Change.ts`), and `heldBy` reads
   what the source PROMISES, not what the live table holds, so it reads nothing either. Measured
