@@ -33,11 +33,27 @@ export function surfaceOf(path: string): string | undefined {
  * Receiving end for the browser — same wire as process-to-process (JSON-RPC), different trust
  * boundary: the browser sits outside the topology, so `state` is whatever the host resolved
  * server-side, never what the payload claims.
+ *
+ * For the same reason a page writes no `args`: they are taken as written, which is a peer's
+ * right, and `[id, draft, { id: 'admin' }]` would hand the handler a user no collector read.
  */
 export async function serveRpc(app: App, request: Pick<DoorRequest, 'path' | 'body' | 'state'>): Promise<unknown> {
   const runner = createAppRunner(app, surfaceOf(request.path));
 
-  return handleRpc((call, invocation) => runner(call, { ...invocation, state: request.state }), request.body);
+  return handleRpc((call, invocation) => {
+    if (invocation.args !== undefined) throw writtenByPage(call);
+
+    return runner(call, { ...invocation, state: request.state });
+  }, request.body);
+}
+
+function writtenByPage(call: FrondCall): FougereError {
+  return new FougereError({
+    code: ErrorCode.BAD_REQUEST,
+    message: `${call.address}.${call.op}: a page sends params, query and input — \`args\` are what one frond hands another.`,
+    address: call.address,
+    operation: call.op,
+  });
 }
 
 /**

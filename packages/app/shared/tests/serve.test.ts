@@ -12,7 +12,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { entity, primary, text } from '@fougere/schema';
-import { serveRest, shapeRest, surfaceOf } from '../src/Outcome.js';
+import { serveRest, serveRpc, shapeRest, surfaceOf } from '../src/Outcome.js';
 
 class Post extends entity({ id: primary(), title: text() }) {}
 
@@ -160,5 +160,17 @@ describe('the GraphQL facade obeys the same declaration', () => {
     // No query AND no adapter: the answer is `pass`, not a 400. A facade that is not
     // served does not get to complain about what was sent to it.
     expect(await serveGraphQL(appOf({}), { state: {} })).toEqual({ kind: 'pass' });
+  });
+});
+
+describe('the call envelope a page knocks on', () => {
+  it('refuses `args` — a page sends a request, and a peer hands over the arguments', async () => {
+    const answer = await serveRpc(app, {
+      path: '/_fougere/call',
+      body: { jsonrpc: '2.0', id: 1, method: 'post.update', params: { args: ['1', { title: 'x' }, { id: 'admin' }] } },
+      state: {},
+    }) as { error: { data: { code: string; message: string } } };
+
+    expect(answer.error.data).toMatchObject({ code: 'BAD_REQUEST', message: expect.stringMatching(/`args` are what one frond hands another/) });
   });
 });
