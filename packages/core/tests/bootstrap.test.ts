@@ -172,7 +172,7 @@ describe('handler facades', () => {
     // ItemHandler extends Crud(Item) — it declares the five by inheriting them.
     const itemHandler = app.resolve<Record<string, Function>>('itemHandler');
 
-    const page = await itemHandler.list({ params: {}, query: {}, input: undefined, state: {} });
+    const page = await itemHandler.list();
     expect(page).toEqual({ items: [{ id: '1' }] });
     expect(storage.list).toHaveBeenCalled();
   });

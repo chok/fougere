@@ -2,12 +2,11 @@
 import { Card } from '@fougere/schema';
 import type { App } from './App.js';
 import { factsAnnouncedBy } from '../wire/Emit.js';
-import type { InvocationContext } from '../wire/InvocationContext.js';
 import { type CardOp } from '../wire/card/CardOp.js';
 import { type IdentityCard } from '../wire/card/IdentityCard.js';
 import { facadeKeyOf } from '../wire/Facade.js';
 
-type AnyFacade = Record<string, (invocation?: InvocationContext) => Promise<unknown>>;
+type AnyFacade = Record<string, (...args: unknown[]) => Promise<unknown>>;
 
 /** Serialize what the app hosts, for one audience. */
 export function identityCardOf(app: App, surface?: string): IdentityCard {

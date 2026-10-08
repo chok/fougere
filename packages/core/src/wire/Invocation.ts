@@ -31,6 +31,7 @@ export class Invocation implements InvocationContext {
   readonly params: Record<string, unknown>;
   readonly query: Record<string, unknown>;
   readonly input: unknown;
+  readonly args?: readonly unknown[];
   readonly state: Record<string, unknown>;
   readonly trace?: string;
   readonly identity?: string;
@@ -38,11 +39,12 @@ export class Invocation implements InvocationContext {
   readonly runAt?: number;
   readonly crossed?: true;
 
-  /** Gives every entry and every transport the same nine-member value, frozen. */
+  /** Gives every entry and every transport the same ten-member value, frozen. */
   private constructor(context: PartialInvocation) {
     this.params = canonicalRecord(context.params);
     this.query = canonicalRecord(context.query);
     this.input = canonicalValue(context.input);
+    if (context.args !== undefined) this.args = canonicalValue(context.args) as readonly unknown[];
     // State is host-owned and may still be enriched by existing middlewares. Moving it
     // to immutable lifecycle context is a separate migration.
     this.state = context.state ?? {};

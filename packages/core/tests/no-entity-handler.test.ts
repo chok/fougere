@@ -29,7 +29,7 @@ describe('a handler with no entity', () => {
 
     // Not `{}`: an absent field set means nothing to encode, not everything to drop.
     expect(Object.keys(facade)).toEqual(['check']);
-    expect(await facade.check(Invocation.empty)).toEqual({ status: 'up' });
+    expect(await facade.check()).toEqual({ status: 'up' });
   });
 
   it('is served under a NAMED surface too, not only the default one', async () => {

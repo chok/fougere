@@ -1,23 +1,20 @@
 import { lowerFirst } from '@fougere/schema';
 
-import type { InvocationContext } from './InvocationContext.js';
-
 /**
  * The facade built in front of a handler — the framework's second port, after `Storage`.
  *
- * What the handler knows is WHICH operations exist and what each one answers. The two ends are
- * the port's own: an invocation goes in where the handler takes positional arguments, and a
- * promise comes back where the handler may answer a bare value. A facade is a crossing, and a
- * crossing is awaited before any transport — the dispatch resolves a route, runs the middlewares
- * and awaits the collectors, so `readLocation(): string` was typed as answering now and never did.
+ * It takes what the handler takes: code calling it already holds the values, so nothing is
+ * collected for it and nothing is presented — that is a door's work, done on what a door
+ * received. A promise comes back where the handler may answer a bare value, because a facade
+ * is a crossing and a crossing is awaited, whether or not a transport carries it.
  *
  * `Awaited` because a promise does not stack: `Promise.resolve(p)` IS `p`, so writing
  * `Promise<R>` over an async handler would describe a `Promise<Promise<Post>>` that no value can
  * have — `.then` would hand its callback a promise the runtime never delivers.
  */
 export type Facade<T> = {
-  [K in keyof T]: T[K] extends (...args: never[]) => infer R
-    ? (invocation?: InvocationContext) => Promise<Awaited<R>>
+  [K in keyof T]: T[K] extends (...args: infer A) => infer R
+    ? (...args: A) => Promise<Awaited<R>>
     : never;
 };
 

@@ -57,7 +57,8 @@ import { LocalRoutePolicy } from '../dispatch/LocalRoutePolicy.js';
 import { OperationRoute } from '../dispatch/OperationRoute.js';
 import { remoteRoutes } from '../dispatch/remoteRoutes.js';
 import { RouteRegistry } from '../dispatch/RouteRegistry.js';
-import { facadeOperations } from '../entry/facade.js';
+import { callOperations, facadeOperations } from '../entry/facade.js';
+import { decoded } from '../dispatch/decoded.js';
 
 const LOG_LINE = lowerFirst(LogLine.name);
 
@@ -403,6 +404,7 @@ interface Serving {
   container: Container;
   fronds: Fronds;
   remoteRouter: RemoteRouter | undefined;
+  dispatcher: Dispatcher;
   localDispatcher: Dispatcher;
   routeRegistry: RouteRegistry;
   effectiveByKey: Map<string, EffectiveOperationsMap>;
@@ -415,7 +417,7 @@ interface Serving {
  * `facadeFor` is THE rule, stated once: every projection reads it and nothing else.
  */
 function readings(
-  { container, fronds, remoteRouter, localDispatcher, routeRegistry, effectiveByKey, log }: Serving,
+  { container, fronds, remoteRouter, dispatcher, localDispatcher, routeRegistry, effectiveByKey, log }: Serving,
 ): Pick<App, 'resolve' | 'schemaFor' | 'facadeFor' | 'operationsFor' | 'presenterFor'> {
   const resolve = <T>(name: string): T => {
     try {
@@ -454,6 +456,19 @@ function readings(
     }
   };
 
+  /**
+   * What a door is handed for an address it may serve: the calls, not the facade code holds.
+   * The names are the routes this process registered; an address served elsewhere has none
+   * before it is reached, so its calls are named when they are made.
+   */
+  const callsAt = (address: string, surface: string | undefined, through: Dispatcher): Record<string, Function> => {
+    const names = routeRegistry.operationNames(address, surface);
+    if (names.length === 0) return callOperations(through, address, undefined, surface);
+    const effective = effectiveByKey.get(facadeKeyOf(address, surface));
+
+    return callOperations(through, address, names, surface, (operation, answer) => decoded(effective?.get(operation)?.output, answer));
+  };
+
   /** Said once per pair, so a facade that registers in a loop says it once. */
   const saidAbsent = new Set<string>();
 
@@ -474,9 +489,9 @@ function readings(
 
   /** THE membership rule, stated once — every projection reads this and nothing else. */
   const facadeFor = (address: string, surface?: string): Record<string, Function> | undefined => {
-    if (!surface) return facadeAt(facadeKeyOf(address), true);
+    if (!surface) return facadeAt(facadeKeyOf(address), true) && callsAt(address, undefined, dispatcher);
 
-    const own = facadeAt(facadeKeyOf(address, surface), false);
+    const own = facadeAt(facadeKeyOf(address, surface), false) && callsAt(address, surface, localDispatcher);
     if (!fronds.owner(address)) {
       sayNoSurfaceAcross(address, surface);
 
@@ -490,7 +505,7 @@ function readings(
     const fallback = facadeAt(facadeKeyOf(address), false);
 
     return fallback
-      ? facadeOperations(
+      ? callOperations(
           localDispatcher,
           address,
           routeRegistry.operationNames(address, surface),
@@ -696,16 +711,16 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     refuseWhatDoesNotHold(refused);
     warnAboutUnboundPorts(options, boundPorts, log);
 
+    const { resolve, schemaFor, facadeFor, operationsFor, presenterFor } = readings({
+      container, fronds, remoteRouter, dispatcher, localDispatcher, routeRegistry, effectiveByKey, log,
+    });
+
     // A pipe order and an `Emit<T, A>` are read here, once every facade exists.
-    emissions.register();
+    emissions.register((facade) => facadeFor(addressOf(facade)));
     refuseWhatDoesNotHold(refused);
     markLineCarriers(emissions);
 
     const answeredElsewhere = remoteRouter ? answerRemotes(assembly, remoteRouter, fronds) : () => false;
-
-    const { resolve, schemaFor, facadeFor, operationsFor, presenterFor } = readings({
-      container, fronds, remoteRouter, localDispatcher, routeRegistry, effectiveByKey, log,
-    });
 
     const app: App = {
       container,

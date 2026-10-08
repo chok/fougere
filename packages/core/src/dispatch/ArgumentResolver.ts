@@ -1,9 +1,11 @@
+import type { SchemaView } from '@fougere/schema';
 import type { InvocationContext } from '../wire/InvocationContext.js';
 import type { BindingPlan } from '../wire/binding.js';
 import { ErrorCode } from '../wire/ErrorCode.js';
 import { FougereError } from '../wire/FougereError.js';
 import type { CollectorLookup } from './CollectorLookup.js';
 import { collectedAs } from '../prefab/collector.js';
+import { validateInput } from './validateInput.js';
 
 type ParamSource = Extract<BindingPlan[number]['source'], { kind: 'param' }>;
 
@@ -54,6 +56,39 @@ export class ArgumentResolver {
     }
 
     return args;
+  }
+
+  /**
+   * The arguments code wrote, judged where a door would have judged them: the input against
+   * the op's view, a value a collector would have produced through that collector's entity —
+   * which also puts back a `Date` that crossed a wire as text. Nothing is collected: what the
+   * caller left out stays out.
+   */
+  given(plan: BindingPlan, input: SchemaView | undefined, ctx: InvocationContext): unknown[] {
+    const args = ctx.args ?? [];
+
+    return plan.map((binding, index) => {
+      const value = args[index];
+      switch (binding.source.kind) {
+        case 'context':
+          return ctx;
+        case 'input':
+        case 'fact':
+        case 'pipe':
+          return validateInput(input, { ...ctx, input: value }).input;
+        case 'collector': {
+          const collector = this.collectors?.(binding.source.typeName);
+
+          return collector ? collectedAs(collector, value) : value;
+        }
+        case 'param':
+          if (value === undefined && !binding.optional) throw refused(binding.source.name, 'Required');
+
+          return value;
+        case 'query':
+          return value;
+      }
+    });
   }
 
   /**

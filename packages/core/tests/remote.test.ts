@@ -90,18 +90,22 @@ describe('a named surface across a process', () => {
 });
 
 describe('remote façade (repli)', () => {
-  it('executes remotely with parity against the local runner', async () => {
+  it('executes remotely with parity — code against code, door against door', async () => {
     const host = await bootHost();
     const consumer = await bootConsumer(host);
 
-    const facade = consumer.resolve<Record<string, (inv?: unknown) => Promise<unknown>>>('productHandler');
-    const remote = await facade.list();
-    const local = await createLocalRunner(host)({ address: 'product', op: 'list' }, Invocation.empty);
+    // Code holds the facade: the rows as the handler answered them, on either side.
+    const facade = consumer.resolve<Record<string, () => Promise<unknown>>>('productHandler');
+    const local = host.resolve<Record<string, () => Promise<unknown>>>('productHandler');
+    expect(await facade.list()).toEqual(JSON.parse(JSON.stringify(await local.list())));
+    expect(await facade.list()).toEqual(products);
 
-    // Parity is the claim: the same enrichment on both sides, computed where the
-    // frond is hosted and carried across untouched.
-    expect(remote).toEqual(JSON.parse(JSON.stringify(local)));
-    expect(remote).toEqual(products.map((p) => ({
+    // A door sends a call: the presenter's fields, computed where the frond is hosted and
+    // carried across untouched.
+    const door = await createAppRunner(consumer)({ address: 'product', op: 'list' }, Invocation.empty);
+    const hosted = await createLocalRunner(host)({ address: 'product', op: 'list' }, Invocation.empty);
+    expect(door).toEqual(JSON.parse(JSON.stringify(hosted)));
+    expect(door).toEqual(products.map((p) => ({
       ...p,
       displayPrice: `$${p.price.toFixed(2)}`,
       isExpensive: p.price > 100,
@@ -134,17 +138,15 @@ describe('remote façade (repli)', () => {
     await host.dispose();
   });
 
-  it('carries the invocation — findById routes params across the wire', async () => {
+  it('carries the arguments — findById sends its id across the wire', async () => {
     const host = await bootHost();
     const consumer = await bootConsumer(host);
 
-    const facade = consumer.resolve<Record<string, (inv?: unknown) => Promise<unknown>>>('productHandler');
-    const found = await facade.findById({ ...Invocation.empty, params: { id: '2' } });
-    expect(found).toEqual({ id: '2', name: 'Moss', price: 320, displayPrice: '$320.00', isExpensive: true });
+    const facade = consumer.resolve<Record<string, (id: string) => Promise<unknown>>>('productHandler');
+    expect(await facade.findById('2')).toEqual({ id: '2', name: 'Moss', price: 320 });
 
     // A miss is null on every transport — undefined has no wire form.
-    const miss = await facade.findById({ ...Invocation.empty, params: { id: 'nope' } });
-    expect(miss).toBeNull();
+    expect(await facade.findById('nope')).toBeNull();
 
     await consumer.dispose();
     await host.dispose();
@@ -154,7 +156,7 @@ describe('remote façade (repli)', () => {
     const host = await bootHost();
     const consumer = await bootConsumer(host);
 
-    const facade = consumer.resolve<Record<string, (inv?: unknown) => Promise<unknown>>>('productHandler');
+    const facade = consumer.resolve<Record<string, (...args: unknown[]) => Promise<unknown>>>('productHandler');
     const failure = facade.explode();
     await expect(failure).rejects.toBeInstanceOf(FougereError);
     await expect(failure).rejects.toMatchObject({
@@ -171,7 +173,7 @@ describe('remote façade (repli)', () => {
     const host = await bootHost();
     const consumer = await bootConsumer(host);
 
-    const facade = consumer.resolve<Record<string, (inv?: unknown) => Promise<unknown>>>('unicornHandler');
+    const facade = consumer.resolve<Record<string, (...args: unknown[]) => Promise<unknown>>>('unicornHandler');
     await expect(facade.list()).rejects.toMatchObject({
       code: ErrorCode.NOT_FOUND,
       address: 'unicorn',
@@ -186,7 +188,7 @@ describe('remote façade (repli)', () => {
     const dead: Transport = async () => { throw new TypeError('fetch failed'); };
     const consumer = await bootConsumer(host, dead);
 
-    const facade = consumer.resolve<Record<string, (inv?: unknown) => Promise<unknown>>>('productHandler');
+    const facade = consumer.resolve<Record<string, (...args: unknown[]) => Promise<unknown>>>('productHandler');
     const failure = facade.list();
     await expect(failure).rejects.toBeInstanceOf(FougereError);
     await expect(failure).rejects.toMatchObject({ code: ErrorCode.SERVICE_UNAVAILABLE });
@@ -202,10 +204,10 @@ describe('remote façade (repli)', () => {
     const spy = vi.fn(wire);
     const consumer = await bootConsumer(host, spy);
 
-    const facade = consumer.resolve<Record<string, (inv?: unknown) => Promise<unknown>>>('productHandler');
+    const facade = consumer.resolve<Record<string, (...args: unknown[]) => Promise<unknown>>>('productHandler');
     await facade.list();
     await facade.list();
-    await facade.findById({ ...Invocation.empty, params: { id: '1' } });
+    await facade.findById('1');
 
     const discoverCalls = spy.mock.calls.filter(([call]) => call.address === 'rpc' && call.op === 'discover');
     expect(discoverCalls).toHaveLength(1);
@@ -315,7 +317,7 @@ describe('remote façade (repli)', () => {
     expect(consumer.fronds.map((f) => f.name)).toContain('catalog');
     expect(consumer.container.has('productHandler')).toBe(false);
 
-    const facade = consumer.resolve<Record<string, (inv?: unknown) => Promise<unknown>>>('productHandler');
+    const facade = consumer.resolve<Record<string, (...args: unknown[]) => Promise<unknown>>>('productHandler');
     expect(await facade.list()).toMatchObject([{ id: '1' }, { id: '2' }]);
 
     await consumer.dispose();

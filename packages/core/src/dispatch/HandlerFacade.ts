@@ -124,20 +124,29 @@ export class HandlerFacade {
     entered: Record<string, unknown>,
   ): Promise<unknown> {
     const state = this.facade.state.judge(context.state, this.handler.address, op, entered);
-    const validated = validateInput(contract.input, { ...invocation, state });
+    const written = invocation.args !== undefined;
+    const validated = written ? { ...invocation, state } : validateInput(contract.input, { ...invocation, state });
     context.invocation = validated;
 
-    const args = contract.binding ? await this.arguments.resolve(contract.binding, validated) : [];
+    const args = await this.argumentsOf(contract, validated);
     const { instance, method } = this.resolveImplementation(op);
     const answered = await instance[method](...args);
 
     const view = this.viewOf(op);
     const { presenter } = this.facade;
-    const computed = view.closed || !presenter
+    const computed = written || view.closed || !presenter
       ? answered
       : await this.present(op, presenter, answered, validated);
 
     return view.project(computed);
+  }
+
+  /** What code wrote, judged; or what a door received, read through the binding plan. */
+  private async argumentsOf(contract: OperationContract, invocation: InvocationContext): Promise<unknown[]> {
+    if (!contract.binding) return [];
+    if (invocation.args !== undefined) return this.arguments.given(contract.binding, contract.input, invocation);
+
+    return this.arguments.resolve(contract.binding, invocation);
   }
 
   /**

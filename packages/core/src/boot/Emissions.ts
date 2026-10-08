@@ -172,8 +172,16 @@ export class Emissions {
     return (this.subscribers.get(fact) ?? []).map(({ facade }) => facade);
   }
 
+  /**
+   * What a listener is handed a fact through: the calls a door makes, never the facade code
+   * holds. A fact arrives as the invocation's input and the listener's binding plan places it,
+   * wherever it sits in the signature.
+   */
+  private calls: (facade: string) => Record<string, Function> | undefined = () => undefined;
+
   /** Register one emission value per fact — announced here, or merely listened to. */
-  register(): void {
+  register(calls: (facade: string) => Record<string, Function> | undefined): void {
+    this.calls = calls;
     this.orderPipes();
     for (const fact of new Set([...this.announced, ...this.subscribers.keys()])) {
       this.container.registerValue(emitKeyOf(fact), (raw: unknown) => this.announce(fact, raw));
@@ -295,8 +303,7 @@ export class Emissions {
   private async finished(fact: string, payload: unknown): Promise<unknown> {
     let carried = payload;
     for (const link of this.pipes.get(fact) ?? []) {
-      const facade = this.container.resolve<Record<string, Function>>(link.facade);
-      const answered = await facade[link.op]({ ...Invocation.empty, input: carried });
+      const answered = await this.reach(link.facade, fact)[link.op]({ ...Invocation.empty, input: carried });
 
       // A link that answers nothing SUPPRESSES the fact — every subscriber was then handed
       // `null` and crashed reading it, one message each. It is refused rather than named,
@@ -377,16 +384,16 @@ export class Emissions {
       facade,
       op,
       done: ambient.enterChain(fact, async () => {
-        let handler: Record<string, Function>;
-        try {
-          handler = this.container.resolve<Record<string, Function>>(facade);
-        } catch (cause) {
-          throw new Error(`${fact} → ${facade} could not be reached`, { cause });
-        }
-
-        return handler[op]({ ...Invocation.empty, input: payload });
+        return this.reach(facade, fact)[op]({ ...Invocation.empty, input: payload });
       }),
     }));
+  }
+
+  private reach(facade: string, fact: string): Record<string, Function> {
+    const calls = this.calls(facade);
+    if (!calls) throw new Error(`${fact} → ${facade} could not be reached`);
+
+    return calls;
   }
 
   /** A subscriber refusing the SHAPE, said in one line instead of dumped as an error. */

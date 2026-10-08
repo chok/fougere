@@ -2,6 +2,12 @@ export interface InvocationContext {
   params: Record<string, unknown>;
   query: Record<string, unknown>;
   input: unknown;
+  /**
+   * The handler's own arguments, written by code that called its facade. A door writes
+   * `params`, `query` and `input` — what it received — and the binding plan reads them; code
+   * already holds the values, so nothing is collected and nothing is presented.
+   */
+  args?: readonly unknown[];
   state: Record<string, unknown>;
   trace?: string;
   identity?: string;
