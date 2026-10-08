@@ -46,12 +46,21 @@ async function elsewhere(): Promise<{ consumer: App; host: App }> {
   return { consumer, host };
 }
 
+async function inThisProcess(): Promise<{ app: App; done: () => Promise<void> }> {
+  const app = await here();
+
+  return { app, done: () => app.dispose() };
+}
+
+async function inAnotherProcess(): Promise<{ app: App; done: () => Promise<void> }> {
+  const { consumer, host } = await elsewhere();
+
+  return { app: consumer, done: async () => { await consumer.dispose(); await host.dispose(); } };
+}
+
 describe.each([
-  ['in this process', async () => { const app = await here(); return { app, done: () => app.dispose() }; }],
-  ['in another process', async () => {
-    const { consumer, host } = await elsewhere();
-    return { app: consumer, done: async () => { await consumer.dispose(); await host.dispose(); } };
-  }],
+  ['in this process', inThisProcess],
+  ['in another process', inAnotherProcess],
 ])('a facade, %s', (_, boot) => {
   it('binds the arguments as written, and judges the input', async () => {
     const { app, done } = await boot();
