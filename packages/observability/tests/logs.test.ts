@@ -6,13 +6,13 @@ import { scanProject } from '@fougere/compiler';
 import { describe, it, expect, beforeAll, afterAll, afterEach, vi } from 'vitest';
 import { join } from 'node:path';
 import { Carry, createApp, Logger, setLogLevel } from '@fougere/core';
-import type { App, InvocationContext, LogRecord } from '@fougere/core';
+import type { App, LogRecord } from '@fougere/core';
 import { createContainer } from '@fougere/container';
 import { tracing, logs, currentSpan, type FinishedSpan, type SpanSink } from '../src/index.js';
 import { createStorageFactory } from './fixtures/data.js';
 
 const fixturesDir = join(import.meta.dirname, 'fixtures');
-type Facade = Record<string, (invocation?: InvocationContext) => Promise<unknown>>;
+type Facade = Record<string, (...args: unknown[]) => Promise<unknown>>;
 
 let app: App;
 const undo: (() => void)[] = [];

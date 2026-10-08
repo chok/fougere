@@ -9,13 +9,13 @@ import { scanProject } from '@fougere/compiler';
 import { describe, it, expect, beforeAll, afterAll, afterEach } from 'vitest';
 import { join } from 'node:path';
 import { createApp } from '@fougere/core';
-import type { App, InvocationContext } from '@fougere/core';
+import type { App } from '@fougere/core';
 import { createContainer } from '@fougere/container';
 import { tracing, metrics, type FinishedSpan, type SpanSink, type Tracing } from '../src/index.js';
 import { createStorageFactory } from './fixtures/data.js';
 
 const fixturesDir = join(import.meta.dirname, 'fixtures');
-type Facade = Record<string, (invocation?: InvocationContext) => Promise<unknown>>;
+type Facade = Record<string, (...args: unknown[]) => Promise<unknown>>;
 
 let app: App;
 let tracer: Tracing;

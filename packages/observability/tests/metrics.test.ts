@@ -6,14 +6,14 @@ import { scanProject } from '@fougere/compiler';
 import { describe, it, expect, beforeAll, afterAll, afterEach } from 'vitest';
 import { join } from 'node:path';
 import { createApp, createLocalRunner } from '@fougere/core';
-import type { App, InvocationContext } from '@fougere/core';
+import type { App } from '@fougere/core';
 import { createContainer } from '@fougere/container';
 import { tracing, metrics, activeCalls, type Metrics, type SpanSink } from '../src/index.js';
 import { metricsPayload, serveTopology } from '../src/metrics/Metrics.js';
 import { createStorageFactory } from './fixtures/data.js';
 
 const fixturesDir = join(import.meta.dirname, 'fixtures');
-type Facade = Record<string, (invocation?: InvocationContext) => Promise<unknown>>;
+type Facade = Record<string, (...args: unknown[]) => Promise<unknown>>;
 
 let app: App;
 let measured: Metrics;
@@ -39,7 +39,7 @@ describe('rate, errors and duration come from one histogram', () => {
     const facade = app.resolve<Facade>('productHandler');
     await facade.list();
     await facade.list();
-    await facade.findById({ params: { id: 'p1' }, query: {}, input: undefined, state: {} });
+    await facade.findById('p1');
 
     const { series } = measured.snapshot();
     const list = series.find((s) => s.operation === 'list')!;

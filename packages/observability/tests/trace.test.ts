@@ -10,8 +10,8 @@ import { scanProject } from '@fougere/compiler';
 import { describe, it, expect, beforeAll, afterAll, afterEach } from 'vitest';
 import { createServer, connect, type Server } from 'node:net';
 import { join } from 'node:path';
-import { createApp, createLocalRunner } from '@fougere/core';
-import type { App, InvocationContext, Transport } from '@fougere/core';
+import { createApp, createAppRunner, createLocalRunner } from '@fougere/core';
+import type { App, Transport } from '@fougere/core';
 import { createContainer } from '@fougere/container';
 import { serve, createHttpTransport, handleRpc, frameCall, unframeResponse } from '@fougere/transport-http';
 import type { RunningReceiver, RpcResponse } from '@fougere/transport-http';
@@ -19,7 +19,7 @@ import { tracing, type FinishedSpan, type SpanSink } from '../src/index.js';
 import { createStorageFactory } from './fixtures/data.js';
 
 const fixturesDir = join(import.meta.dirname, 'fixtures');
-type Facade = Record<string, (invocation?: InvocationContext) => Promise<unknown>>;
+type Facade = Record<string, (...args: unknown[]) => Promise<unknown>>;
 
 /** A receiver with no envelope at all — one call per connection, nowhere to put a header. */
 function serveSocket(runner: Transport): Promise<{ port: number; server: Server }> {
@@ -182,8 +182,9 @@ describe('across a wire — any wire', () => {
 
   it('starts a fresh trace rather than refusing a malformed one', async () => {
     collect();
+    // A trace arrives with a call, so a door sends it: code holds no invocation to carry one.
     await expect(
-      overHttp.resolve<Facade>('productHandler').list({ params: {}, query: {}, input: undefined, state: {}, trace: 'not-a-traceparent' }),
+      createAppRunner(overHttp)({ address: 'product', op: 'list' }, { params: {}, query: {}, input: undefined, state: {}, trace: 'not-a-traceparent' }),
     ).resolves.toBeDefined();
 
     // The bad value is dropped, not inherited: two spans, still one trace, opened here.

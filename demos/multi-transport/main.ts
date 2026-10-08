@@ -98,7 +98,7 @@ async function main() {
       url.startsWith('tcp://') ? createSocketTransport(Number(new URL(url).port)) : createHttpTransport(url),
   });
 
-  type Facade = Record<string, (invocation?: InvocationContext) => Promise<unknown>>;
+  type Facade = Record<string, (...args: unknown[]) => Promise<unknown>>;
   const facade = consumer.resolve<Facade>('readingHandler');
   console.log('  \x1b[1mconsumer.resolve("readingHandler").list()\x1b[0m  \x1b[2m— remotes: tcp://\x1b[0m');
   console.log(`    \x1b[2m${'via remotes:'.padEnd(16)}\x1b[0m ${render(await facade.list())}\n`);
