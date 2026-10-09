@@ -39,6 +39,19 @@ Uncomment the two lines in `fougere.config.ts` and run it again:
 Cart.checkout      answers local   reaches catalog, pricing   2 hop(s)
 ```
 
+The demo then answers `pricing` and `catalog` for real — each in an app of its own, scanned alone
+the way `fougere serve` carries one frond, behind HTTP on the port the config names. The checkout
+crosses the wire twice and answers the same:
+
+```
+INF [app:pricing] (cart:CartHandler.checkout) price.total (2.4ms)
+INF [app:cart] CartHandler.checkout (14.0ms)
+
+cart.checkout → {"items":2,"cents":1650}
+```
+
+Same answer, same handlers — 14 ms where it was 0.6.
+
 **Same file, same signature, different cost.** `placement` says where an operation ANSWERS;
 `reach` says where its work GOES. Three numbers a process writes down today are a function of
 that second one — how often a trace is sampled, where a latency histogram's bounds sit, and what

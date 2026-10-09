@@ -14,6 +14,7 @@ import { log } from '@fougere/log';
 import { createApp, createLocalRunner, declaredTopologyOf, resolveEffectiveOperations, type Storage } from '@fougere/core';
 import { loadConfig, remotesOf } from '@fougere/core/node';
 import { createContainer } from '@fougere/container';
+import { createHttpTransport, serve } from '@fougere/transport-http';
 import { join } from 'node:path';
 
 const root = join(import.meta.dirname, '..');
@@ -31,15 +32,36 @@ const shelf = () => ({
   output() { return this; },
 }) as unknown as Storage;
 
-await using app = await createApp({
-  scan,
+const remotes = remotesOf(config);
+
+/** `ledger` is placed and served by nobody, on purpose — every other placed frond answers. */
+const LEDGER = 'ledger';
+
+const boot = (fronds: typeof scan, elsewhere: Record<string, string>) => createApp({
+  scan: fronds,
   createContainer,
   storageFactory: shelf,
-  remotes: remotesOf(config),
-  // Nothing answers at those addresses. A call would refuse; reading the shape does not.
-  remoteTransport: () => (async () => { throw new Error('nobody is listening there'); }),
+  remotes: elsewhere,
+  remoteTransport: (url) => createHttpTransport(url),
   extensions: [log()],
 });
+
+/** Each frond `fronds:` places at an address answers there: an app of its own, behind real HTTP. */
+const answering = await Promise.all(Object.entries(remotes)
+  .filter(([frond]) => frond !== LEDGER)
+  .map(async ([frond, url]) => {
+    // Scanned alone, the way `fougere serve <frond>` carries one: two hosts holding `cart` both
+    // would answer for it, and a caller could not choose.
+    const host = await boot(
+      await scanProject(root, [frond]),
+      Object.fromEntries(Object.entries(remotes).filter(([other]) => other !== frond)),
+    );
+    const receiver = await serve(createLocalRunner(host), { port: Number(new URL(url).port) });
+
+    return { host, receiver };
+  }));
+
+await using app = await boot(scan, remotes);
 
 const declared = declaredTopologyOf(app);
 const { operations } = resolveEffectiveOperations(app.fronds, { remotes: remotesOf(config) });
@@ -62,10 +84,17 @@ for (const op of operations) {
   );
 }
 
-// Everything is local right now, so this costs function calls and nothing else.
+// The same call either way: function calls when everything is here, HTTP when a line is uncommented.
 const out = await createLocalRunner(app)(
   { address: 'cart', op: 'checkout' },
   { params: {}, query: {}, input: undefined, state: {} },
 );
 console.log('\n  cart.checkout →', JSON.stringify(out));
-console.log('\n  Now uncomment a line in fougere.config.ts and run it again.\n');
+console.log(answering.length === 0
+  ? '\n  Now uncomment the two lines in fougere.config.ts and run it again.\n'
+  : `\n  The same answer, with ${answering.length} frond(s) answering over HTTP. No handler changed.\n`);
+
+for (const { host, receiver } of answering) {
+  await receiver.close();
+  await host.dispose();
+}
