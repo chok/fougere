@@ -29,13 +29,16 @@ const { prompt, copied, copy } = useAudit();
 
 <style scoped>
 .try {
-  padding: 120px clamp(16px, 6vw, 96px);
+  min-height: calc(100svh - 3.5rem);
+  scroll-margin-top: 3.5rem;
+  padding: 80px clamp(16px, 6vw, 96px);
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
+  border-top: 1px solid var(--ui-border);
   text-align: center;
   gap: 26px;
-  border-top: 1px solid var(--ui-border);
 }
 
 .try h2 {
