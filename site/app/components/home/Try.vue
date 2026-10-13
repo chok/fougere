@@ -9,10 +9,12 @@ const { prompt, copied, copy } = useAudit();
   <section id="try" class="try">
     <h2>{{ $t('home.tryTitle') }} <em>Fougere</em></h2>
     <p>{{ $t('home.tryText') }}</p>
-    <pre class="command">npm create fougere</pre>
+    <div class="start">
+      <pre class="command">npm create fougere</pre>
+      <NuxtLink :to="localePath('/docs/getting-started')" class="doc">{{ $t('home.tryStart') }} →</NuxtLink>
+    </div>
     <div class="actions">
       <NuxtLink :to="localePath('/docs/existing-app')" class="primary">{{ $t('home.tryExisting') }}</NuxtLink>
-      <NuxtLink :to="localePath('/docs/getting-started')" class="secondary">{{ $t('home.tryScratch') }}</NuxtLink>
       <a href="#audit" class="secondary">{{ $t('home.tryAgent') }}</a>
     </div>
   </section>
@@ -29,13 +31,11 @@ const { prompt, copied, copy } = useAudit();
 
 <style scoped>
 .try {
-  min-height: calc(100svh - 3.5rem);
   scroll-margin-top: 3.5rem;
-  padding: 80px clamp(16px, 6vw, 96px);
+  padding: 120px clamp(16px, 6vw, 96px);
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
   border-top: 1px solid var(--ui-border);
   text-align: center;
   gap: 26px;
@@ -60,13 +60,13 @@ p {
 }
 
 .audit {
-  padding: 120px clamp(16px, 6vw, 96px);
+  padding: 380px clamp(16px, 6vw, 96px) 120px;
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
   gap: 48px;
   align-items: start;
   border-top: 1px solid var(--ui-border);
-  scroll-margin-top: 3.5rem;
+  scroll-margin-top: calc(3.5rem - 340px);
 }
 
 .audit .words {
@@ -100,7 +100,8 @@ p {
 @media (max-width: 760px) {
   .audit {
     grid-template-columns: minmax(0, 1fr);
-    padding: 80px 16px;
+    padding: 200px 16px 80px;
+    scroll-margin-top: calc(3.5rem - 160px);
   }
 
   .audit .words {
@@ -119,6 +120,21 @@ pre {
 .command {
   padding: 16px 26px;
   font-size: 16px;
+}
+
+.start {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 12px 20px;
+}
+
+.doc {
+  font-size: 15px;
+  color: var(--ui-primary);
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 .actions {
