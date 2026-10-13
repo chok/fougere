@@ -1,0 +1,572 @@
+<script setup lang="ts">
+import Marble from '~/story/marble';
+import Globe from '~/story/globe';
+import { fernFrame } from '~/story/fern';
+import { chapterAt, phasesAt } from '~/story/timeline';
+
+const { t } = useI18n();
+const localePath = useLocalePath();
+
+const codeSnippet = `export default class PostHandler extends Crud(Post) {
+  async publish(id: Post['id']) { … }
+}
+
+// answers POST /api/blog/posts/:id/publish`;
+
+const schemaSnippet = `class Post extends entity({
+  title: text({ min: 1, max: 200 }),
+  body: text(),
+  status: readOnly(oneOf('draft', 'published')),
+}) {}`;
+
+const derivationSnippet = `useFormFor(Post)        // the form
+POST /api/blog/posts    // the API
+posts (title, body, …)  // the table`;
+
+const gradientSnippet = `// fougere.config.ts
+fronds: {
+  blog: 'http://127.0.0.1:4100',
+}
+
+$ fougere serve blog`;
+
+interface Clip {
+  src: string;
+  label: string;
+  caption: string;
+}
+
+const chapters = computed(() => [
+  { key: 'code', code: codeSnippet, doc: '/docs/business/handlers' },
+  { key: 'schema', code: schemaSnippet, doc: '/docs/schema/entities' },
+  { key: 'derivation', code: derivationSnippet, doc: '/docs/infra/surfaces', legend: true, clip: { src: '/home/derivation.mp4', label: t('home.derivationVideo'), caption: t('home.derivationCaption') } },
+  { key: 'gradient', code: gradientSnippet, doc: '/docs/infra/gradient', clip: { src: '/home/gradient.mp4', label: t('home.gradientVideo'), caption: t('home.gradientCaption') } },
+  { key: 'same', doc: '/docs/concepts/philosophy' },
+].map((chapter) => ({
+  ...chapter,
+  docLabel: t(`home.${chapter.key}Doc`),
+  label: t(`home.${chapter.key}Label`),
+  title: t(`home.${chapter.key}Title`),
+  accent: t(`home.${chapter.key}Accent`),
+  text: t(`home.${chapter.key}Text`),
+})));
+
+const rail = computed(() => ['railCode', 'railSchema', 'railDerivation', 'railGradient', 'railSame'].map((key) => t(`home.${key}`)));
+
+const story = ref<HTMLElement>();
+const stage = ref<HTMLElement>();
+const marbleCanvas = ref<HTMLCanvasElement>();
+const backCanvas = ref<HTMLCanvasElement>();
+const frontCanvas = ref<HTMLCanvasElement>();
+const fernOutline = ref<SVGPathElement>();
+const fernFill = ref<SVGPathElement>();
+const fernPlate = ref<SVGImageElement>();
+const fernLayer = ref<SVGSVGElement>();
+
+const chapter = ref(0);
+const playing = ref<Clip>();
+
+function jump(id: string) {
+  document.getElementById(id)?.scrollIntoView({ behavior: 'instant' });
+}
+
+let frame = 0;
+
+onMounted(() => {
+  const marble = Marble.on(marbleCanvas.value!);
+  const globe = new Globe(backCanvas.value!, frontCanvas.value!);
+  const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const started = performance.now();
+  let shown = 0;
+  let previous = started;
+
+  const tick = (now: number) => {
+    frame = requestAnimationFrame(tick);
+    const bounds = story.value!.getBoundingClientRect();
+    const height = stage.value!.clientHeight;
+    const width = stage.value!.clientWidth;
+    const scrolled = Math.min(Math.max((stage.value!.getBoundingClientRect().top - bounds.top) / (bounds.height - height), 0), 1);
+    shown += (scrolled - shown) * (1 - Math.exp(-(now - previous) / 200));
+    previous = now;
+    const phase = phasesAt(shown);
+    const reached = chapterAt(shown);
+    if (reached !== chapter.value) chapter.value = reached;
+
+    const narrow = width < 760;
+    const ratio = Math.min(window.devicePixelRatio || 1, narrow ? 1.5 : 2);
+    const unit = narrow ? Math.min(height, width * 1.25) : height;
+    const center: [number, number] = [narrow ? 0 : Math.min((width / height) * 0.5 - 0.42, 0.3), narrow ? 0.27 : 0];
+    const time = still ? 0 : (now - started) / 1000;
+
+    const fern = fernFrame(
+      { x: narrow ? width / 2 : width * 0.26, y: narrow ? height * 0.28 : height / 2 },
+      { x: width / 2 + center[0] * unit, y: height / 2 - center[1] * unit },
+      narrow ? height * 0.4 : Math.min(height * 0.8, 700),
+      0.15 * unit,
+      phase.travel,
+      phase.morph,
+      height * 0.06,
+    );
+    fernOutline.value!.setAttribute('d', fern.outline);
+    fernFill.value!.setAttribute('d', fern.outline);
+    fernFill.value!.setAttribute('opacity', String(phase.fill));
+    for (const [name, value] of Object.entries({ x: fern.x, y: fern.y, width: fern.width, height: fern.height, opacity: phase.plate })) {
+      fernPlate.value!.setAttribute(name, String(value));
+    }
+    fernLayer.value!.style.opacity = String(phase.fern);
+
+    marble?.draw({ unit, time, center, appear: phase.appear, schema: phase.schema, fusion: phase.fusion, globe: phase.globe, split: phase.split }, ratio);
+    globe.draw({ unit, time, center, marble: phase.marble, sphere: phase.sphere, wound: phase.wound, split: phase.split }, ratio);
+  };
+  frame = requestAnimationFrame(tick);
+});
+
+onBeforeUnmount(() => cancelAnimationFrame(frame));
+</script>
+
+<template>
+  <div class="story-page">
+    <section ref="story" class="story">
+      <div ref="stage" class="stage">
+        <canvas ref="backCanvas" class="layer" aria-hidden="true" />
+        <canvas ref="marbleCanvas" class="layer" aria-hidden="true" />
+        <canvas ref="frontCanvas" class="layer" aria-hidden="true" />
+        <svg ref="fernLayer" class="layer" aria-hidden="true">
+          <defs>
+            <clipPath id="fern-outline"><path ref="fernOutline" /></clipPath>
+          </defs>
+          <path ref="fernFill" fill="#8fa152" opacity="0" />
+          <image ref="fernPlate" href="/home/fern.png" preserveAspectRatio="none" clip-path="url(#fern-outline)" />
+        </svg>
+
+        <div class="hero" :class="{ off: chapter !== 0 }">
+          <h1>
+            <i18n-t keypath="home.slogan" scope="global">
+              <template #code><em>{{ $t('home.sloganCode') }}</em></template>
+              <template #later><em>{{ $t('home.sloganLater') }}</em></template>
+            </i18n-t>
+          </h1>
+          <p class="plate">
+            <span>{{ $t('home.plateName') }}</span>
+            {{ $t('home.plateCredit') }}
+          </p>
+        </div>
+
+        <div class="chapters">
+          <article v-for="(item, index) in chapters" :key="item.key" class="chapter" :class="{ on: chapter === index + 1 }">
+            <p class="label">{{ item.label }}</p>
+            <h2>{{ item.title }} <em>{{ item.accent }}</em></h2>
+            <p class="text">{{ item.text }}</p>
+            <pre v-if="item.code">{{ item.code }}</pre>
+            <div v-if="item.legend" class="legend">
+              <span><i class="calls" />{{ $t('home.derivationCalls') }}</span>
+              <span><i class="called" />{{ $t('home.derivationCalled') }}</span>
+            </div>
+            <div class="more">
+              <button v-if="item.clip" type="button" class="play" @click="playing = item.clip">
+                <span class="play-icon"><svg width="10" height="12" viewBox="0 0 10 12" aria-hidden="true"><path d="M0 0l10 6-10 6z" /></svg></span>
+                {{ item.clip.label }}
+              </button>
+              <NuxtLink :to="localePath(item.doc)" class="doc">{{ item.docLabel }} →</NuxtLink>
+            </div>
+          </article>
+        </div>
+
+        <ol class="rail" :class="{ off: chapter < 1 }">
+          <li v-for="(name, index) in rail" :key="name" :class="{ on: Math.max(chapter, 1) === index + 1 }">{{ name }}<i /></li>
+        </ol>
+
+        <div class="shortcuts" :class="{ off: chapter >= 5 }">
+          <button type="button" @click="jump('audit')">{{ $t('home.tryAgent') }}</button>
+          <button type="button" @click="jump('try')">{{ $t('home.skip') }}</button>
+        </div>
+        <p v-if="chapter === 0" class="hint">{{ $t('home.scroll') }}<br>↓</p>
+      </div>
+    </section>
+
+
+    <div v-if="playing" class="clip" @click="playing = undefined">
+      <figure @click.stop>
+        <video :src="playing.src" autoplay controls playsinline />
+        <figcaption>{{ playing.caption }}</figcaption>
+        <button type="button" @click="playing = undefined">{{ $t('home.close') }}</button>
+      </figure>
+    </div>
+  </div>
+</template>
+
+<style scoped>
+.story-page {
+  --paper: var(--ui-bg);
+  --ink: var(--ui-text);
+  --muted: var(--ui-text-muted);
+  --green: var(--ui-primary);
+  --ochre: #bf8738;
+  --slate: #4a6b8c;
+  --code: #10180f;
+  --header: 3.5rem;
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 17px;
+  line-height: 1.6;
+}
+
+h1, h2 {
+  margin: 0;
+}
+
+h1 em, h2 em {
+  font-style: italic;
+  color: var(--green);
+}
+
+pre {
+  margin: 22px 0 0;
+  max-width: 440px;
+  overflow-x: auto;
+  white-space: pre;
+  background: var(--code);
+  color: #e1ebde;
+  border-radius: 12px;
+  padding: 16px 18px;
+  font-family: var(--font-mono);
+  font-size: 13.5px;
+  line-height: 1.7;
+}
+
+.story {
+  position: relative;
+  height: 650vh;
+}
+
+.stage {
+  position: sticky;
+  top: var(--header);
+  height: calc(100svh - var(--header));
+  overflow: hidden;
+}
+
+.layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  pointer-events: none;
+}
+
+.hero {
+  position: absolute;
+  left: 46%;
+  right: clamp(16px, 6vw, 96px);
+  top: 50%;
+  transform: translateY(-50%);
+  transition: opacity 0.45s ease;
+}
+
+.hero h1 {
+  font-size: clamp(34px, 4.1vw, 60px);
+  line-height: 1.04;
+}
+
+.plate {
+  margin: 28px 0 0;
+  padding-top: 10px;
+  border-top: 1px solid var(--ink);
+  max-width: 340px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--muted);
+}
+
+.plate span {
+  display: block;
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 18px;
+  color: var(--ink);
+}
+
+.off {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.chapters {
+  position: absolute;
+  left: clamp(16px, 6vw, 96px);
+  top: 0;
+  bottom: 0;
+  width: min(460px, calc(100% - 32px));
+}
+
+.chapter {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  transform: translateY(-44%);
+  opacity: 0;
+  transition: opacity 0.5s ease, transform 0.6s cubic-bezier(0.2, 0.7, 0.2, 1);
+  pointer-events: none;
+}
+
+.chapter.on {
+  opacity: 1;
+  transform: translateY(-50%);
+  pointer-events: auto;
+}
+
+.label {
+  margin: 0 0 14px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--green);
+}
+
+.chapter h2 {
+  font-size: clamp(30px, 3.6vw, 48px);
+  line-height: 1.06;
+}
+
+.text {
+  margin: 18px 0 0;
+  max-width: 420px;
+  font-size: 18px;
+  color: var(--muted);
+}
+
+.legend {
+  margin-top: 18px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.legend span {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.legend i {
+  width: 22px;
+  height: 3px;
+  border-radius: 2px;
+}
+
+.legend .calls { background: var(--ochre); }
+.legend .called { background: var(--slate); }
+
+.more {
+  margin-top: 22px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 20px;
+}
+
+.doc {
+  font-size: 15px;
+  color: var(--green);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.play {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 18px 10px 12px;
+  border-radius: 999px;
+  border: 1.5px solid var(--ink);
+  background: color-mix(in oklab, var(--paper) 80%, transparent);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.play-icon {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.play-icon path { fill: var(--paper); }
+
+.rail {
+  position: absolute;
+  right: clamp(16px, 4vw, 56px);
+  top: 50%;
+  transform: translateY(-50%);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  transition: opacity 0.45s ease;
+}
+
+.rail li {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #8a948c;
+  transition: color 0.3s;
+}
+
+.rail i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1.5px solid #9aa39b;
+  transition: all 0.3s;
+}
+
+.rail .on { color: var(--ink); }
+.rail .on i {
+  background: var(--green);
+  border-color: var(--green);
+  transform: scale(1.3);
+}
+
+.shortcuts {
+  position: absolute;
+  right: clamp(16px, 4vw, 56px);
+  bottom: 24px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+  transition: opacity 0.4s ease;
+}
+
+.shortcuts button {
+  min-height: 44px;
+  padding: 8px 16px;
+  border-radius: 999px;
+  border: 1px solid var(--ink);
+  background: color-mix(in oklab, var(--paper) 85%, transparent);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: opacity 0.4s ease;
+}
+
+.hint {
+  position: absolute;
+  left: 50%;
+  bottom: 28px;
+  margin: 0 0 0 -40px;
+  width: 80px;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  animation: hint 1.8s ease-in-out infinite;
+}
+
+@keyframes hint {
+  0%, 100% { transform: translateY(0); opacity: 0.5; }
+  50% { transform: translateY(6px); opacity: 1; }
+}
+
+.clip {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: rgb(16 24 15 / 0.82);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.clip figure {
+  margin: 0;
+  max-width: min(92vw, 520px);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.clip video {
+  width: 100%;
+  max-height: 80vh;
+  border-radius: 12px;
+  background: #000;
+}
+
+.clip figcaption { color: #e1ebde; font-size: 14px; }
+
+.clip button {
+  align-self: flex-end;
+  min-height: 44px;
+  padding: 8px 18px;
+  border-radius: 999px;
+  border: 1px solid #e1ebde;
+  background: transparent;
+  color: #e1ebde;
+  font: inherit;
+  cursor: pointer;
+}
+
+@media (max-width: 760px) {
+  .hero {
+    left: 16px;
+    right: 16px;
+    top: auto;
+    bottom: 12%;
+    transform: none;
+  }
+
+  .chapters {
+    top: auto;
+    height: 52%;
+    left: 16px;
+    right: 16px;
+    width: auto;
+  }
+
+  .chapter pre {
+    font-size: 11.5px;
+    padding: 12px 14px;
+  }
+
+  .rail, .hint { display: none; }
+
+  .shortcuts {
+    top: 12px;
+    bottom: auto;
+    left: 16px;
+    right: 16px;
+    justify-content: center;
+  }
+
+  .shortcuts button {
+    padding: 8px 12px;
+    font-size: 11px;
+  }
+}
+</style>
