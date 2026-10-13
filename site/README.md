@@ -2,7 +2,7 @@
 
 The Fougere site — landing page, docs, blog — built with Fougere: the blog is a Frond
 (`fronds/blog`, a validated draft→publish), the docs are Nuxt Content markdown
-(`content/{en,fr}/docs`), i18n is en/fr (`prefix_except_default`: `/docs`, `/fr/docs`).
+(`content/docs`), served at `/docs`.
 
 ```bash
 pnpm migrate             # from site/ — the boot only reads the schema
@@ -23,7 +23,7 @@ NITRO_PRESET=github_pages NUXT_APP_BASE_URL=/ pnpm generate
 npx serve .output/public
 ```
 
-What survives the export: the landing page, the docs (en/fr), and the **read side** of
+What survives the export: the landing page, the docs, and the **read side** of
 the blog — rendered by the Frond at build time, exactly as it would be in SSR.
 
 What does not: writing and signing in, which need a server. `useReadOnlyDeployment()`

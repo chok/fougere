@@ -1,7 +1,7 @@
 name: Pages
 
 # The site prerendered to static hosting. What survives the export: the landing
-# page, the docs (en/fr), and the blog's READ side — rendered by the Frond at
+# page, the docs, and the blog's READ side — rendered by the Frond at
 # build time. What does not: writing and signing in, which need a server. See
 # site/README.md#static.
 

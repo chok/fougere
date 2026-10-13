@@ -1,6 +1,6 @@
 <script setup lang="ts">
 
-const { t, locale } = useI18n();
+const { t } = useI18n();
 const localePath = useLocalePath();
 const { user } = useCurrentUser();
 
@@ -11,7 +11,7 @@ const { items: posts, loading } = await useQuery(postFacade, 'mine');
 useSeoMeta({ title: () => `${t('blog.drafts.title')} — Fougere` });
 
 function day(at?: Date | null) {
-  return at ? at.toLocaleDateString(locale.value === 'fr' ? 'fr-FR' : 'en-US', { dateStyle: 'medium' }) : '';
+  return at ? at.toLocaleDateString('en-US', { dateStyle: 'medium' }) : '';
 }
 </script>
 

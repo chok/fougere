@@ -12,7 +12,7 @@ ideas are its two readings, and calling them two hid the rule that produces both
 1. **Single-schema** — what the declaration does not name is *derived* from it: one Entity class (`class Post extends entity({...})`) generates validation, DB tables (Kysely), GraphQL types (Pothos), form contracts, API surfaces.
 2. **The gradient** — what it does not name is *chosen outside* it: a Frond (entities + handlers + collectors + seeds) runs in-process or in its own process behind JSON-RPC, with **identical user code**. `fronds:` in `fougere.config.ts` is the whole statement — an entry per frond, whose `extends:` names the one it inherits code from, whose `remote:` says where it answers, and whose key names a module when a package brings it.
 
-Reference docs: `site/content/` (en/fr).
+Reference docs: `site/content/`.
 
 ## Commands
 
@@ -752,7 +752,7 @@ since a frond's middleware covers the addresses its handlers SERVE and not the o
 CALL, which is a different subject with no name yet. And `HttpRouter` is never held by the
 boot at all: the host builds it, hands it to `registerRoutes`, and already holds both
 `router.use(middleware)` and the routes array — a seam would be a fourth way to say it. Both
-ways in are written down, with `Storage`'s, in `site/content/*/docs/4.business/10.ports.md`
+ways in are written down, with `Storage`'s, in `site/content/docs/4.business/10.ports.md`
 and `7.storage.md`: `remoteTransport:` swaps a transport whole, `app.use` wraps the outgoing
 call, `router.use` and the routes array reach the HTTP side.
 
@@ -1013,7 +1013,7 @@ X), `useFormFor` (contract, not rendering; local validator = remote validator), 
   false all cited code touched in the last seven days.
 - Commits: title + 1-3 lines. Never `git add -A` (parallel sessions)
 - **Everything committed here is in English** — commit messages, PR bodies, comments, tests,
-  `README.md`, `CLAUDE.md`. The one exception is `site/content/fr/`, a translation target.
+  `README.md`, `CLAUDE.md`.
 
 ## Known issues
 

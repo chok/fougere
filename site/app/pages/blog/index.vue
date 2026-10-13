@@ -1,6 +1,6 @@
 <script setup lang="ts">
 
-const { t, locale } = useI18n();
+const { t } = useI18n();
 const localePath = useLocalePath();
 
 import { post as postFacade } from '@fronds/facade';
@@ -10,7 +10,7 @@ const { items: posts, loading, error } = await useQuery(postFacade, 'list');
 useSeoMeta({ title: () => `${t('blog.title')} — Fougere`, description: () => t('blog.subtitle') });
 
 function day(at?: Date | null) {
-  return at ? at.toLocaleDateString(locale.value === 'fr' ? 'fr-FR' : 'en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : '';
+  return at ? at.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : '';
 }
 </script>
 

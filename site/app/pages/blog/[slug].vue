@@ -3,7 +3,7 @@ import MarkdownIt from 'markdown-it';
 import { post as postFacade } from '@fronds/facade';
 
 const route = useRoute();
-const { t, locale } = useI18n();
+const { t } = useI18n();
 const localePath = useLocalePath();
 const slug = route.params.slug as string;
 
@@ -18,7 +18,7 @@ useSeoMeta({
 });
 
 function day(at?: Date | null) {
-  return at ? at.toLocaleDateString(locale.value === 'fr' ? 'fr-FR' : 'en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : '';
+  return at ? at.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : '';
 }
 </script>
 
