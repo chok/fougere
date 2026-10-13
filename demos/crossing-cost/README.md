@@ -50,7 +50,14 @@ INF [app:cart] CartHandler.checkout (14.0ms)
 cart.checkout → {"items":2,"cents":1650}
 ```
 
-Same answer, same handlers — 14 ms where it was 0.6.
+Same answer, same handlers — 14 ms where it was 0.6. Each run ends on a fingerprint of `fronds/`:
+
+```
+fronds/ sha256 <12 hex> — the same on both runs: no file under fronds/ moved.
+```
+
+It reads the same before and after the line is uncommented, because the line is the only thing
+that changed.
 
 **Same file, same signature, different cost.** `placement` says where an operation ANSWERS;
 `reach` says where its work GOES. Three numbers a process writes down today are a function of
