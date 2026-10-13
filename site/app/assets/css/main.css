@@ -1,6 +1,45 @@
 @import "tailwindcss";
 @import "@nuxt/ui";
 
+@theme static {
+  --font-sans: 'IBM Plex Sans', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+  --font-serif: 'Fraunces', Georgia, serif;
+
+  --color-fern-50: #eef4ef;
+  --color-fern-100: #d5e5d7;
+  --color-fern-200: #adcbb1;
+  --color-fern-300: #80ac86;
+  --color-fern-400: #538c5c;
+  --color-fern-500: #2f6b3a;
+  --color-fern-600: #275a31;
+  --color-fern-700: #204a28;
+  --color-fern-800: #193a20;
+  --color-fern-900: #122b17;
+  --color-fern-950: #0b1c0f;
+}
+
+:root {
+  --ui-bg: #f6f5ef;
+  --ui-bg-muted: #efede5;
+  --ui-bg-elevated: #fbfaf5;
+  --ui-bg-accented: #e7e4da;
+  --ui-border: #dcdcd0;
+  --ui-border-muted: #e7e4da;
+  --ui-border-accented: #c9c8ba;
+  --ui-text: #17201a;
+  --ui-text-highlighted: #17201a;
+  --ui-text-muted: #4c5a50;
+  --ui-text-toned: #2e3a31;
+  --ui-text-dimmed: #7a857c;
+}
+
+h1, h2, h3 {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  letter-spacing: -0.01em;
+}
+
 /* ── Hero glow ─────────────────────────────────────────────────────────── */
 .hero-glow {
   position: absolute;
