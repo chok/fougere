@@ -12,223 +12,192 @@ export function useAudit() {
 }
 
 function auditPrompt(origin: string): string {
-  return `# Audit: what does a week of work cost here?
+  return `# Audit: what this repo would have avoided, and what one module costs to move
 
-You are auditing THIS repository. Be honest: report the costs of
-adopting as carefully as the gains, and what would get WORSE as
-carefully as what improves. Fougere is added beside what exists,
-one module at a time. The question is what the everyday work in
-this repo costs today, and what it would cost written that way.
+This audit is hypothetical. Assume Fougere does exactly what the model
+below states — nothing more, nothing less — and judge THIS repository's
+code against it. Do not evaluate Fougere's version, maturity, docs or
+backlog: they change every week, and this audit must not.
 
-The schema is one subject among several. Most commits in a
-backend touch operations, services, wiring and calls to other
-systems, not the tables. Weigh every finding by how often that
-kind of code actually changes here.
+Fougere is added beside what exists. Adding it and writing new code in
+it from day one changes nothing that exists: that step costs the
+existing code nothing, and the report says so. Moving existing modules
+is the rest, and it happens at the team's pace, one module at a time.
+Never weigh a rewrite of the whole repository: the question is never
+"adopt or not", it is "what would a module have avoided, and what does
+moving it cost". Report what would get worse as carefully as what
+improves.
 
-## Reference model — Fougere, a TS framework
+## The model — the only source of claims about Fougere
 
-One rule: a declaration names nothing outside itself — no table,
-no protocol, no host, no address. What it does not name is either
-derived from it, or chosen outside it. In practice:
+The docs explain it at ${origin}/docs. Claim nothing beyond what
+this section states.
 
-- Shape. One class declares a business object once:
+One rule: a declaration names nothing outside itself — no table, no
+protocol, no host, no address. What it does not name is either derived
+from it, or chosen outside it.
+
+- Shape. A business object is declared once, as a class:
 
       class Post extends entity({
         id: primary(),
         title: text({ min: 1, max: 160 }),
-        status: readOnly(oneOf('draft', 'published',
-          { default: 'draft' })),
+        status: readOnly(oneOf('draft', 'published', { default: 'draft' })),
       }) {}
 
-  Validation (the same in the browser and at the API, unknown
-  keys refused), the SQL table, the form contract, the API
-  surface, GraphQL types and the TS type all come from it.
-- Operations. A handler method is an operation. Its signature is
-  its contract: what it takes, what it returns, and the errors it
-  can refuse with — found by the scan even when thrown from a
-  helper, and published to the client's types.
-- Wiring. Nothing is registered by hand. A class in a convention
-  folder is found, and constructor parameter types are its
-  dependencies. A dependency nothing provides stops the boot,
-  naming the class and its file.
-- Ports. \`class StripePayment extends Payment\` IS the
-  registration. Two implementations stop the boot; one config
-  line picks. A retry or a cache is a class that extends the port
-  and asks for it, stacked in front by config. Tests get a stub
-  derived from the port (\`stubOf(Payment)\`).
-- Boundaries. Code lives in fronds (modules). A frond cannot reach
-  another frond's rows; it calls its operations or announces a
-  fact (\`Emit<T>\`) that others subscribe to by signature. Moving
-  a frond to its own process is one config line, with identical
-  user code.
-- Computed fields. A presenter receives the whole page of rows,
-  not one row, so one query per page is the natural form.
-- Observability. Every log line says which class wrote it and
-  which operation was running. One optional package adds a span
-  per operation, its own time apart from its children, and the
-  number of SQL queries it ran. An expected refusal and a bug are
-  told apart by type, not by convention.
-- Reading. \`fougere explain\` and the identity card answer what an
-  operation takes, returns, refuses and which modules it reaches.
-
-Scope today (pre-release): storage is additive auto-DDL over
-Kysely. SQLite resolves from its name; Postgres, MySQL and SQL
-Server work by handing Fougere the Kysely dialect you built. No
-search-index projection. Auth via better-auth, or the sessions you
-already have behind an auth provider. Price the adoption costs
-against THIS scope, not an imagined one.
-
-If you can fetch the web, ground yourself in the docs first:
-
-- ${origin}/docs — the model in one page
-- ${origin}/docs/business/handlers — operations
-- ${origin}/docs/business/ports — ports and chains
-- ${origin}/docs/business/errors — what an operation refuses
-- ${origin}/docs/business/presenters — computed fields
-- ${origin}/docs/infra/gradient — the process boundary as config
-- ${origin}/docs/infra/observability — spans and query counts
-- ${origin}/docs/infra/testing — tests and stubs derived
-- ${origin}/docs/existing-app — the feature-by-feature path
-  (use it to price the adoption cost honestly)
+  Validation (the same in the browser and at the API, unknown keys
+  refused), the table, the migration from one version to the next, the
+  form contract, the API surfaces and the TS type are derived from it.
+- Operations. A handler method is an operation. Its signature is its
+  contract: what it takes, what it returns, and what it can refuse —
+  found wherever it is thrown, and published to the caller's types.
+- Wiring. Nothing is registered by hand. A class in a convention folder
+  is found; its constructor parameter types are its dependencies. A
+  missing dependency stops the boot, naming the class.
+- Ports. \`class StripePayment extends Payment\` is the registration. A
+  retry or a cache is a class that extends the port and asks for it,
+  stacked in front by config. A test stub is derived from the port.
+- Boundaries. Code lives in modules (fronds). A frond does not touch
+  another frond's rows: it calls its operations, or announces a fact
+  that others subscribe to by signature. Where a frond runs is config;
+  the code is the same in one process or several, so a frond can run in
+  its own process beside an app in another language, called over HTTP.
+- Rows. A frond reads and writes through its storage's gestures (get,
+  list, create, update, delete...). A query beyond them — a join across
+  entities, an aggregate, full-text — is written against the engine,
+  outside the derived validation.
+- Computed fields. A presenter receives the page of rows, not one row.
+- Identity. Who calls reaches an operation as a typed value, resolved
+  once per call.
+- Observability. A log line says which class wrote it and which
+  operation was running. A span per operation carries its own time and
+  its query count. An expected refusal and a bug differ by type.
 
 ## Rules for every number
 
-- Every sentence carries a unit the reader can recount: a count,
-  or a path plus a symbol. Quote the command you ran.
-- Where a section finds nothing, write "nothing". It is a result.
-- Never claim what Fougere does beyond the model above or a doc
-  page you read.
-- Never weigh a section by another section's frequency.
+- Every sentence carries a unit the reader can recount: a count, or a
+  path plus a symbol. Quote the command you ran.
+- A section that finds nothing writes "nothing". It is a result.
+- Only section 0 gives a weight.
+- A line that moves (into an entity, into config) is not a line removed.
+  Say where each one goes.
+- Audit what is written in TypeScript against the model. For any other
+  language, measure what does not need a rewrite (sections 0, 1, 3), and
+  price a module as a TS frond in its own process beside the existing
+  app — never as a rewrite of the app.
+- The repository is read-only: never write to it, never run anything
+  that writes. A rewrite lives in the report.
 
 ## 0. Where the work goes
 
-Run \`git log\` over the last 12 months of the backend and count
-the commits that touch each kind of code. Adapt the paths to this
-repo and say which you used:
+Count the commits that change a business rule (a condition, a
+computation, a state transition, a field with a meaning), against all
+commits. Start with the last 12 months; widen the window until it holds
+at least 20 such commits, and name the window. Say how you recognized
+them.
 
-- schema and migrations
-- operations: controllers, resolvers, route handlers
-- services and business logic
-- wiring: module files, DI registration, route tables, barrels
-- clients of external systems (HTTP, SDKs, queues)
-- tests
-- the client side's API calls and generated types
+Take 20 of them. For each: the lines that state the rule, and the lines
+touched around it. Report the median ratio and the median number of
+files touched per change. This weighs everything below.
 
-This table is the weight of every section below. A cost paid in
-60% of commits and one paid twice a year are not the same size.
+## 1. What would have been avoided
 
-## 1. Ports — the systems this code calls
+This is the core of the audit. Find, in the code and in the history,
+every place where one rule, one list or one contract is declared in two
+places that disagree, and every incident that came from it. For each:
 
-- List every external system the backend calls, with the file of
-  its client.
-- How many sit behind an abstraction the rest of the code depends
-  on, and how many are concrete classes used directly?
-- How does a test replace one? Count mock calls, provider
-  overrides, fake servers. If tests never replace them, say so.
-- Where do retry, cache and timeout live: inside each client, or
-  in front of it?
+- the two declarations, both quoted with path and symbol;
+- what breaks between them, as a concrete input and its wrong output —
+  read in the code, and say it was not executed;
+- the commits it cost, if the history shows them (a fix, a revert, a
+  hotfix, a rename spread over weeks), counted;
+- the mechanism of the model that makes it impossible, from the model
+  above only.
 
-## 2. Wiring — lines that only list things
+Sweep at least: validation against the database (a rule the model
+states and the table does not hold, or the reverse); the same filter or
+rule copied into several functions; an enum or a status list declared
+in several files; a contract copied into another repository or service
+(a schema file, a client, a list of error codes matched by string); a
+migration that destroyed or reset stored values; refusals a caller
+cannot tell from bugs.
 
-Count lines whose only job is to register or list what already
-exists: module files, provider and export lists, DI tokens, route
-tables, path aliases kept in two places. Count names written twice
-(declared, then exported). From section 0, how many commits a year
-touch these files?
+## 2. Business code, line by line
 
-Then: when a dependency is missing, when does this stack say so —
-at startup, or at the first call?
+Pick the five business files changed most often
+(\`git log --since=<window> --format= --name-only | sort | uniq -c | sort -rn\`).
+Classify every line:
 
-## 3. Boundaries — what reaches what
+- decision — a rule, a computation, a branch on business state;
+- ceremony — one of: wiring; shape declared again (mapping, DTOs,
+  re-validation); error translation; plumbing of an external system
+  (retry, timeout, auth headers); per-row fetching; logger setup;
+  where-it-runs (base URLs, per-service env vars, host request objects);
+  transaction and pagination boilerplate;
+- engine — a query the model leaves to the engine (see Rows).
 
-- Build the matrix of imports between top-level domains or
-  modules. Report every cycle.
-- Does anything refuse a crossing, or does any import pass?
-- Pick the module you would most plausibly move to its own
-  process. Count the files that would change.
-- Count files of business code (not config, not the HTTP layer)
-  that name where they run: base URLs, per-service env vars,
-  host-specific request objects.
+Report the three shares, and ceremony by category. If a script
+classifies, say which class is the residue: its count is a ceiling.
 
-## 4. What an operation refuses
+## 3. Candidate modules, each priced
 
-- Count throw sites of expected errors (not found, bad request,
-  unauthorized…) by kind.
-- Can a caller see them in its types, or does it learn them at
-  runtime? Pick three operations and list what each can refuse,
-  and how many lines you had to read to find out.
-- How is a bug told apart from an expected refusal: by structure,
-  or by a convention someone has to remember? Quote the doc or
-  helper if there is one.
+Name two or three modules that could become the first frond: one about
+to be written, or an existing one with many external calls and few rows
+shared with the rest. For each, price the move alone:
 
-## 5. Computed fields and reads
+- what it owns: tables, entities, endpoints or operations, external
+  systems it calls — counted;
+- what changes in the rest of the repository to call it instead: call
+  sites, imports, routes — counted. Everything else is untouched and
+  costs nothing;
+- what it would stop paying, per business change, from sections 0-2;
+- what it uses that has no place in the model (engine queries, search
+  index, durable multi-step workflows, job queues, a non-SQL store, a
+  federated schema) — counted, and how the frond would keep calling it
+  (a port, or leaving it where it is);
+- for a repository in another language: the second runtime this adds
+  (a process to host, a deployment, a language for the team), stated as
+  a cost, and the HTTP calls the existing app would make to it.
 
-- Count fields resolved per row (field resolvers, getters that
-  query, serializers that fetch).
-- Is there batching? Count hand-made per-request caches.
-- Can you tell today how many queries one operation runs?
+Rewrite one operation of the first candidate against the model,
+behaviour identical. Report lines before and after, and for every
+removed line where it went: derived (written nowhere), moved to an
+entity, moved to config.
 
-## 6. Observability
+## 4. Reading by an agent
 
-Not "is there tracing" — most stacks auto-instrument HTTP. Ask:
+For three operations of section 2: to know what each takes, returns,
+refuses and which modules it reaches, how many files and lines did you
+open? Under the model the answer is its signature: say how many of
+those lines it replaces.
 
-- Can a log line say which operation was running when it was
-  written? Count loggers created by hand.
-- Are queries counted per operation?
-- Is there a hand-kept list (component tags, domain names) that
-  copies the folder structure?
+Count the rules in this repo's instruction files (CLAUDE.md, AGENTS.md,
+.cursorrules, CONTRIBUTING, .claude/rules) that must be followed by
+hand, like "update X when you change Y".
 
-## 7. Shape — where the same field is declared again
-
-- Take two business objects: one added in the last year, one the
-  app is built around. List every file that re-declares their
-  shape: DB, validation, API input and output types, form rules,
-  client types.
-- Sweep for drift: two declarations of one field that disagree (a
-  max length, an enum, a nullable, a default the ORM chose). Quote
-  both, and say what breaks between them.
-- Files touched per new field (median over at least five commits)
-  and per rename. Their frequency comes from section 0.
-
-## 8. Reading by an agent
-
-You are an agent reading this repo, so measure yourself.
-
-- For the three operations of section 4: to know what each takes,
-  returns, refuses and which other modules it reaches, how many
-  files and lines did you open?
-- Count rules in this repo's instruction files (CLAUDE.md,
-  AGENTS.md, .cursorrules, CONTRIBUTING) that a person or an agent
-  must follow by hand, like "update X when you change Y".
-- The other side, stated plainly: this repo's stack is in every
-  model's training data, and Fougere is not. An agent writes
-  idiomatic code here without reading anything. Say what that is
-  worth here.
+State plainly: this repo's stack is in every model's training data, and
+Fougere is not. Say what that is worth here.
 
 ## Report
 
-Lead with the table from section 0. Then, for each section, its
-count and its weight from section 0, side by side.
+Lead with section 0. Then, in this order:
 
-Then, honestly:
-- what this repo ALREADY derives or gets for free — generated
-  clients, inferred types, auto-instrumentation, a framework that
-  checks wiring at startup. Those are not gains, and a report that
-  counts them is lying;
-- what would get WORSE: database features in use that Fougere's
-  scope does not cover, change-data-capture or search pipelines
-  tied to the current ORM, a second migration tool on one
-  database, where a Fougere process would be hosted, what the team
-  and its agents must learn, the pre-release status;
-- what adopting would cost HERE, in counts, named mechanisms and
-  versions — never a grade;
-- the weighing: which costs and gains recur every week, which are
-  paid once, and which side dominates for the work this repo
-  actually does. Say it in one paragraph, and say what it rests on;
-- where the FIRST frond would go: a module about to be written, or
-  an existing one with many external calls and few tables shared
-  with the rest. Name it and say why. If nothing fits, say that.
+0. Day one — adding Fougere beside this code and writing the next new
+   module in it. Name that module if the history or the open work shows
+   one, and say what it changes in the existing code: nothing.
+1. What would have been avoided — section 1, one row per finding, with
+   the commits it cost.
+2. The first frond — the chosen candidate of section 3, its price, what
+   it stops paying, and what stays outside the model.
+3. The path after it: which module would come second, and what the
+   first one makes cheaper for it.
+4. What the repository already gets for free — derived types, generated
+   clients, checked wiring, auto-instrumentation. Not gains.
+5. What would get worse, for the first frond only, counted.
 
-The last section is "What these numbers do not establish", and it
-is written seriously.`;
+The last section is "What these numbers do not establish", written
+seriously. It includes, by construction: the audit assumes the model
+holds and does not check that Fougere delivers it today; the rewrite was
+done by the auditor and favours it; findings read in the code were not
+executed; the auditor read the model before measuring section 4.`;
 }

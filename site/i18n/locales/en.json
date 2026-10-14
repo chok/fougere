@@ -65,7 +65,7 @@
     "auditCopied": "Copied",
     "tryAgent": "Ask your agent",
     "auditTitle": "Don't take our word for it.",
-    "auditText": "Paste this prompt into the agent that already knows your codebase. It counts where your commits go and what each kind of change costs, and it reports what adopting Fougere would cost just as carefully.",
+    "auditText": "Paste this prompt into the agent that already knows your codebase. It finds what your code declares twice and what that has cost you, then prices moving one module to Fougere, and what would get worse.",
     "auditCopy": "Copy the prompt"
   },
   "docs": {
