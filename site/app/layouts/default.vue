@@ -1,6 +1,8 @@
 <script setup lang="ts">
+import { post as postFacade } from '@fronds/facade';
+
 const { user, refresh } = useCurrentUser();
-const readOnly = useReadOnlyDeployment();
+const { items: posts } = await useQuery(postFacade, 'list');
 const localePath = useLocalePath();
 const route = useRoute();
 const onPaper = computed(() => route.path === localePath('/'));
@@ -22,7 +24,7 @@ async function logout() {
         </NuxtLink>
         <nav class="ml-auto flex items-center gap-4 text-sm">
           <NuxtLink :to="localePath('/docs')" class="text-muted hover:text-highlighted">{{ $t('nav.docs') }}</NuxtLink>
-          <NuxtLink v-if="!readOnly" :to="localePath('/blog')" class="text-muted hover:text-highlighted">{{ $t('nav.blog') }}</NuxtLink>
+          <NuxtLink v-if="posts.length" :to="localePath('/blog')" class="text-muted hover:text-highlighted">{{ $t('nav.blog') }}</NuxtLink>
           <a href="https://github.com/chok/fougere" target="_blank" rel="noopener" class="text-muted hover:text-highlighted">GitHub</a>
         </nav>
         <div class="flex items-center gap-2">

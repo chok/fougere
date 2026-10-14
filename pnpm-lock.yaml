@@ -2296,6 +2296,9 @@ importers:
 
   site:
     dependencies:
+      '@fougere/adapter-file':
+        specifier: workspace:*
+        version: link:../packages/adapter/file
       '@fougere/adapter-graphql':
         specifier: workspace:*
         version: link:../packages/adapter/graphql

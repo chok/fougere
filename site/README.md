@@ -23,16 +23,13 @@ NITRO_PRESET=github_pages NUXT_APP_BASE_URL=/ pnpm generate
 npx serve .output/public
 ```
 
-What survives the export: the landing page, the docs, and the **read side** of
-the blog — rendered by the Frond at build time, exactly as it would be in SSR.
+What the export keeps: the landing page, the docs, and the **read side** of the blog —
+rendered by the Frond at build time, exactly as it would be in SSR. Posts are files in
+git (`posts/post/*.json`, the `posts` source in `fougere.config.ts`): written on a local
+server, committed, and read by the build. A blog with no post answers 404 and is not written.
 
-What does not: writing and signing in, which need a server. `useReadOnlyDeployment()`
-derives that from the build (`import.meta.prerender`, put in the payload) and hides the
-blog from the bar. Nothing links to `/login`, on any deployment: it is reached by typing it.
-The SPA fallback still renders it on Pages, where its form simply has no recipient.
-
-The static blog is empty as long as `.data/` is out of git: CI starts from a fresh
-database. Publishing posts on Pages would take seeds — the reading side already works.
+What it does not keep: writing and signing in, which need a server. `useReadOnlyDeployment()`
+derives that from the build and `/login` and `/register` answer 404 there.
 
 ## Deploy
 

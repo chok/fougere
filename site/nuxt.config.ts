@@ -3,16 +3,15 @@ import { DEMO_LANGUAGES } from './modules/demo';
 const locales = [{ code: 'en', name: 'English', language: 'en-US', file: 'en.json' }];
 
 /**
- * Sections a prerendered deployment cannot serve — the blog is a live Frond
- * (reading it means a database, writing it means a server), and the auth pages
- * are facades onto that server.
- *
- * This binds the crawler alone. Under `nuxt build` they are served normally,
- * which is where the blog is the dogfooding proof.
+ * Pages a prerendered deployment cannot serve: writing a post and signing in need a
+ * server. Reading the blog does not — the Frond reads the posts at build time.
  */
-const serverOnly = ['/blog', '/login', '/register'];
+const serverOnly = ['/blog/new', '/blog/edit', '/blog/drafts', '/login', '/register'];
 
 export default defineNuxtConfig({
+  // A page's data is shared across prerendered pages through JSON, which hands a Date back
+  // as a string: the blog's dates arrived as text under `nuxt generate` alone.
+  experimental: { sharedPrerenderData: false },
   // `./modules/demo` is named rather than left to the modules/ scan: it writes into
   // content/ and must run before @nuxt/content reads it.
   modules: ['./modules/demo', '@nuxt/ui', '@nuxt/content', '@nuxtjs/i18n', '@fougere/nuxt'],
@@ -76,6 +75,15 @@ export default defineNuxtConfig({
   ],
   nitro: {
     prerender: { ignore: serverOnly },
+    hooks: {
+      // A blog with no post answers 404, and on static hosting that is a file not written.
+      'prerender:generate'(route) {
+        if (route.route === '/blog' && route.error?.statusCode === 404) {
+          route.skip = true;
+          route.error = undefined;
+        }
+      },
+    },
   },
   // Building them is what took `nuxt build` past Node's default heap: rollup holds the map
   // of every chunk alive for the whole bundle, and the server bundle is where the app

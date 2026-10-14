@@ -60,6 +60,12 @@ jobs:
       # that has never been installed on its own — and it then tries to resolve
       # @fougere/* there, where they do not live. The frozen install above
       # already pinned every dependency.
+      # The boot reads the schema and never writes it: the accounts' tables are made here,
+      # in a database that lives as long as the job. The posts are files, in git.
+      - name: migrate
+        working-directory: site
+        run: ./node_modules/.bin/fougere migrate --apply
+
       - name: generate
         working-directory: site
         # The site is served at the apex of its own domain, so the base path is
