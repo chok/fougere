@@ -16,8 +16,6 @@ const vec3 IVORY_SHADE = vec3(.74, .71, .62);
 const vec3 FERN_LIGHT = vec3(.66, .72, .42);
 const vec3 FERN = vec3(.56, .63, .32);
 const vec3 FERN_SHADE = vec3(.39, .43, .18);
-const vec3 OCHRE = vec3(.75, .53, .22);
-const vec3 SLATE = vec3(.29, .42, .55);
 const vec3 INK = vec3(.07, .11, .08);
 const vec3 LIGHT = vec3(-.5, .6, -.65);
 
@@ -108,7 +106,6 @@ void main() {
     vec3 fused = mix(tone(lit, FERN_LIGHT, FERN, FERN_SHADE), ivory, .3 * uFusion);
     vec3 marble = mix(ivory, fused, fern);
     marble = mix(marble, mix(vec3(.99, .98, .94), vec3(.92, .94, .82), fern), step(.985, dot(reflect(ray, normal), light)));
-    marble = mix(marble, mix(SLATE, OCHRE, step(0., normal.x)), step(.82, rim) * uGlobe * .9);
     marble = mix(marble, INK, step(.93, rim));
     color = vec4(mix(color.rgb, marble, coverage), max(color.a, coverage));
   }
