@@ -7,28 +7,48 @@ import { chapterAt, phasesAt } from '~/story/timeline';
 const { t } = useI18n();
 const localePath = useLocalePath();
 
-const codeSnippet = `export default class PostHandler extends Crud(Post) {
-  async publish(id: Post['id']) { … }
+const codeSnippet = `// services/Moderation.ts
+export default abstract class Moderation {
+  abstract canPublish(text: string): Promise<boolean>;
 }
 
-// answers POST /api/blog/posts/:id/publish`;
+// services/KeywordModeration.ts
+export default class KeywordModeration extends Moderation { … }
+
+// handlers/CommentHandler.ts
+export default class CommentHandler {
+  constructor(private moderation: Moderation) {}
+
+  async canPublish(text: string) {
+    return this.moderation.canPublish(text);
+  }
+}`;
 
 const schemaSnippet = `class Post extends entity({
   title: text({ min: 1, max: 200 }),
   body: text(),
   status: readOnly(oneOf('draft', 'published')),
-}) {}`;
+}) {}
 
-const derivationSnippet = `useFormFor(Post)        // the form
+// and a handler now speaks in entities
+async publish(id: Post['id']) { … }`;
+
+const derivationSnippet = `extends Crud(Post)      // the five CRUD operations
+useFormFor(Post)        // the form
 POST /api/blog/posts    // the API
 posts (title, body, …)  // the table`;
 
 const gradientSnippet = `// fougere.config.ts
-fronds: {
-  blog: 'http://127.0.0.1:4100',
-}
+fronds: { blog: 'http://127.0.0.1:4100' },
+ports: { Moderation: 'KeywordModeration' },`;
 
-$ fougere serve blog`;
+const { data: highlighted } = await useAsyncData('home-code', async () => {
+  const { highlight } = await import('~/home/code');
+  const snippets = { code: codeSnippet, schema: schemaSnippet, derivation: derivationSnippet, gradient: gradientSnippet };
+  const rendered = await Promise.all(Object.entries(snippets).map(async ([key, code]) => [key, await highlight(code)] as const));
+
+  return Object.fromEntries(rendered) as Record<string, string>;
+});
 
 interface Clip {
   src: string;
@@ -37,7 +57,7 @@ interface Clip {
 }
 
 const chapters = computed(() => [
-  { key: 'code', code: codeSnippet, doc: '/docs/business/handlers' },
+  { key: 'code', code: codeSnippet, doc: '/docs/guides/business-logic' },
   { key: 'schema', code: schemaSnippet, doc: '/docs/schema/entities' },
   { key: 'derivation', code: derivationSnippet, doc: '/docs/infra/surfaces', legend: true, clip: { src: '/home/derivation.mp4', label: t('home.derivationVideo'), caption: t('home.derivationCaption') } },
   { key: 'gradient', code: gradientSnippet, doc: '/docs/infra/gradient', clip: { src: '/home/gradient.mp4', label: t('home.gradientVideo'), caption: t('home.gradientCaption') } },
@@ -157,7 +177,7 @@ onBeforeUnmount(() => cancelAnimationFrame(frame));
             <p class="label">{{ item.label }}</p>
             <h2>{{ item.title }} <em>{{ item.accent }}</em></h2>
             <p class="text">{{ item.text }}</p>
-            <pre v-if="item.code">{{ item.code }}</pre>
+            <HomeCode v-if="item.code" class="snippet" :code="item.code" :html="highlighted?.[item.key]" />
             <div v-if="item.legend" class="legend">
               <span><i class="calls" />{{ $t('home.derivationCalls') }}</span>
               <span><i class="called" />{{ $t('home.derivationCalled') }}</span>
@@ -220,18 +240,9 @@ h1 em, h2 em {
   color: var(--green);
 }
 
-pre {
-  margin: 22px 0 0;
-  max-width: 440px;
-  overflow-x: auto;
-  white-space: pre;
-  background: var(--code);
-  color: #e1ebde;
-  border-radius: 12px;
-  padding: 16px 18px;
-  font-family: var(--font-mono);
-  font-size: 13.5px;
-  line-height: 1.7;
+.snippet {
+  margin-top: 22px;
+  max-width: 580px;
 }
 
 .story {
@@ -298,7 +309,7 @@ pre {
   left: clamp(16px, 6vw, 96px);
   top: 0;
   bottom: 0;
-  width: min(460px, calc(100% - 32px));
+  width: min(600px, calc(100% - 32px));
 }
 
 .chapter {
@@ -549,9 +560,9 @@ pre {
     width: auto;
   }
 
-  .chapter pre {
+  .snippet :deep(pre) {
     font-size: 11.5px;
-    padding: 12px 14px;
+    padding: 12px 44px 12px 14px;
   }
 
   .rail, .hint { display: none; }

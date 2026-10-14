@@ -10,7 +10,7 @@ const { prompt, copied, copy } = useAudit();
     <h2>{{ $t('home.tryTitle') }} <em>Fougere</em></h2>
     <p>{{ $t('home.tryText') }}</p>
     <div class="start">
-      <pre class="command">npm create fougere</pre>
+      <HomeCode class="command" code="npm create fougere" />
       <NuxtLink :to="localePath('/docs/getting-started')" class="doc">{{ $t('home.tryStart') }} →</NuxtLink>
     </div>
     <div class="actions">
@@ -117,8 +117,8 @@ pre {
   font-family: var(--font-mono);
 }
 
-.command {
-  padding: 16px 26px;
+.command :deep(pre) {
+  padding: 16px 56px 16px 26px;
   font-size: 16px;
 }
 
