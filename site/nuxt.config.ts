@@ -37,6 +37,7 @@ export default defineNuxtConfig({
   runtimeConfig: {
     public: {
       siteUrl: (process.env.SITE_URL ?? 'http://localhost:3000').replace(/\/$/, ''),
+      readOnly: process.argv.includes('generate'),
     },
   },
   // `lucide` and `noto` are devDependencies so the icons ship with the build instead of
