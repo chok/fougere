@@ -55,6 +55,12 @@ describe('boundary · date default (derived from shape)', () => {
     expect(asNull.success).toBe(true);
     if (asNull.success) expect(asNull.data.dueAt).toBeNull();
   });
+
+  it('a readOnly date is still read back as a Date — closed refuses a caller, it converts nothing less', () => {
+    class Post extends entity({ id: primary(), publishedAt: readOnly(optional(date())) }) {}
+    const row = Visibility.of(Post.getFields()).decode({ id: 'p1', publishedAt: '2026-05-31T10:00:00.000Z' });
+    expect(row.publishedAt).toBeInstanceOf(Date);
+  });
 });
 
 describe('boundary · non-date kinds are identity', () => {
