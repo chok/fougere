@@ -13,6 +13,9 @@ uniform float uSplit;
 const vec3 SAFFRON_LIGHT = vec3(.96, .82, .46);
 const vec3 SAFFRON = vec3(.91, .72, .29);
 const vec3 SAFFRON_SHADE = vec3(.72, .53, .17);
+const vec3 GOLD_LIGHT = vec3(.96, .90, .66);
+const vec3 GOLD = vec3(.87, .78, .50);
+const vec3 GOLD_SHADE = vec3(.67, .57, .31);
 const vec3 FERN_LIGHT = vec3(.66, .72, .42);
 const vec3 FERN = vec3(.56, .63, .32);
 const vec3 FERN_SHADE = vec3(.39, .43, .18);
@@ -103,7 +106,7 @@ void main() {
     float rim = 1. + dot(normal, ray);
 
     vec3 saffron = tone(lit, SAFFRON_LIGHT, SAFFRON, SAFFRON_SHADE);
-    vec3 fused = mix(tone(lit, FERN_LIGHT, FERN, FERN_SHADE), saffron, .5 * uFusion);
+    vec3 fused = mix(tone(lit, FERN_LIGHT, FERN, FERN_SHADE), tone(lit, GOLD_LIGHT, GOLD, GOLD_SHADE), uFusion);
     vec3 marble = mix(saffron, fused, fern);
     marble = mix(marble, mix(vec3(.99, .98, .94), vec3(.92, .94, .82), fern), step(.985, dot(reflect(ray, normal), light)));
     marble = mix(marble, INK, step(.93, rim));

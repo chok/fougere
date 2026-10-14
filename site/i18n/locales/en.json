@@ -8,7 +8,7 @@
     "signOut": "Sign out"
   },
   "footer": {
-    "builtWith": "Built with Fougere"
+    "builtWith": "Built with Fougere and Nuxt, hosted on GitHub Pages."
   },
   "home": {
     "title": "TypeScript business code first. Deployment and API later.",
@@ -32,7 +32,7 @@
     "derivationLabel": "03 — Derivation",
     "derivationTitle": "Everything else",
     "derivationAccent": "is derived.",
-    "derivationText": "The API, the validation, the form and the table are all read from that one class. Change a field and they change with it. To target something else, you write an adapter that reads the same class.",
+    "derivationText": "The API, the validation, the form and the table are all read from your schema. Change a field and they change with it.",
     "derivationCalls": "what calls you — REST, GraphQL, forms, client types",
     "derivationCalled": "what you call — tables, migrations, ports",
     "derivationVideo": "Watch a field go everywhere",
@@ -59,8 +59,8 @@
     "close": "Close",
     "codeDoc": "Handle your business logic",
     "schemaDoc": "Store your data",
-    "derivationDoc": "Forms and APIs from it",
-    "gradientDoc": "Move a frond to its own process",
+    "derivationDoc": "Get forms and an API from your schema",
+    "gradientDoc": "Run the blog in its own process",
     "sameDoc": "Why it works this way",
     "auditCopied": "Copied",
     "tryAgent": "Ask your agent",

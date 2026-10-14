@@ -37,10 +37,12 @@ export default class PostHandler {
   async publish(id: Post['id']) { … }
 }`;
 
-const derivationSnippet = `extends Crud(Post)      // the five CRUD operations
-POST /api/blog/posts    // the API, validated
-useFormFor(Post)        // the form, same rules
-posts (title, body, …)  // the table`;
+const derivationSnippet = `class PostHandler extends Crud(Post)  // five CRUD operations
+POST /api/blog/posts                  // the API, validated
+useFormFor(Post)                      // the form, same rules
+posts (title, body, …)                // the table
+
+// GraphQL, or any adapter that reads an entity's schema`;
 
 const gradientSnippet = `// fougere.config.ts
 fronds: { blog: 'http://127.0.0.1:4100' },
@@ -202,7 +204,7 @@ onBeforeUnmount(() => cancelAnimationFrame(frame));
             </div>
             <div class="more">
               <button v-if="item.clip" type="button" class="play" @click="playing = item.clip">
-                <span class="play-icon"><svg width="10" height="12" viewBox="0 0 10 12" aria-hidden="true"><path d="M0 0l10 6-10 6z" /></svg></span>
+                <UIcon name="i-lucide-circle-play" class="play-icon" />
                 {{ item.clip.label }}
               </button>
               <NuxtLink :to="localePath(item.doc)" class="doc">{{ item.docLabel }} →</NuxtLink>
@@ -409,39 +411,36 @@ h2 em.code { display: block; }
   gap: 12px 20px;
 }
 
-.doc {
-  font-size: 15px;
-  color: var(--green);
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
-
-.play {
+.play, .doc {
   min-height: 44px;
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  padding: 10px 18px 10px 12px;
+  padding: 10px 20px;
   border-radius: 999px;
   border: 1.5px solid var(--ink);
-  background: color-mix(in oklab, var(--paper) 80%, transparent);
-  color: var(--ink);
   font: inherit;
   font-weight: 500;
+  text-decoration: none;
   cursor: pointer;
 }
 
-.play-icon {
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
+.play {
+  padding-left: 16px;
   background: var(--ink);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  color: var(--paper);
 }
 
-.play-icon path { fill: var(--paper); }
+.doc {
+  background: color-mix(in oklab, var(--paper) 80%, transparent);
+  color: var(--ink);
+}
+
+.play-icon {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+}
 
 .rail {
   position: absolute;
