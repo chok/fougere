@@ -67,7 +67,7 @@ const chapters = computed(() => [
   { key: 'code', code: codeSnippet, doc: '/docs/guides/business-logic' },
   { key: 'schema', code: schemaSnippet, doc: '/docs/guides/data' },
   { key: 'derivation', code: derivationSnippet, doc: '/docs/guides/data#forms', legend: true, clip: { src: '/home/derivation.mp4', wide: '/home/derivation-wide.mp4', label: t('home.derivationVideo'), caption: t('home.derivationCaption') } },
-  { key: 'gradient', code: gradientSnippet, doc: '/docs/guides/topology#moving-a-frond', clip: { src: '/home/gradient.mp4', wide: '/home/gradient-wide.mp4', label: t('home.gradientVideo'), caption: t('home.gradientCaption') } },
+  { key: 'gradient', code: gradientSnippet, doc: '/docs/guides/config', clip: { src: '/home/gradient.mp4', wide: '/home/gradient-wide.mp4', label: t('home.gradientVideo'), caption: t('home.gradientCaption') } },
   { key: 'same', doc: '/docs/concepts/philosophy' },
 ].map((chapter) => ({
   ...chapter,
@@ -411,28 +411,29 @@ h2 em.code { display: block; }
   gap: 12px 20px;
 }
 
-.play, .doc {
+.play {
   min-height: 44px;
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  padding: 10px 20px;
+  padding: 10px 20px 10px 16px;
   border-radius: 999px;
   border: 1.5px solid var(--ink);
+  background: var(--ink);
+  color: var(--paper);
   font: inherit;
   font-weight: 500;
-  text-decoration: none;
   cursor: pointer;
 }
 
-.play {
-  padding-left: 16px;
-  background: var(--ink);
-  color: var(--paper);
+.doc {
+  font-size: 15px;
+  color: var(--muted);
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
-.doc {
-  background: color-mix(in oklab, var(--paper) 80%, transparent);
+.doc:hover {
   color: var(--ink);
 }
 
