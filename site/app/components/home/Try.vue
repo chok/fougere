@@ -32,7 +32,7 @@ const { prompt, copied, copy } = useAudit();
 <style scoped>
 .try {
   scroll-margin-top: 3.5rem;
-  padding: 120px clamp(16px, 6vw, 96px);
+  padding: 120px 1.5rem;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -60,7 +60,7 @@ p {
 }
 
 .audit {
-  padding: 380px clamp(16px, 6vw, 96px) 120px;
+  padding: 380px max(1.5rem, calc((100% - 72rem) / 2 + 1.5rem)) 120px;
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
   gap: 48px;

@@ -241,6 +241,7 @@ onBeforeUnmount(() => cancelAnimationFrame(frame));
   --slate: #4a6b8c;
   --code: #10180f;
   --header: 3.5rem;
+  --gutter: max(1.5rem, calc((100% - 72rem) / 2 + 1.5rem));
   background: var(--paper);
   color: var(--ink);
   font-size: 17px;
@@ -285,7 +286,7 @@ h1 em, h2 em {
 .hero {
   position: absolute;
   left: 46%;
-  right: clamp(16px, 6vw, 96px);
+  right: var(--gutter);
   top: 50%;
   transform: translateY(-50%);
   transition: opacity 0.45s ease;
@@ -322,7 +323,7 @@ h1 em, h2 em {
 
 .chapters {
   position: absolute;
-  left: clamp(16px, 6vw, 96px);
+  left: var(--gutter);
   top: 0;
   bottom: 0;
   width: min(600px, calc(100% - 32px));
@@ -434,7 +435,7 @@ h1 em, h2 em {
 
 .rail {
   position: absolute;
-  right: clamp(16px, 4vw, 56px);
+  right: var(--gutter);
   top: 50%;
   transform: translateY(-50%);
   margin: 0;
@@ -476,7 +477,7 @@ h1 em, h2 em {
 
 .shortcuts {
   position: absolute;
-  right: clamp(16px, 4vw, 56px);
+  right: var(--gutter);
   bottom: 24px;
   display: flex;
   flex-wrap: wrap;

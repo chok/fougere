@@ -15,7 +15,7 @@ async function logout() {
 <template>
   <div class="min-h-screen flex flex-col">
     <header class="sticky top-0 z-40 paper" :class="{ 'border-b border-default': !onPaper }">
-      <div class="h-14 flex items-center gap-6" :class="onPaper ? 'paper-row' : 'max-w-6xl mx-auto px-6'">
+      <div class="max-w-6xl mx-auto px-6 h-14 flex items-center gap-6">
         <NuxtLink :to="localePath('/')" class="flex items-center gap-2 font-bold text-highlighted">
           <UIcon name="i-noto-herb" class="size-5" />
           Fougere
@@ -31,7 +31,6 @@ async function logout() {
             <UButton :to="localePath('/blog/new')" variant="soft" size="sm" icon="i-lucide-plus" :label="$t('nav.write')" />
             <UButton variant="ghost" size="sm" icon="i-lucide-log-out" :aria-label="$t('nav.signOut')" @click="logout" />
           </template>
-          <UButton v-else-if="!readOnly" :to="localePath('/login')" variant="ghost" size="sm" :label="$t('nav.signIn')" />
         </div>
       </div>
     </header>
@@ -54,9 +53,6 @@ async function logout() {
   background: var(--ui-bg);
 }
 
-.paper-row {
-  padding: 0 clamp(16px, 6vw, 96px);
-}
 
 .paper :is(a, button) {
   color: var(--ui-text);
