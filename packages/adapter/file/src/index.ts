@@ -2,7 +2,7 @@
 import { mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { lowerFirst } from '@fougere/schema';
+import { lowerFirst, Visibility, type SchemaView } from '@fougere/schema';
 import {
   Sources, storageOver,
   type Store, type Values, type Source, type SourceConfig, type SourceView,
@@ -17,12 +17,13 @@ function fileOf(dir: string, key: string): string {
   return join(dir, `${encodeURIComponent(key)}.json`);
 }
 
-/** One entity, one file each, under `<root>/<entity>/`. */
-function dirStore(root: string, name: string): Store {
+/** One entity, one file each, under `<root>/<entity>/`. JSON holds a date as text, so a read decodes it back. */
+function dirStore(root: string, entity: SchemaView, name: string): Store {
   const dir = join(root, name);
+  const visibility = Visibility.of(entity.getFields());
   const read = async (file: string): Promise<Values | undefined> => {
     try {
-      return JSON.parse(await readFile(file, 'utf8')) as Values;
+      return visibility.decode(JSON.parse(await readFile(file, 'utf8')) as Values);
     } catch (error) {
       if ((error as { code?: string }).code === 'ENOENT') return undefined;
       throw error;
@@ -68,7 +69,7 @@ export interface FileSourceOptions {
 
 export function createFileSource(opts: FileSourceOptions): Source {
   return {
-    storageFactory: storageOver((_entity, name) => dirStore(opts.path, name)),
+    storageFactory: storageOver((entity, name) => dirStore(opts.path, entity, name)),
     name: opts.path,
     // A directory IS the shape, so bringing it up to date is making it exist. `elsewhere`
     // is not read: nothing here emits a constraint, so a cross-source `ref()` costs nothing.
