@@ -23,7 +23,7 @@ interface Stroke {
 }
 
 const GRAPHITE = '23, 32, 26';
-const THREADS = ['191, 135, 56', '74, 107, 140'];
+const THREADS = ['192, 96, 58', '74, 107, 140'];
 const TILT = 0.32;
 const MERIDIANS = 6;
 const PARALLELS = [-0.55, 0, 0.55];

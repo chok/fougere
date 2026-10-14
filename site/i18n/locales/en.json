@@ -8,7 +8,7 @@
     "signOut": "Sign out"
   },
   "footer": {
-    "builtWith": "Built with Fougere — this site runs on the framework it documents."
+    "builtWith": "Built with Fougere"
   },
   "home": {
     "title": "TypeScript business code first. Deployment and API later.",
@@ -25,13 +25,14 @@
     "codeAccent": "business code.",
     "codeText": "The green marble is your business code: plain classes that do the work and ask for what they need. No route, no setup, no server required.",
     "schemaLabel": "02 — The schema",
-    "schemaTitle": "Your schema",
-    "schemaAccent": "joins it.",
-    "schemaText": "The white marble is your schema: you describe a post once, and your code uses it everywhere.",
+    "schemaTitle": "Your",
+    "schemaAccent": "schema",
+    "schemaAfter": "joins it.",
+    "schemaText": "The yellow marble is your schema: you describe a post once, and your code uses it everywhere.",
     "derivationLabel": "03 — Derivation",
     "derivationTitle": "Everything else",
     "derivationAccent": "is derived.",
-    "derivationText": "The globe is what comes out of that one class, on both sides. Nothing to keep in sync.",
+    "derivationText": "The API, the validation, the form and the table are all read from that one class. Change a field and they change with it. To target something else, you write an adapter that reads the same class.",
     "derivationCalls": "what calls you — REST, GraphQL, forms, client types",
     "derivationCalled": "what you call — tables, migrations, ports",
     "derivationVideo": "Watch a field go everywhere",
@@ -73,7 +74,6 @@
   "blog": {
     "title": "Blog",
     "subtitle": "Notes from building Fougere — written and published through the Frond you are reading about.",
-    "empty": "Nothing published yet.",
     "by": "by",
     "draft": "draft",
     "published": "published",

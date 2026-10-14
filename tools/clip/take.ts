@@ -25,9 +25,10 @@ export async function until(ready: () => boolean | Promise<boolean>, what: strin
 /** The width of a README's column, so the clip is shown at its own size. */
 const width = 800;
 
-/** Two cameras on one clock: the terminal above, the browser below. */
+/** Two cameras on one clock: the terminal above the browser, or beside it when `wide`. */
 export async function take() {
-  const out = process.argv[2]!;
+  const [out, layout] = process.argv.slice(2);
+  const wide = layout === 'wide';
   const browser = await chromium.launch();
 
   /**
@@ -47,7 +48,7 @@ export async function take() {
 
   const terminal = await film('terminal', 720);
   await terminal.page.goto('http://localhost:7681');
-  const { page, opened } = await film('page', 440, 0.65);
+  const { page, opened } = wide ? await film('page', 720, 0.85) : await film('page', 440, 0.65);
   await page.goto(new URL('browser.html', import.meta.url).href);
   await pause(1500);
   const app: FrameLocator = page.frameLocator('iframe');

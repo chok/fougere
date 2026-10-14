@@ -4,7 +4,7 @@ import Globe from '~/story/globe';
 import { fernFrame } from '~/story/fern';
 import { ANCHORS, chapterAt, phasesAt, progressOf } from '~/story/timeline';
 
-const { t } = useI18n();
+const { t, te } = useI18n();
 const localePath = useLocalePath();
 
 const codeSnippet = `// fronds/blog/services/Moderation.ts
@@ -38,8 +38,8 @@ export default class PostHandler {
 }`;
 
 const derivationSnippet = `extends Crud(Post)      // the five CRUD operations
-useFormFor(Post)        // the form
-POST /api/blog/posts    // the API
+POST /api/blog/posts    // the API, validated
+useFormFor(Post)        // the form, same rules
 posts (title, body, …)  // the table`;
 
 const gradientSnippet = `// fougere.config.ts
@@ -56,6 +56,7 @@ const { data: highlighted } = await useAsyncData('home-code', async () => {
 
 interface Clip {
   src: string;
+  wide: string;
   label: string;
   caption: string;
 }
@@ -63,8 +64,8 @@ interface Clip {
 const chapters = computed(() => [
   { key: 'code', code: codeSnippet, doc: '/docs/guides/business-logic' },
   { key: 'schema', code: schemaSnippet, doc: '/docs/guides/data' },
-  { key: 'derivation', code: derivationSnippet, doc: '/docs/guides/data#forms', legend: true, clip: { src: '/home/derivation.mp4', label: t('home.derivationVideo'), caption: t('home.derivationCaption') } },
-  { key: 'gradient', code: gradientSnippet, doc: '/docs/guides/topology#moving-a-frond', clip: { src: '/home/gradient.mp4', label: t('home.gradientVideo'), caption: t('home.gradientCaption') } },
+  { key: 'derivation', code: derivationSnippet, doc: '/docs/guides/data#forms', legend: true, clip: { src: '/home/derivation.mp4', wide: '/home/derivation-wide.mp4', label: t('home.derivationVideo'), caption: t('home.derivationCaption') } },
+  { key: 'gradient', code: gradientSnippet, doc: '/docs/guides/topology#moving-a-frond', clip: { src: '/home/gradient.mp4', wide: '/home/gradient-wide.mp4', label: t('home.gradientVideo'), caption: t('home.gradientCaption') } },
   { key: 'same', doc: '/docs/concepts/philosophy' },
 ].map((chapter) => ({
   ...chapter,
@@ -72,6 +73,7 @@ const chapters = computed(() => [
   label: t(`home.${chapter.key}Label`),
   title: t(`home.${chapter.key}Title`),
   accent: t(`home.${chapter.key}Accent`),
+  after: te(`home.${chapter.key}After`) ? t(`home.${chapter.key}After`) : '',
   text: t(`home.${chapter.key}Text`),
 })));
 
@@ -191,7 +193,7 @@ onBeforeUnmount(() => cancelAnimationFrame(frame));
         <div class="chapters">
           <article v-for="(item, index) in chapters" :key="item.key" class="chapter" :class="{ on: chapter === index + 1 }">
             <p class="label">{{ item.label }}</p>
-            <h2>{{ item.title }} <em>{{ item.accent }}</em></h2>
+            <h2>{{ item.title }} <em :class="item.key">{{ item.accent }}</em>{{ item.after && ` ${item.after}` }}</h2>
             <p class="text">{{ item.text }}</p>
             <HomeCode v-if="item.code" class="snippet" :code="item.code" :html="highlighted?.[item.key]" />
             <div v-if="item.legend" class="legend">
@@ -212,7 +214,7 @@ onBeforeUnmount(() => cancelAnimationFrame(frame));
           <li v-for="(name, index) in rail" :key="name" :class="{ on: Math.max(chapter, 1) === index + 1 }">{{ name }}<i /></li>
         </ol>
 
-        <div class="shortcuts" :class="{ off: chapter >= 5 }">
+        <div class="shortcuts" :class="{ off: chapter >= 5, started: chapter >= 1 }">
           <button type="button" @click="jump('audit')">{{ $t('home.tryAgent') }}</button>
           <button type="button" @click="jump('try')">{{ $t('home.skip') }}</button>
         </div>
@@ -223,7 +225,10 @@ onBeforeUnmount(() => cancelAnimationFrame(frame));
 
     <div v-if="playing" class="clip" @click="playing = undefined">
       <figure @click.stop>
-        <video :src="playing.src" autoplay controls playsinline />
+        <video autoplay controls playsinline>
+          <source :src="playing.wide" media="(min-aspect-ratio: 4/3)" type="video/mp4">
+          <source :src="playing.src" type="video/mp4">
+        </video>
         <figcaption>{{ playing.caption }}</figcaption>
         <button type="button" @click="playing = undefined">{{ $t('home.close') }}</button>
       </figure>
@@ -237,7 +242,8 @@ onBeforeUnmount(() => cancelAnimationFrame(frame));
   --ink: var(--ui-text);
   --muted: var(--ui-text-muted);
   --green: var(--ui-primary);
-  --ochre: #bf8738;
+  --terracotta: #c0603a;
+  --saffron: #a0701c;
   --slate: #4a6b8c;
   --code: #10180f;
   --header: 3.5rem;
@@ -256,6 +262,10 @@ h1 em, h2 em {
   font-style: italic;
   color: var(--green);
 }
+
+h2 em.schema { color: var(--saffron); }
+
+h2 em.code { display: block; }
 
 .snippet {
   margin-top: 22px;
@@ -362,7 +372,7 @@ h1 em, h2 em {
 
 .text {
   margin: 18px 0 0;
-  max-width: 420px;
+  max-width: 580px;
   font-size: 18px;
   color: var(--muted);
 }
@@ -388,7 +398,7 @@ h1 em, h2 em {
   border-radius: 2px;
 }
 
-.legend .calls { background: var(--ochre); }
+.legend .calls { background: var(--terracotta); }
 .legend .called { background: var(--slate); }
 
 .more {
@@ -533,14 +543,14 @@ h1 em, h2 em {
 
 .clip figure {
   margin: 0;
-  max-width: min(92vw, 520px);
+  max-width: 92vw;
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
 
 .clip video {
-  width: 100%;
+  max-width: 100%;
   max-height: 80vh;
   border-radius: 12px;
   background: #000;
@@ -560,6 +570,17 @@ h1 em, h2 em {
   cursor: pointer;
 }
 
+@media (max-width: 760px) and (max-height: 700px) {
+  .shortcuts.started {
+    opacity: 0;
+    pointer-events: none;
+  }
+}
+
+@media (max-width: 760px) and (max-height: 600px) {
+  .snippet, .legend { display: none; }
+}
+
 @media (max-width: 760px) {
   .hero {
     left: 16px;
@@ -575,6 +596,21 @@ h1 em, h2 em {
     left: 16px;
     right: 16px;
     width: auto;
+  }
+
+  .chapter {
+    top: auto;
+    bottom: 20px;
+    transform: translateY(24px);
+  }
+
+  .chapter.on { transform: none; }
+
+  .chapter h2 { font-size: 28px; }
+
+  .text {
+    margin-top: 12px;
+    font-size: 16px;
   }
 
   .snippet :deep(pre) {
