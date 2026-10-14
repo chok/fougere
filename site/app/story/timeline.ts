@@ -6,6 +6,15 @@ export function band(from: number, to: number, progress: number): number {
 
 const CHAPTERS = [0.08, 0.2, 0.41, 0.66, 0.92];
 
+export const ANCHORS = ['code', 'schema', 'derivation', 'gradient', 'same-code'];
+
+export function progressOf(anchor: string): number | undefined {
+  const index = ANCHORS.indexOf(anchor);
+  if (index < 0) return undefined;
+
+  return (CHAPTERS[index]! + (CHAPTERS[index + 1] ?? 1)) / 2;
+}
+
 export function chapterAt(progress: number): number {
   if (progress < 0.04) return 0;
   if (progress < CHAPTERS[0]!) return -1;

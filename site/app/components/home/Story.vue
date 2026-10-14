@@ -2,20 +2,20 @@
 import Marble from '~/story/marble';
 import Globe from '~/story/globe';
 import { fernFrame } from '~/story/fern';
-import { chapterAt, phasesAt } from '~/story/timeline';
+import { ANCHORS, chapterAt, phasesAt, progressOf } from '~/story/timeline';
 
 const { t } = useI18n();
 const localePath = useLocalePath();
 
-const codeSnippet = `// services/Moderation.ts
+const codeSnippet = `// fronds/blog/services/Moderation.ts
 export default abstract class Moderation {
   abstract canPublish(text: string): Promise<boolean>;
 }
 
-// services/KeywordModeration.ts
+// fronds/blog/services/KeywordModeration.ts
 export default class KeywordModeration extends Moderation { … }
 
-// handlers/CommentHandler.ts
+// fronds/blog/handlers/CommentHandler.ts
 export default class CommentHandler {
   constructor(private moderation: Moderation) {}
 
@@ -24,15 +24,18 @@ export default class CommentHandler {
   }
 }`;
 
-const schemaSnippet = `class Post extends entity({
+const schemaSnippet = `// fronds/blog/entities/Post.ts
+export default class Post extends entity({
   id: primary(),
   title: text({ min: 1, max: 200 }),
   body: text(),
   status: readOnly(oneOf('draft', 'published')),
 }) {}
 
-// and a handler now speaks in entities
-async publish(id: Post['id']) { … }`;
+// fronds/blog/handlers/PostHandler.ts
+export default class PostHandler {
+  async publish(id: Post['id']) { … }
+}`;
 
 const derivationSnippet = `extends Crud(Post)      // the five CRUD operations
 useFormFor(Post)        // the form
@@ -59,9 +62,9 @@ interface Clip {
 
 const chapters = computed(() => [
   { key: 'code', code: codeSnippet, doc: '/docs/guides/business-logic' },
-  { key: 'schema', code: schemaSnippet, doc: '/docs/schema/entities' },
-  { key: 'derivation', code: derivationSnippet, doc: '/docs/infra/surfaces', legend: true, clip: { src: '/home/derivation.mp4', label: t('home.derivationVideo'), caption: t('home.derivationCaption') } },
-  { key: 'gradient', code: gradientSnippet, doc: '/docs/infra/gradient', clip: { src: '/home/gradient.mp4', label: t('home.gradientVideo'), caption: t('home.gradientCaption') } },
+  { key: 'schema', code: schemaSnippet, doc: '/docs/guides/data' },
+  { key: 'derivation', code: derivationSnippet, doc: '/docs/guides/data#forms', legend: true, clip: { src: '/home/derivation.mp4', label: t('home.derivationVideo'), caption: t('home.derivationCaption') } },
+  { key: 'gradient', code: gradientSnippet, doc: '/docs/guides/topology#moving-a-frond', clip: { src: '/home/gradient.mp4', label: t('home.gradientVideo'), caption: t('home.gradientCaption') } },
   { key: 'same', doc: '/docs/concepts/philosophy' },
 ].map((chapter) => ({
   ...chapter,
@@ -98,7 +101,13 @@ onMounted(() => {
   const globe = new Globe(backCanvas.value!, frontCanvas.value!);
   const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const started = performance.now();
-  let shown = 0;
+  const range = () => story.value!.offsetHeight - stage.value!.clientHeight;
+  const sticksAt = () => parseFloat(getComputedStyle(stage.value!).top);
+  const linked = progressOf(location.hash.slice(1));
+  if (linked !== undefined) {
+    window.scrollTo({ top: story.value!.getBoundingClientRect().top + window.scrollY - sticksAt() + range() * linked, behavior: 'instant' });
+  }
+  let shown = linked ?? 0;
   let previous = started;
 
   const tick = (now: number) => {
@@ -111,7 +120,13 @@ onMounted(() => {
     previous = now;
     const phase = phasesAt(shown);
     const reached = chapterAt(shown);
-    if (reached !== chapter.value) chapter.value = reached;
+    if (reached !== chapter.value) {
+      chapter.value = reached;
+      if (bounds.bottom > height + sticksAt()) {
+        const anchor = reached >= 1 ? `#${ANCHORS[reached - 1]}` : '';
+        history.replaceState(history.state, '', `${location.pathname}${location.search}${anchor}`);
+      }
+    }
 
     const narrow = width < 760;
     const ratio = Math.min(window.devicePixelRatio || 1, narrow ? 1.5 : 2);
