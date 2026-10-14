@@ -27,7 +27,7 @@
     "schemaLabel": "02 — The schema",
     "schemaTitle": "Your schema",
     "schemaAccent": "joins it.",
-    "schemaText": "The white marble is the schema. It states the shape once, and from here your operations speak in entities.",
+    "schemaText": "The white marble is your schema: you describe a post once, and your code uses it everywhere.",
     "derivationLabel": "03 — Derivation",
     "derivationTitle": "Everything else",
     "derivationAccent": "is derived.",

@@ -25,6 +25,7 @@ export default class CommentHandler {
 }`;
 
 const schemaSnippet = `class Post extends entity({
+  id: primary(),
   title: text({ min: 1, max: 200 }),
   body: text(),
   status: readOnly(oneOf('draft', 'published')),

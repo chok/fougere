@@ -20,12 +20,12 @@ async function logout() {
           <UIcon name="i-noto-herb" class="size-5" />
           Fougere
         </NuxtLink>
-        <nav class="flex items-center gap-4 text-sm" :class="{ 'ml-auto': onPaper }">
+        <nav class="ml-auto flex items-center gap-4 text-sm">
           <NuxtLink :to="localePath('/docs')" class="text-muted hover:text-highlighted">{{ $t('nav.docs') }}</NuxtLink>
           <NuxtLink v-if="!readOnly" :to="localePath('/blog')" class="text-muted hover:text-highlighted">{{ $t('nav.blog') }}</NuxtLink>
           <a href="https://github.com/chok/fougere" target="_blank" rel="noopener" class="text-muted hover:text-highlighted">GitHub</a>
         </nav>
-        <div class="flex items-center gap-2" :class="{ 'ml-auto': !onPaper }">
+        <div class="flex items-center gap-2">
           <template v-if="user">
             <UButton :to="localePath('/blog/drafts')" variant="ghost" size="sm" icon="i-lucide-notebook-pen" :label="$t('nav.drafts')" />
             <UButton :to="localePath('/blog/new')" variant="soft" size="sm" icon="i-lucide-plus" :label="$t('nav.write')" />
