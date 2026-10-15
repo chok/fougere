@@ -19,10 +19,12 @@ const localePath = useLocalePath();
 <style scoped>
 .try {
   scroll-margin-top: 3.5rem;
+  min-height: calc(100svh - 3.5rem);
   padding: 120px 1.5rem;
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   border-top: 1px solid var(--ui-border);
   text-align: center;
   gap: 26px;
