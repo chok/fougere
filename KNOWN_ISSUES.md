@@ -42,9 +42,10 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
   Measured 2026-09-17. While a repository is one process nothing notices: what is local to a
   neighbour is already paid in its latency, and the caller measures that. The day a neighbour
   splits, every caller under-counts in silence and `base + hops * perHop` keeps naming the
-  figure that was true before it. Depth is a LOCAL fact and it composes — a process answers for
-  what it knows and the caller adds — which is the shape `holds` and `release` already have,
-  `visited` trail included, since two fronds naming each other need one.
+  figure that was true before it. Left as is on purpose, 2026-10-15: composing depth card by card
+  needs the worst op of each neighbour (a dep names a frond, not an op), a figure that exists only
+  once every neighbour answered, a `visited` trail, and a guess between serial and parallel calls —
+  all of which a trace already MEASURES. When the threshold proves wrong, it is set from traces.
 - **A fact received with a field its reader does not declare is refused** — `deliver`
   (`boot/Emissions.ts`) hands it to the local dispatch, whose validator refuses unknown keys
   (`InputValidator.unknownIn`): strict like an input, where a fact read off a wire would rather
