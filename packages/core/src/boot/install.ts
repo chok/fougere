@@ -434,6 +434,7 @@ function buildFacadeInto(
     frond: frond.name,
     handlers: frond.handlers,
     operations: operationModel.forHandler(handler),
+    entities: (name) => assembly.entityByName.get(lowerFirst(name)),
     collectors: collectorTypeNames,
     presenter: presenterMap.get(handler.address),
     presenterScope: scope,

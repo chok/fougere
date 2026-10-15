@@ -35,9 +35,7 @@ export class HandlerFacade {
   private instance: any;
   private readonly implementationKeys = new Map<string, string>();
   private readonly implementationInstances = new Map<string, any>();
-  private readonly arguments = new ArgumentResolver(
-    (typeName) => this.collectorResolver(typeName),
-  );
+  private readonly arguments: ArgumentResolver;
   /** A computed field's parameters and the collectors in scope are both boot-time facts. */
   private readonly presenterPlans: Map<string, BindingPlan>;
 
@@ -52,6 +50,7 @@ export class HandlerFacade {
     private readonly facade: Facade,
   ) {
     this.refuseCrudWithoutRepository(handler);
+    this.arguments = new ArgumentResolver((typeName) => this.collectorResolver(typeName), facade.entities);
 
     this.presenterPlans = facade.presenter
       ? presenterPlans(facade.presenter, facade.collectors)

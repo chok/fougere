@@ -5,6 +5,7 @@ import type { HandlerEntry } from '../descriptor/HandlerEntry.js';
 import type { PresenterEntry } from '../descriptor/PresenterEntry.js';
 import type { StateShape } from '../wire/StateShape.js';
 import type { OwnLogger } from '../builtin/OwnLoggers.js';
+import type { EntityLookup } from './EntityLookup.js';
 
 /** What boot resolved around one handler, beyond the handler and the scope it resolves in. */
 export interface Facade {
@@ -16,6 +17,8 @@ export interface Facade {
   handlers: readonly HandlerEntry[];
   /** The canonical operation table resolved before boot performs any side effect. */
   operations: EffectiveOperationsMap;
+  /** Where a parameter typed `Post['title']` finds the rules of `title`. */
+  entities: EntityLookup;
   /** Entity names this frond has a collector for. */
   collectors: Set<string>;
   /** The presenter over this handler's entity, when the frond declares one. */

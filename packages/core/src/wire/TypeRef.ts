@@ -16,6 +16,8 @@ export interface TypeRef {
   undefined?: boolean;
   /** Whether this is a Promise wrapper (unwrapped in output). */
   promise?: boolean;
-  /** `Post['id']` — the entity whose primary key this value is, and the field holding it. */
-  identifies?: { entity: string; field: string };
+  /** `Post['title']` — the field this type is read from, whose rules the value obeys. */
+  field?: { entity: string; name: string };
+  /** The entity whose row this value designates — set by the scan when `field` is its primary. */
+  identifies?: string;
 }

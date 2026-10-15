@@ -381,7 +381,7 @@ interface Reading {
  * the façade did.
  */
 function contractOf(parsed: Signature, read: Reading): OperationContract {
-  const method = { ...parsed, params: parsed.params.map((param) => identifying(param, parsed, read)) };
+  const method = { ...parsed, params: parsed.params.map((param) => identifying(param, read)) };
   const meta: OperationContract = {
     signature: method,
     ...(method.description && { description: method.description }),
@@ -403,27 +403,20 @@ function contractOf(parsed: Signature, read: Reading): OperationContract {
 }
 
 /**
- * `id: Post['id']` designates a row only when `id` IS Post's primary — `Post['title']` is a
- * string borrowed from the entity, and stays an ordinary value.
+ * `id: Post['id']` designates a row when `id` IS Post's primary. `title: Post['title']` borrows
+ * the field's rules and designates nothing. A type read from something that is not an entity is
+ * an ordinary type.
  */
-function identifying(param: Param, method: Signature, read: Reading): Param {
-  const { identifies, ...type } = param.type;
-  if (!identifies) return param;
+function identifying(param: Param, read: Reading): Param {
+  const { field, ...type } = param.type;
+  if (!field) return param;
 
-  const entity = read.moduleExports[identifies.entity] as SchemaView | undefined;
-  const primary = typeof entity?.getFields === 'function' ? FieldSet.of(entity.getFields()).primary : undefined;
-  if (primary === identifies.field) return param;
+  const entity = read.moduleExports[field.entity] as SchemaView | undefined;
+  if (typeof entity?.getFields !== 'function') return { ...param, type };
 
-  record({
-    severity: 'warning',
-    code: 'parameter-identifies-non-primary',
-    filePath: read.filePath,
-    subject: `${read.handlerName}.${method.name}`,
-    message: `'${param.name}: ${param.type.raw}' does not designate a row: `
-      + (primary ? `${identifies.entity}'s primary is '${primary}'.` : `'${identifies.entity}' is not an entity this scan holds.`),
-  });
+  const primary = FieldSet.of(entity.getFields()).primary;
 
-  return { ...param, type };
+  return primary === field.name ? { ...param, type: { ...param.type, identifies: field.entity } } : param;
 }
 
 /** Parse ALL method signatures for unified binding. */

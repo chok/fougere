@@ -29,9 +29,9 @@ const ANNOUNCED = new Set(['Fact', 'Pipe']);
 /** Parse a TypeScript type node into a TypeRef. */
 function parseTypeNode(node: ts.TypeNode, source: ts.SourceFile, checker?: ts.TypeChecker): TypeRef {
   const parsed = readTypeNode(node, source, checker);
-  const identifies = identified(node);
+  const field = fieldOf(node);
 
-  return identifies ? { ...parsed, identifies } : parsed;
+  return field ? { ...parsed, field } : parsed;
 }
 
 function readTypeNode(node: ts.TypeNode, source: ts.SourceFile, checker?: ts.TypeChecker): TypeRef {
@@ -52,17 +52,17 @@ function readTypeNode(node: ts.TypeNode, source: ts.SourceFile, checker?: ts.Typ
 }
 
 /**
- * `Post['id']` names where the type comes from, which the checker forgets once it answers
- * `string`. Read from the syntax, then held to the entity's primary by the scan.
+ * `Post['title']` names where the type comes from, which the checker forgets once it answers
+ * `string`. Read from the syntax; the scan then says whether it designates a row.
  */
-function identified(node: ts.TypeNode): TypeRef['identifies'] {
+function fieldOf(node: ts.TypeNode): TypeRef['field'] {
   const ts = getTS();
   if (!ts.isIndexedAccessTypeNode(node)) return undefined;
   const { objectType, indexType } = node;
   if (!ts.isTypeReferenceNode(objectType) || !ts.isIdentifier(objectType.typeName)) return undefined;
   if (!ts.isLiteralTypeNode(indexType) || !ts.isStringLiteral(indexType.literal)) return undefined;
 
-  return { entity: objectType.typeName.text, field: indexType.literal.text };
+  return { entity: objectType.typeName.text, name: indexType.literal.text };
 }
 
 /**

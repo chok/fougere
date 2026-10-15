@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { entity, number, primary, text } from '@fougere/schema';
 import type { BindingPlan } from '../src/wire/binding.js';
 import { Invocation } from '../src/wire/Invocation.js';
 import { ArgumentResolver } from '../src/dispatch/ArgumentResolver.js';
@@ -55,5 +56,32 @@ describe('ArgumentResolver', () => {
 
     await expect(new ArgumentResolver().resolve(plan, Invocation.from({ query: { active: 'yes' } })))
       .rejects.toMatchObject({ code: 'VALIDATION_FAILED' });
+  });
+
+  describe('a parameter typed by a field', () => {
+    class Sample extends entity({
+      id: primary(text({ format: 'uuid' })),
+      age: number({ integer: true, min: 1 }),
+    }) {}
+    const plan: BindingPlan = [
+      { name: 'sampleId', source: { kind: 'param', name: 'sampleId', field: { entity: 'Sample', name: 'id' }, identifies: 'Sample' }, optional: false },
+      { name: 'age', source: { kind: 'param', name: 'age', coerce: 'number', field: { entity: 'Sample', name: 'age' } }, optional: false },
+    ];
+    const resolver = new ArgumentResolver(undefined, (name) => name === 'Sample' ? Sample : undefined);
+    const id = '3f2a8c1e-6d4b-4f7a-9c2e-1b5d8e0a7f63';
+
+    it('obeys what the field declares, after the query string was read', async () => {
+      await expect(resolver.resolve(plan, Invocation.from({ query: { sampleId: id, age: '21' } })))
+        .resolves.toEqual([id, 21]);
+    });
+
+    it.each([
+      [{ sampleId: 'abc', age: '21' }, 'sampleId'],
+      [{ sampleId: id, age: '0' }, 'age'],
+      [{ sampleId: id, age: '2.5' }, 'age'],
+    ])('refuses %j at the door, naming the parameter', async (query, name) => {
+      await expect(resolver.resolve(plan, Invocation.from({ query })))
+        .rejects.toMatchObject({ code: 'VALIDATION_FAILED', details: [{ path: [name] }] });
+    });
   });
 });

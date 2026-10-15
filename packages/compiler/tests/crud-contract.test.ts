@@ -111,7 +111,7 @@ describe('as an installed app — the scan finds nothing, the façade validates 
     // Each carries the TYPES a GraphQL argument needs — `binding` only says where from.
     expect(ops.get('findById')!.signature!.params).toEqual([{
       name: 'id',
-      type: { raw: "Note['id']", name: 'string', identifies: { entity: 'Note', field: 'id' } },
+      type: { raw: "Note['id']", name: 'string', field: { entity: 'Note', name: 'id' }, identifies: 'Note' },
     }]);
     // The ops themselves still arrive by prototype, as they always did.
     expect(Object.keys(app.resolve('noteHandler') as object).sort())

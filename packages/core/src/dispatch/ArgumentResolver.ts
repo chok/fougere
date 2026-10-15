@@ -1,9 +1,10 @@
-import type { SchemaView } from '@fougere/schema';
+import { FieldValueValidator, type SchemaView } from '@fougere/schema';
 import type { InvocationContext } from '../wire/InvocationContext.js';
 import type { BindingPlan } from '../wire/binding.js';
 import { ErrorCode } from '../wire/ErrorCode.js';
 import { FougereError } from '../wire/FougereError.js';
 import type { CollectorLookup } from './CollectorLookup.js';
+import type { EntityLookup } from './EntityLookup.js';
 import { collectedAs } from '../prefab/collector.js';
 import { validateInput } from './validateInput.js';
 
@@ -11,7 +12,10 @@ type ParamSource = Extract<BindingPlan[number]['source'], { kind: 'param' }>;
 
 /** Resolves an operation's declared binding plan against one invocation. */
 export class ArgumentResolver {
-  constructor(private readonly collectors?: CollectorLookup) {}
+  constructor(
+    private readonly collectors?: CollectorLookup,
+    private readonly entities?: EntityLookup,
+  ) {}
 
   async resolve(plan: BindingPlan, ctx: InvocationContext): Promise<unknown[]> {
     const args: unknown[] = [];
@@ -28,7 +32,7 @@ export class ArgumentResolver {
           break;
         }
         case 'param': {
-          args.push(ArgumentResolver.param(binding.source, binding.optional, ctx));
+          args.push(this.judged(binding.source, ArgumentResolver.param(binding.source, binding.optional, ctx)));
           break;
         }
         case 'fact':
@@ -84,7 +88,7 @@ export class ArgumentResolver {
         case 'param':
           if (value === undefined && !binding.optional) throw refused(binding.source.name, 'Required');
 
-          return value;
+          return this.judged(binding.source, value);
         case 'query':
           return value;
       }
@@ -110,6 +114,19 @@ export class ArgumentResolver {
     if (coerced === undefined) throw refused(name, `Expected a ${coerce}, got ${JSON.stringify(value)}`);
 
     return coerced;
+  }
+
+  /** `age: Sample['age']` obeys what `Sample.age` declares, after the query string was read. */
+  private judged(source: ParamSource, value: unknown): unknown {
+    if (value === undefined || !source.field) return value;
+
+    const field = this.entities?.(source.field.entity)?.getFields()[source.field.name];
+    if (!field) return value;
+
+    const verdict = FieldValueValidator.of(field).parse(value);
+    if ('message' in verdict) throw refused(source.name, verdict.message);
+
+    return verdict.value;
   }
 
   private static number(value: unknown): number | undefined {

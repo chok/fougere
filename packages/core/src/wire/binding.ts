@@ -17,8 +17,11 @@ type ParamSource =
    * (`Emissions.stamped`, which realizes `created()`); this is the declared form of it.
    */
   | { kind: 'pipe'; factName: string }
-  /** `identifies` names the entity whose row the value designates — `id: Post['id']`. */
-  | { kind: 'param'; name: string; coerce?: 'number' | 'boolean'; identifies?: string }
+  /**
+   * `field` is where the value's rules are declared — `title: Post['title']`. `identifies` names
+   * the entity whose row the value designates, when that field is its primary.
+   */
+  | { kind: 'param'; name: string; coerce?: 'number' | 'boolean'; field?: { entity: string; name: string }; identifies?: string }
   | { kind: 'input' }
   | { kind: 'context' }
   /** The whole query bag, for an op whose argument IS the options (list). */
@@ -78,9 +81,9 @@ function sourceOf(param: Param, collectorTypeNames: Set<string>): ParamSource {
   if (collectorTypeNames.has(typeKey)) return { kind: 'collector', typeName: typeKey };
   if (typeName === 'InvocationContext') return { kind: 'context' };
   if (PRIMITIVES.has(typeName)) {
-    const identifies = param.type.identifies?.entity;
+    const { field, identifies } = param.type;
 
-    return { kind: 'param', name: param.name, coerce: coercionFor(typeName), ...(identifies && { identifies }) };
+    return { kind: 'param', name: param.name, coerce: coercionFor(typeName), ...(field && { field }), ...(identifies && { identifies }) };
   }
 
   return { kind: 'input' };

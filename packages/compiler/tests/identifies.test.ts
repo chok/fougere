@@ -1,6 +1,6 @@
 /**
- * `id: Post['id']` designates a row, and only the source says so: the checker answers `string`.
- * The scan reads the syntax and holds it to the entity's primary.
+ * `title: Post['title']` names the field the value obeys, and only the source says so: the checker
+ * answers `string`. The scan reads the syntax, and the primary also designates a row.
  */
 import { describe, it, expect } from 'vitest';
 import { join } from 'node:path';
@@ -16,16 +16,16 @@ async function bindingOf(op: string) {
   return computeBindingPlan(handler.operations.get(op)!.signature!.params, new Set());
 }
 
-describe('a parameter typed by the primary of an entity', () => {
-  it('designates a row of that entity', async () => {
-    expect((await bindingOf('publish'))[0]?.source).toEqual({ kind: 'param', name: 'id', identifies: 'Post' });
+describe('a parameter typed by a field of an entity', () => {
+  it('designates a row of that entity when the field is its primary', async () => {
+    expect((await bindingOf('publish'))[0]?.source)
+      .toEqual({ kind: 'param', name: 'id', field: { entity: 'Post', name: 'id' }, identifies: 'Post' });
   });
 
-  it('stays an ordinary value when the field is not the primary, and the scan says so', async () => {
+  it('borrows the rules of any other field, and designates nothing', async () => {
     const { diagnostics } = await scanProject(project);
 
-    expect((await bindingOf('retitle'))[1]?.source).toEqual({ kind: 'param', name: 'title' });
-    expect(diagnostics.find((one) => one.code === 'parameter-identifies-non-primary')?.message)
-      .toMatch(/Post's primary is 'id'/);
+    expect((await bindingOf('retitle'))[1]?.source).toEqual({ kind: 'param', name: 'title', field: { entity: 'Post', name: 'title' } });
+    expect(diagnostics).toEqual([]);
   });
 });

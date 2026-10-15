@@ -30,14 +30,14 @@ export function subjectOf(ctor: unknown, address: string): string {
 }
 
 /** The id of the row an op acts on — `id: Post['id']`, which a route places before the op. */
-const byId = (entity: string) =>
-  ({ name: 'id', source: { kind: 'param' as const, name: 'id', identifies: entity }, optional: false });
+const byId = (entity: string, field: string) =>
+  ({ name: 'id', source: { kind: 'param' as const, name: 'id', field: { entity, name: field }, identifies: entity }, optional: false });
 
 const fromBody = { name: 'input', source: { kind: 'input' as const }, optional: false };
 
 /** The same five, written as the scan would have written them. */
 const idParam = (entity: string, field: string) =>
-  ({ name: 'id', type: { raw: `${entity}['${field}']`, name: 'string', identifies: { entity, field } } });
+  ({ name: 'id', type: { raw: `${entity}['${field}']`, name: 'string', field: { entity, name: field }, identifies: entity } });
 
 const inputParam = (entity: string) => ({ name: 'input', type: { raw: `Partial<${entity}>`, name: entity } });
 
@@ -52,8 +52,9 @@ const returns = (raw: string, name: string, extra?: { array?: boolean; nullable?
 function crudOps(entity: SchemaView & { partial?: () => SchemaView }): Record<string, OperationContract> {
   const name = (entity as { name?: string }).name ?? 'Entity';
   const input = inputParam(name);
-  const id = byId(name);
-  const idSignature = idParam(name, FieldSet.of(entity.getFields()).primary ?? 'id');
+  const primary = FieldSet.of(entity.getFields()).primary ?? 'id';
+  const id = byId(name, primary);
+  const idSignature = idParam(name, primary);
 
   return {
     list: {

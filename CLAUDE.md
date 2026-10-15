@@ -877,11 +877,18 @@ returns, once per entity. Pinned by `adapter/rest/tests/stated.test.ts` and `rou
 entity's primary (`id: Post['id']`) DESIGNATES a row and comes before the op —
 `/posts/:id/publish`; another required primitive comes after it, an optional one is left to the
 query string. The checker answers `string` for `Post['id']`, so the parser reads the SYNTAX
-(`identified`, `handler-parser.ts`) and the scan holds it to the entity's primary
-(`identifying`, `scanner.ts`), warning `parameter-identifies-non-primary` otherwise; the
-binding carries it as `identifies`. `Crud` declares it on its three `byId`. A `ById` in a name
-used to decide, so `publish(id: string)` and `publishById` answered different paths for one
-signature. Pinned by `adapter/rest/tests/routes.test.ts` and `compiler/tests/identifies.test.ts`.
+(`fieldOf`, `handler-parser.ts`) and the scan marks it `identifies` when the field is the
+entity's primary (`identifying`, `scanner.ts`). `Crud` declares it on its three `byId`. A `ById`
+in a name used to decide, so `publish(id: string)` and `publishById` answered different paths for
+one signature. Pinned by `adapter/rest/tests/routes.test.ts` and `compiler/tests/identifies.test.ts`.
+
+**A parameter typed by a field obeys that field** — `age: Sample['age']` carries `field` on its
+binding, and `ArgumentResolver.judged` passes the value, once the query string is read, through
+`FieldValueValidator` against `Sample.age`: format, bounds, `integer`, the way a body is judged.
+Designating a row and borrowing a field's rules are two facts: the primary does both, any other
+field the second, which is why `Post['title']` is no longer warned. Before, a parameter was only
+coerced to `number` or `boolean`, and `z.uuid()` or `.int().positive()` on a query parameter had
+nothing to say it in. Pinned by `core/tests/argument-resolver.test.ts`.
 
 **Operation contract, three producers** — the façade consumes `OperationContract` and
 nothing else. A prefab DECLARES (`Crud.__ops`, runtime), the scan DERIVES from source,
