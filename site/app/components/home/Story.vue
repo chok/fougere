@@ -39,14 +39,14 @@ export default class PostHandler {
 
 const derivationSnippet = `class PostHandler extends Crud(Post)  // five CRUD operations
 POST /api/blog/posts                  // the API, validated
-useFormFor(Post)                      // the form, same rules
+useFormFor(Post)                      // the form, validated first
 posts (title, body, …)                // the table
 
 // GraphQL, or any adapter that reads an entity's schema`;
 
 const choicesSnippet = `// fougere.config.ts
 fronds: { blog: 'http://127.0.0.1:4100' },
-ports: { Moderation: 'KeywordModeration' },`;
+ports: { Moderation: 'ManualModeration' },`;
 
 const { data: highlighted } = await useAsyncData('home-code', async () => {
   const { highlight } = await import('~/home/code');
