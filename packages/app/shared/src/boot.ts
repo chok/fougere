@@ -43,6 +43,7 @@ export interface FougereServerConfig {
 
 let _config: FougereServerConfig = {};
 let _appPromise: Promise<App> | null = null;
+let _replaced: Promise<App>[] = [];
 
 // ── Public API ───────────────────────────────────
 
@@ -52,12 +53,17 @@ let _appPromise: Promise<App> | null = null;
  */
 export function configureFougere(config: FougereServerConfig) {
   _config = config;
-  _appPromise = null;
+  replace();
 }
 
 /** Add to what is already stated, instead of replacing it. */
 export function extendFougere(config: Partial<FougereServerConfig>) {
   _config = { ..._config, ...config };
+  replace();
+}
+
+function replace() {
+  if (_appPromise) _replaced.push(_appPromise);
   _appPromise = null;
 }
 
@@ -78,12 +84,16 @@ export function useFougereApp(): Promise<App> {
 
 /** Turn the ring. */
 export async function reloadFougere(timeoutMs?: number): Promise<App> {
-  const previous = _appPromise;
-  _appPromise = null;
+  replace();
+  const previous = _replaced;
+  _replaced = [];
   // The new one first: a boot that fails leaves the previous app serving, still whole.
-  const next = await useFougereApp();
-  if (previous) {
-    const old = await previous;
+  const next = await useFougereApp().catch((refusal: unknown) => {
+    _replaced = [...previous, ..._replaced];
+    throw refusal;
+  });
+  for (const replaced of previous) {
+    const old = await replaced;
     await old.drain(timeoutMs);
     await old.dispose();
   }
