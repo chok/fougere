@@ -33,7 +33,8 @@ export function stubOf<T>(port: Port): Stub<T> {
 /** Put doubles in front of ports, in every frond scope that answers under their name. */
 export function installStubs(app: App, ports: Port[]): Map<Port, Stub<unknown>> {
   const doubles = new Map<Port, Stub<unknown>>();
-  const scopes = app.fronds.map((frond) => app.resolve<Container>(`frond:${frond.name}`));
+  const served = app.fronds.filter((frond) => !(frond.name in app.remotes));
+  const scopes = served.map((frond) => app.resolve<Container>(`frond:${frond.name}`));
 
   for (const port of ports) {
     const answering = scopes.filter((scope) => scope.has(port.name));

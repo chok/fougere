@@ -51,6 +51,13 @@ describe('testApp', () => {
     const rows = Array.isArray(listed) ? listed : listed.items ?? [];
     expect(rows).toHaveLength(0);
   });
+
+  it('boots the project as `fronds:` places it, the frond elsewhere not running', async () => {
+    await using app = await testApp({ root: join(import.meta.dirname, 'fixtures-topology'), topology: true });
+
+    expect(app.remotes).toEqual({ billing: 'http://127.0.0.1:1' });
+    await run(app);
+  });
 });
 
 async function run(app: Awaited<ReturnType<typeof testApp>>) {
