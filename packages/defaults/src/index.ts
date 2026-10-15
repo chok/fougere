@@ -2,10 +2,11 @@
 import { migrating, type App, type CreateAppOptions } from '@fougere/core';
 import { boot } from '@fougere/compiler';
 import { loadConfig, remotesOf } from '@fougere/core/node';
-import { createHttpTransport } from '@fougere/transport-http';
 import { type DbConfig } from './storage/DbConfig.js';
 import { resolveStorage, type ResolvedStorage } from './storage/ResolvedStorage.js';
+import { remoteTransport } from './transport/RemoteTransport.js';
 
+export { remoteTransport } from './transport/RemoteTransport.js';
 export { declaresStorage } from './storage/DeclaredStorage.js';
 export { layerOf, resolveStorage, storageFrom } from './storage/ResolvedStorage.js';
 export type { DbConfig } from './storage/DbConfig.js';
@@ -47,7 +48,7 @@ export async function bootApp(root: string, opts: BootAppOptions = {}): Promise<
     only: opts.only ?? opts.fronds,
     // `{}` and never undefined: `boot` reads the config's own `fronds:` when handed nothing.
     remotes: useRemotes ? elsewhere : {},
-    remoteTransport: useRemotes ? (url) => createHttpTransport(url) : undefined,
+    remoteTransport: useRemotes ? await remoteTransport() : undefined,
     // One resolver, one place that knows a storage package.
     db: (cfg) => (storage = resolveStorage(cfg.db as DbConfig, (cfg as { sources?: unknown }).sources as never, root)),
     extensions: [...(opts.migrates ? [migrating((app) => storage?.migrate?.(app))] : []), ...(opts.extensions ?? [])],

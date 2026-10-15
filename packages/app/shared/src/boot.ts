@@ -1,13 +1,13 @@
 /** Fougere server bootstrap — single entry point for an app's lifecycle, whatever hosts it. */
 import { resolve, sep } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { applyConfig, createApp, identityFromEnv, Logger, migrating } from '@fougere/core';
+import { applyConfig, createApp, Logger, migrating } from '@fougere/core';
 import { scanProject, frondAliases } from '@fougere/compiler';
 import { resolveConventions } from '@fougere/core';
 import { loadCascadedConfig, remotesOf, setModuleLoader, statedModules } from '@fougere/core/node';
 
 import type { App, CreateAppOptions, FougereConfig, Transport } from '@fougere/core';
-import { layerOf, type ResolvedStorage } from '@fougere/defaults';
+import { layerOf, remoteTransport, type ResolvedStorage } from '@fougere/defaults';
 import { executor } from './graphql.js';
 
 // ── Public types ─────────────────────────────────
@@ -152,23 +152,14 @@ async function boot(): Promise<App> {
   // The storage's two halves, kept together: its ascent is an extension, its connection
   // is not — it is opened here, before the container, so it closes after the container.
 
-  // Layer-2 wiring: `remotes: { catalog: 'http://...' }` in fougere.config.ts
-  // is all the user writes — the default transport comes from here.
-  // The host's word wins here too — and where it speaks, nothing below runs: building
-  // the default would import the transport and read the environment for a key, both
-  // pointless once the caller has said who carries the call.
-  let remoteTransport: ((url: string) => Transport) | undefined = _config.remoteTransport;
   // What the config names by module — imported here, because core resolves no specifier.
   const stated = await statedModules(fileConfig.fronds);
   const remotes = remotesOf(fileConfig);
-  if (!remoteTransport && Object.keys(remotes).length > 0) {
+  // The host's word wins — and where it speaks, the environment is never read for a key.
+  let transport: ((url: string) => Transport) | undefined = _config.remoteTransport;
+  if (!transport && Object.keys(remotes).length > 0) {
     log.debug(`remotes declared (${Object.keys(remotes).join(', ')}) — wiring HTTP transport`);
-    const { createHttpTransport } = await import('@fougere/transport-http');
-    // A call that leaves this process carries a proof of who sent it, when the
-    // deployment gave one. Without a key it travels as a bare claim, which only a
-    // receiver that trusts no root will take.
-    const { sign } = await identityFromEnv();
-    remoteTransport = (url) => createHttpTransport(url, (sign ? { sign } : {}));
+    transport = await remoteTransport();
   }
 
   const app = await createApp({
@@ -195,7 +186,7 @@ async function boot(): Promise<App> {
     remotes,
     /** Who inherits code from whom — the tree, whole, so a refusal can name where an entry sits. */
     under: fileConfig.fronds,
-    remoteTransport,
+    remoteTransport: transport,
     extensions: [
       ...(_config.migrates ? [migrating((app) => storage.migrate?.(app))] : []),
       ...stated.extensions,
