@@ -88,10 +88,6 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
   middleware extends `Middleware`, an extension `up`/`down`/`state`, and an address is the class
   name less `Handler` (`addressOf`, `wire/Facade.ts`). The README says the conventions can be
   overridden, which holds for where code lives and not for how it is read. Stated 2026-10-04.
-- **A subscription to a fact nothing announces passes the boot in silence** — a handler accepting
-  `Fact<T>` for a fact no code names is a subscription to nothing; `drift.ts` only reads a fact gone
-  between two CARDS. Read in the code 2026-10-01. It cannot be refused: the announcer may be another
-  process or another repository.
 - **The level decides what is COLLECTED, not only what is printed** — `Logger.log`
   (`builtin/Logger.ts`) returns on the threshold BEFORE `carry.push`, so a line under it reaches no
   destination either. The CLI sets `FOUGERE_LOG_LEVEL=warn` (`cli/src/main.ts`) to keep its output
