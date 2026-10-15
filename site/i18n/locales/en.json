@@ -63,7 +63,7 @@
     "derivationDoc": "Get forms and an API from your schema",
     "choicesDoc": "Configure how it runs",
     "auditCopied": "Copied",
-    "tryAgent": "Ask your agent",
+    "tryAgent": "Ask your agent in your project",
     "auditCopy": "Copy the prompt"
   },
   "docs": {
