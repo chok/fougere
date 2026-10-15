@@ -43,10 +43,10 @@ Everything your handler receives is validated against your schema, and it is ser
 
 ## Quick start
 
-For now, only pnpm is fully supported. Fougere changes quickly, so to try the latest release:
+For now, only pnpm is fully supported:
 
 ```bash
-pnpm --config.minimum-release-age=0 create fougere
+pnpm create fougere
 ```
 
 With no arguments, it walks you through creating a new app in an interactive terminal UI.
