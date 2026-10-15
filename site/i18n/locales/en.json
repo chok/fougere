@@ -19,7 +19,7 @@
     "plateName": "Fougère mâle · Aspidium filix-mas",
     "plateCredit": "R. Siélain, Atlas de poche des plantes des champs, pl. 124, 1895",
     "scroll": "Scroll",
-    "skip": "Skip to Try Fougere ↓",
+    "skip": "Try Fougere ↓",
     "codeLabel": "01 — Business code",
     "codeTitle": "Start with your",
     "codeAccent": "business code.",
@@ -63,7 +63,7 @@
     "derivationDoc": "Get forms and an API from your schema",
     "choicesDoc": "Configure how it runs",
     "auditCopied": "Copied",
-    "tryAgent": "Ask your agent in your project",
+    "tryAgent": "Ask your agent",
     "auditCopy": "Copy the prompt"
   },
   "docs": {
