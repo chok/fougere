@@ -7,8 +7,9 @@ const { prompt, copied, copy } = useAudit();
 
 <template>
   <section id="try" class="try">
-    <h2>{{ $t('home.tryTitle') }} <em>Fougere</em></h2>
+    <h2>{{ $t('home.tryTitle') }} <em>{{ $t('home.tryAccent') }}</em></h2>
     <p>{{ $t('home.tryText') }}</p>
+    <NuxtLink :to="localePath('/docs/concepts/philosophy')" class="doc">{{ $t('home.tryPhilosophy') }} →</NuxtLink>
     <div class="start">
       <HomeCode class="command" code="npm create fougere" />
       <NuxtLink :to="localePath('/docs/getting-started')" class="doc">{{ $t('home.tryStart') }} →</NuxtLink>
@@ -43,8 +44,9 @@ const { prompt, copied, copy } = useAudit();
 
 .try h2 {
   margin: 0;
-  font-size: clamp(40px, 5vw, 72px);
-  line-height: 1.02;
+  max-width: 900px;
+  font-size: clamp(36px, 4.6vw, 64px);
+  line-height: 1.04;
 }
 
 h2 em {

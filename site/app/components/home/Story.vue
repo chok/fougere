@@ -68,7 +68,6 @@ const chapters = computed(() => [
   { key: 'schema', code: schemaSnippet, doc: '/docs/guides/data' },
   { key: 'derivation', code: derivationSnippet, doc: '/docs/guides/data#forms', legend: true, clip: { src: '/home/derivation.mp4', wide: '/home/derivation-wide.mp4', label: t('home.derivationVideo'), caption: t('home.derivationCaption') } },
   { key: 'choices', code: choicesSnippet, doc: '/docs/guides/config', clip: { src: '/home/gradient.mp4', wide: '/home/gradient-wide.mp4', label: t('home.choicesVideo'), caption: t('home.choicesCaption') } },
-  { key: 'same', doc: '/docs/concepts/philosophy' },
 ].map((chapter) => ({
   ...chapter,
   docLabel: t(`home.${chapter.key}Doc`),
@@ -79,7 +78,7 @@ const chapters = computed(() => [
   text: t(`home.${chapter.key}Text`),
 })));
 
-const rail = computed(() => ['railCode', 'railSchema', 'railDerivation', 'railChoices', 'railSame'].map((key) => t(`home.${key}`)));
+const rail = computed(() => ['railCode', 'railSchema', 'railDerivation', 'railChoices'].map((key) => t(`home.${key}`)));
 
 const story = ref<HTMLElement>();
 const stage = ref<HTMLElement>();
@@ -98,6 +97,14 @@ function jump(id: string) {
   document.getElementById(id)?.scrollIntoView({ behavior: 'instant' });
 }
 
+const range = () => story.value!.offsetHeight - stage.value!.clientHeight;
+const sticksAt = () => parseFloat(getComputedStyle(stage.value!).top);
+const scrollFor = (progress: number) => story.value!.getBoundingClientRect().top + window.scrollY - sticksAt() + range() * progress;
+
+function reach(anchor: string) {
+  window.scrollTo({ top: scrollFor(progressOf(anchor)!), behavior: 'smooth' });
+}
+
 let frame = 0;
 
 onMounted(() => {
@@ -105,12 +112,8 @@ onMounted(() => {
   const globe = new Globe(backCanvas.value!, frontCanvas.value!);
   const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const started = performance.now();
-  const range = () => story.value!.offsetHeight - stage.value!.clientHeight;
-  const sticksAt = () => parseFloat(getComputedStyle(stage.value!).top);
   const linked = progressOf(location.hash.slice(1));
-  if (linked !== undefined) {
-    window.scrollTo({ top: story.value!.getBoundingClientRect().top + window.scrollY - sticksAt() + range() * linked, behavior: 'instant' });
-  }
+  if (linked !== undefined) window.scrollTo({ top: scrollFor(linked), behavior: 'instant' });
   let shown = linked ?? 0;
   let previous = started;
 
@@ -213,10 +216,12 @@ onBeforeUnmount(() => cancelAnimationFrame(frame));
         </div>
 
         <ol class="rail" :class="{ off: chapter < 1 }">
-          <li v-for="(name, index) in rail" :key="name" :class="{ on: Math.max(chapter, 1) === index + 1 }">{{ name }}<i /></li>
+          <li v-for="(name, index) in rail" :key="name" :class="{ on: Math.max(chapter, 1) === index + 1 }">
+            <button type="button" @click="reach(ANCHORS[index]!)">{{ name }}<i /></button>
+          </li>
         </ol>
 
-        <div class="shortcuts" :class="{ off: chapter >= 5, started: chapter >= 1 }">
+        <div class="shortcuts" :class="{ started: chapter >= 1 }">
           <button type="button" @click="jump('audit')">{{ $t('home.tryAgent') }}</button>
           <button type="button" @click="jump('try')">{{ $t('home.skip') }}</button>
         </div>
@@ -276,7 +281,7 @@ h2 em.code { display: block; }
 
 .story {
   position: relative;
-  height: 650vh;
+  height: 610vh;
 }
 
 .stage {
@@ -453,11 +458,11 @@ h2 em.code { display: block; }
   list-style: none;
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 10px;
   transition: opacity 0.45s ease;
 }
 
-.rail li {
+.rail button {
   display: flex;
   align-items: center;
   justify-content: flex-end;
@@ -467,8 +472,14 @@ h2 em.code { display: block; }
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: #8a948c;
+  background: none;
+  border: 0;
+  padding: 4px 0;
+  cursor: pointer;
   transition: color 0.3s;
 }
+
+.rail button:hover { color: var(--ink); }
 
 .rail i {
   width: 8px;
@@ -478,7 +489,7 @@ h2 em.code { display: block; }
   transition: all 0.3s;
 }
 
-.rail .on { color: var(--ink); }
+.rail .on button { color: var(--ink); }
 .rail .on i {
   background: var(--green);
   border-color: var(--green);

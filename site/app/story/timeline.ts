@@ -4,9 +4,9 @@ export function band(from: number, to: number, progress: number): number {
   return x * x * (3 - 2 * x);
 }
 
-const CHAPTERS = [0.08, 0.2, 0.41, 0.66, 0.92];
+const CHAPTERS = [0.08, 0.2, 0.41, 0.66];
 
-export const ANCHORS = ['code', 'schema', 'derivation', 'choices', 'same-code'];
+export const ANCHORS = ['code', 'schema', 'derivation', 'choices'];
 
 export function progressOf(anchor: string): number | undefined {
   const index = ANCHORS.indexOf(anchor);
