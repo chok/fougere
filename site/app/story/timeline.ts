@@ -6,7 +6,7 @@ export function band(from: number, to: number, progress: number): number {
 
 const CHAPTERS = [0.08, 0.2, 0.41, 0.66, 0.92];
 
-export const ANCHORS = ['code', 'schema', 'derivation', 'gradient', 'same-code'];
+export const ANCHORS = ['code', 'schema', 'derivation', 'choices', 'same-code'];
 
 export function progressOf(anchor: string): number | undefined {
   const index = ANCHORS.indexOf(anchor);

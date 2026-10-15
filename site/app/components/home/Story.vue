@@ -44,13 +44,13 @@ posts (title, body, …)                // the table
 
 // GraphQL, or any adapter that reads an entity's schema`;
 
-const gradientSnippet = `// fougere.config.ts
+const choicesSnippet = `// fougere.config.ts
 fronds: { blog: 'http://127.0.0.1:4100' },
 ports: { Moderation: 'KeywordModeration' },`;
 
 const { data: highlighted } = await useAsyncData('home-code', async () => {
   const { highlight } = await import('~/home/code');
-  const snippets = { code: codeSnippet, schema: schemaSnippet, derivation: derivationSnippet, gradient: gradientSnippet };
+  const snippets = { code: codeSnippet, schema: schemaSnippet, derivation: derivationSnippet, choices: choicesSnippet };
   const rendered = await Promise.all(Object.entries(snippets).map(async ([key, code]) => [key, await highlight(code)] as const));
 
   return Object.fromEntries(rendered) as Record<string, string>;
@@ -67,7 +67,7 @@ const chapters = computed(() => [
   { key: 'code', code: codeSnippet, doc: '/docs/guides/business-logic' },
   { key: 'schema', code: schemaSnippet, doc: '/docs/guides/data' },
   { key: 'derivation', code: derivationSnippet, doc: '/docs/guides/data#forms', legend: true, clip: { src: '/home/derivation.mp4', wide: '/home/derivation-wide.mp4', label: t('home.derivationVideo'), caption: t('home.derivationCaption') } },
-  { key: 'gradient', code: gradientSnippet, doc: '/docs/guides/config', clip: { src: '/home/gradient.mp4', wide: '/home/gradient-wide.mp4', label: t('home.gradientVideo'), caption: t('home.gradientCaption') } },
+  { key: 'choices', code: choicesSnippet, doc: '/docs/guides/config', clip: { src: '/home/gradient.mp4', wide: '/home/gradient-wide.mp4', label: t('home.choicesVideo'), caption: t('home.choicesCaption') } },
   { key: 'same', doc: '/docs/concepts/philosophy' },
 ].map((chapter) => ({
   ...chapter,
@@ -79,7 +79,7 @@ const chapters = computed(() => [
   text: t(`home.${chapter.key}Text`),
 })));
 
-const rail = computed(() => ['railCode', 'railSchema', 'railDerivation', 'railGradient', 'railSame'].map((key) => t(`home.${key}`)));
+const rail = computed(() => ['railCode', 'railSchema', 'railDerivation', 'railChoices', 'railSame'].map((key) => t(`home.${key}`)));
 
 const story = ref<HTMLElement>();
 const stage = ref<HTMLElement>();
