@@ -42,9 +42,9 @@ async function logout() {
     </main>
 
     <footer class="border-t border-default">
-      <div class="max-w-6xl mx-auto px-6 py-6 text-sm text-muted flex items-center justify-between gap-4">
-        <span>{{ $t('footer.builtWith') }}</span>
+      <div class="max-w-6xl mx-auto px-6 py-6 text-sm text-muted flex items-center gap-2">
         <UIcon name="i-noto-herb" class="size-4 shrink-0" />
+        <span>{{ $t('footer.builtWith') }}</span>
       </div>
     </footer>
   </div>

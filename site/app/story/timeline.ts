@@ -42,6 +42,6 @@ export function phasesAt(progress: number) {
     wound: band(0.5, 0.62, progress),
     split,
     lines: 1 - rest,
-    marble: 0.185 * appear * (1 - 0.38 * globe) * (1 - 0.15 * split),
+    marble: 0.185 * appear * (1 - 0.38 * globe) * (1 - 0.4 * split),
   };
 }

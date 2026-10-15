@@ -43,7 +43,7 @@ export default class Globe {
     const height = this.back.clientHeight;
     const shell = state.marble * state.unit * (1 + 1.05 * state.sphere);
     const middle = { x: width / 2 + state.center[0] * state.unit, y: height / 2 - state.center[1] * state.unit };
-    const apart = state.split * 0.125 * state.unit;
+    const apart = state.split * 0.09 * state.unit;
     const strokes = new Map<string, Stroke>();
 
     const trace = (points: Point[], colour: string, weight: number, strength: number) => {

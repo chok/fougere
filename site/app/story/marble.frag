@@ -36,7 +36,7 @@ vec3 schemaPosition() {
 }
 
 float shrink() {
-  return uAppear * mix(1., .62, uGlobe) * mix(1., .85, uSplit);
+  return uAppear * mix(1., .62, uGlobe) * mix(1., .6, uSplit);
 }
 
 float businessRadius() {
@@ -49,7 +49,7 @@ float schemaRadius() {
 
 float scene(vec3 p, out float share) {
   float wobble = .005 * sin(7. * p.x + uTime * 1.9) * sin(6. * p.y + uTime * 1.4);
-  vec3 apart = vec3(uSplit * .125, 0., 0.);
+  vec3 apart = vec3(uSplit * .09, 0., 0.);
   float neck = max(.06 * smoothstep(0., .3, uSplit) * (1. - smoothstep(.55, .95, uSplit)), .0001);
   float halves;
   float business = smoothUnion(length(p - apart), length(p + apart), neck, halves) - businessRadius() + wobble;
