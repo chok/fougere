@@ -136,6 +136,10 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
 - **An un-augmented `adapters:` accepts anything, silently.** With no adapter in the program
   `EntityAdapters<TFields>` is `Partial<{}>`, which in TypeScript means "anything
   non-nullish". The RUNTIME half is closed since the adapter's format; what remains open is the type.
+- **`Middleware` names two things in two packages** — the class a frond's middleware extends
+  (`core/src/prefab/Middleware.ts`) and the HTTP one, a function type (`http/src/router/Middleware.ts`).
+  They are the two levels of middleware, around an operation and around a request, and a file
+  importing both renames one. Stated 2026-10-15, left as is.
 - **An outgoing call's line names the frond it goes to, and the address rather than the class.**
   `callLines` reads the `OperationContext` the remote facade builds (`boot/remote.ts`), which holds
   the TARGET frond and no `handler`, so the caller writes `[app:catalog] (shop:CartHandler.checkout)
