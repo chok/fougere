@@ -4,7 +4,7 @@ import { type ProviderEntry } from '../descriptor/ProviderEntry.js';
 import { inheritsCrud } from '../prefab/CrudConstructor.js';
 import { targetOf } from '../prefab/prefab.js';
 import { ownedBy, repositoryKeyOf } from '../prefab/RepositoryConstructor.js';
-import { entityOfStorageKey } from '../storage/Storage.js';
+import { entityOfStorageKey, membersOfTogetherKey } from '../storage/Storage.js';
 import type { Diagnostic } from '../diagnostic.js';
 
 /** One name, one file: two providers under one key and the second silently replaces the first. */
@@ -129,23 +129,16 @@ function refuseStorageReached(
   const allowed = decl.kind === 'provider' ? builtOn(decl.ctor) : [];
 
   for (const dep of decl.deps) {
-    const entity = entityOfStorageKey(dep, known);
-    if (!entity) continue;
-
-    const owner = owners.get(entity);
-    if (owner && owner !== decl.ctor.name) {
-      refused.push({
-        severity: 'blocking',
-        code: 'aggregate-storage-reached',
-        filePath: decl.filePath,
-        frond,
-        subject: `${decl.ctor.name}(${dep})`,
-        message: `${decl.ctor.name} asks for ${dep}, and ${owner} owns ${entity}. Nothing else `
-          + `reaches an owned entity's storage — name the operation on ${owner} and ask for it: `
-          + `constructor(private ${entity}: ${owner}) {}`,
-      });
+    const framed = membersOfTogetherKey(dep);
+    if (framed) {
+      const members = framed.entities.map(lowerFirst).filter(known);
+      for (const entity of members) reachesOwned(decl, dep, entity, frond, owners, refused);
       continue;
     }
+
+    const entity = entityOfStorageKey(dep, known);
+    if (!entity) continue;
+    if (reachesOwned(decl, dep, entity, frond, owners, refused)) continue;
     if (allowed.includes(entity)) continue;
 
     refused.push({
@@ -160,6 +153,32 @@ function refuseStorageReached(
         + `${entity} belongs to an aggregate, this line does not move.`,
     });
   }
+}
+
+/** Whether `dep` reaches an entity an aggregate other than `decl` owns — a frame as much as a storage. */
+function reachesOwned(
+  decl: { ctor: { name: string }; filePath: string },
+  dep: string,
+  entity: string,
+  frond: string,
+  owners: Map<string, string>,
+  refused: Diagnostic[],
+): boolean {
+  const owner = owners.get(entity);
+  if (!owner || owner === decl.ctor.name) return false;
+
+  refused.push({
+    severity: 'blocking',
+    code: 'aggregate-storage-reached',
+    filePath: decl.filePath,
+    frond,
+    subject: `${decl.ctor.name}(${dep})`,
+    message: `${decl.ctor.name} asks for ${dep}, and ${owner} owns ${entity}. Nothing else `
+      + `reaches an owned entity's storage — name the operation on ${owner} and ask for it: `
+      + `constructor(private ${entity}: ${owner}) {}`,
+  });
+
+  return true;
 }
 
 export function storageInUserCode(

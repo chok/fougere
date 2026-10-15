@@ -17,7 +17,12 @@ import aggregateTwice from './fixtures-aggregate-twice/fronds.js';
 import holder from './fixtures-holder/fronds.js';
 import { describe, it, expect, vi } from 'vitest';
 import { createContainer, type Container } from '@fougere/container';
-import { createApp, createLocalRunner, Repository, type FrondDescriptor } from '../src/index.js';
+import { createApp, createLocalRunner, frond, Repository, type FrondDescriptor } from '../src/index.js';
+import { op } from './contract.js';
+import Account from './fixtures-aggregate-trap/fronds/bank/entities/Account.js';
+import Ledger from './fixtures-aggregate-trap/fronds/bank/entities/Ledger.js';
+import AccountRepository from './fixtures-aggregate-trap/fronds/bank/repositories/AccountRepository.js';
+import LedgerHandler from './fixtures-aggregate-trap/fronds/bank/handlers/LedgerHandler.js';
 import { ownedBy, repositoryKeyOf } from '../src/prefab/RepositoryConstructor.js';
 import { storageKeyOf } from '../src/storage/Storage.js';
 import { type StorageFactory } from '../src/storage/StorageFactory.js';
@@ -96,7 +101,29 @@ describe('an owned entity has no other facade', () => {
     await expect(rejected).rejects.toThrow(/AccountRepository owns ledger/);
     await expect(rejected).rejects.toThrow(/constructor\(private ledger: AccountRepository\)/);
   });
+
+  it('refuses a handler that reaches around it through a frame', async () => {
+    const rejected = createApp({ fronds: bankWith(['AccountRepository'], ['LedgerTogether']), createContainer, storageFactory });
+
+    await expect(rejected).rejects.toThrow(/\[aggregate-storage-reached\] LedgerHandler\(LedgerTogether\)/);
+    await expect(rejected).rejects.toThrow(/AccountRepository owns ledger/);
+  });
+
+  it('lets the owner frame its own members', async () => {
+    await using app = await createApp({ fronds: bankWith(['Account+LedgerTogether'], ['AccountRepository']), createContainer, storageFactory });
+
+    expect(app.resolve<Container>('frond:bank').resolve('AccountRepository')).toBeDefined();
+  });
 });
+
+/** The bank, its repository asking for `repository`, and a second handler asking for `handler`. */
+function bankWith(repository: string[], handler: string[]): FrondDescriptor[] {
+  return [frond('bank', {
+    entities: [Account, Ledger],
+    providers: [{ ctor: AccountRepository, deps: repository }],
+    handlers: [{ ctor: LedgerHandler, deps: handler, operations: { all: op({ output: Ledger, cardinality: 'page' }) } }],
+  })];
+}
 
 describe('storage is reached through a repository, never through the port', () => {
   it('refuses a facade that names the port, and points at the repository key', async () => {

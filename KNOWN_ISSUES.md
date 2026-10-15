@@ -63,11 +63,6 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
   break it, and `drift` is where it would be said — it reads nullability today and the engine's
   introspection carries no foreign key (`ColumnMetadata`, measured 2026-09-14). The fix is one
   statement by hand, or a fresh table. `fougere migrate` does not add it either.
-- **A frame opens an owned entity to anyone** — `refuseStorageReached` (`boot/ownership.ts`) reads
-  `<E>Storage` keys only (`entityOfStorageKey`), and a frame's key is `<E>Together`
-  (`togetherKeyOf`, `storage/Storage.ts`). Measured 2026-10-01 beside `Repository(Account, Ledger)`:
-  a handler asking `LedgerStorage` is refused `aggregate-storage-reached`, the same handler asking
-  `Together<[Ledger]>` boots and writes the ledger alone. The aggregate guards one of its two doors.
 - **A process carrying only its own frond cannot MIGRATE a table whose key names an entity it
   has never seen** — `ref(User): no source hosts it`, measured 2026-09-14 while writing
   `defaults/tests/on-delete.test.ts`. It can CHECK it: `pending` reads names and leaves `elsewhere`
