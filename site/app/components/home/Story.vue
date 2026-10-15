@@ -68,6 +68,7 @@ const chapters = computed(() => [
   { key: 'schema', code: schemaSnippet, doc: '/docs/guides/data' },
   { key: 'derivation', code: derivationSnippet, doc: '/docs/guides/data#forms', legend: true, clip: { src: '/home/derivation.mp4', wide: '/home/derivation-wide.mp4', label: t('home.derivationVideo'), caption: t('home.derivationCaption') } },
   { key: 'choices', code: choicesSnippet, doc: '/docs/guides/config', clip: { src: '/home/gradient.mp4', wide: '/home/gradient-wide.mp4', label: t('home.choicesVideo'), caption: t('home.choicesCaption') } },
+  { key: 'rule', doc: '/docs/concepts/philosophy' },
 ].map((chapter) => ({
   ...chapter,
   docLabel: t(`home.${chapter.key}Doc`),
@@ -78,7 +79,7 @@ const chapters = computed(() => [
   text: t(`home.${chapter.key}Text`),
 })));
 
-const rail = computed(() => ['railCode', 'railSchema', 'railDerivation', 'railChoices'].map((key) => t(`home.${key}`)));
+const rail = computed(() => ['railCode', 'railSchema', 'railDerivation', 'railChoices', 'railRule'].map((key) => t(`home.${key}`)));
 
 const story = ref<HTMLElement>();
 const stage = ref<HTMLElement>();
@@ -159,7 +160,7 @@ onMounted(() => {
     fernLayer.value!.style.opacity = String(phase.fern);
 
     marble?.draw({ unit, time, center, appear: phase.appear, schema: phase.schema, fusion: phase.fusion, globe: phase.globe, split: phase.split }, ratio);
-    globe.draw({ unit, time, center, marble: phase.marble, sphere: phase.sphere, wound: phase.wound, split: phase.split }, ratio);
+    globe.draw({ unit, time, center, marble: phase.marble, sphere: phase.sphere, wound: phase.wound, split: phase.split, lines: phase.lines }, ratio);
   };
   frame = requestAnimationFrame(tick);
 });
@@ -222,7 +223,7 @@ onBeforeUnmount(() => cancelAnimationFrame(frame));
         </ol>
 
         <div class="shortcuts" :class="{ started: chapter >= 1 }">
-          <button type="button" @click="jump('audit')">{{ $t('home.tryAgent') }}</button>
+          <NuxtLink :to="localePath('/docs/existing-app#ask-your-agent')">{{ $t('home.tryAgent') }}</NuxtLink>
           <button type="button" @click="jump('try')">{{ $t('home.skip') }}</button>
         </div>
         <p v-if="chapter === 0" class="hint">{{ $t('home.scroll') }}<br>↓</p>
@@ -281,7 +282,7 @@ h2 em.code { display: block; }
 
 .story {
   position: relative;
-  height: 610vh;
+  height: 650vh;
 }
 
 .stage {
@@ -507,8 +508,11 @@ h2 em.code { display: block; }
   transition: opacity 0.4s ease;
 }
 
-.shortcuts button {
+.shortcuts button, .shortcuts a {
+  display: inline-flex;
+  align-items: center;
   min-height: 44px;
+  text-decoration: none;
   padding: 8px 16px;
   border-radius: 999px;
   border: 1px solid var(--ink);
@@ -639,7 +643,7 @@ h2 em.code { display: block; }
     justify-content: center;
   }
 
-  .shortcuts button {
+  .shortcuts button, .shortcuts a {
     padding: 8px 12px;
     font-size: 11px;
   }

@@ -6,6 +6,7 @@ export interface GlobeState {
   sphere: number;
   wound: number;
   split: number;
+  lines: number;
 }
 
 interface Point {
@@ -37,7 +38,7 @@ export default class Globe {
 
   draw(state: GlobeState, ratio: number) {
     const layers = { back: this.cleared(this.back, ratio), front: this.cleared(this.front, ratio) };
-    if (state.sphere <= 0) return;
+    if (state.sphere <= 0 || state.lines <= 0) return;
     const width = this.back.clientWidth;
     const height = this.back.clientHeight;
     const shell = state.marble * state.unit * (1 + 1.05 * state.sphere);
@@ -54,7 +55,7 @@ export default class Globe {
         const stroke = strokes.get(key) ?? {
           layer: layers[side],
           colour,
-          alpha: strength * (0.35 + 0.65 * near),
+          alpha: strength * state.lines * (0.35 + 0.65 * near),
           width: weight * (0.65 + 0.7 * near),
           path: new Path2D(),
         };

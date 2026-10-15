@@ -4,9 +4,9 @@ export function band(from: number, to: number, progress: number): number {
   return x * x * (3 - 2 * x);
 }
 
-const CHAPTERS = [0.08, 0.2, 0.41, 0.66];
+const CHAPTERS = [0.08, 0.2, 0.41, 0.66, 0.9];
 
-export const ANCHORS = ['code', 'schema', 'derivation', 'choices'];
+export const ANCHORS = ['code', 'schema', 'derivation', 'choices', 'rule'];
 
 export function progressOf(anchor: string): number | undefined {
   const index = ANCHORS.indexOf(anchor);
@@ -23,8 +23,9 @@ export function chapterAt(progress: number): number {
 }
 
 export function phasesAt(progress: number) {
-  const globe = band(0.44, 0.56, progress);
-  const split = band(0.66, 0.86, progress);
+  const rest = band(0.9, 0.98, progress);
+  const globe = band(0.44, 0.56, progress) * (1 - rest);
+  const split = band(0.66, 0.86, progress) * (1 - rest);
   const appear = progress >= 0.095 ? 1 : 0;
 
   return {
@@ -40,6 +41,7 @@ export function phasesAt(progress: number) {
     sphere: band(0.44, 0.54, progress),
     wound: band(0.5, 0.62, progress),
     split,
+    lines: 1 - rest,
     marble: 0.185 * appear * (1 - 0.38 * globe) * (1 - 0.15 * split),
   };
 }

@@ -1,32 +1,18 @@
 <script setup lang="ts">
-import { useAudit } from '~/home/audit';
-
 const localePath = useLocalePath();
-const { prompt, copied, copy } = useAudit();
 </script>
 
 <template>
   <section id="try" class="try">
-    <h2>{{ $t('home.tryTitle') }} <em>{{ $t('home.tryAccent') }}</em></h2>
-    <p>{{ $t('home.tryText') }}</p>
-    <NuxtLink :to="localePath('/docs/concepts/philosophy')" class="doc">{{ $t('home.tryPhilosophy') }} →</NuxtLink>
-    <div class="start">
-      <HomeCode class="command" code="npm create fougere" />
-      <NuxtLink :to="localePath('/docs/getting-started')" class="doc">{{ $t('home.tryStart') }} →</NuxtLink>
-    </div>
+    <h2>{{ $t('home.tryTitle') }} <em>Fougere</em></h2>
     <div class="actions">
-      <NuxtLink :to="localePath('/docs/existing-app')" class="primary">{{ $t('home.tryExisting') }}</NuxtLink>
-      <a href="#audit" class="secondary">{{ $t('home.tryAgent') }}</a>
+      <HomeCode class="command" code="npm create fougere" />
+      <NuxtLink :to="localePath('/docs/getting-started')" class="primary">{{ $t('home.tryButton') }} →</NuxtLink>
     </div>
-  </section>
-
-  <section id="audit" class="audit">
-    <div class="words">
-      <h2>{{ $t('home.auditTitle') }}</h2>
-      <p>{{ $t('home.auditText') }}</p>
-      <button type="button" class="secondary" @click="copy">{{ copied ? $t('home.auditCopied') : $t('home.auditCopy') }}</button>
-    </div>
-    <pre class="prompt">{{ prompt }}</pre>
+    <p class="or">
+      {{ $t('home.tryOr') }}
+      <NuxtLink :to="localePath('/docs/existing-app')" class="doc">{{ $t('home.tryExisting') }}</NuxtLink>
+    </p>
   </section>
 </template>
 
@@ -45,8 +31,8 @@ const { prompt, copied, copy } = useAudit();
 .try h2 {
   margin: 0;
   max-width: 900px;
-  font-size: clamp(36px, 4.6vw, 64px);
-  line-height: 1.04;
+  font-size: clamp(34px, 4.4vw, 60px);
+  line-height: 1.06;
 }
 
 h2 em {
@@ -61,75 +47,14 @@ p {
   max-width: 600px;
 }
 
-.audit {
-  padding: 380px max(1.5rem, calc((100% - 72rem) / 2 + 1.5rem)) 120px;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
-  gap: 48px;
-  align-items: start;
-  border-top: 1px solid var(--ui-border);
-  scroll-margin-top: calc(3.5rem - 340px);
-}
-
-.audit .words {
-  position: sticky;
-  top: 6rem;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 22px;
-}
-
-.audit h2 {
-  margin: 0;
-  font-size: clamp(30px, 3.6vw, 48px);
-  line-height: 1.06;
-}
-
-.audit p {
-  font-size: 18px;
-}
-
-.prompt {
-  max-height: 34rem;
-  overflow: auto;
-  padding: 18px 22px;
-  font-size: 12.5px;
-  line-height: 1.6;
-  white-space: pre-wrap;
-}
-
-@media (max-width: 760px) {
-  .audit {
-    grid-template-columns: minmax(0, 1fr);
-    padding: 200px 16px 80px;
-    scroll-margin-top: calc(3.5rem - 160px);
-  }
-
-  .audit .words {
-    position: static;
-  }
-}
-
-pre {
-  margin: 0;
-  background: #10180f;
-  color: #e1ebde;
-  border-radius: 12px;
-  font-family: var(--font-mono);
-}
-
 .command :deep(pre) {
   padding: 16px 56px 16px 26px;
   font-size: 16px;
 }
 
-.start {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  align-items: center;
-  gap: 12px 20px;
+.or {
+  color: var(--ui-text-muted);
+  font-size: 15px;
 }
 
 .doc {
@@ -140,30 +65,23 @@ pre {
 }
 
 .actions {
+  margin-top: 10px;
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 12px;
-}
-
-.primary, .secondary {
-  display: inline-block;
-  padding: 14px 28px;
-  border-radius: 999px;
-  font: inherit;
-  font-weight: 500;
-  text-decoration: none;
-  cursor: pointer;
+  align-items: center;
+  gap: 16px 28px;
 }
 
 .primary {
+  display: inline-block;
+  padding: 18px 40px;
+  border-radius: 999px;
   background: var(--ui-text);
   color: var(--ui-bg);
+  font-size: 18px;
+  font-weight: 500;
+  text-decoration: none;
 }
 
-.secondary {
-  border: 1.5px solid var(--ui-text);
-  background: transparent;
-  color: var(--ui-text);
-}
 </style>
