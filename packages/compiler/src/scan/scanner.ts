@@ -1,4 +1,4 @@
-import { DEFAULT_CONVENTIONS, frondDirsOf, frondPackage, providerDirsOf, resolveConventions, togetherKeyOf, type Conventions, type ConventionsInput, type Diagnostic, type ScanResult } from '@fougere/core';
+import { DEFAULT_CONVENTIONS, Middleware, frondDirsOf, frondPackage, providerDirsOf, resolveConventions, togetherKeyOf, type Conventions, type ConventionsInput, type Diagnostic, type ScanResult } from '@fougere/core';
 import { Fronds, addressOf, awaitKeyOf, cardinalityOf, computeBindingPlan, opsOf, emitKeyOf, getPresenterFields, outputOf, ownedBy, repositoryKeyOf, storageKeyOf, targetOf, type CollectorEntry, type EntityEntry, type FrondDescriptor, type HandlerEntry, type MiddlewareEntry, type OperationContract, type OperationsMap, type PresenterEntry, type ProviderEntry, type SeedEntry, type TypeRef, viewsOf, isExtension, type ExtensionEntry } from '@fougere/core/descriptor';
 import { getModuleLoader, loadFrondConfig } from '@fougere/core/node';
 import type { FrondConfig, ErrorCode } from '@fougere/core';
@@ -624,13 +624,37 @@ async function toCollectorEntry(filePath: string): Promise<CollectorEntry | null
 }
 
 /**
- * Recognized by its FORM: a class in `middlewares/` that declares `around`. The scope is
- * the frond's own unless `frond.config.ts` widened it, which is why the config comes first.
+ * A class in `middlewares/` that extends `Middleware`. Anything else there runs around nothing,
+ * which is said rather than left silent — a forgotten `extends` reads exactly like a helper.
  */
 async function toMiddlewareEntry(filePath: string): Promise<MiddlewareEntry | null> {
   const ctor = await loadClass(filePath);
-  const prototype = (ctor as { prototype?: { around?: unknown } }).prototype;
-  if (typeof prototype?.around !== 'function') return null;
+  if (!(ctor.prototype instanceof Middleware)) {
+    record({
+      severity: 'warning',
+      code: 'middleware-not-extended',
+      filePath,
+      subject: ctor.name,
+      message: `${ctor.name} sits in middlewares/ and does not extend Middleware, so it runs around `
+        + `nothing. Write \`class ${ctor.name} extends Middleware\`, or move it out of middlewares/.`,
+    });
+
+    return null;
+  }
+  // `abstract` leaves nothing at runtime, so a class that never compiled — a misspelled `around`
+  // run without a type check — would be handed every call and fail on each one.
+  if (typeof (ctor.prototype as { around?: unknown }).around !== 'function') {
+    record({
+      severity: 'blocking',
+      code: 'middleware-without-around',
+      filePath,
+      subject: ctor.name,
+      message: `${ctor.name} extends Middleware and declares no \`around(context, next)\`, so every `
+        + `operation it stands around would fail. Name the method \`around\`.`,
+    });
+
+    return null;
+  }
   const deps = await depsOf(filePath);
 
   return {

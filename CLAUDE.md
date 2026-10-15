@@ -623,8 +623,11 @@ dead. That is why `Pipe<T>` returns a value instead of taking `next`, and it is 
 between the two, not a convention.
 
 **A middleware is a frond's to declare** — `middlewares/`, the tenth convention directory
-and the only one whose members apply to code they do not name. Recognized by its FORM: the
-class states `around(context, next)`, so a file in the directory that does not is not one.
+and the only one whose members apply to code they do not name. A member EXTENDS `Middleware`
+(`prefab/Middleware.ts`), read by `instanceof`, so a misspelled `around` stops compiling; a class
+there that does not extend it runs around nothing and the scan WARNS `middleware-not-extended`,
+since a forgotten `extends` reads exactly like a helper. One that extends it with no `around` is
+refused. Pinned by `compiler/tests/middleware-form.test.ts` and `core/tests/middleware-base.test.ts`.
 It answers for its own frond — every ADDRESS its handlers answer to, wider than its
 entities since a handler without one runs behind it too — AND for the fronds under it in
 `FougereConfig.fronds`. How far it reaches is written nowhere else: `MiddlewareEntry.scope`

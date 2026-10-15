@@ -1,4 +1,4 @@
-import type { AppNext, OperationContext } from '@fougere/core';
+import { Middleware, type AppNext, type OperationContext } from '@fougere/core';
 
 /**
  * What a link on a port cannot see: the refusal, as the caller receives it.
@@ -8,8 +8,8 @@ import type { AppNext, OperationContext } from '@fougere/core';
  * comes next, so it may not run it and may act on what came back; a link on a port answers a
  * gesture and knows nothing of the call that asked for it.
  */
-export default class Attempted {
-  async around(context: OperationContext, next: AppNext): Promise<unknown> {
+export default class Attempted extends Middleware {
+  async around<T>(context: OperationContext, next: AppNext<T>): Promise<T> {
     try {
       const answer = await next();
       console.log(`    around  ${context.address}.${context.operation} → answered`);

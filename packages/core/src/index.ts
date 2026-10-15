@@ -23,6 +23,7 @@ export type { CrudConstructor } from './prefab/CrudConstructor.js';
 export type { CrudOpName } from './prefab/CrudOpName.js';
 export type { CrudOps } from './prefab/CrudOps.js';
 export type { CrudViews } from './prefab/CrudViews.js';
+export { Middleware } from './prefab/Middleware.js';
 export { Mirror } from './prefab/MirrorConstructor.js';
 export type { MirrorConstructor } from './prefab/MirrorConstructor.js';
 export type { MirrorOf } from './prefab/MirrorOf.js';

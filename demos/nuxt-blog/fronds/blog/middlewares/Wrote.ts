@@ -1,4 +1,4 @@
-import { Logger, type AppNext, type OperationContext } from '@fougere/core';
+import { Logger, Middleware, type AppNext, type OperationContext } from '@fougere/core';
 
 /**
  * A line per write, and nothing for a read.
@@ -7,10 +7,12 @@ import { Logger, type AppNext, type OperationContext } from '@fougere/core';
  * including one whose handler carries no entity. `Logger` comes from the frond's own scope,
  * so the line says `blog:` without anyone writing it down.
  */
-export default class Wrote {
-  constructor(private log: Logger) {}
+export default class Wrote extends Middleware {
+  constructor(private log: Logger) {
+    super();
+  }
 
-  async around(context: OperationContext, next: AppNext): Promise<unknown> {
+  async around<T>(context: OperationContext, next: AppNext<T>): Promise<T> {
     const answer = await next();
     if (context.operation !== 'list' && context.operation !== 'find') {
       this.log.info(`${context.address}.${context.operation}`);

@@ -85,17 +85,15 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
   nothing BYPASS the wrapper. `OwnLoggers` already avoids `child()` on a replaced logger.
 - **`conventions:` restates the directory NAMES and the import scope, nothing else** —
   `Conventions` (`core/src/Conventions.ts`). What a file is recognized BY stays fixed: a
-  middleware states `around`, an extension `up`/`down`/`state`, and an address is the class
+  middleware extends `Middleware`, an extension `up`/`down`/`state`, and an address is the class
   name less `Handler` (`addressOf`, `wire/Facade.ts`). The README says the conventions can be
   overridden, which holds for where code lives and not for how it is read. Stated 2026-10-04.
-- **Three implicit rules pass the boot in silence when they are broken** — read in the code
-  2026-10-01, each checkable at boot since the declaration is read there. (1) A file in a convention
-  directory that is not of its FORM is dropped: `collect` (`compiler/src/scan/scanner.ts`) filters
-  every `null` a reader answers, so a class in `middlewares/` without `around` is simply not one,
-  and nothing says so. (2) A class in `handlers/` without the `Handler` suffix answers at its whole
-  name (`addressOf`, `wire/Facade.ts`): `Posts` answers `posts`, where `PostHandler` answers `post`.
-  (3) A handler accepting `Fact<T>` for a fact nothing announces is a subscription to nothing — no
-  code names it; `drift.ts` only reads a fact gone between two CARDS.
+- **Two implicit rules pass the boot in silence when they are broken** — read in the code
+  2026-10-01, each checkable at boot since the declaration is read there. (1) A class in `handlers/`
+  without the `Handler` suffix answers at its whole name (`addressOf`, `wire/Facade.ts`): `Posts`
+  answers `posts`, where `PostHandler` answers `post`. (2) A handler accepting `Fact<T>` for a fact
+  nothing announces is a subscription to nothing — no code names it; `drift.ts` only reads a fact
+  gone between two CARDS.
 - **The level decides what is COLLECTED, not only what is printed** — `Logger.log`
   (`builtin/Logger.ts`) returns on the threshold BEFORE `carry.push`, so a line under it reaches no
   destination either. The CLI sets `FOUGERE_LOG_LEVEL=warn` (`cli/src/main.ts`) to keep its output
