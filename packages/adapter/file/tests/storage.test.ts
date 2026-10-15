@@ -78,7 +78,8 @@ describe('rows as files', () => {
     const again = await rows.upsert({ id: 's1', label: 'second', size: 2 });
     expect(again.label).toBe('second');
     // The row keeps the moment it appeared — the same contract SQL states for an overwrite.
-    expect(new Date(again.takenAt as never).getTime()).toBe((first.takenAt as Date).getTime());
+    expect((again.takenAt as Date).getTime()).toBe((first.takenAt as Date).getTime());
+    expect((await rows.findById('s1'))?.takenAt).toBeInstanceOf(Date);
 
     await expect(rows.create({ id: 's1', label: 'third', size: 3 })).rejects.toThrow(/already exists/);
   });

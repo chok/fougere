@@ -1,12 +1,14 @@
 #!/usr/bin/env bash
 # A scenario as a GIF: the terminal above, the page below, filmed by one browser so they share a clock.
 # Each runs on the starter `fougere new` writes. `pnpm clip schema` films tools/clip/scenario/schema.ts.
+# `pnpm clip schema wide` puts the browser beside the terminal, at the terminal's height, and writes an mp4.
 # Needs ttyd, tmux, httpie and ffmpeg (`brew install ttyd tmux httpie ffmpeg`). Writes docs/img/<scenario>.gif, the one the README shows.
 set -euo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"
 ROOT="$(cd "$HERE/../.." && pwd)"
 SCENARIO="${1:-gradient}"
-OUT="$HERE/out/$SCENARIO"
+LAYOUT="${2:-tall}"
+OUT="$HERE/out/$SCENARIO/$LAYOUT"
 WORK="$(mktemp -d)"
 rm -rf "$OUT" && mkdir -p "$OUT"
 release() {
@@ -33,7 +35,14 @@ until ! lsof -ti tcp:3100 >/dev/null; do sleep 0.2; done
 ttyd -W -p 7681 -t fontSize=13 -t 'theme={"background":"#151c18"}' tmux -L clip attach -t clip >"$OUT/ttyd.log" 2>&1 &
 until curl -s -o /dev/null http://localhost:7681; do sleep 0.2; done
 
-OFFSET=$(node "$HERE/scenario/$SCENARIO.ts" "$OUT")
+OFFSET=$(node "$HERE/scenario/$SCENARIO.ts" "$OUT" "$LAYOUT")
+if [ "$LAYOUT" = wide ]; then
+  ffmpeg -y -loglevel error -i "$OUT"/terminal/*.webm -i "$OUT"/page/*.webm -filter_complex "
+    [1:v]tpad=start_duration=${OFFSET}:start_mode=add:color=0x151c18[page];
+    [0:v][page]hstack=shortest=1,fps=12" -c:v libx264 -pix_fmt yuv420p -crf 23 -movflags +faststart "$OUT/$SCENARIO.mp4"
+  echo "$OUT/$SCENARIO.mp4"
+  exit
+fi
 ffmpeg -y -loglevel error -i "$OUT"/terminal/*.webm -i "$OUT"/page/*.webm -filter_complex "
   [1:v]tpad=start_duration=${OFFSET}:start_mode=add:color=0x151c18[page];
   [0:v][page]vstack=shortest=1,fps=12,split[a][b];

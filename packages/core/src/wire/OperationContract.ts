@@ -49,8 +49,8 @@ const PRIMITIVE_RETURNS = new Set(['boolean', 'string', 'number', 'void', 'undef
 
 /** Deliberately finite. */
 const QUERY_VERBS = new Set([
-  'all', 'check', 'count', 'exists', 'fetch', 'find', 'get', 'has', 'health', 'list',
-  'load', 'mine', 'ping', 'quote', 'read', 'search', 'stats', 'status', 'who',
+  'all', 'can', 'check', 'count', 'exists', 'fetch', 'find', 'get', 'has', 'health', 'is',
+  'list', 'load', 'mine', 'ping', 'quote', 'read', 'search', 'stats', 'status', 'who',
 ]);
 
 /**

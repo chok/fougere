@@ -1,6 +1,10 @@
 <script setup lang="ts">
 definePageMeta({ layout: false });
 
+if (useReadOnlyDeployment().value) {
+  throw createError({ statusCode: 404, statusMessage: 'Page not found', fatal: true });
+}
+
 const { t } = useI18n();
 const localePath = useLocalePath();
 const name = ref('');

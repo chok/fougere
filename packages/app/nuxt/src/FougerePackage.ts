@@ -16,6 +16,9 @@ function packageNameOf(directory: string): string | undefined {
   return name;
 }
 
-/** A file Nitro must not drop for being imported for what it runs: it belongs to a `@fougere/*` package. */
+/**
+ * A module Nitro must not drop for being imported for what it runs: it belongs to a `@fougere/*`
+ * package — a file in one, or the package named, as an external is in a dev build.
+ */
 export const isFougerePackage = (id: string): boolean =>
-  isAbsolute(id) && (packageNameOf(dirname(id))?.startsWith('@fougere/') ?? false);
+  id.startsWith('@fougere/') || (isAbsolute(id) && (packageNameOf(dirname(id))?.startsWith('@fougere/') ?? false));

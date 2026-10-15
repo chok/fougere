@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@fougere/adapter-graphql": "workspace:*",
+    "@fougere/adapter-file": "workspace:*",
     "@fougere/adapter-sql": "workspace:*",
     "@fougere/auth-better": "workspace:*",
     "@fougere/container": "workspace:*",
@@ -30,7 +31,7 @@
     "jiti": "^2.6.1",
     "kysely": "^0.28.17",
     "markdown-it": "^14.1.0",
-    "nuxt": "^4.4.2",
+    "nuxt": "^4.6.1",
     "roughjs": "^4.6.6",
     "shiki": "^4.3.1",
     "tailwindcss": "^4.2.2",

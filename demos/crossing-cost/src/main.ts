@@ -15,7 +15,9 @@ import { createApp, createLocalRunner, declaredTopologyOf, resolveEffectiveOpera
 import { loadConfig, remotesOf } from '@fougere/core/node';
 import { createContainer } from '@fougere/container';
 import { createHttpTransport, serve } from '@fougere/transport-http';
-import { join } from 'node:path';
+import { createHash } from 'node:crypto';
+import { readdir, readFile } from 'node:fs/promises';
+import { join, relative } from 'node:path';
 
 const root = join(import.meta.dirname, '..');
 const config = await loadConfig(root);
@@ -94,7 +96,18 @@ console.log(answering.length === 0
   ? '\n  Now uncomment the two lines in fougere.config.ts and run it again.\n'
   : `\n  The same answer, with ${answering.length} frond(s) answering over HTTP. No handler changed.\n`);
 
+console.log(`  fronds/ sha256 ${await fingerprintOf(join(root, 'fronds'))} — the same on both runs: no file under fronds/ moved.\n`);
+
 for (const { host, receiver } of answering) {
   await receiver.close();
   await host.dispose();
+}
+
+async function fingerprintOf(dir: string): Promise<string> {
+  const entries = await readdir(dir, { recursive: true, withFileTypes: true });
+  const files = entries.filter((entry) => entry.isFile()).map((entry) => join(entry.parentPath, entry.name)).sort();
+  const hash = createHash('sha256');
+  for (const file of files) hash.update(relative(dir, file)).update(await readFile(file));
+
+  return hash.digest('hex').slice(0, 12);
 }

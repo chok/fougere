@@ -94,4 +94,4 @@ it is created — didi is the one to take.
 
 Part of [Fougere](https://github.com/chok/fougere) — one schema, a gradient from
 monolith to distributed, the same user code.
-Reference documentation: [the site](https://fougere.dev/) (en/fr).
+Reference documentation: [the site](https://fougere.dev/).

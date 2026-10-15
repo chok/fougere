@@ -1,41 +1,42 @@
 import { DEMO_LANGUAGES } from './modules/demo';
 
-const locales: {
-  code: 'en' | 'fr';
-  name: string;
-  language: string;
-  file: string;
-}[] = [
-  { code: 'en', name: 'English', language: 'en-US', file: 'en.json' },
-  { code: 'fr', name: 'Français', language: 'fr-FR', file: 'fr.json' },
-];
+const locales = [{ code: 'en', name: 'English', language: 'en-US', file: 'en.json' }];
 
 /**
- * Sections a prerendered deployment cannot serve — the blog is a live Frond
- * (reading it means a database, writing it means a server), and the auth pages
- * are facades onto that server. Stated once as routes; the locale prefixes are
- * derived from the locales above rather than spelled out per language.
- *
- * This binds the crawler alone. Under `nuxt build` they are served normally,
- * which is where the blog is the dogfooding proof.
+ * Pages a prerendered deployment cannot serve: writing a post and signing in need a
+ * server. Reading the blog does not — the Frond reads the posts at build time.
  */
-const serverOnly = ['/blog', '/login', '/register'];
-const serverOnlyRoutes = locales.flatMap((l) =>
-  serverOnly.map((route) => (l.code === 'en' ? route : `/${l.code}${route}`)),
-);
+const serverOnly = ['/blog/new', '/blog/edit', '/blog/drafts', '/login', '/register'];
 
 export default defineNuxtConfig({
+  // A page's data is shared across prerendered pages through JSON, which hands a Date back
+  // as a string: the blog's dates arrived as text under `nuxt generate` alone.
+  experimental: { sharedPrerenderData: false },
   // `./modules/demo` is named rather than left to the modules/ scan: it writes into
   // content/ and must run before @nuxt/content reads it.
   modules: ['./modules/demo', '@nuxt/ui', '@nuxt/content', '@nuxtjs/i18n', '@fougere/nuxt'],
   css: ['~/assets/css/main.css'],
+  fonts: {
+    families: [
+      { name: 'Fraunces', weights: [400], styles: ['normal', 'italic'] },
+      { name: 'IBM Plex Sans', weights: [400, 500, 600, 700], styles: ['normal', 'italic'] },
+      { name: 'IBM Plex Mono', weights: [400], styles: ['normal'] },
+    ],
+  },
   compatibilityDate: '2026-07-18',
+  colorMode: { preference: 'light', fallback: 'light' },
+  app: {
+    head: {
+      link: [{ rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' }],
+    },
+  },
   // The audit prompt links to the docs, and `nuxt generate` renders it with no client
   // request to read an origin from — `useRequestURL()` returns http://localhost there.
   // SITE_URL is what the Pages workflow already hands the build.
   runtimeConfig: {
     public: {
       siteUrl: (process.env.SITE_URL ?? 'http://localhost:3000').replace(/\/$/, ''),
+      readOnly: process.argv.includes('generate'),
     },
   },
   // `lucide` and `noto` are devDependencies so the icons ship with the build instead of
@@ -73,7 +74,16 @@ export default defineNuxtConfig({
     '~/components',
   ],
   nitro: {
-    prerender: { ignore: serverOnlyRoutes },
+    prerender: { ignore: serverOnly },
+    hooks: {
+      // A blog with no post answers 404, and on static hosting that is a file not written.
+      'prerender:generate'(route) {
+        if (route.route === '/blog' && route.error?.statusCode === 404) {
+          route.skip = true;
+          route.error = undefined;
+        }
+      },
+    },
   },
   // Building them is what took `nuxt build` past Node's default heap: rollup holds the map
   // of every chunk alive for the whole bundle, and the server bundle is where the app

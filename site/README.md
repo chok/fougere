@@ -2,7 +2,7 @@
 
 The Fougere site — landing page, docs, blog — built with Fougere: the blog is a Frond
 (`fronds/blog`, a validated draft→publish), the docs are Nuxt Content markdown
-(`content/{en,fr}/docs`), i18n is en/fr (`prefix_except_default`: `/docs`, `/fr/docs`).
+(`content/docs`), served at `/docs`.
 
 ```bash
 pnpm migrate             # from site/ — the boot only reads the schema
@@ -23,16 +23,13 @@ NITRO_PRESET=github_pages NUXT_APP_BASE_URL=/ pnpm generate
 npx serve .output/public
 ```
 
-What survives the export: the landing page, the docs (en/fr), and the **read side** of
-the blog — rendered by the Frond at build time, exactly as it would be in SSR.
+What the export keeps: the landing page, the docs, and the **read side** of the blog —
+rendered by the Frond at build time, exactly as it would be in SSR. Posts are files in
+git (`posts/post/*.json`, the `posts` source in `fougere.config.ts`): written on a local
+server, committed, and read by the build. A blog with no post answers 404 and is not written.
 
-What does not: writing and signing in, which need a server. `useReadOnlyDeployment()`
-derives that from the build (`import.meta.prerender`, put in the payload) and removes the
-"Sign in" entry from the bar. The SPA fallback still renders any hand-typed URL: `/login`
-draws its form, which simply has no recipient. No path through the site leads there.
-
-The static blog is empty as long as `.data/` is out of git: CI starts from a fresh
-database. Publishing posts on Pages would take seeds — the reading side already works.
+What it does not keep: writing and signing in, which need a server. `useReadOnlyDeployment()`
+derives that from the build and `/login` and `/register` answer 404 there.
 
 ## Deploy
 

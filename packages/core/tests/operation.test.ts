@@ -43,6 +43,13 @@ describe('isReadOp (convention)', () => {
   it('matches whole words, never string prefixes', () => {
     expect(() => isReadOp('hashPassword')).toThrow(/Cannot infer operation kind/);
   });
+
+  it('reads a predicate as a question, whatever verb it asks about', () => {
+    expect(isReadOp('canPublish')).toBe(true);
+    expect(isReadOp('isAvailable')).toBe(true);
+    expect(() => isReadOp('cancelOrder')).toThrow(/Cannot infer operation kind/);
+    expect(() => isReadOp('issueRefund')).toThrow(/Cannot infer operation kind/);
+  });
 });
 
 describe('resolveIsReadOp (convention + overrides)', () => {

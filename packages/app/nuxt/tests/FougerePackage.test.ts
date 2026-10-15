@@ -26,10 +26,16 @@ describe('a file Nitro must keep for what it runs at load', () => {
     expect(isFougerePackage(join(linked, 'dist/sqlite/index.js'))).toBe(true);
   });
 
+  it('is a @fougere package named, the way a dev build leaves it external', () => {
+    expect(isFougerePackage('@fougere/adapter-file')).toBe(true);
+    expect(isFougerePackage('@fougere/adapter-sql/sqlite')).toBe(true);
+  });
+
   it('is not any other package, nor a virtual module', () => {
     const other = packageAt('node_modules/h3', { name: 'h3' });
 
     expect(isFougerePackage(join(other, 'dist/index.mjs'))).toBe(false);
     expect(isFougerePackage('\0virtual:nitro')).toBe(false);
+    expect(isFougerePackage('h3')).toBe(false);
   });
 });

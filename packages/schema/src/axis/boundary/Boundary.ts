@@ -67,11 +67,9 @@ export class Boundary {
 
     return new Boundary(rules, {
       decode:
-        rules.in === 'closed'
-          ? identityDecoder
-          : typeof declared.rules.in === 'object'
-            ? Boundaries.decoders.resolve(declared.rules.in.decode)
-            : derived.decode,
+        typeof declared.rules.in === 'object'
+          ? Boundaries.decoders.resolve(declared.rules.in.decode)
+          : derived.decode,
       encode:
         rules.out === 'closed'
           ? identityEncoder

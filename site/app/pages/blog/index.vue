@@ -1,16 +1,19 @@
 <script setup lang="ts">
 
-const { t, locale } = useI18n();
+const { t } = useI18n();
 const localePath = useLocalePath();
 
 import { post as postFacade } from '@fronds/facade';
 
 const { items: posts, loading, error } = await useQuery(postFacade, 'list');
+if (!loading.value && !error.value && !posts.value.length) {
+  throw createError({ statusCode: 404, statusMessage: 'No posts yet', fatal: true });
+}
 
 useSeoMeta({ title: () => `${t('blog.title')} — Fougere`, description: () => t('blog.subtitle') });
 
 function day(at?: Date | null) {
-  return at ? at.toLocaleDateString(locale.value === 'fr' ? 'fr-FR' : 'en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : '';
+  return at ? at.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : '';
 }
 </script>
 
@@ -21,7 +24,6 @@ function day(at?: Date | null) {
 
     <div v-if="loading" class="py-16 text-center text-muted">…</div>
     <UAlert v-else-if="error" color="error" :title="error.message" class="mt-8" />
-    <p v-else-if="!posts.length" class="py-16 text-center text-muted">{{ $t('blog.empty') }}</p>
 
     <div v-else class="mt-10 space-y-8">
       <article v-for="post in posts" :key="post.id">

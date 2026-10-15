@@ -3,18 +3,14 @@ definePageMeta({ key: (route) => route.path.replace(/\/$/, '') || '/' });
 
 const route = useRoute();
 // Static hosting 301s a directory URL onto its trailing slash, so a reload lands on
-// `/fr/docs/` while a document path — and the prerendered payload key built from it —
+// `/docs/` while a document path — and the prerendered payload key built from it —
 // is spelled without one. Everything below reads this, never `route.path`.
 const path = computed(() => route.path.replace(/\/$/, '') || '/');
-const { locale } = useI18n();
 const localePath = useLocalePath();
 
-// One collection per language, prefixed so document paths match route paths as-is.
-const collection = computed(() => (locale.value === 'fr' ? 'docs_fr' : 'docs_en') as 'docs_fr' | 'docs_en');
-
 const [{ data: page }, { data: nav }] = await Promise.all([
-  useAsyncData(`docs:${path.value}`, () => queryCollection(collection.value).path(path.value).first()),
-  useAsyncData(`docs-nav:${locale.value}`, () => queryCollectionNavigation(collection.value)),
+  useAsyncData(`docs:${path.value}`, () => queryCollection('docs').path(path.value).first()),
+  useAsyncData('docs-nav', () => queryCollectionNavigation('docs')),
 ]);
 
 if (!page.value) {
@@ -23,7 +19,6 @@ if (!page.value) {
 
 type NavItem = { title: string; path: string; page?: boolean; children?: NavItem[] };
 
-// The docs node sits at a locale-dependent depth — walk the tree.
 function findNode(items: NavItem[], target: string): NavItem | undefined {
   for (const item of items) {
     if (item.path === target) return item;
