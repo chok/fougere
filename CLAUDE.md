@@ -851,8 +851,9 @@ names the view ONE op emits: the handler keeps its full-row storage, and the fa�
 so `CrudOps` has no `storage`. The five ops it inherits are the handler's SURFACE — what a caller
 reaches — and rows are read and written through the repository, which the handler asks for in its
 constructor and hands to `super()`, the form the boot already required of a `Crud` handler with a
-constructor: `this.posts.findById(id)`, never `super.findById(id)`, which reads a row through a door
-the outside calls and stops meaning the same thing the day the handler redefines that op. A handler
+constructor. `this.posts.findById(id)` and `super.findById(id)` are two calls under one name: the
+first reads the row as stored, the second calls the handler's own operation — the door the outside
+calls, whatever the handler redefined there — and the method says which one it means. A handler
 with no constructor holds no repository, and `super` is then its only way to the rows. `this.storage` used to be the one place a
 handler touched the port directly, and the starter taught it: 22 of 71 `Crud` handlers wrote their
 queries there, filtering a whole `list()` in memory. The frond template `blank` went with it — an
