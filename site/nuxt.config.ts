@@ -1,4 +1,5 @@
 import { DEMO_LANGUAGES } from './modules/demo';
+import { pastel } from './app/code/pastel';
 
 const locales = [{ code: 'en', name: 'English', language: 'en-US', file: 'en.json' }];
 
@@ -24,7 +25,7 @@ export default defineNuxtConfig({
     ],
   },
   compatibilityDate: '2026-07-18',
-  colorMode: { preference: 'light', fallback: 'light' },
+  ui: { colorMode: false },
   app: {
     head: {
       link: [{ rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' }],
@@ -95,10 +96,7 @@ export default defineNuxtConfig({
     build: {
       markdown: {
         highlight: {
-          // Shiki's `github-dark` is GitHub's OLD dark theme: its comments are #6a737d,
-          // 3.09:1 on an elevated block where AA asks 4.5 — and this doc explains itself
-          // in comments. `github-dark-default` is the current one, #8b949e, 4.84:1.
-          theme: { default: 'github-light', dark: 'github-dark-default' },
+          theme: { default: pastel },
           langs: [
             ...new Set(['ts', 'vue', 'bash', 'json', 'jsonc', 'dockerfile', 'yaml', 'html', ...DEMO_LANGUAGES]),
           ],

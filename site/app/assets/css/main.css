@@ -61,69 +61,6 @@ h1, h2, h3 {
   filter: blur(48px);
 }
 
-/* ── Code windows (landing) ────────────────────────────────────────────── */
-.code-window {
-  display: flex;
-  flex-direction: column;
-  border: 1px solid var(--ui-border);
-  border-radius: 0.75rem;
-  overflow: hidden;
-  background: var(--ui-bg-elevated);
-  box-shadow: 0 1px 3px rgb(0 0 0 / 0.06), 0 8px 24px -12px rgb(0 0 0 / 0.12);
-}
-.code-window-bar {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.55rem 0.9rem;
-  border-bottom: 1px solid var(--ui-border);
-}
-.code-dot {
-  width: 0.65rem;
-  height: 0.65rem;
-  border-radius: 9999px;
-}
-.code-filename {
-  margin-left: 0.5rem;
-  font-family: var(--font-mono, ui-monospace, monospace);
-  font-size: 0.72rem;
-  color: var(--ui-text-muted);
-  letter-spacing: 0.01em;
-}
-.code-window-body {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-}
-.code-window-body pre {
-  min-height: 100%;
-  margin: 0;
-  padding: 1rem;
-  font-size: 0.74rem;
-  line-height: 1.65;
-  overflow-x: auto;
-  border: 0;
-  border-radius: 0;
-  background: transparent !important;
-}
-.code-window-body :not(pre) > code {
-  background: none;
-  padding: 0;
-}
-
-/* ── Shiki dual-theme switching ────────────────────────────────────────── */
-.shiki span {
-  color: var(--shiki-default);
-  font-style: var(--shiki-default-font-style);
-  font-weight: var(--shiki-default-font-weight);
-}
-.dark .shiki,
-.dark .shiki span {
-  color: var(--shiki-dark);
-  font-style: var(--shiki-dark-font-style);
-  font-weight: var(--shiki-dark-font-weight);
-}
-
 /* ── Prose — docs pages and rendered post bodies ───────────────────────── */
 .prose-body {
   line-height: 1.75;
@@ -159,7 +96,8 @@ h1, h2, h3 {
   margin: 1.1rem 0;
   font-size: 0.82rem;
   line-height: 1.65;
-  background: var(--ui-bg-elevated);
+  background: #10180f;
+  color: #dde5da;
 }
 .prose-body pre code { background: none; border: 0; padding: 0; }
 
