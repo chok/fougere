@@ -1,9 +1,12 @@
 import { Field, type Described } from '../../field/Field.js';
 import { Generators, type GeneratorRef } from '../../axis/lifecycle/Generators.js';
+import { Format } from '../../lib/Format.js';
+import { DESCRIBED, admits, judgeOptions, type OptionsIn } from '../../field/Word.js';
 
-interface PrimaryOptions extends Described {
-  generate?: GeneratorRef | [name: string, fn: () => string];
-}
+const KEYS = { generate: Format.anything.as<GeneratorRef | [name: string, fn: () => string]>() };
+const ADMITS = admits('primary', KEYS, DESCRIBED);
+
+type PrimaryOptions = OptionsIn<typeof KEYS> & Described;
 
 export function primary(opts?: PrimaryOptions): Field<string>;
 export function primary<T>(field: Field<T>): Field<T>;
@@ -22,6 +25,7 @@ export function primary(fieldOrOptions?: Field | PrimaryOptions): Field {
   }
 
   const opts: PrimaryOptions = fieldOrOptions ?? {};
+  judgeOptions('primary', ADMITS, fieldOrOptions);
 
   let generate: GeneratorRef;
   if (Array.isArray(opts.generate)) {

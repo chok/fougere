@@ -42,13 +42,22 @@ describe('what every word admits', () => {
     expect(ref(Target, { default: 'anonymous' }).lifecycle?.create).toEqual({ value: 'anonymous' });
   });
 
-  it('offers no value where the word has none to hold', () => {
+  it('offers no value where the word has none to hold — and refuses one at run time too', () => {
     // @ts-expect-error a collection is not a value a caller writes
-    many(Target, { default: [] });
+    expect(() => many(Target, { default: [] })).toThrow(/many\(\)\.default/);
     // @ts-expect-error a generated key already states how it is born
-    primary({ default: 'x' });
+    expect(() => primary({ default: 'x' })).toThrow(/primary\(\)\.default/);
     // @ts-expect-error a stamp states `create: 'now'`, so there is no value to offer
-    created({ default: new Date(0) });
+    expect(() => created({ default: new Date(0) })).toThrow(/created\(\)\.default/);
+  });
+
+  it('refuses an option a word does not know, under its own name', () => {
+    // @ts-expect-error `minn` is not a key of `text`
+    expect(() => text({ minn: 1 })).toThrow(/text\(\)\.minn: Instance does not match any of/);
+    // @ts-expect-error a boundary is a rule, written `writeOnly(text())`
+    expect(() => text({ boundary: 'writeOnly' })).toThrow(/text\(\)\.boundary/);
+    // @ts-expect-error `minimum` is the keyword, `min` the option
+    expect(() => number({ minimum: 1 })).toThrow(/number\(\)\.minimum/);
   });
 
 });

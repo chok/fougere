@@ -1,6 +1,9 @@
 import type { Entity } from '../../entity/Entity.js';
 import { Relation } from '../../axis/role/Relation.js';
 import { Field, type Described } from '../../field/Field.js';
+import { DESCRIBED, admits, judgeOptions } from '../../field/Word.js';
+
+const ADMITS = admits('many', {}, DESCRIBED);
 
 /**
  * `many(() => Post)` → `{ type: 'array' }` with `role.relation.kind` `'many'`
@@ -9,6 +12,8 @@ export function many<E extends Entity>(
   target: E | (() => E),
   opts?: Described,
 ): Field<InstanceType<E>[]> {
+  judgeOptions('many', ADMITS, opts);
+
   return new Field<InstanceType<E>[]>({
     shape: { type: 'array' },
     role: { relation: Relation.many(target) },

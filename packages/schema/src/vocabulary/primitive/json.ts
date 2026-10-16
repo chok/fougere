@@ -3,6 +3,9 @@ import type { SchemaView } from '../../SchemaView.js';
 import type { Entity } from '../../entity/Entity.js';
 import { InputValidator } from '../../validator/InputValidator.js';
 import { SchemaError } from '../../SchemaError.js';
+import { admits, judgeOptions } from '../../field/Word.js';
+
+const ADMITS = admits('json', {});
 
 
 export function json<T = unknown>(opts?: Shared<T>): Field<T>;
@@ -19,6 +22,7 @@ export function json(
   opts?: Shared<unknown>,
 ): Field<unknown> {
   const [schema, shared] = typeof of === 'function' ? [of, opts] : [undefined, of];
+  judgeOptions('json', ADMITS, shared);
 
   if (schema && typeof schema.getFields !== 'function')
     throw new SchemaError(

@@ -2,6 +2,9 @@ import { Field, type Shared } from '../../field/Field.js';
 import type { Shape } from '../../axis/shape/Shape.js';
 import { isArrayOf, isObject } from '../../lib/utils.js';
 import { SchemaError } from '../../SchemaError.js';
+import { admits, judgeOptions } from '../../field/Word.js';
+
+const ADMITS = admits('oneOf', {});
 
 type Values = readonly [string, ...string[]] | readonly [number, ...number[]];
 
@@ -43,6 +46,8 @@ export function oneOf<const T extends Values>(
     throw new SchemaError(
       'oneOf() takes strings or numbers, then an optional object of options', { received: given },
     );
+
+  judgeOptions('oneOf', ADMITS, opts);
 
   return new Field<T[number]>({ shape }).setShared(opts);
 }

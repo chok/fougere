@@ -1,21 +1,13 @@
-import { Field, type Shared } from '../../field/Field.js';
-import { type StringFormat } from '../../axis/shape/StringFormat.js';
+import { Format } from '../../lib/Format.js';
+import { word } from '../../field/Word.js';
+import type { StringFormat } from '../../axis/shape/StringFormat.js';
 
-export interface TextOptions extends Shared<string> {
-  min?: number;
-  max?: number;
-  pattern?: string;
-  format?: StringFormat;
-}
+/** `text({ min: 1, max: 160 })` → `{ type: 'string', minLength: 1, maxLength: 160 }` */
+export const text = word<string>()('text', { type: 'string' }, {
+  min: ['minLength', Format.count],
+  max: ['maxLength', Format.count],
+  pattern: ['pattern', Format.text],
+  format: ['format', Format.text.as<StringFormat>()],
+});
 
-export function text(opts?: TextOptions): Field<string> {
-  return new Field<string>({
-    shape: {
-      type: 'string',
-      minLength: opts?.min,
-      maxLength: opts?.max,
-      pattern: opts?.pattern,
-      format: opts?.format,
-    },
-  }).setShared(opts);
-}
+export type TextOptions = NonNullable<Parameters<typeof text>[0]>;

@@ -1,5 +1,3 @@
-import { Field, type Shared } from '../../field/Field.js';
+import { word } from '../../field/Word.js';
 
-export function bool(opts?: Shared<boolean>): Field<boolean> {
-  return new Field<boolean>({ shape: { type: 'boolean' } }).setShared(opts);
-}
+export const bool = word<boolean>()('bool', { type: 'boolean' }, {});

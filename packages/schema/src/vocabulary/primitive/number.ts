@@ -1,17 +1,11 @@
-import { Field, type Shared } from '../../field/Field.js';
+import { Format } from '../../lib/Format.js';
+import { word } from '../../field/Word.js';
 
-export interface NumberOptions extends Shared<number> {
-  min?: number;
-  max?: number;
-  integer?: boolean;
-}
+/** `number({ integer: true, min: 1 })` → `{ type: 'integer', minimum: 1 }` */
+export const number = word<number>()('number', { type: 'number' }, {
+  min: ['minimum', Format.number],
+  max: ['maximum', Format.number],
+  integer: ['type', Format.flag, (integer: boolean) => (integer ? 'integer' : 'number')],
+});
 
-export function number(opts?: NumberOptions): Field<number> {
-  return new Field<number>({
-    shape: {
-      type: opts?.integer ? 'integer' : 'number',
-      minimum: opts?.min,
-      maximum: opts?.max,
-    },
-  }).setShared(opts);
-}
+export type NumberOptions = NonNullable<Parameters<typeof number>[0]>;
