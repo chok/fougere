@@ -245,11 +245,13 @@ One line each, kept because a past version of this file asserted the opposite.
   container answers `has()` and knows no policy. Pinned by `core/tests/unregistered.test.ts`. A neighbour's `AuthorRepository` used to
   answer `'AuthorRepository' is not registered` at the first call; the check found a seam link
   registered under its own name, which nothing could ever resolve, and it no longer is.
-- **A Nuxt server build keeps what a `@fougere/*` package runs at load** — Nitro reads every module
-  as free of side effects but its own, so `import '@fougere/adapter-sql/sqlite'` was dropped and a
-  built site answered `Unknown source 'sql' … answers memory`. `@fougere/nuxt` widens Nitro's rule
-  by the package NAME (`FougerePackage.ts`), since a workspace link has no `@fougere/` in its path.
-  Pinned by `app/nuxt/tests/FougerePackage.test.ts`, measured 2026-09-25.
+- **A Nuxt server build keeps what a package the config NAMES runs at load** — Nitro reads every
+  module as free of side effects but its own, so `import '@fougere/adapter-sql/sqlite'` was dropped
+  and a built site answered `Unknown source 'sql' … answers memory`. `@fougere/nuxt` keeps every
+  package `fougere.config.ts` imports (`packagesImportedBy`, `compiler/src/imports.ts`) or names as a
+  module key of `fronds:` — whole, since a package may register from a file nothing reads a value of
+  (`NamedPackage.ts`). It used to keep `@fougere/*` by NAME, which left a third party's adapter out.
+  Pinned by `app/nuxt/tests/NamedPackage.test.ts`, measured 2026-09-25.
 - **Core does not depend on the compiler, not even for its tests** — a core test states its fronds
   with `frond()` (`tests/fixtures-*/fronds.ts`, contracts written through `tests/contract.ts`), and
   what the scan DEDUCES is tested in `packages/compiler/tests/`. Core's devDependency on the

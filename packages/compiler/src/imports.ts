@@ -51,6 +51,17 @@ async function sourcesUnder(dir: string): Promise<string[]> {
   return out;
 }
 
+const PACKAGE = /^((?:@[\w.-]+\/)?\w[\w.-]*)(?:\/|$)/;
+
+/** The packages a file imports by name — `@fougere/adapter-sql/sqlite` is `@fougere/adapter-sql`. */
+export async function packagesImportedBy(filePath: string): Promise<string[]> {
+  const typescript = await loadTs();
+  const text = await readFile(filePath, 'utf8');
+  const specifiers = typescript.preProcessFile(text, true, true).importedFiles.map(({ fileName }) => fileName);
+
+  return [...new Set(specifiers.flatMap((specifier) => PACKAGE.exec(specifier)?.[1] ?? []))];
+}
+
 /** Every relative import that resolves outside its own frond. */
 export async function crossFrondImports(
   fronds: readonly Pick<FrondDescriptor, 'name' | 'source'>[],

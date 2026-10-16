@@ -8,6 +8,6 @@ export { emitStatement } from './scan/statement.js';
 export { codesOf, emitFacade, facadeModule, type Served } from './scan/Served.js';
 export { emitNames } from './scan/names.js';
 export { adaptersOf } from './scan/adapters.js';
-export { crossFrondImports } from './imports.js';
+export { crossFrondImports, packagesImportedBy } from './imports.js';
 export { handlerDeclarations } from './declarations.js';
 export { outsideConventions } from './placement.js';
