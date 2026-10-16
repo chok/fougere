@@ -6,7 +6,7 @@ const localePath = useLocalePath();
   <section id="try" class="try">
     <h2>{{ $t('home.tryTitle') }} <em>Fougere</em></h2>
     <div class="actions">
-      <HomeCode class="command" code="npm create fougere" />
+      <HomeCode class="command" code="pnpm create fougere" />
       <NuxtLink :to="localePath('/docs/getting-started')" class="primary">{{ $t('home.tryButton') }} →</NuxtLink>
     </div>
     <p class="or">
