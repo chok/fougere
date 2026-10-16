@@ -64,6 +64,7 @@
     "a-middleware-extends-middleware",
     "a-mirror-resumes-from-its-callers-mark",
     "a-missing-dependency-refuses-the-boot",
+    "a-new-project-tests-that-it-boots",
     "a-parameter-typed-by-a-field-obeys-it",
     "a-refusal-releases-from-the-first-line",
     "a-refused-boot-is-a-boot-refusal",

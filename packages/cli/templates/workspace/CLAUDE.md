@@ -81,6 +81,7 @@ After every change to handlers, entities, Fronds, configuration, or topology:
 
 ```bash
 fougere check
+pnpm test
 pnpm typecheck
 ```
 
