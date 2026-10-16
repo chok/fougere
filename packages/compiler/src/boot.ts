@@ -30,11 +30,8 @@ interface BootOptions {
   remoteTransport?: (url: string) => Transport;
   /** Carries an announced fact out of this process. */
   onEmit?: CreateAppOptions['onEmit'];
-  /**
-   * storage setup — returns the storage handle (db), an storageFactory, and its two halves.
-   */
-  db?: (config: FougereConfig) => {
-    db?: unknown;
+  /** The data layer, built from the config — a factory, and the two halves it owes the boot. */
+  storage?: (config: FougereConfig) => {
     storageFactory: CreateAppOptions['storageFactory'];
     /** What the schema lacks, read — the boot refuses on it and never writes. */
     pending?: (app: App) => Promise<string[]>;
@@ -64,11 +61,11 @@ export async function boot(options: BootOptions): Promise<App> {
   applyConfig(config);
   log.info('config loaded');
 
-  let dbSetup: ReturnType<NonNullable<BootOptions['db']>> | undefined;
-  if (options.db) {
-    log.debug('initializing database');
-    dbSetup = options.db(config);
-    log.info('database initialized');
+  let layer: ReturnType<NonNullable<BootOptions['storage']>> | undefined;
+  if (options.storage) {
+    log.debug('opening the sources');
+    layer = options.storage(config);
+    log.info('sources opened');
   }
 
   // What the config names by module — imported here, because core resolves no specifier.
@@ -83,7 +80,7 @@ export async function boot(options: BootOptions): Promise<App> {
     // handed the answer and reaches for nothing.
     scan: await scanProject(root, only, config.conventions),
     createContainer: options.createContainer,
-    storageFactory: dbSetup?.storageFactory,
+    storageFactory: layer?.storageFactory,
     // The tree's string leaves say the same thing `remotes:` does, and this boot read
     // neither of them from the file until now — a project stating its topology got a
     // process that believed every frond was local.
@@ -98,13 +95,13 @@ export async function boot(options: BootOptions): Promise<App> {
     // `serveGraphQL` both answered `pass` on an app whose config declared them — the
     // hosts got it right through their own boot (`app/shared/src/boot.ts`), and this
     // path, the conventional one, served nothing.
-    adapters: config.adapters,
+    protocols: config.protocols,
     // boot() called the factory, so boot() owns closing what it opened. Not an extension:
     // it was opened before the container existed, so it closes after the container goes.
-    onDispose: dbSetup?.close,
+    onDispose: layer?.close,
     // Read, never written: the boot refuses a database behind the entities, and writing it
     // is `fougere migrate --apply`.
-    pending: dbSetup?.pending,
+    pending: layer?.pending,
     extensions: [...stated.extensions, ...(options.extensions ?? [])],
     onEmit: options.onEmit,
     remoteTransport: options.remoteTransport,

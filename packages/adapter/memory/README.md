@@ -2,18 +2,20 @@
 
 > A Map — the source that ships no driver
 
-What an app with no `db` runs on, and what a test runs on when the shape is the subject
+What an app with no `sources:` runs on, and what a test runs on when the shape is the subject
 and the engine is not.
 
 ```ts
 // fougere.config.ts
+import '@fougere/adapter-memory';
+
 export default defineFougere({
-  db: { source: 'memory' },
-  sources: { cache: { source: 'memory', entities: ['Draft'] } },
+  sources: { cache: { type: 'memory', entities: ['Draft'] } },
 });
 ```
 
-Nothing else to wire: importing this package is what makes `'memory'` an answered name.
+Nothing else to wire: importing this package is what makes `type: 'memory'` an answered name,
+and a word the config may write.
 `@fougere/app` already depends on it, so the fallback needs no declaration at all.
 
 ## It answers the whole port

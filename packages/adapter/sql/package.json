@@ -25,11 +25,8 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
-    },
-    "./sqlite": {
-      "types": "./dist/sqlite/index.d.ts",
-      "import": "./dist/sqlite/index.js"
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
     }
   },
   "files": [
@@ -46,7 +43,8 @@
   "dependencies": {
     "@fougere/core": "workspace:*",
     "@fougere/schema": "workspace:*",
-    "dequal": "^2.0.3"
+    "dequal": "^2.0.3",
+    "kysely-d1": "^0.4.0"
   },
   "peerDependencies": {
     "kysely": ">=0.28.17"

@@ -1,7 +1,8 @@
 # @fougere/defaults
 > The conventional boot
-`bootApp()` and `resolveStorage()` — **the single** place that names a storage
-package. Changing engine is a change here, and nowhere else.
+`bootApp()` and `resolveStorage()` — **the single** place that reads `sources:`. It names no
+engine: the config imports the adapters it uses, and memory, the fallback for an app that
+declares no source, is the only one it brings.
 
 ## Installation
 ```bash

@@ -1,5 +1,6 @@
 import { defineFougere } from '@fougere/core';
 import { betterAuth } from '@fougere/auth-better';
+import '@fougere/adapter-sql';
 import '@fougere/adapter-file';
 import User from './fronds/user/entities/User';
 
@@ -7,10 +8,10 @@ export default defineFougere({
   // File-backed on purpose: posts and accounts must survive reloads and deploys.
   // Lives under .data/ — the writable-state dir (Nuxt Content uses it too),
   // which is also the single volume to mount when deploying.
-  db: { dialect: 'sqlite', path: '.data/site.db' },
-  // Posts are files in git: written locally, committed, and read by the static build.
   sources: {
-    posts: { source: 'file', path: 'posts', entities: ['Post'] },
+    main: { path: '.data/site.db' },
+    // Posts are files in git: written locally, committed, and read by the static build.
+    posts: { type: 'file', path: 'posts', entities: ['Post'] },
   },
   fronds: {
     // A frond like any other: `only:` or an address decides which process starts its engine.

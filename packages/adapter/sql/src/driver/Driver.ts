@@ -1,5 +1,6 @@
-import { createRequire } from 'node:module';
-import { join } from 'node:path';
+import type { createRequire } from 'node:module';
+import type { join } from 'node:path';
+import { builtin } from './Builtin.js';
 import { MssqlDialect, MysqlDialect, PostgresDialect, type Dialect as KyselyDialect } from 'kysely';
 import type { Engine } from '../fields/Engine.js';
 
@@ -34,7 +35,9 @@ export const DRIVERS: Record<Exclude<Engine, 'sqlite'>, Driver> = {
  * names what to do.
  */
 export function modulesOf(engine: Engine, from = process.cwd()): any[] {
-  const require = createRequire(join(from, 'package.json'));
+  const { createRequire: requireFrom } = builtin<{ createRequire: typeof createRequire }>('node:module', engine);
+  const { join: joined } = builtin<{ join: typeof join }>('node:path', engine);
+  const require = requireFrom(joined(from, 'package.json'));
   const packages = PACKAGES[engine];
   const missing = packages.filter((name) => !resolves(require, name));
   if (missing.length) {

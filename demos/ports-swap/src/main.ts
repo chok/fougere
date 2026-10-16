@@ -46,7 +46,7 @@ const storageFactory = (() => {
 // `boot()` asks for the SETUP, not the factory: a host that opens a connection has to be
 // able to close it, and `db:` is where both halves are stated.
 const booted = (ports?: Record<string, string | readonly string[]>) =>
-  boot({ root, createContainer, db: () => ({ storageFactory }), ...(ports ? { config: { ports } } : {}) });
+  boot({ root, createContainer, storage: () => ({ storageFactory }), ...(ports ? { config: { ports } } : {}) });
 
 const pay = async (ports?: Record<string, string | readonly string[]>) => {
   const app = await booted(ports);

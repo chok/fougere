@@ -6,38 +6,35 @@
  *
  *  1. THE SCAN arrives as a module `fougere build` wrote. Producing it read the project;
  *     consuming it reads nothing, which is why `createApp` runs where `node:fs` does not.
- *  2. THE STORAGE arrives as a BINDING, read from `cloudflare:workers` at MODULE scope.
- *     That placement is the whole difference between two budgets: work done inside
- *     `fetch` counts against the request's CPU allowance (10 ms on the free plan), work
- *     done at module load counts as STARTUP time, which is far larger. Measured before
- *     the move: a cold isolate answered in 12–23 ms of CPU and a warm one in 1 ms.
+ *  2. THE STORAGE is a BINDING, and `fougere.config.ts` names it — `type: 'd1'`. The app
+ *     is built at MODULE scope: work done inside `fetch` counts against the request's CPU
+ *     allowance (10 ms on the free plan), work done at module load counts as STARTUP time,
+ *     which is far larger. Measured before the move: a cold isolate answered in 12–23 ms
+ *     of CPU and a warm one in 1 ms.
  *  3. THE DOORS are `receive` (the JSON-RPC envelope, taking a `Request`) and the REST
  *     projection on hono. `serve()` is the node:http realization of the first and stays
  *     where it is; hono needs no bridge here because a Worker already speaks `Request`.
  *
  * The frond under `fronds/` is ordinary. Nothing in it names Cloudflare.
  */
-import { env } from 'cloudflare:workers';
 import { Hono } from 'hono';
-import { createApp, createLocalRunner, type App } from '@fougere/core';
+import { Sources, createApp, createLocalRunner, type App } from '@fougere/core';
 import { observability, flushTelemetry } from '@fougere/observability';
 import { createContainer } from '@fougere/container';
 import { receive } from '@fougere/transport-http/receive';
 import { createHonoRouter } from '@fougere/http';
 import { generateRoutes, registerRoutes } from '@fougere/adapter-rest';
-import { createKyselySource } from '@fougere/adapter-sql';
-import { D1Dialect } from 'kysely-d1';
+import config from '../fougere.config.js';
 import { scan } from '../.fougere/scan.generated.js';
 
 interface Env {
   DB: D1Database;
 }
 
-async function open(env: Env) {
-  // D1 IS SQLite, so the dialect Fougere reasons with is `'sqlite'` — the DDL, the
-  // codecs and the binding limit are the ones it already knows. What is different is
-  // the driver, and `createKyselySource` exists exactly so this package chooses none.
-  const storage = createKyselySource(new D1Dialect({ database: env.DB }), 'sqlite');
+async function open() {
+  // The same entry a Node app writes, opened the way `resolveStorage` opens one — which is
+  // a Node package, so the one line it would run is run here.
+  const storage = Sources.open(config.sources!.main!, 'sources.main');
   // No `otlp:` — an exporter buffers and flushes on a timer, and an isolate is frozen
   // the moment it answers. Without one the extension still measures and still serves
   // `rpc.topology`; what it cannot do is push, and that wants `ctx.waitUntil`.
@@ -78,7 +75,7 @@ async function open(env: Env) {
  * serving anything yet, so nothing waits on this — and every request, the first one
  * included, meets an app that is already up.
  */
-const facade = await open(env as unknown as Env);
+const facade = await open();
 
 export default {
   async fetch(request: Request, _env: Env, ctx: { waitUntil(work: Promise<unknown>): void }): Promise<Response> {

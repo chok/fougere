@@ -17,7 +17,7 @@ import { createContainer } from '@fougere/container';
 import {
   created, date, entity, json, oneOf, optional, primary, readOnly, ref, text, unique, updated, writeOnly,
 } from '@fougere/schema';
-import { createSqliteSource } from '@fougere/adapter-sql/sqlite';
+import { createSqliteSource } from '@fougere/adapter-sql';
 import {
   Collector, createApp, createAppRunner, createLocalRunner, Crud, ErrorCode, frond, Invocation, migrating, Presenter,
   togetherKeyOf, type App, type Storage, type Transport,
@@ -195,10 +195,10 @@ async function world(placement: Placement): Promise<World> {
 
   const storage = storageFrom(placement.split
     ? {
-      db: createSqliteSource({ path: join(dir, 'app.db') }),
-      sources: { archive: { source: createSqliteSource({ path: join(dir, 'archive.db') }), entities: ['Article'] } },
+      main: { source: createSqliteSource({ path: join(dir, 'app.db') }) },
+      archive: { source: createSqliteSource({ path: join(dir, 'archive.db') }), entities: ['Article'] },
     }
-    : { db: createSqliteSource({ path: join(dir, 'app.db') }) });
+    : { main: { source: createSqliteSource({ path: join(dir, 'app.db') }) } });
   const layer = layerOf(storage);
 
   let people: App;

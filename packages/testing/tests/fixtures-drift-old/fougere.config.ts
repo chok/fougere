@@ -1,2 +1,2 @@
 import { defineFougere } from '@fougere/core';
-export default defineFougere({ db: false });
+export default defineFougere({});

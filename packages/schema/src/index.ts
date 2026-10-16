@@ -47,5 +47,5 @@ export { FieldValueValidator } from './validator/FieldValueValidator.js';
 export { JsonSchemaValidator } from './validator/JsonSchemaValidator.js';
 export type { JsonSchema } from './lib/JsonSchema.js';
 export { Axes } from './axis/Axes.js';
-export { Format } from './lib/Format.js';
+export { Format, type Accepted } from './lib/Format.js';
 export type { Axis } from './axis/Axis.js';

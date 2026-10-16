@@ -108,7 +108,7 @@ export default class ExplainHandler {
       model: resolveEffectiveOperations(scan.fronds, {
         diagnostics: scan.diagnostics,
         remotes: remotesOf(scan.config),
-        adapters: scan.config.adapters,
+        protocols: scan.config.protocols,
       }),
     };
   }

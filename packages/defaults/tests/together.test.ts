@@ -14,7 +14,7 @@ import { tmpdir } from 'node:os';
 import { createApp, createLocalRunner, togetherKeyOf } from '@fougere/core';
 import { Invocation } from '@fougere/core/contract';
 import { createContainer } from '@fougere/container';
-import { createSqliteSource } from '@fougere/adapter-sql/sqlite';
+import { createSqliteSource } from '@fougere/adapter-sql';
 import { storageFrom } from '../src/storage/ResolvedStorage.js';
 
 const root = join(import.meta.dirname, 'fixtures-together');
@@ -31,10 +31,10 @@ async function boot(split: boolean) {
   const dir = mkdtempSync(join(tmpdir(), 'together-'));
   const storage = storageFrom(split
     ? {
-      db: createSqliteSource({ path: join(dir, 'app.db') }),
-      sources: { accounting: { source: createSqliteSource({ path: join(dir, 'accounting.db') }), entities: ['Ledger'] } },
+      main: { source: createSqliteSource({ path: join(dir, 'app.db') }) },
+      accounting: { source: createSqliteSource({ path: join(dir, 'accounting.db') }), entities: ['Ledger'] },
     }
-    : { db: createSqliteSource({ path: join(dir, 'app.db') }) });
+    : { main: { source: createSqliteSource({ path: join(dir, 'app.db') }) } });
 
   // What the boot SAYS is half of what is under test, so it is captured rather than read.
   // Every level, not `log` alone: a logger sends each one to its own console method, so a
@@ -98,7 +98,7 @@ describe('the key and its dual', () => {
 describe('one source — the engine gives both', () => {
   it('says at boot that it built a transaction', async () => {
     await using app = await boot(false);
-    expect(app.said.some((line) => /Account\+LedgerTogether — transaction, source 'db'/.test(line))).toBe(true);
+    expect(app.said.some((line) => /Account\+LedgerTogether — transaction, source 'main'/.test(line))).toBe(true);
   });
 
   it('takes both writes back when the block throws', async () => {
@@ -227,7 +227,7 @@ describe('what a frame refuses at boot', () => {
   /** Boot a fixture and hand back whatever it refused with. */
   const bootOf = async (fixture: string, remotes?: Record<string, string>) => {
     const dir = mkdtempSync(join(tmpdir(), 'together-'));
-    const storage = storageFrom({ db: createSqliteSource({ path: join(dir, 'app.db') }) });
+    const storage = storageFrom({ main: { source: createSqliteSource({ path: join(dir, 'app.db') }) } });
     try {
       await createApp({
         scan: await scanProject(join(import.meta.dirname, fixture)),

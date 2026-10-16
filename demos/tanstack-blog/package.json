@@ -9,19 +9,20 @@
     "migrate": "fougere migrate --latest --apply"
   },
   "dependencies": {
-    "@fougere/log": "workspace:*",
+    "@fougere/adapter-rest": "workspace:*",
+    "@fougere/adapter-sql": "workspace:*",
     "@fougere/app": "workspace:*",
     "@fougere/core": "workspace:*",
+    "@fougere/log": "workspace:*",
     "@fougere/react": "workspace:*",
     "@fougere/schema": "workspace:*",
-    "@fougere/adapter-sql": "workspace:*",
+    "@fougere/vite": "workspace:*",
     "@tanstack/react-router": "^1.170.25",
     "@tanstack/react-start": "^1.168.42",
     "better-sqlite3": "^13.0.3",
     "jiti": "^2.6.1",
     "react": "^19.2.0",
-    "react-dom": "^19.2.0",
-    "@fougere/vite": "workspace:*"
+    "react-dom": "^19.2.0"
   },
   "devDependencies": {
     "@tanstack/router-cli": "^1.132.0",

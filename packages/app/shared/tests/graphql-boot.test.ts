@@ -1,28 +1,31 @@
-/** `adapters: { graphql: true }` without the package that serves it refuses the boot, not the first query. */
+/** `protocols: { graphql: {} }` is served by what the config imports — and refuses the boot without it. */
+import '@fougere/adapter-sql';
 import { describe, it, expect } from 'vitest';
 import { entity, primary, text } from '@fougere/schema';
-import { frond } from '@fougere/core';
+import { frond, serves } from '@fougere/core';
 import { configureFougere, useFougereApp } from '../src/boot.js';
-import { executor } from '../src/graphql.js';
 
 class Note extends entity({ id: primary(), title: text() }) {}
 
-describe('graphql declared on a web host', () => {
-  it('names the missing package when it cannot be loaded', async () => {
-    const missing = () => Promise.reject(new Error("Cannot find package '@fougere/adapter-graphql'"));
+const declaring = () => configureFougere({
+  fronds: [frond('notes', { entities: [Note] })],
+  config: { sources: { main: { path: ':memory:' } }, protocols: { graphql: {} } } as never,
+  migrates: true,
+});
 
-    await expect(executor(missing)).rejects.toThrow(/adapters: \{ graphql: true \} is declared, but the package that serves it is not installed/);
+describe('graphql named on a web host', () => {
+  it('refuses the boot, naming the import, when no adapter serves it', async () => {
+    declaring();
+
+    await expect(useFougereApp()).rejects.toThrow(/protocols\.graphql: Unknown protocol 'graphql' — import the adapter that serves it/);
   });
 
-  it('loads it at boot, so a declared GraphQL is ready before the first query', async () => {
-    configureFougere({
-      fronds: [frond('notes', { entities: [Note] })],
-      config: { db: { dialect: 'sqlite', path: ':memory:' }, adapters: { graphql: true } } as never,
-      migrates: true,
-    });
+  it('serves it once the adapter is imported', async () => {
+    await import('@fougere/adapter-graphql');
+    declaring();
 
     const app = await useFougereApp();
-    expect(app.adapters.graphql).toBe(true);
+    expect(serves(app.protocols, 'graphql')).toBe(true);
     await app.dispose();
   });
 });

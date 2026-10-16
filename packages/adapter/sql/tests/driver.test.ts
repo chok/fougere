@@ -1,5 +1,5 @@
 /**
- * `db: { dialect, url }` names an engine and the app installs its driver. No server is opened
+ * `{ type: 'pg', url }` names an engine and the app installs its driver. No server is opened
  * here: what is pinned is which dialect the name builds, and what a missing driver answers.
  */
 import { describe, it, expect } from 'vitest';
@@ -9,7 +9,8 @@ import { join } from 'node:path';
 import { MssqlDialect, MysqlDialect, PostgresDialect } from 'kysely';
 import { Sources } from '@fougere/core';
 import { dialectFor, tediousConfig } from '../src/driver/Driver.js';
-import { createSqliteSource } from '../src/sqlite/index.js';
+import '../src/SqlSourceTypes.js';
+import { createSqliteSource } from '../src/sqlite/SqliteSource.js';
 
 /** An app directory holding fake drivers, so the resolution is the one an installed app gets. */
 function appWith(drivers: Record<string, string>): string {
@@ -63,8 +64,15 @@ describe('an engine named in the config', () => {
     });
   });
 
-  it('refuses a dialect it does not answer, and an engine with no url', () => {
-    expect(() => Sources.open('sql', { dialect: 'oracle' })).toThrow(/no dialect 'oracle'. It answers sqlite, pg, mysql, mssql/);
-    expect(() => Sources.open('sql', { dialect: 'pg' })).toThrow(/states no `url`/);
+  it('refuses a type it does not answer, a server with no url, and a key its format does not hold', () => {
+    expect(() => Sources.open({ type: 'oracle' }, 'sources.main')).toThrow(/Unknown source type 'oracle'.*sqlite, pg, mysql, mssql, d1/);
+    expect(() => Sources.open({ type: 'pg' }, 'sources.main')).toThrow(/sources\.main.*url/);
+    expect(() => Sources.open({ pathh: 'app.db' } as never, 'sources.main')).toThrow(/pathh/);
+  });
+
+  it('opens an entry naming no type as the conventional one, a SQLite file', () => {
+    const source = Sources.open({ path: ':memory:' } as never, 'sources.main');
+
+    expect(source.name).toBe(':memory:');
   });
 });

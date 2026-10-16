@@ -16,7 +16,7 @@ describe('the names file', () => {
   it('writes every kind the config can name', async () => {
     const written = emitNames(await scanProject(at('fixtures-refusals')));
 
-    for (const kind of ['frond', 'entity', 'handler', 'provider', 'middleware', 'source']) {
+    for (const kind of ['frond', 'entity', 'handler', 'provider', 'middleware']) {
       expect(written).toMatch(new RegExp(`^\\s+${kind}: `, 'm'));
     }
   });
@@ -25,14 +25,7 @@ describe('the names file', () => {
   it('says never for a kind the project declares nothing of', async () => {
     const written = emitNames(await scanProject(at('fixtures-refusals')));
 
-    expect(written).toMatch(/source: never;/);
-  });
-
-  /** The keys of `sources:` come from the config — no scan can find them. */
-  it('takes the source names it cannot scan', async () => {
-    const written = emitNames(await scanProject(at('fixtures-refusals')), { sources: ['analytics', 'archive'] });
-
-    expect(written).toMatch(/source: 'analytics' \| 'archive';/);
+    expect(written).toMatch(/middleware: never;/);
   });
 
   /**

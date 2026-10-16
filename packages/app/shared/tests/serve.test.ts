@@ -10,6 +10,7 @@
  * Dispatch itself is not here on purpose — `shapeRest` is separate from `serveRest`
  * precisely so the shaping can be validated without standing up a runner.
  */
+import '@fougere/adapter-graphql';
 import { describe, it, expect } from 'vitest';
 import { entity, primary, text } from '@fougere/schema';
 import { serveRest, serveRpc, shapeRest, surfaceOf } from '../src/Outcome.js';
@@ -28,9 +29,9 @@ const facade = {
 const byId = [{ name: 'id', source: { kind: 'param', name: 'id', identifies: 'Post' }, optional: false }];
 const bindings: Record<string, unknown> = { findById: byId, update: byId, delete: byId };
 
-function appOf(adapters: Record<string, boolean> = { rest: true }) {
+function appOf(protocols: Record<string, object> = { rest: {} }) {
   return {
-    adapters,
+    protocols,
     fronds: [{
       name: 'blog',
       entities: [{ name: 'post', entityClass: Post }],
@@ -66,15 +67,15 @@ describe('surfaceOf', () => {
   });
 });
 
-describe('the app decides which adapters it serves', () => {
-  it('serves nothing when the app declares no adapters — the route file is not the decision', async () => {
+describe('the app decides which protocols it serves', () => {
+  it('serves nothing when the app names no protocol — the route file is not the decision', async () => {
     const closed = appOf({});
     const outcome = await serveRest(closed, { method: 'GET', path: 'blog/posts', query: {}, state: {} });
     expect(outcome).toEqual({ kind: 'pass' });
   });
 
   it('serves nothing when it declares another adapter but not rest', async () => {
-    const closed = appOf({ graphql: true });
+    const closed = appOf({ graphql: {} });
     expect(await serveRest(closed, { method: 'GET', path: 'blog/posts', query: {}, state: {} }))
       .toEqual({ kind: 'pass' });
   });
@@ -82,7 +83,7 @@ describe('the app decides which adapters it serves', () => {
   it('declines rather than refuses, so the host keeps routing the request', async () => {
     // `pass`, never a 404: the app that mounted the facade may serve `/api/...` itself,
     // and an undeclared adapter must not take that path away from it.
-    const closed = appOf({ rest: false });
+    const closed = appOf({});
     const outcome = await serveRest(closed, { method: 'DELETE', path: 'blog/posts', query: {}, state: {} });
     expect(outcome).toEqual({ kind: 'pass' });
   });
@@ -145,13 +146,13 @@ describe('shapeRest', () => {
 describe('the GraphQL facade obeys the same declaration', () => {
   it('serves nothing when the app declares no graphql adapter', async () => {
     const { serveGraphQL } = await import('../src/graphql.js');
-    const outcome = await serveGraphQL(appOf({ rest: true }), { query: '{ __typename }', state: {} });
+    const outcome = await serveGraphQL(appOf({ rest: {} }), { query: '{ __typename }', state: {} });
     expect(outcome).toEqual({ kind: 'pass' });
   });
 
   it('refuses a request with no query once declared', async () => {
     const { serveGraphQL } = await import('../src/graphql.js');
-    const outcome = await serveGraphQL(appOf({ graphql: true }), { state: {} });
+    const outcome = await serveGraphQL(appOf({ graphql: {} }), { state: {} });
     expect(outcome).toMatchObject({ kind: 'error', status: 400 });
   });
 

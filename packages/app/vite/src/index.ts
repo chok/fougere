@@ -1,5 +1,4 @@
 /** `@fougere/vite` — the one place a Vite-built host is told what a Fougere app needs. */
-import type { FougereConfig } from '@fougere/core';
 import { readdirSync, existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { join, dirname, resolve } from 'node:path';
@@ -123,15 +122,12 @@ async function writeDoors(app: string, root: string): Promise<void> {
       alias: await frondAliases(root, resolveConventions()),
     });
     setModuleLoader((filePath: string) => jiti.import(filePath) as Promise<Record<string, unknown>>);
-    const { loadConfig } = await import('@fougere/core/node');
     const out = join(app, FACADE);
     mkdirSync(dirname(out), { recursive: true });
     const scan = await scanProject(root);
     writeFileSync(out, emitFacade(scan, { outFile: out }));
-    // What a config may NAME, from the same scan: the sources are the config's own keys, which
-    // no scan can find, and a project without one states none.
-    const config = await loadConfig(root).catch(() => ({}) as FougereConfig);
-    writeFileSync(join(app, NAMES), emitNames(scan, { sources: Object.keys(config.sources ?? {}) }));
+    // What a config may NAME, from the same scan.
+    writeFileSync(join(app, NAMES), emitNames(scan));
   } catch { /* a host with no fronds, or a scan that could not run */ }
 }
 

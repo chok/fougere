@@ -8,7 +8,6 @@ import { defineFougere } from '@fougere/core';
  * Comment it out and run again: the boot names both classes and stops.
  */
 export default defineFougere({
-  db: false,
   ports: { Payment: 'StripePayment' },
   fronds: { '@fougere/log': {} },
 });

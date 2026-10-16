@@ -1,19 +1,12 @@
-import '@fougere/adapter-sql/sqlite';
 import type { App } from '@fougere/core';
 import { lowerFirst } from '@fougere/core/contract';
 import { existsSync } from 'node:fs';
 import { isAbsolute, resolve } from 'node:path';
-import { Logger, Sources, sourceViewOf, type Constraint, type Source } from '@fougere/core';
+import { Logger, Sources, sourceViewOf, type Constraint, type Source, type SourceConfig } from '@fougere/core';
 import { createMemorySource } from '@fougere/adapter-memory';
-import { declaresStorage } from './DeclaredStorage.js';
-import type { DbConfig } from './DbConfig.js';
-import type { SourcesConfig } from './SourcesConfig.js';
 import type { SourceEntities } from './SourceEntities.js';
-import type { DeclaredStorage } from './DeclaredStorage.js';
 
 export interface ResolvedStorage {
-  /** The default source's engine handle — what `fougere migrate` reads the live tables through. */
-  db?: unknown;
   storageFactory: ((entity: any, name: string) => any) | undefined;
   /**
    * The source an entity's rows live in — what decides whether a frame gets a real transaction or
@@ -45,10 +38,12 @@ export interface ResolvedStorage {
   /** Raw synchronous handle, when the engine exposes one. */
 }
 
-/** Resolve the data layer. */
+/**
+ * Resolve the data layer from `sources:`. The one entry listing no entities holds the rest; none
+ * at all keeps the rows in memory, and saying so is the whole fallback.
+ */
 export function resolveStorage(
-  dbConf: DbConfig,
-  sources?: SourcesConfig,
+  sources: Record<string, SourceConfig> | undefined,
   /**
    * Where a relative `path:` is counted from — the directory of the config that named it.
    *
@@ -60,28 +55,13 @@ export function resolveStorage(
    */
   root?: string,
 ): ResolvedStorage {
-  if (!declaresStorage(dbConf)) {
-    new Logger('storage').warn('no `db:` declared — rows live in memory and are gone when the process exits');
+  const opened = Object.fromEntries(Object.entries(sources ?? {}).map(([name, entry]) => {
+    const { entities, ...rest } = entry as { entities?: string[] } & Record<string, unknown>;
 
-    return storageFrom({ db: createMemorySource() });
-  }
+    return [name, { source: Sources.open(anchored(rest, root), `sources.${name}`), entities }];
+  }));
 
-  const named: Record<string, SourceEntities> = {};
-  for (const [name, conf] of Object.entries(sources ?? {})) {
-    named[name] = { source: built(conf, `sources.${name}`, root), entities: conf.entities };
-  }
-
-  return storageFrom({
-    db: built(typeof dbConf === 'object' ? dbConf : {}, 'db', root),
-    sources: named,
-  });
-}
-
-/** One config entry, resolved to the adapter it names. */
-function built(conf: Record<string, unknown>, field: string, root?: string): Source {
-  const name = (conf.source as string | undefined) ?? DEFAULT_ADAPTER;
-
-  return Sources.open(name, anchored(conf, root) as never, `${field}.source`);
+  return storageFrom(opened);
 }
 
 /**
@@ -89,9 +69,9 @@ function built(conf: Record<string, unknown>, field: string, root?: string): Sou
  * absolute path already says where it is — both pass through untouched, which is what
  * keeps this from being a second reader of what a path means.
  */
-function anchored(conf: Record<string, unknown>, root?: string): Record<string, unknown> {
-  const path = conf.path;
-  if (!root || typeof path !== 'string' || path === ':memory:' || isAbsolute(path)) return conf;
+function anchored(entry: Record<string, unknown>, root?: string): Record<string, unknown> {
+  const path = entry.path;
+  if (!root || typeof path !== 'string' || path === ':memory:' || isAbsolute(path)) return entry;
 
   const anchoredPath = resolve(root, path);
   // Anchoring MOVES a database that a deployment has been running against, and the driver
@@ -105,22 +85,40 @@ function anchored(conf: Record<string, unknown>, root?: string): Record<string, 
     );
   }
 
-  return { ...conf, path: anchoredPath };
+  return { ...entry, path: anchoredPath };
 }
 
-/** What a config naming no adapter means. */
-const DEFAULT_ADAPTER = 'sql';
+/** Where an entity no source names lives, and what it is called — the one entry listing none. */
+function defaultOf(sources: Record<string, SourceEntities>): [string, Source] {
+  const unlisted = Object.entries(sources).filter(([, placement]) => placement.entities === undefined);
+  if (unlisted.length > 1) {
+    throw new Error(
+      `sources: ${unlisted.map(([name]) => `'${name}'`).join(' and ')} list no entities, and nothing says which `
+      + 'one holds the rest. Give all but one of them their entities.',
+    );
+  }
+  if (unlisted.length === 1) return [unlisted[0]![0], unlisted[0]![1].source];
+
+  new Logger('storage').warn(
+    Object.keys(sources).length === 0
+      ? 'no `sources:` declared — rows live in memory and are gone when the process exits'
+      : 'no source lists no entities — the rows of every entity no source names live in memory and are gone when the process exits',
+  );
+
+  return ['memory', createMemorySource()];
+}
 
 /** The same routing `resolveStorage` performs, over engines the CALLER built. */
-export function storageFrom(declared: DeclaredStorage): ResolvedStorage {
-  const { db: base, sources } = declared;
+export function storageFrom(sources: Record<string, SourceEntities>): ResolvedStorage {
+  const [DEFAULT, base] = defaultOf(sources);
 
   // Where each named entity lives. An entity claimed by two sources is refused naming
   // both: the rows would be read from one and written to the other, by whichever
   // registration ran last — the same silent duplicate `remotes:` refuses one level up.
   const home = new Map<string, string>();
   const engines = new Map<string, Source>();
-  for (const [name, placement] of Object.entries(sources ?? {})) {
+  for (const [name, placement] of Object.entries(sources)) {
+    if (placement.entities === undefined) continue;
     engines.set(name, placement.source);
     for (const entity of placement.entities) {
       const key = lowerFirst(entity);
@@ -136,7 +134,6 @@ export function storageFrom(declared: DeclaredStorage): ResolvedStorage {
 
   // The default source answers to the name the config gave it, so a refusal naming two
   // sources names things the author can find in their own file.
-  const DEFAULT = 'db';
   const sourceOf = (entityName: string) => home.get(lowerFirst(entityName)) ?? DEFAULT;
   const engineOf = (source: string) => (source === DEFAULT ? base : engines.get(source));
   const engineFor = (entityName: string) => {
@@ -146,15 +143,13 @@ export function storageFrom(declared: DeclaredStorage): ResolvedStorage {
   };
 
   return {
-    // Opaque, and narrowed by whoever needs it — auth wants a handle, the CLI wants Kysely.
-    db: (base as { db?: unknown }).db,
     storageFactory: (entity: any, name: string) => engineFor(name).storageFactory(entity, name),
     sourceOf,
     dbOf: (source) => (engineOf(source) as { db?: unknown } | undefined)?.db,
     sources: () => [DEFAULT, ...engines.keys()],
     // Asked of the source that will run the work, never of the default one: a frame whose
-    // members all live in a transactional source gets its transaction even when `db:` has
-    // none. A source that hands out none leaves the answer `false`, and a frame reads it:
+    // members all live in a transactional source gets its transaction even when the default
+    // source has none. A source that hands out none leaves the answer `false`, and a frame reads it:
     // `boot/together.ts` compensates instead, and says which of the two it built.
     transacts: (source) => engineOf(source)?.transacted !== undefined,
     // Absent means the judge is alone with it: a source that keeps no constraint of its own

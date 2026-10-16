@@ -1,9 +1,10 @@
+import '@fougere/adapter-sql';
 import { defineFougere } from '@fougere/core';
 
 /**
  * ONE line decides who carries out a deletion.
  *
- * With `sources:` commented out, the three entities share a file and a connection: the engine
+ * With `archive` commented out, the three entities share a file and a connection: the engine
  * holds every foreign key, and deleting a user is one statement — no read, no walk.
  *
  * Uncomment it and `Comment` moves to its own database. Two databases share no constraint, so
@@ -15,8 +16,8 @@ import { defineFougere } from '@fougere/core';
  * The entities are not touched between the two. That is the whole demo.
  */
 export default defineFougere({
-  db: { path: '.data/app.db' },
-  // sources: {
-  //   archive: { path: '.data/archive.db', entities: ['Comment'] },
-  // },
+  sources: {
+    main: { path: '.data/app.db' },
+    // archive: { path: '.data/archive.db', entities: ['Comment'] },
+  },
 });

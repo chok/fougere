@@ -1,3 +1,3 @@
 export default {
-  adapters: { graphql: true, rest: true },
+  protocols: { graphql: {}, rest: {} },
 };

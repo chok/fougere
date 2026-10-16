@@ -8,7 +8,7 @@ import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { createContainer } from '@fougere/container';
 import { entity, oneOf, primary, readOnly, ref, text } from '@fougere/schema';
-import { createSqliteSource } from '@fougere/adapter-sql/sqlite';
+import { createSqliteSource } from '@fougere/adapter-sql';
 import { createApp, Crud, frond, migrating, pageOf } from '@fougere/core';
 import { layerOf, storageFrom } from '../src/storage/ResolvedStorage.js';
 
@@ -28,7 +28,7 @@ describe('a seed', () => {
   it('writes its rows by the storage — a readOnly field and a reference by a stated id', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'seed-'));
     dirs.push(dir);
-    const storage = storageFrom({ db: createSqliteSource({ path: join(dir, 'app.db') }) });
+    const storage = storageFrom({ main: { source: createSqliteSource({ path: join(dir, 'app.db') }) } });
 
     await using app = await createApp({
       createContainer,

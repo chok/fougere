@@ -57,7 +57,7 @@ app.use(session());
 // stops existing, while the pages above keep working.
 app.use(rest());
 
-// Mounted, and it serves nothing until `adapters: { graphql: true }` says so.
+// Mounted, and it serves nothing until `protocols: { graphql: {} }` says so.
 app.use(graphql());
 
 // ── turning the ring, without stopping the server ──

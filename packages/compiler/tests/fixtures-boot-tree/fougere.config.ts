@@ -1,5 +1,4 @@
 export default {
-  db: false,
   fronds: {
     shop: {},
     cart: { extends: 'shop' },

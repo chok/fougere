@@ -59,17 +59,17 @@ console.log(`\n1. fougere.config.ts says logLevel: 'warn' — the handler's two 
 console.log('   →', JSON.stringify(await call({ address: 'health', op: 'check' }, Invocation.empty)));
 
 console.log(`\n2. the file is rewritten to 'debug', and the process gets a real SIGHUP`);
-write(`{ db: false, logLevel: 'debug' }`);
+write(`{ logLevel: 'debug' }`);
 await hangUp();
 console.log('   →', JSON.stringify(await call({ address: 'health', op: 'check' }, Invocation.empty)));
 
-console.log(`\n3. the file also changes db — consulted vs consumed, and it says so`);
-write(`{ db: 'sqlite', logLevel: 'error' }`);
+console.log(`\n3. the file also declares a source — consulted vs consumed, and it says so`);
+write(`{ sources: { main: { type: 'memory' } }, logLevel: 'error' }`);
 await hangUp();
 console.log('   →', JSON.stringify(await call({ address: 'health', op: 'check' }, Invocation.empty)));
 
-write(`{\n  db: false,\n  logLevel: 'warn',\n}`);
-// ── What a re-read cannot do: `db` above needed a rebuild, not a new value. ──
+write(`{\n  logLevel: 'warn',\n}`);
+// ── What a re-read cannot do: `sources` above needed a rebuild, not a new value. ──
 console.log(`\n4. a call is running; the app is drained before being released`);
 const pingSlow = call({ address: 'health', op: 'pingSlow' }, Invocation.empty);
 console.log(`   in flight: ${app.inFlight()}`);

@@ -1,8 +1,11 @@
+import '@fougere/adapter-rest';
+import '@fougere/adapter-graphql';
+import '@fougere/adapter-sql';
 import { defineFougere } from '@fougere/core';
 
 /**
- * The whole configuration. `db: 'sqlite'` resolves the storage, the tables are
- * derived from the entities at boot, and the seeds run once.
+ * The whole configuration. `main` is a SQLite file, its tables are written by
+ * `fougere migrate` from the entities, and the seeds run once.
  *
  * Uncomment the address below and the blog frond answers from its own process over
  * JSON-RPC instead of in memory — the pages, the handler and the entity do not
@@ -10,10 +13,10 @@ import { defineFougere } from '@fougere/core';
  * the reason this demo exists: the topology is a property of the app, not of the host.
  */
 export default defineFougere({
-  db: 'sqlite',
+  sources: { main: {} },
   // What this app publishes. Absent means not served — the route file existing is
   // not the decision, this is.
-  adapters: { rest: true, graphql: true },
+  protocols: { rest: {}, graphql: {} },
   fronds: {
     '@fougere/log': {},
     // blog: 'http://127.0.0.1:4100',

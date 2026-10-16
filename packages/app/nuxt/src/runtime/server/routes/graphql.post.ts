@@ -1,4 +1,4 @@
-/** GraphQL, when the app declares `adapters: { graphql: true }` — the h3 half of `serveGraphQL`. */
+/** GraphQL, when the app declares `protocols: { graphql: {} }` — the h3 half of `serveGraphQL`. */
 import { defineEventHandler, readBody, createError, setResponseStatus } from 'h3';
 import { serveGraphQL, useFougereApp } from '@fougere/app';
 import { stateOf } from '../stateOf.js';

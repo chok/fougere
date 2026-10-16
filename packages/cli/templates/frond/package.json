@@ -9,15 +9,16 @@
     "serve": "node serve.ts"
   },
   "dependencies": {
+    "@fougere/adapter-sql": "latest",
+    "@fougere/compiler": "latest",
+    "@fougere/container": "latest",
     "@fougere/core": "latest",
-    "@fougere/schema": "latest",
     "@fougere/defaults": "latest",
     "@fougere/log": "latest",
+    "@fougere/schema": "latest",
     "@fougere/transport-http": "latest",
     "better-sqlite3": "^13.0.3",
-    "kysely": "^0.28.17",
     "jiti": "^2.4.2",
-    "@fougere/container": "latest",
-    "@fougere/compiler": "latest"
+    "kysely": "^0.28.17"
   }
 }

@@ -3,39 +3,25 @@ import { generateBootPlugin, extensionsOf } from '../src/module.js';
 import type { FougereConfig } from '@fougere/core';
 
 /**
- * The two `db:` shorthand forms must resolve to the SAME default path.
- * Regression for the split-brain bug: `db: 'sqlite'` used to embed a hardcoded
- * `path: ':memory:'` in the generated plugin, while the runtime fallback
- * (fougereApp.ts) and every other consumer of resolveStorage() default to a
- * file (`fougere.db`, via schema-sql's createSqliteSource). The fix is to stop
- * re-deriving a path here at all: pass `db` straight through to
- * resolveStorage(), the single place that owns the default.
+ * `sources:` passes straight through to resolveStorage(), the single place that reads it — this
+ * host never re-derives a path, a type or a default.
  */
-describe('generateBootPlugin — db path convergence', () => {
-  it('no db: names no engine — the host resolves memory, the same as every other host', () => {
+describe('generateBootPlugin — sources pass through', () => {
+  it('no sources: names no engine — the host resolves memory, the same as every other host', () => {
     const out = generateBootPlugin({} as FougereConfig, [], '@fougere/nuxt/fougereApp');
 
     expect(out).not.toContain('resolveStorage');
     expect(out).not.toContain('sqlite');
   });
 
-  it('db: "sqlite" (string form) passes the config through unchanged — no path override', () => {
-    const out = generateBootPlugin({ db: 'sqlite' } as FougereConfig, [], '@fougere/nuxt/fougereApp');
-
-    expect(out).toContain('resolveStorage("sqlite")');
-    // The old bug: this literal must never reappear for the string form.
-    expect(out).not.toContain(':memory:');
-    expect(out).not.toContain("path: '");
-  });
-
-  it('db: { dialect, path } (object form) still carries its explicit path through', () => {
+  it('carries each entry through unchanged — no path override', () => {
     const out = generateBootPlugin(
-      { db: { dialect: 'sqlite', path: '.data/site.db' } } as FougereConfig,
+      { sources: { main: { path: '.data/site.db' } } } as unknown as FougereConfig,
       [],
       '@fougere/nuxt/fougereApp',
     );
 
-    expect(out).toContain('resolveStorage({"dialect":"sqlite","path":".data/site.db"})');
+    expect(out).toContain('resolveStorage({"main":{"path":".data/site.db"}})');
     expect(out).not.toContain(':memory:');
   });
 
@@ -43,7 +29,7 @@ describe('generateBootPlugin — db path convergence', () => {
     // Sans elle, `apps/nuxt` a fabriqué une SECONDE base vide à côté de lui pendant que
     // le workspace tenait la vraie, et l'app a servi un domaine vide avec un boot vert.
     const out = generateBootPlugin(
-      { db: { dialect: 'sqlite', path: '.data/site.db' } } as FougereConfig,
+      { sources: { main: { path: '.data/site.db' } } } as unknown as FougereConfig,
       [],
       '@fougere/nuxt/fougereApp',
       [],
@@ -51,33 +37,19 @@ describe('generateBootPlugin — db path convergence', () => {
       '/w',
     );
 
-    expect(out).toContain('resolveStorage({"dialect":"sqlite","path":".data/site.db"}, undefined, "/w")');
+    expect(out).toContain('resolveStorage({"main":{"path":".data/site.db"}}, "/w")');
   });
 
-  it('db: { dialect } with no path also defers to resolveStorage — no local default', () => {
-    const out = generateBootPlugin(
-      { db: { dialect: 'sqlite' } } as FougereConfig,
-      [],
-      '@fougere/nuxt/fougereApp',
-    );
-
-    expect(out).toContain('resolveStorage({"dialect":"sqlite"})');
-    expect(out).not.toContain(':memory:');
-  });
-
-  it('carries `sources:` through — where a row lives is not the host\u2019s business either', () => {
+  it('carries a second source through — where a row lives is not the host\u2019s business either', () => {
     const out = generateBootPlugin(
       {
-        db: 'sqlite',
-        sources: { archive: { path: '.data/archive.db', entities: ['Book'] } },
-      } as FougereConfig,
+        sources: { main: {}, archive: { path: '.data/archive.db', entities: ['Book'] } },
+      } as unknown as FougereConfig,
       [],
       '@fougere/nuxt/fougereApp',
     );
 
-    // Same reason `db` passes through untouched: this host must not know which package
-    // backs a source, only that the declaration reaches the one place that resolves it.
-    expect(out).toContain('resolveStorage("sqlite", {"archive":{"path":".data/archive.db","entities":["Book"]}})');
+    expect(out).toContain('resolveStorage({"main":{},"archive":{"path":".data/archive.db","entities":["Book"]}})');
   });
 
   /**
@@ -87,7 +59,7 @@ describe('generateBootPlugin — db path convergence', () => {
    */
   it('hands the storage over whole, writes no schema, and names the member it replaces', () => {
     const out = generateBootPlugin(
-      { db: 'sqlite' } as FougereConfig,
+      { sources: { main: {} } } as unknown as FougereConfig,
       [{ entityName: 'post', data: [], filePath: '/app/fronds/blog/seeds/post.ts' }] as never,
       '@fougere/nuxt/fougereApp',
     );
@@ -102,10 +74,6 @@ describe('generateBootPlugin — db path convergence', () => {
     expect(out).not.toContain('afterBoot');
   });
 
-  it('db: false skips storage entirely', () => {
-    const out = generateBootPlugin({ db: false } as FougereConfig, [], '@fougere/nuxt/fougereApp');
-    expect(out).not.toContain('resolveStorage');
-  });
 });
 
 describe('a storage that could not be opened', () => {
@@ -113,19 +81,19 @@ describe('a storage that could not be opened', () => {
     // Measured on workerd: `resolveStorage` threw on a native driver, Nitro swallowed the
     // plugin whole, and the app came up with ZERO fronds and not a word. Two unrelated
     // facts were sharing one failure.
-    const out = generateBootPlugin({ db: 'sqlite' }, [], '/app/boot', [], '/app/fronds.ts');
+    const out = generateBootPlugin({ sources: { main: {} } } as never, [], '/app/boot', [], '/app/fronds.ts');
 
     // Both positions asserted present first: `indexOf` answers -1 for an absent needle,
     // and -1 is less than anything — this very assertion passed for that reason once.
     const stated = out.indexOf('configureFougere({');
-    const opened = out.indexOf('resolveStorage("sqlite")');
+    const opened = out.indexOf('resolveStorage({"main":{}})');
     expect(stated).toBeGreaterThan(-1);
     expect(opened).toBeGreaterThan(-1);
     expect(stated).toBeLessThan(opened);
   });
 
   it('reports it rather than dying quietly', () => {
-    const out = generateBootPlugin({ db: 'sqlite' }, [], '/app/boot', [], '/app/fronds.ts');
+    const out = generateBootPlugin({ sources: { main: {} } } as never, [], '/app/boot', [], '/app/fronds.ts');
 
     expect(out).toContain('try {');
     expect(out).toContain('storage could not be opened');
@@ -134,7 +102,7 @@ describe('a storage that could not be opened', () => {
   it('states what it hosts even when no storage is declared', () => {
     // The early return used to emit an empty plugin, which threw the scan away with the
     // storage — and an app with no database still has fronds.
-    const out = generateBootPlugin({ db: false }, [], '/app/boot', [], '/app/fronds.ts');
+    const out = generateBootPlugin({}, [], '/app/boot', [], '/app/fronds.ts');
 
     expect(out).toContain('configureFougere({ fronds,');
     expect(out).not.toContain('resolveStorage');
@@ -144,7 +112,7 @@ describe('a storage that could not be opened', () => {
     // `fronds:` is the whole reason an app that hosts nothing boots at all, and `boot()`
     // used to re-read it off a disk the Worker does not have.
     const out = generateBootPlugin(
-      { db: false, fronds: { catalog: 'https://x.workers.dev' } },
+      { fronds: { catalog: 'https://x.workers.dev' } },
       [], '/app/boot', [], '/app/fronds.ts',
     );
 
@@ -153,7 +121,7 @@ describe('a storage that could not be opened', () => {
 
   it('carries `ports:`, or two realizations refuse the boot with the line that settles it written', () => {
     const out = generateBootPlugin(
-      { db: false, ports: { Payment: 'FakePayment' } },
+      { ports: { Payment: 'FakePayment' } },
       [], '/app/boot', [], '/app/fronds.ts',
     );
 
@@ -163,15 +131,15 @@ describe('a storage that could not be opened', () => {
 
 describe('generateBootPlugin — extensions named in the fougere: section', () => {
   it('changes nothing when the section names none', () => {
-    const before = generateBootPlugin({ db: 'sqlite' } as FougereConfig, [], '@fougere/nuxt/fougereApp');
-    const after = generateBootPlugin({ db: 'sqlite' } as FougereConfig, [], '@fougere/nuxt/fougereApp', []);
+    const before = generateBootPlugin({ sources: { main: {} } } as unknown as FougereConfig, [], '@fougere/nuxt/fougereApp');
+    const after = generateBootPlugin({ sources: { main: {} } } as unknown as FougereConfig, [], '@fougere/nuxt/fougereApp', []);
 
     expect(after).toBe(before);
   });
 
   it('writes one import and one member per key, the key being both', () => {
     const out = generateBootPlugin(
-      { db: 'sqlite' } as FougereConfig, [], '@fougere/nuxt/fougereApp',
+      { sources: { main: {} } } as unknown as FougereConfig, [], '@fougere/nuxt/fougereApp',
       [{ key: 'observability', options: { service: 'blog' } }, { key: 'calls', options: { panel: 4400 } }],
     );
 
@@ -183,7 +151,7 @@ describe('generateBootPlugin — extensions named in the fougere: section', () =
 
   it('states no order of its own — tables before rows belongs to core', () => {
     const out = generateBootPlugin(
-      { db: 'sqlite' } as FougereConfig, [], '@fougere/nuxt/fougereApp',
+      { sources: { main: {} } } as unknown as FougereConfig, [], '@fougere/nuxt/fougereApp',
       [{ key: 'calls', options: {} }],
     );
 
@@ -221,7 +189,7 @@ describe('extensionsOf', () => {
   describe('when the app states its fronds', () => {
     it('imports the stated file and passes `fronds`', () => {
       const out = generateBootPlugin(
-        { db: 'sqlite' } as FougereConfig, [], '/app/boot', [], '/app/fronds.ts');
+        { sources: { main: {} } } as unknown as FougereConfig, [], '/app/boot', [], '/app/fronds.ts');
 
       expect(out).toContain("import fronds from '/app/fronds';");
       expect(out).toContain('configureFougere({');
@@ -230,7 +198,7 @@ describe('extensionsOf', () => {
 
     it('drops the extension a bundler would refuse to resolve', () => {
       const out = generateBootPlugin(
-        { db: 'sqlite' } as FougereConfig, [], '/app/boot', [], '/app/fronds.mts');
+        { sources: { main: {} } } as unknown as FougereConfig, [], '/app/boot', [], '/app/fronds.mts');
 
       expect(out).toContain("import fronds from '/app/fronds';");
     });
@@ -238,7 +206,7 @@ describe('extensionsOf', () => {
     it('configures even when the app states nothing, so the absence is answered', () => {
       // `hostedBy` names both keys and refuses. Skipping the call boots a silent app whose
       // every facade answers NOT_FOUND with nothing said.
-      const out = generateBootPlugin({ db: 'sqlite' } as FougereConfig, [], '/app/boot');
+      const out = generateBootPlugin({ sources: { main: {} } } as unknown as FougereConfig, [], '/app/boot');
 
       expect(out).toContain('configureFougere({');
       expect(out).not.toContain('import fronds');
@@ -247,7 +215,7 @@ describe('extensionsOf', () => {
   describe('a module key', () => {
     it('is handed over as the config file wrote it, since its options may hold a class', () => {
       const out = generateBootPlugin(
-        { db: 'sqlite' } as FougereConfig, [], '/app/boot', [], undefined, undefined,
+        { sources: { main: {} } } as unknown as FougereConfig, [], '/app/boot', [], undefined, undefined,
         ['/app/fougere.config.ts', '/workspace/fougere.config.ts']);
 
       expect(out).toContain("import config_0 from '/app/fougere.config';");
@@ -257,7 +225,7 @@ describe('extensionsOf', () => {
 
     it('is handed over even when the app declares no storage', () => {
       const out = generateBootPlugin(
-        { db: false } as FougereConfig, [], '/app/boot', [], undefined, undefined, ['/app/fougere.config.ts']);
+        {} as FougereConfig, [], '/app/boot', [], undefined, undefined, ['/app/fougere.config.ts']);
 
       expect(out).toContain('fronds: (config_0.fronds) }');
     });
@@ -267,7 +235,7 @@ describe('extensionsOf', () => {
 describe('generateBootPlugin — a module key', () => {
   it('is imported by the bundle and handed to the loader, since nothing resolves it at runtime', () => {
     const out = generateBootPlugin(
-      { db: false, fronds: { '@fougere/log': 'logs/app.jsonl', './fronds/audit.ts': {} } } as FougereConfig,
+      { fronds: { '@fougere/log': 'logs/app.jsonl', './fronds/audit.ts': {} } } as FougereConfig,
       [], '/app/boot', [], undefined, '/app');
 
     expect(out).toContain("import * as module_0 from '@fougere/log';");

@@ -67,7 +67,7 @@ describe('applyConfig', () => {
 
   it('leaves the level alone when the config declares none', () => {
     setLogLevel('warn');
-    const out = applyConfig({ db: 'sqlite' });
+    const out = applyConfig({ ports: { Payment: 'StripePayment' } });
 
     expect(logLevel()).toBe('warn');
     expect(out.applied).toEqual([]);
@@ -76,12 +76,12 @@ describe('applyConfig', () => {
   it('reports what changed and did NOT take effect, rather than pretending', () => {
     setLogLevel('warn');
     const out = applyConfig(
-      { logLevel: 'warn', db: 'sqlite', ports: { Payment: 'OgonePayment' } },
-      { logLevel: 'warn', db: false, ports: { Payment: 'StripePayment' } },
+      { logLevel: 'warn', sources: { main: {} as never }, ports: { Payment: 'OgonePayment' } },
+      { logLevel: 'warn', ports: { Payment: 'StripePayment' } },
     );
 
     expect(out.applied).toEqual([]);
-    expect(out.pending.sort()).toEqual(['db', 'ports']);
+    expect(out.pending.sort()).toEqual(['ports', 'sources']);
   });
 
   /**

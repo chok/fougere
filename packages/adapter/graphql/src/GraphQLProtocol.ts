@@ -1,0 +1,16 @@
+import { Format, type Accepted } from '@fougere/schema';
+import { Protocols } from '@fougere/core';
+import { executeOn } from './app.js';
+
+/** What `protocols: { graphql: … }` may say — nothing yet, so nothing is admitted. */
+const GRAPHQL = Format.of('protocol/graphql').closed();
+
+declare module '@fougere/core' {
+  interface FougereProtocols {
+    graphql: Accepted<typeof GRAPHQL>;
+  }
+}
+
+// The host answers `/graphql` through what is registered here, never by importing a package by name.
+const served = { format: GRAPHQL, executeOn };
+Protocols.register('graphql', served);

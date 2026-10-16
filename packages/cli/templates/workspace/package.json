@@ -10,6 +10,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@fougere/adapter-sql": "latest",
     "@fougere/core": "latest",
     "@fougere/log": "latest",
     "@fougere/schema": "latest",

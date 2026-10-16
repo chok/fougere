@@ -1,16 +1,16 @@
-import { mkdirSync } from 'node:fs';
-import { dirname } from 'node:path';
+import type { mkdirSync } from 'node:fs';
+import type { dirname } from 'node:path';
+import { builtin } from '../driver/Builtin.js';
 import { Kysely, SqliteDialect } from 'kysely';
 import type BetterSqlite from 'better-sqlite3';
 import { createStorageFactory } from '../crud/SqlStorage.js';
 import { logQueries } from '../query/QuerySink.js';
 import { drift, driftReport } from '../drift.js';
-import { createKyselySource, sqlEnforces, sqlSink, type SqlSource } from '../source/SqlSource.js';
-import { DRIVERS, dialectFor, messageOf, modulesOf } from '../driver/Driver.js';
-import { ENGINES } from '../fields/Engine.js';
+import { sqlEnforces, sqlSink, type SqlSource } from '../source/SqlSource.js';
+import { messageOf, modulesOf } from '../driver/Driver.js';
 import { desiredTables, migrate, pendingOf } from '../diff/Change.js';
 import { toTableName } from '../table/TableDef.js';
-import { Sources, type Source, type SourceConfig, type SourceView } from '@fougere/core';
+import type { SourceView } from '@fougere/core';
 import type { SqliteSourceOptions } from './SqliteSourceOptions.js';
 
 export interface SqliteSource extends SqlSource {
@@ -21,7 +21,11 @@ export interface SqliteSource extends SqlSource {
 export function createSqliteSource(opts: SqliteSourceOptions = {}): SqliteSource {
   const path = opts.path ?? 'fougere.db';
   // A file-backed DB needs its directory — SQLite won't create it.
-  if (path !== ':memory:') mkdirSync(dirname(path), { recursive: true });
+  if (path !== ':memory:') {
+    const fs = builtin<{ mkdirSync: typeof mkdirSync }>('node:fs', 'sqlite');
+    const paths = builtin<{ dirname: typeof dirname }>('node:path', 'sqlite');
+    fs.mkdirSync(paths.dirname(path), { recursive: true });
+  }
   const sqlite = open(path);
   sqlite.pragma('journal_mode = WAL');
   sqlite.pragma('foreign_keys = ON');
@@ -72,23 +76,4 @@ function unopened(error: unknown, path: string): string {
   }
 
   return `SQLite could not open '${path}': ${messageOf(error)}`;
-}
-
-/** `source. */
-Sources.register('sql', (conf: SourceConfig): Source => {
-  const dialect = conf.dialect as string | undefined;
-  const name = conf.name as string | undefined;
-  if (dialect === undefined || dialect === 'sqlite') return createSqliteSource({ path: conf.path as string | undefined, name });
-
-  if (!isDriven(dialect)) {
-    throw new Error(`source 'sql': no dialect '${dialect}'. It answers ${ENGINES.join(', ')}.`);
-  }
-  const url = conf.url;
-  if (typeof url !== 'string') throw new Error(`source 'sql', dialect '${dialect}': states no \`url\`.`);
-
-  return createKyselySource(dialectFor(dialect, url), dialect, { name });
-});
-
-function isDriven(dialect: string): dialect is keyof typeof DRIVERS {
-  return dialect in DRIVERS;
 }

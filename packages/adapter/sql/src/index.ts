@@ -11,10 +11,13 @@ export type { SqlField } from './fields/SqlField.js';
 export type { SqlFields } from './fields/SqlFields.js';
 export { SqlStorage, createStorageFactory } from './crud/SqlStorage.js';
 export { codecsOf } from './values.js';
-// The driver this package owns is NOT here: `better-sqlite3` is native and `node:fs` is a
-// builtin, and an index that re-exported them made the whole adapter unreachable from a
-// runtime that has neither. It lives at `@fougere/adapter-sql/sqlite`.
+// Every engine is registered here, and none loads Node at import: each reads what it needs
+// when it opens, so this entry loads on a runtime that has none.
+import './SqlSourceTypes.js';
 export { createKyselySource } from './source/SqlSource.js';
+export { createSqliteSource, type SqliteSource } from './sqlite/SqliteSource.js';
+export { type SqliteSourceOptions } from './sqlite/SqliteSourceOptions.js';
+export { createD1Source } from './d1/D1Source.js';
 export type { SqlSource } from './source/SqlSource.js';
 export { drift } from './drift.js';
 export type { Drift } from './drift.js';

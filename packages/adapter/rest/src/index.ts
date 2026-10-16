@@ -1,3 +1,4 @@
+import './RestProtocol.js';
 export { generateRoutes, type RouteDefinition } from './routes/RouteDefinition.js';
 export type { HttpMethod } from '@fougere/http';
 export { registerRoutes } from './register.js';

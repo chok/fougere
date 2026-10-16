@@ -4,25 +4,17 @@ import { lowerFirst, type Entity, type SchemaView } from '@fougere/schema';
 import { toTable, toTableName, toSnakeCase, codecsOf } from '@fougere/adapter-sql';
 
 
-/** The engines DuckDB can attach — and the reason the list is short. */
-export type Attachable = 'sqlite' | 'postgres' | 'mysql';
-
-export interface SourceDeclaration {
-  /** A file, for sqlite. */
+/** An entry of `sources:` as this reader sees it — what its own adapter declared, nothing added. */
+export interface SourceEntry {
+  type?: string;
   path?: string;
-  /** A connection string, for an engine reached over the network. */
-  attach?: string;
-  /** Defaults to sqlite, the engine `db:` resolves from a name. */
-  type?: Attachable;
-  /** Registration names of the entities whose rows live here. */
-  entities: string[];
+  url?: string;
+  entities?: string[];
 }
 
 export interface ConnectOptions {
-  /** The default source — where an entity no declaration names lives. */
-  db: { path?: string; attach?: string; type?: Attachable };
-  /** The other places, exactly as `fougere.config.ts` states them. */
-  sources?: Record<string, SourceDeclaration>;
+  /** The app's sources, exactly as `fougere.config.ts` states them. */
+  sources: Record<string, SourceEntry>;
   /** What this scope may read — and therefore what gets attached at all. */
   reads: readonly Entity[];
   /** Same resolver the storage uses, when an app renames tables. */
@@ -38,43 +30,29 @@ export interface Reads {
   close(): Promise<void>;
 }
 
-const EXTENSION: Record<Attachable, string> = {
-  sqlite: 'sqlite',
-  postgres: 'postgres',
-  mysql: 'mysql',
+/**
+ * What DuckDB attaches, read off the entry's own type — the extension it loads and the key that
+ * says where. MSSQL, files and memory have no extension, which is why the list is short.
+ */
+const ATTACHABLE: Record<string, { extension: string; target: (entry: SourceEntry) => string | undefined }> = {
+  sqlite: { extension: 'sqlite', target: (entry) => entry.path },
+  pg: { extension: 'postgres', target: (entry) => entry.url },
+  mysql: { extension: 'mysql', target: (entry) => entry.url },
 };
 
-const TYPE_CLAUSE: Record<Attachable, string> = {
-  sqlite: 'sqlite',
-  postgres: 'postgres',
-  mysql: 'mysql',
-};
-
-/** The default source's alias — the same word `fougere.config.ts` uses for it. */
-const DEFAULT_ALIAS = 'db';
-
-/** 'Book' and 'book' name the same rows — the spelling `sources:` accepts either way. */
-
-function targetOf(declaration: { path?: string; attach?: string }, alias: string): string {
-  const target = declaration.attach ?? declaration.path;
-  if (!target) {
-    throw new Error(
-      `source '${alias}': neither \`path\` nor \`attach\` — DuckDB is told what to open, ` +
-      `and an in-memory database of its own would hold none of your rows.`,
-    );
-  }
-
-  return target;
-}
+/** DuckDB reserves `main`, `temp` and `system`, and a source may be called any of them. */
+const attachedAs = (source: string): string => `source_${source}`;
 
 /** Open a read-only view of the app's sources. */
 export async function connectSources(options: ConnectOptions): Promise<Reads> {
   const resolve = options.tableName ?? toTableName;
 
-  // Where each named entity lives; anything unnamed is in the default source.
+  // Where each named entity lives; anything unnamed is in the one source listing none.
   const home = new Map<string, string>();
-  for (const [alias, declaration] of Object.entries(options.sources ?? {})) {
-    for (const entity of declaration.entities) home.set(lowerFirst(entity), alias);
+  let fallback: string | undefined;
+  for (const [alias, entry] of Object.entries(options.sources)) {
+    if (entry.entities === undefined) fallback = alias;
+    for (const entity of entry.entities ?? []) home.set(lowerFirst(entity), alias);
   }
 
   // Only what this scope reads is attached — the declaration IS the environment.
@@ -82,7 +60,8 @@ export async function connectSources(options: ConnectOptions): Promise<Reads> {
   const placed = new Map<Entity, { alias: string; table: string }>();
   for (const shape of options.reads) {
     const name = lowerFirst((shape as { name?: string }).name ?? '');
-    const alias = home.get(name) ?? DEFAULT_ALIAS;
+    const alias = home.get(name) ?? fallback;
+    if (!alias) throw new Error(`${name} lives in no declared source — no source lists it, and none holds the rest.`);
     wanted.add(alias);
     placed.set(shape, { alias, table: resolve(name) });
   }
@@ -92,22 +71,25 @@ export async function connectSources(options: ConnectOptions): Promise<Reads> {
   const attached = new Map<string, string>();
 
   for (const alias of wanted) {
-    const declaration = alias === DEFAULT_ALIAS
-      ? { ...options.db, entities: [] }
-      : options.sources?.[alias];
-    if (!declaration) throw new Error(`source '${alias}' is read but never declared.`);
+    const entry = options.sources[alias];
+    if (!entry) throw new Error(`source '${alias}' is read but never declared.`);
 
-    const type = declaration.type ?? 'sqlite';
-    if (!(type in EXTENSION)) {
+    const type = entry.type ?? 'sqlite';
+    const attachable = ATTACHABLE[type];
+    if (!attachable) {
       throw new Error(
-        `source '${alias}' is a ${type} database, which DuckDB cannot attach — there is no ` +
+        `source '${alias}' is a ${type} source, which DuckDB cannot attach — there is no ` +
         `such extension. Read it by key through its own storage, or mirror it into one of ` +
-        `${Object.keys(EXTENSION).join(', ')}.`,
+        `${Object.keys(ATTACHABLE).join(', ')}.`,
       );
     }
-    await db.run(`INSTALL ${EXTENSION[type]}; LOAD ${EXTENSION[type]};`);
-    await db.run(`ATTACH '${targetOf(declaration, alias)}' AS ${quote(alias)} (TYPE ${TYPE_CLAUSE[type]}, READ_ONLY);`);
-    attached.set(alias, targetOf(declaration, alias));
+    const target = attachable.target(entry);
+    if (!target) {
+      throw new Error(`source '${alias}': nothing says where it is — DuckDB is told what to open.`);
+    }
+    await db.run(`INSTALL ${attachable.extension}; LOAD ${attachable.extension};`);
+    await db.run(`ATTACH '${target}' AS ${quote(attachedAs(alias))} (TYPE ${attachable.extension}, READ_ONLY);`);
+    attached.set(alias, target);
   }
 
   return {
@@ -133,7 +115,7 @@ export async function connectSources(options: ConnectOptions): Promise<Reads> {
 /** `${Book}` becomes `archive.books` — the alias AND the table, from one declaration. */
 function qualify(ref: unknown, placed: Map<Entity, { alias: string; table: string }>): string {
   const found = placed.get(ref as Entity);
-  if (found) return `${quote(found.alias)}.${quote(found.table)}`;
+  if (found) return `${quote(attachedAs(found.alias))}.${quote(found.table)}`;
   const name = (ref as { name?: string } | undefined)?.name;
   if (name) {
     throw new Error(

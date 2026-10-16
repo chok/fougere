@@ -46,7 +46,7 @@ const log = new Logger('blog-host');
 // while the demo's whole claim is that commenting `remotes:` changes nothing. `layerOf`
 // hands the layer over WHOLE — naming a few of its members is how `transacted` and `close`
 // were left behind once.
-const storage = resolveStorage(config.db, config.sources, process.cwd());
+const storage = resolveStorage(config.sources, process.cwd());
 
 // The panel, on its own loopback port: every call this frond executes, as it happens.
 // Click through the Nuxt app on :3000 and they land here — including the ones that

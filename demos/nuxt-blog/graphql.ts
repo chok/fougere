@@ -3,7 +3,7 @@
  *
  * What this file no longer contains is the point. It used to build two Pothos
  * builders, declare their root types and call `registerAll` on each; all of that was
- * convention, so `adapters: { graphql: true }` in fougere.config.ts replaced it.
+ * convention, so `protocols: { graphql: {} }` in fougere.config.ts replaced it.
  *
  * It also proves something the old version could not: this process reads the app's
  * own topology, and `remotes: { blog: … }` is declared there — so the schema it

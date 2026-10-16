@@ -15,11 +15,6 @@
 import { basesOf, type FrondDescriptor } from '@fougere/core/descriptor';
 import { type ScanResult } from '@fougere/core';
 
-export interface NamesOptions {
-  /** The keys of `sources:`, which the config states and no scan can find. */
-  sources?: readonly string[];
-}
-
 /** Sorted, deduplicated, and quoted — the union as it is written. */
 function union(names: Iterable<string>): string {
   const all = [...new Set(names)].sort();
@@ -43,7 +38,7 @@ function declaredIn(frond: FrondDescriptor): Set<string> {
   ]);
 }
 
-export function emitNames(scan: ScanResult, options: NamesOptions = {}): string {
+export function emitNames(scan: ScanResult): string {
   const fronds = new Set<string>();
   const entities = new Set<string>();
   const handlers = new Set<string>();
@@ -84,7 +79,6 @@ export function emitNames(scan: ScanResult, options: NamesOptions = {}): string 
     `    handler: ${union(handlers)};`,
     `    provider: ${union(providers)};`,
     `    middleware: ${union(middlewares)};`,
-    `    source: ${union(options.sources ?? [])};`,
     '  }',
     '',
     '  /** Each port, and what extends it — so a config cannot answer one with the other. */',

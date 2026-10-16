@@ -75,7 +75,7 @@ for (const one of CASES) {
     const app = await boot({
       root: join(here, one.name),
       createContainer,
-      db: () => ({ storageFactory }),
+      storage: () => ({ storageFactory }),
       ...(one.ports ? { config: { ports: one.ports } } : {}),
     });
     await app.dispose();

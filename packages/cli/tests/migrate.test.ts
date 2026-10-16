@@ -6,7 +6,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { access, cp, mkdir, mkdtemp, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { createSqliteSource } from '@fougere/adapter-sql/sqlite';
+import { createSqliteSource } from '@fougere/adapter-sql';
 import { entity, primary, text } from '@fougere/schema';
 import FreezeHandler from '../fronds/analysis/handlers/FreezeHandler.js';
 import MigrateHandler from '../fronds/analysis/handlers/MigrateHandler.js';

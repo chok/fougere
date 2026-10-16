@@ -1,9 +1,10 @@
+import '@fougere/adapter-sql';
 import { defineFougere } from '@fougere/core';
 import { betterAuth } from '@fougere/auth-better';
 import { User } from './src/entities.js';
 
 export default defineFougere({
-  db: 'sqlite',
+  sources: { main: {} },
   fronds: {
     // A frond like any other: `only:` or an address decides which process starts its engine.
     auth: betterAuth({

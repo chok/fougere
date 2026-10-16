@@ -4,16 +4,19 @@
 
 ```ts
 // fougere.config.ts
+import '@fougere/adapter-sql';
+import '@fougere/adapter-file';
+
 export default defineFougere({
-  db: { path: '.data/app.db' },
   sources: {
-    archive: { source: 'file', path: './rows', entities: ['Snapshot'] },
+    main: { path: '.data/app.db' },
+    archive: { type: 'file', path: './rows', entities: ['Snapshot'] },
   },
 });
 ```
 
 `Snapshot` now reads and writes under `./rows/snapshot/<key>.json`; everything else stays in
-`db`. The storage a handler receives is unchanged — where rows live is a fact about the app,
+`main`. The storage a handler receives is unchanged — where rows live is a fact about the app,
 not about the code that uses them.
 
 ## What it costs, before you find out
@@ -49,8 +52,15 @@ derives the thirteen gestures of the storage port from four, so a new source sup
 rows are and nothing else:
 
 ```ts
-Sources.register('redis', (conf): Source => ({
-  storageFactory: storageOver((_entity, name) => redisStore(conf.url, name)),
-  name: conf.url,
-}));
+const REDIS = Format.of('source/redis').key('type', Format.tokens(['redis'])).key('url', Format.text)
+  .needs('type', 'url').closed();
+
+declare module '@fougere/core' {
+  interface FougereSources { redis: Accepted<typeof REDIS> }
+}
+
+Sources.register('redis', {
+  format: REDIS,
+  open: (entry) => ({ storageFactory: storageOver((_entity, name) => redisStore(entry.url, name)), name: entry.url }),
+});
 ```

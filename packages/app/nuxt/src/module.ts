@@ -11,7 +11,7 @@ import {
   useLogger,
 } from '@nuxt/kit';
 import type { Nuxt } from '@nuxt/schema';
-import { orderSeeds } from '@fougere/core';
+import { orderSeeds, serves } from '@fougere/core';
 import { scanProject, emitStatement, emitFacade, emitNames, frondAliases } from '@fougere/compiler';
 import { frondPackage, resolveConventions, statedFronds, statesModule, type Conventions } from '@fougere/core';
 import { configFileIn, setModuleLoader, loadCascadedConfig, projectRootOf, remotesOf } from '@fougere/core/node';
@@ -23,8 +23,6 @@ import { isFougerePackage } from './FougerePackage.js';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 
 export interface FougereModuleOptions {
-  /** Override fougere.config.ts values from nuxt.config. Optional. */
-  db?: FougereConfig['db'];
   /** Where `fronds/` lives, relative to the app's rootDir — found on its own (`projectRootOf`), so written only when it is elsewhere. */
   root?: string;
 
@@ -101,7 +99,7 @@ const module = defineNuxtModule<FougereModuleOptions>({
     });
 
     // Nitro reads every module as free of side effects but its own, so an import that names
-    // nothing is dropped from the server build — and `import '@fougere/adapter-sql/sqlite'`
+    // nothing is dropped from the server build — and `import '@fougere/adapter-sql'`
     // is how `sql` registers: measured on `site/.output`, `Unknown source 'sql' … answers
     // memory`. What a Fougere package runs at load is kept, whether it is installed or linked.
     (nuxt as any).hook('nitro:init', (nitro: any) => {
@@ -257,15 +255,15 @@ const module = defineNuxtModule<FougereModuleOptions>({
     });
     // Session hydration — the page ships with its user, no round-trip
     addPlugin({ src: runtimeResolve('plugins/session.server'), mode: 'server' });
-    if (config.adapters?.rest) {
+    if (serves(config.protocols, 'rest')) {
       addServerHandler({
         route: '/api/**',
         handler: runtimeResolve('server/api/crud'),
       });
     }
-    // What `adapters: { graphql: true }` publishes — Express mounted it, and here it was
+    // What `protocols: { graphql: {} }` publishes — Express mounted it, and here it was
     // ignored without a word.
-    if (config.adapters?.graphql) {
+    if (serves(config.protocols, 'graphql')) {
       addServerHandler({
         route: '/graphql',
         method: 'post',
@@ -344,7 +342,7 @@ const module = defineNuxtModule<FougereModuleOptions>({
     addTemplate({
       filename: 'fougere-names.d.ts',
       write: true,
-      getContents: () => emitNames(scan, { sources: Object.keys(config.sources ?? {}) }),
+      getContents: () => emitNames(scan),
     });
 
     // ── 6b. Boot plugin (virtual — lives in .nuxt/) ───
@@ -353,7 +351,7 @@ const module = defineNuxtModule<FougereModuleOptions>({
     const bootTpl = addTemplate({
       filename: 'fougere-boot.ts',
       write: true,
-      getContents: () => generateBootPlugin(config, allSeeds, runtimeResolve('server/utils/boot'), extensionsOf(options), statedPath, scanRoot, config.fronds ? configFilesOf(rootDir, scanRoot) : []),
+      getContents: () => generateBootPlugin(config, allSeeds, runtimeResolve('server/utils/boot'), extensionsOf(options), statedPath, scanRoot, config.fronds || config.sources ? configFilesOf(rootDir, scanRoot) : []),
     });
     addServerPlugin(bootTpl.dst);
 
@@ -368,11 +366,11 @@ export default module;
 
 /** What of the config a generated plugin can carry: values, never providers. */
 function carried(config: FougereConfig): Partial<FougereConfig> {
-  const { fronds, adapters, ports, sources, logLevel } = config as FougereConfig & { sources?: unknown };
+  const { fronds, protocols, ports, sources, logLevel } = config;
 
   return {
     ...(fronds ? { fronds } : {}),
-    ...(adapters ? { adapters } : {}),
+    ...(protocols ? { protocols } : {}),
     ...(ports ? { ports } : {}),
     ...(sources ? { sources } : {}),
     // The host hands its config over, so nothing re-reads the file at runtime — a key
@@ -463,17 +461,16 @@ export function generateBootPlugin(
     lines.push(`setModuleLoader((id, options) => (id in modules ? Promise.resolve(modules[id]) : loadModule(id, options)));`);
   }
 
-  const db = config.db;
-  const sources = (config as { sources?: unknown }).sources;
+  const sources = config.sources;
 
-  // `declaresStorage` is the canonical reader of `db:` — asked, not re-interpreted.
+  // `declaresStorage` is the canonical reader of `sources:` — asked, not re-interpreted.
   // Reading `dialect` here made this codegen a SECOND reader, and the two disagreed:
   // any value but 'sqlite' emitted an empty plugin, so no config, no seeds, not a word.
   // resolveStorage now refuses an unresolvable dialect by name, at boot, out loud.
   // An app with no storage still has FRONDS, and the scan is what says so. This used to
   // emit an empty plugin, which threw the scan away with the storage — two unrelated
   // facts, one early return. What a plugin with no storage states is exactly the scan.
-  if (!declaresStorage(db as Parameters<typeof declaresStorage>[0])) {
+  if (!declaresStorage(sources)) {
     lines.push(``);
     lines.push(`export default defineNitroPlugin(() => {`);
     // Always configure, even with nothing to host: `hostedBy` is where the absence is
@@ -486,7 +483,7 @@ export function generateBootPlugin(
   }
 
   // The generated plugin names no storage package — resolution lives in
-  // @fougere/defaults, the one place that knows which engine backs `db:`.
+  // @fougere/defaults, the one place that reads `sources:`.
   lines.push(`import { resolveStorage } from '@fougere/defaults';`);
   // After the early return above: an app that declares no storage generates no imports.
   if (seeds.length) lines.push(`import { runSeeds } from '@fougere/core';`);
@@ -515,14 +512,11 @@ export function generateBootPlugin(
   lines.push(`  configureFougere({ ${states}config: ${configArg} });`);
   lines.push(``);
   lines.push(`  try {`);
-  // Pass `db` through unchanged — resolveStorage (@fougere/defaults → createSqliteSource)
-  // is the one place that defaults an absent path, so both call sites (this
-  // codegen'd plugin and fougereApp.ts's own fallback) land on the same file.
-  // The second argument only appears when there is something to say: an app with one
-  // database generates exactly the line it generated before.
-  const sourcesArg = sources || root ? `, ${JSON.stringify(sources ?? undefined)}` : '';
+  // Pass `sources` through unchanged — resolveStorage is the one place that reads them, so both
+  // call sites (this codegen'd plugin and fougereApp.ts's own fallback) land on the same files.
+  // The adapters that answer them are registered by the config file imported above.
   const rootArg = root ? `, ${JSON.stringify(root)}` : '';
-  lines.push(`    const storage = resolveStorage(${JSON.stringify(db)}${sourcesArg}${rootArg});`);
+  lines.push(`    const storage = resolveStorage(${JSON.stringify(sources)}${rootArg});`);
   // Opened here, so closed here: the app is handed the storage, and a refused boot or a reload
   // disposes an app while the next one still needs the same connection.
   lines.push(`    nitroApp.hooks.hook('close', () => storage.close?.());`);

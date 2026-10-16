@@ -402,9 +402,6 @@ importers:
       kysely:
         specifier: ^0.28.17
         version: 0.28.17
-      kysely-d1:
-        specifier: ^0.4.0
-        version: 0.4.0(kysely@0.28.17)
     devDependencies:
       '@cloudflare/workers-types':
         specifier: ^4.20250801.0
@@ -677,6 +674,9 @@ importers:
       '@fougere/adapter-graphql':
         specifier: workspace:*
         version: link:../../packages/adapter/graphql
+      '@fougere/adapter-rest':
+        specifier: workspace:*
+        version: link:../../packages/adapter/rest
       '@fougere/adapter-sql':
         specifier: workspace:*
         version: link:../../packages/adapter/sql
@@ -748,6 +748,9 @@ importers:
 
   demos/mirror-catalog:
     dependencies:
+      '@fougere/adapter-sql':
+        specifier: workspace:*
+        version: link:../../packages/adapter/sql
       '@fougere/container':
         specifier: workspace:*
         version: link:../../packages/container
@@ -889,6 +892,9 @@ importers:
 
   demos/next-blog:
     dependencies:
+      '@fougere/adapter-rest':
+        specifier: workspace:*
+        version: link:../../packages/adapter/rest
       '@fougere/adapter-sql':
         specifier: workspace:*
         version: link:../../packages/adapter/sql
@@ -941,6 +947,9 @@ importers:
       '@fougere/adapter-graphql':
         specifier: workspace:*
         version: link:../../packages/adapter/graphql
+      '@fougere/adapter-rest':
+        specifier: workspace:*
+        version: link:../../packages/adapter/rest
       '@fougere/adapter-sql':
         specifier: workspace:*
         version: link:../../packages/adapter/sql
@@ -1066,6 +1075,9 @@ importers:
 
   demos/oclif-catalog:
     dependencies:
+      '@fougere/adapter-sql':
+        specifier: workspace:*
+        version: link:../../packages/adapter/sql
       '@fougere/compiler':
         specifier: workspace:*
         version: link:../../packages/compiler
@@ -1197,6 +1209,9 @@ importers:
 
   demos/react-router-blog:
     dependencies:
+      '@fougere/adapter-rest':
+        specifier: workspace:*
+        version: link:../../packages/adapter/rest
       '@fougere/adapter-sql':
         specifier: workspace:*
         version: link:../../packages/adapter/sql
@@ -1369,6 +1384,9 @@ importers:
 
   demos/sveltekit-blog:
     dependencies:
+      '@fougere/adapter-rest':
+        specifier: workspace:*
+        version: link:../../packages/adapter/rest
       '@fougere/adapter-sql':
         specifier: workspace:*
         version: link:../../packages/adapter/sql
@@ -1424,6 +1442,9 @@ importers:
 
   demos/tanstack-blog:
     dependencies:
+      '@fougere/adapter-rest':
+        specifier: workspace:*
+        version: link:../../packages/adapter/rest
       '@fougere/adapter-sql':
         specifier: workspace:*
         version: link:../../packages/adapter/sql
@@ -1488,6 +1509,12 @@ importers:
 
   demos/test-gradient:
     dependencies:
+      '@fougere/adapter-rest':
+        specifier: workspace:*
+        version: link:../../packages/adapter/rest
+      '@fougere/adapter-sql':
+        specifier: workspace:*
+        version: link:../../packages/adapter/sql
       '@fougere/core':
         specifier: workspace:*
         version: link:../../packages/core
@@ -1643,7 +1670,6 @@ importers:
       '@fougere/core':
         specifier: workspace:*
         version: link:../../core
-    devDependencies:
       '@fougere/schema':
         specifier: workspace:*
         version: link:../../schema
@@ -1671,6 +1697,9 @@ importers:
       dequal:
         specifier: ^2.0.3
         version: 2.0.3
+      kysely-d1:
+        specifier: ^0.4.0
+        version: 0.4.0(kysely@0.28.17)
     devDependencies:
       '@types/better-sqlite3':
         specifier: ^7.6.13
@@ -1867,6 +1896,9 @@ importers:
       '@fougere/adapter-graphql':
         specifier: workspace:*
         version: link:../../adapter/graphql
+      '@fougere/adapter-sql':
+        specifier: workspace:*
+        version: link:../../adapter/sql
       vitest:
         specifier: ^4.1.0
         version: 4.1.2(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(jsdom@27.4.0(@noble/hashes@2.0.1)(supports-color@10.2.2))(vite@8.3.3(@types/node@24.13.3)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.46.1)(tsx@4.21.0)(yaml@2.9.0))
@@ -2088,9 +2120,6 @@ importers:
       '@fougere/adapter-memory':
         specifier: workspace:*
         version: link:../adapter/memory
-      '@fougere/adapter-sql':
-        specifier: workspace:*
-        version: link:../adapter/sql
       '@fougere/compiler':
         specifier: workspace:*
         version: link:../compiler
@@ -2104,6 +2133,9 @@ importers:
         specifier: workspace:*
         version: link:../transport/http
     devDependencies:
+      '@fougere/adapter-sql':
+        specifier: workspace:*
+        version: link:../adapter/sql
       '@fougere/schema':
         specifier: workspace:*
         version: link:../schema
@@ -2241,6 +2273,9 @@ importers:
       '@fougere/adapter-graphql':
         specifier: workspace:*
         version: link:../adapter/graphql
+      '@fougere/adapter-rest':
+        specifier: workspace:*
+        version: link:../adapter/rest
       '@fougere/adapter-sql':
         specifier: workspace:*
         version: link:../adapter/sql

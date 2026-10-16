@@ -1,8 +1,7 @@
-import { Registry, Role, type SchemaView } from '@fougere/schema';
+import { JsonSchemaValidator, Registry, Role, SchemaError, dotted, type Format, type JsonSchema, type SchemaView } from '@fougere/schema';
 import type { StorageFactory } from './storage/StorageFactory.js';
 import type { Constraint } from './Constraint.js';
 import type { SourceView } from './SourceView.js';
-import type { SourceConfig } from './SourceConfig.js';
 
 /** Whether an entity asks for one, anywhere but on its key. */
 export function declares(schema: SchemaView, constraint: Constraint): boolean {
@@ -39,15 +38,41 @@ export interface Source {
   name?: string;
 }
 
-/** Which adapter answers a source name — one per process, no subject to hold. */
-class SourceRegistry extends Registry<(conf: SourceConfig) => Source> {
-  /** The source this name stands for, built from the config entry that named it. */
-  open(name: string, conf: SourceConfig, path?: string): Source {
-    return this.resolve(name, path)(conf);
+/** A source type: what its entry admits, and how a place is opened from one. */
+export interface SourceType<Entry = any> {
+  readonly format: Format<Entry>;
+  open(entry: Entry): Source;
+}
+
+/** Which adapter answers a source type — one per process, no subject to hold. */
+class SourceRegistry extends Registry<SourceType> {
+  private conventional?: string;
+
+  /** `open` is handed what `format` admitted, so the entry is typed by the format alone. */
+  override register<Entry>(name: string, type: SourceType<Entry>): SourceType<Entry> {
+    return super.register(name, type) as SourceType<Entry>;
+  }
+
+  /** The type an entry naming none is — claimed by the adapter whose format leaves `type` optional. */
+  byConvention(name: string): void {
+    this.conventional = name;
+  }
+
+  /** The place an entry stands for, once its type's format has judged it. */
+  open(entry: { type?: string }, path: string): Source {
+    const name = entry.type ?? this.conventional;
+    if (name === undefined) {
+      throw new SchemaError(`${path}: no \`type\`, and no imported adapter claims the conventional one — import the adapter that answers it.`);
+    }
+    const type = this.resolve(name, `${path}.type`);
+    const refusal = JsonSchemaValidator.of(type.format.schema as JsonSchema).refusalOf(entry, [path]);
+    if (refusal) throw new SchemaError(`${dotted(refusal.path)}: ${refusal.message}`);
+
+    return type.open(entry);
   }
 }
 
 export const Sources = new SourceRegistry(
-  'source',
-  'import the adapter that answers it, or call Sources.register(name, build)',
+  'source type',
+  'import the adapter that answers it, or call Sources.register(name, { format, open })',
 );

@@ -150,7 +150,7 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
   in declaration order and the source answers. Not "scan order": `createApp` takes `fronds:`
   as readily as `scan:`.
 - **Nothing generates OpenAPI**, so `RouteDefinition.description` is read by nobody. The op's
-  sentence has two readers, neither of them REST: `adapter/graphql/src/pothos.ts` and the
+  sentence has two readers, neither of them REST: `adapter/graphql/src/OperationsConfig.ts` and the
   CLI's `--help`.
 - **`CrudViews` is typed on the five CRUD names** (`core/src/prefab/crud.ts`). Widening it to
   admit a custom op also admits `{ lst: Card }`, the typo the five names catch. Measured
@@ -256,7 +256,7 @@ One line each, kept because a past version of this file asserted the opposite.
   compiler was the one edge closing a cycle, and pnpm 12 refuses a build over it
   (`ERR_PNPM_TASK_CYCLE`, 2026-09-24).
 
-- **No `db:` means memory, on every host, said as a warning** — `resolveStorage`
+- **No `sources:` means memory, on every host, said as a warning** — `resolveStorage`
   (`defaults/src/storage/ResolvedStorage.ts`) is the one place that falls back. Nuxt used to impose
   SQLite, the web hosts fell back to memory at `debug`, and `fougere serve` had no storage at all.
   A `warn` and not an `info`: the CLI runs at `warn`, and losing rows at exit is what an operator must see.

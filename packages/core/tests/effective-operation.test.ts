@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { createContainer } from '@fougere/container';
-import { entity, primary, text } from '@fougere/schema';
+import { Format, entity, primary, text } from '@fougere/schema';
 import {
+  Protocols,
   createApp,
   createAppRunner,
   resolveEffectiveOperations,
@@ -14,10 +15,13 @@ import { identityCardOf } from '../src/boot/card.js';
 import fixture from './fixtures-collector-input/fronds.js';
 import overrideFixture from './fixtures-operation-override/fronds.js';
 
+// What `@fougere/adapter-rest` and `-graphql` register at import — core's tests import neither.
+for (const name of ['rest', 'graphql']) Protocols.register(name, { format: Format.of(`protocol/${name}`).closed() });
+
 describe('EffectiveOperation as the shared runtime contract', () => {
   it('carries the resolved handler, kind, provenance, placement, exposure and absence semantics', async () => {
     const model = resolveEffectiveOperations(fixture, {
-      adapters: { rest: true, graphql: false },
+      protocols: { rest: {} },
     });
     const handler = fixture[0]!.handlers[0]!;
     const operation = model.forHandler(handler).get('collectorFirst')!;
@@ -74,7 +78,7 @@ describe('EffectiveOperation as the shared runtime contract', () => {
     await using app = await createApp({
       fronds: fixture,
       createContainer,
-      adapters: { rest: true },
+      protocols: { rest: {} },
     });
 
     const operation = app.operationsFor('post')?.get('bodyFirst');
@@ -186,7 +190,7 @@ describe('deterministic operation resolution', () => {
   it('accepts one interpretation and normalizes an explicit binding by parameter name', () => {
     const model = resolveEffectiveOperations([frond], {
       remotes: { blog: 'https://blog.internal' },
-      adapters: { graphql: true, rest: true },
+      protocols: { graphql: {}, rest: {} },
     });
     const operation = model.forHandler(handler).get('publish')!;
 

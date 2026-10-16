@@ -1,5 +1,4 @@
 import { mkdir, writeFile } from 'node:fs/promises';
-import { loadConfig } from '@fougere/core/node';
 import { dirname, join, relative, resolve } from 'node:path';
 import { emitFacade, emitNames, emitScan } from '@fougere/compiler';
 import ProjectScan from '../services/ProjectScan.js';
@@ -67,11 +66,9 @@ export default class BuildHandler {
     const facade = join(dirname(out), FACADE_OUT);
     await writeFile(facade, emitFacade(scan, { outFile: facade }));
 
-    // And a fourth, for the only place a name is still written as a string: a config file. The
-    // sources are the config's own keys, which no scan can find.
-    const config = await loadConfig(scan.root).catch(() => ({}) as Awaited<ReturnType<typeof loadConfig>>);
+    // And a fourth, for the only place a name is still written as a string: a config file.
     const names = join(dirname(out), NAMES_OUT);
-    await writeFile(names, emitNames(scan, { sources: Object.keys(config.sources ?? {}) }));
+    await writeFile(names, emitNames(scan));
 
     return {
       out,

@@ -13,6 +13,21 @@ write through the port. `storage.client` meets neither.
 pnpm add @fougere/adapter-sql
 ```
 
+```ts
+// fougere.config.ts — the import registers the types, and makes them words the config may write
+import '@fougere/adapter-sql';
+
+export default defineFougere({
+  sources: {
+    main: { path: '.data/app.db' },                                   // sqlite, the default type
+    legacy: { type: 'pg', url: process.env.LEGACY, entities: ['Book'] },
+  },
+});
+```
+
+The entry loads on any runtime: an engine reads its driver, and SQLite `node:fs`, when it opens.
+`type: 'd1'` with a `binding` opens a Cloudflare D1 database from inside a Worker.
+
 ---
 
 Part of [Fougere](https://github.com/chok/fougere) — one schema, a gradient from

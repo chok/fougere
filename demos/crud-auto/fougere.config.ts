@@ -1,3 +1,6 @@
+import '@fougere/adapter-rest';
+import '@fougere/adapter-graphql';
+import '@fougere/adapter-sql';
 import { defineFougere } from '@fougere/core';
 
 /**
@@ -5,7 +8,7 @@ import { defineFougere } from '@fougere/core';
  * and does not decide what they serve.
  */
 export default defineFougere({
-  db: { dialect: 'sqlite', path: ':memory:' },
-  adapters: { rest: true, graphql: true },
+  sources: { main: { path: ':memory:' } },
+  protocols: { rest: {}, graphql: {} },
   fronds: { '@fougere/log': {} },
 });

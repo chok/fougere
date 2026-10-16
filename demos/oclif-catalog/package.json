@@ -10,10 +10,11 @@
     "migrate": "fougere migrate --latest --apply"
   },
   "dependencies": {
-    "@fougere/log": "workspace:*",
-    "@fougere/core": "workspace:*",
+    "@fougere/adapter-sql": "workspace:*",
     "@fougere/compiler": "workspace:*",
+    "@fougere/core": "workspace:*",
     "@fougere/defaults": "workspace:*",
+    "@fougere/log": "workspace:*",
     "@fougere/oclif": "workspace:*",
     "@fougere/schema": "workspace:*",
     "@oclif/core": "^5.0.0",

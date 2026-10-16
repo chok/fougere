@@ -1,4 +1,5 @@
 import { createContainer, type Container } from '@fougere/container';
+import { servedProtocols } from './protocols.js';
 import { unregistered } from './unregistered.js';
 import { lowerFirst, type SchemaView } from '@fougere/schema';
 
@@ -151,7 +152,7 @@ async function readFronds(
   const operationModel = resolveEffectiveOperations(ordered, {
     diagnostics,
     remotes: options.remotes,
-    adapters: options.adapters,
+    protocols: servedProtocols(options.protocols),
   });
   const scanMs = (performance.now() - scanStart).toFixed(0);
   log.info(`read ${ordered.length} frond(s) in ${scanMs}ms`
@@ -382,7 +383,7 @@ function hostingFor(
 
   const hosting: Hosting = {
     hostedHere: (entity) => !(options.remotes && (frondOf.get(entity) ?? '') in options.remotes),
-    sourceOf: (name) => options.sourceOf?.(name) ?? 'db',
+    sourceOf: (name) => options.sourceOf?.(name) ?? 'default',
     enforces: (source, constraint) => options.enforces?.(source, constraint) ?? false,
     storageOf,
     entities: () => entityByName,
@@ -725,7 +726,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     const app: App = {
       container,
       fronds,
-      adapters: options.adapters ?? {},
+      protocols: options.protocols ?? {},
       // As DECLARED, beside what the runtime observes — the two disagree exactly when something is misconfigured.
       remotes: Object.freeze({ ...options.remotes }),
       dispatch: (call) => dispatcher.dispatch(call),

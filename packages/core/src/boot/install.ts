@@ -212,7 +212,7 @@ function registerStorages(
   const release = releasing(assembly.hosting);
   for (const entity of frond.entities) {
     const key = storageKeyOf(entity.name);
-    const source = options.sourceOf?.(entity.name) ?? 'db';
+    const source = options.sourceOf?.(entity.name) ?? 'default';
     if (declares(entity.entityClass, 'unique') && options.enforces?.(source, 'unique') === false) {
       unenforced.push(`${entity.name} in '${source}'`);
     }

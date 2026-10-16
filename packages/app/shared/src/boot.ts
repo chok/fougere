@@ -8,7 +8,6 @@ import { loadCascadedConfig, remotesOf, setModuleLoader, statedModules } from '@
 
 import type { App, CreateAppOptions, FougereConfig, Transport } from '@fougere/core';
 import { layerOf, remoteTransport, type ResolvedStorage } from '@fougere/defaults';
-import { executor } from './graphql.js';
 
 // ── Public types ─────────────────────────────────
 
@@ -49,7 +48,7 @@ let _replaced: Promise<App>[] = [];
 
 /**
  * Override the data layer — only needed if you don't want the convention-driven
- * setup based on `config.db` in fougere.config.ts.
+ * setup based on `sources:` in fougere.config.ts.
  */
 export function configureFougere(config: FougereServerConfig) {
   _config = config;
@@ -144,20 +143,19 @@ async function boot(): Promise<App> {
   // and did nothing with it: the file said `debug` and the threshold stayed where the
   // module had left it.
   applyConfig(fileConfig);
-  if (fileConfig.adapters?.graphql) await executor();
 
   const conventions = resolveConventions(fileConfig.conventions);
   // `frondAliases` reads a directory listing, so it is asked only when the loader it
   // feeds is going to exist at all.
   if (reads) installLoader(await frondAliases(root, conventions));
 
-  // Auto-resolve the data layer from config.db when the user didn't provide a
+  // Auto-resolve the data layer from `sources:` when the user didn't provide a
   // custom one via configureFougere. The resolution itself lives in @fougere/defaults
-  // — this host must not know which storage package backs `db:`.
+  // — this host must not know which storage package backs a source.
   let storage = _config.storage;
   if (!storage) {
     const { resolveStorage } = await import('@fougere/defaults');
-    storage = resolveStorage(fileConfig.db as never, (fileConfig as { sources?: unknown }).sources as never, root);
+    storage = resolveStorage(fileConfig.sources, root);
   }
   // The storage's two halves, kept together: its ascent is an extension, its connection
   // is not — it is opened here, before the container, so it closes after the container.
@@ -191,7 +189,7 @@ async function boot(): Promise<App> {
     // The layer, spread whole. Naming a few of its members is how `transacted` and `close`
     // were left behind once, under Nuxt only.
     ...layerOf(storage),
-    adapters: fileConfig.adapters,
+    protocols: fileConfig.protocols,
     ports: fileConfig.ports,
     remotes,
     /** Who inherits code from whom — the tree, whole, so a refusal can name where an entry sits. */

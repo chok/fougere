@@ -85,7 +85,7 @@ as a movement rather than a list:
 
 And it is checkable with `diff`: the five demos that serve this same blog under Next,
 TanStack Start, React Router, SvelteKit and Express share a `fronds/` directory that is
-identical byte for byte, and three of those hosts need no package of their own. So
+identical byte for byte ([what each host costs](/docs/infra/hosts#what-each-host-costs)). So
 *progressive* here means only this — each step outward
 [states its price](/docs/infra/gradient#five-rungs-and-the-price-of-each), and none of them
 asks you to rewrite what you wrote.

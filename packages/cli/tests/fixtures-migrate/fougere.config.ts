@@ -1,3 +1,4 @@
+import '@fougere/adapter-sql';
 export default {
-  db: { dialect: 'sqlite', path: 'app.db' },
+  sources: { main: { path: 'app.db' } },
 };

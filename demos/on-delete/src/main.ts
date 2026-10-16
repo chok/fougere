@@ -2,15 +2,14 @@
  * One declaration, and the config line that decides who carries it out.
  *
  * Run it as it stands: everything shares one engine, so the foreign keys do the work and
- * nothing is read first. Uncomment `sources:` in fougere.config.ts and run again — the same
+ * nothing is read first. Uncomment `archive` in fougere.config.ts and run again — the same
  * entities, the same rows left behind, and one line of boot output that is not the same.
  */
 import { scanProject } from '@fougere/compiler';
 import { log } from '@fougere/log';
-import { createApp, createLocalRunner, Invocation, migrating, type App } from '@fougere/core';
+import { createApp, createLocalRunner, Invocation, migrating, type App, type FougereConfig } from '@fougere/core';
 import { createContainer } from '@fougere/container';
-import { layerOf, storageFrom } from '@fougere/defaults';
-import { createSqliteSource } from '@fougere/adapter-sql/sqlite';
+import { layerOf, resolveStorage } from '@fougere/defaults';
 import { workflow } from '@fougere/workflow';
 import { rmSync } from 'node:fs';
 import { join } from 'node:path';
@@ -20,23 +19,15 @@ const data = join(root, '.data');
 rmSync(data, { recursive: true, force: true });
 
 /** Read the demo's own config the way the boot does, so the comment block is the switch. */
-const { default: config } = await import(join(root, 'fougere.config.ts')) as {
-  default: { sources?: Record<string, { path: string; entities: string[] }> };
-};
-const split = config.sources !== undefined;
+const { default: config } = await import(join(root, 'fougere.config.ts')) as { default: FougereConfig };
+const split = Object.keys(config.sources ?? {}).length > 1;
 
-const storage = storageFrom({
-  db: createSqliteSource({ path: join(data, 'app.db') }),
-  sources: Object.fromEntries(Object.entries(config.sources ?? {}).map(([name, declared]) => [
-    name,
-    { source: createSqliteSource({ path: join(root, declared.path) }), entities: declared.entities },
-  ])),
-});
+const storage = resolveStorage(config.sources, root);
 
 console.log(`\n${'─'.repeat(74)}`);
 console.log(split
-  ? 'sources: DECLARED — Comment in its own database, so one hop leaves the engine'
-  : 'sources: commented out — one engine holds every key');
+  ? 'archive: DECLARED — Comment in its own database, so one hop leaves the engine'
+  : 'archive: commented out — one engine holds every key');
 console.log('─'.repeat(74));
 
 const app: App = await createApp({
@@ -103,8 +94,8 @@ console.log(split
   : 'One engine, so every hop was a key: no read, no walk, one statement. The declaration did\n'
     + 'not change, and neither did what is left.');
 console.log(split
-  ? 'Comment `sources:` out in fougere.config.ts and run again. The entities do not change.'
-  : 'Uncomment `sources:` in fougere.config.ts and run again. The entities do not change.');
+  ? 'Comment `archive` out in fougere.config.ts and run again. The entities do not change.'
+  : 'Uncomment `archive` in fougere.config.ts and run again. The entities do not change.');
 console.log(`${'─'.repeat(74)}\n`);
 
 await call({ address: 'run', op: 'sweep' }, Invocation.empty);

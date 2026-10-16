@@ -48,7 +48,7 @@ export default class CheckHandler {
     const model = resolveEffectiveOperations(fronds, {
       diagnostics,
       remotes: remotesOf(config),
-      adapters: config.adapters,
+      protocols: config.protocols,
     });
     const findings: Diagnostic[] = [...model.diagnostics];
     const handlers = fronds.reduce((count, frond) => count + frond.handlers.length, 0);

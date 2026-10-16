@@ -1,5 +1,6 @@
 /** A Map — the source that ships no driver, in the ten lines the frame leaves. */
-import { Sources, storageOver, type Store, type Values, type Source, type SourceConfig } from '@fougere/core';
+import { Format, type Accepted } from '@fougere/schema';
+import { Sources, storageOver, type Store, type Values, type Source } from '@fougere/core';
 
 /** One entity, held for the life of the process, released with nothing to close. */
 function mapStore(): Store {
@@ -22,4 +23,15 @@ export function createMemorySource(): Source {
   return { storageFactory: createMemoryStorage, name: 'memory' };
 }
 
-Sources.register('memory', (_conf: SourceConfig): Source => createMemorySource());
+const MEMORY = Format.of('source/memory')
+  .key('type', Format.tokens(['memory']))
+  .needs('type')
+  .closed();
+
+declare module '@fougere/core' {
+  interface FougereSources {
+    memory: Accepted<typeof MEMORY>;
+  }
+}
+
+Sources.register('memory', { format: MEMORY, open: () => createMemorySource() });

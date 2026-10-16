@@ -1,9 +1,12 @@
+import '@fougere/adapter-rest';
+import '@fougere/adapter-sql';
 import { defineFougere } from '@fougere/core';
 
 /**
- * No `db:` key. On a Worker there is nothing to open at boot and no file to re-read:
- * the storage arrives as a BINDING, per request, and `src/worker.ts` hands it in.
+ * The database is a BINDING, so the entry names the binding rather than a file or a url.
+ * D1 is SQLite: the DDL, the codecs and the limits are the ones Fougere already knows.
  */
 export default defineFougere({
-  adapters: { rest: true, graphql: false },
+  sources: { main: { type: 'd1', binding: 'DB' } },
+  protocols: { rest: {} },
 });

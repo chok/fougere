@@ -17,7 +17,7 @@ import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { createContainer } from '@fougere/container';
 import { entity, optional, primary, ref, text } from '@fougere/schema';
-import { createSqliteSource } from '@fougere/adapter-sql/sqlite';
+import { createSqliteSource } from '@fougere/adapter-sql';
 import { createApp, createLocalRunner, Crud, frond, migrating, type App, type Storage, type Transport } from '@fougere/core';
 import { layerOf, storageFrom } from '../src/storage/ResolvedStorage.js';
 
@@ -86,10 +86,10 @@ async function bench({ together = false, split = false, apart = false }: Placeme
   // ONE set of files, opened by both processes — what varies is who decides, not who stores.
   const storage = storageFrom(split
     ? {
-      db: createSqliteSource({ path: join(dir, 'app.db') }),
-      sources: { archive: { source: createSqliteSource({ path: join(dir, 'archive.db') }), entities: ['Comment'] } },
+      main: { source: createSqliteSource({ path: join(dir, 'app.db') }) },
+      archive: { source: createSqliteSource({ path: join(dir, 'archive.db') }), entities: ['Comment'] },
     }
-    : { db: createSqliteSource({ path: join(dir, 'app.db') }) });
+    : { main: { source: createSqliteSource({ path: join(dir, 'app.db') }) } });
 
   // `layerOf`, so the data layer travels whole — naming a few members is how `transacted` and
   // `close` were once left behind. Only the factory is wrapped, to count what a release reads.
@@ -251,7 +251,7 @@ describe('a chain cut twice, and code that is not here', () => {
     const spies = (['debug', 'info', 'log', 'warn', 'error'] as const)
       .map((method) => vi.spyOn(console, method).mockImplementation((...parts) => { said.push(parts.join(' ')); }));
 
-    const storage = storageFrom({ db: createSqliteSource({ path: join(dir, 'app.db') }) });
+    const storage = storageFrom({ main: { source: createSqliteSource({ path: join(dir, 'app.db') }) } });
     // Migrated ONCE, by an app that carries every frond: a process holding only its own cannot
     // write a table whose key names an entity it has never seen. What each process can migrate
     // is a subject of its own, and not what this bench is about.

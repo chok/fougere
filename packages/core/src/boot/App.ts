@@ -7,6 +7,7 @@ import type { EffectiveOperationsMap } from '../EffectiveOperationsMap.js';
 import type { DispatchObserver } from '../dispatch/DispatchObserver.js';
 import type { DispatchPort } from '../dispatch/DispatchPort.js';
 import type { Storage } from '../storage/Storage.js';
+import type { ProtocolConfig } from '../Protocol.js';
 
 /** The App object returned by createApp(). */
 export interface App extends DispatchPort {
@@ -14,8 +15,8 @@ export interface App extends DispatchPort {
   local: DispatchPort;
   /** Root container with builtins + frond scopes. */
   container: Container;
-  /** Which protocol adapters this app declared, from `fougere.config.ts`. */
-  adapters: Record<string, boolean | undefined>;
+  /** The protocols this app serves, from `fougere.config.ts`. */
+  protocols: ProtocolConfig;
   /** Where a call goes, as the config declared it — frond name to address. */
   remotes: Readonly<Record<string, string>>;
   /** Discovered fronds metadata. */

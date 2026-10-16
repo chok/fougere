@@ -2,22 +2,23 @@ import { dirname, join, resolve } from 'node:path';
 import { existsSync } from 'node:fs';
 import type { LogLevel } from './builtin/LogLevel.js';
 import type { ConventionsInput } from './ConventionsInput.js';
-import type { NameOf } from './NameOf.js';
+import type { SourceConfig } from './SourceConfig.js';
 import type { PortChoice } from './PortChoice.js';
 import { getModuleLoader } from './loader.js';
-import type { AdapterConfig } from './AdapterConfig.js';
+import type { ProtocolConfig } from './Protocol.js';
 import { mergeStated, statesModule, type FrondsStated } from './FrondsStated.js';
 import { statedFronds } from './StatedFrond.js';
 import { DEFAULT_CONVENTIONS } from './Conventions.js';
 
 export interface FougereConfig {
-  /** Database configuration — the DEFAULT source, the one an entity lands in unnamed. */
-  db?: 'sqlite' | { dialect: 'sqlite'; path?: string } | false;
-  /** The other places rows live — a name, an engine, and the entities it holds. */
-  sources?: Record<string, { dialect?: 'sqlite'; path?: string; entities: NameOf<'entity'>[] }>;
+  /**
+   * Where rows live — a name, a type and what it admits, and the entities it holds. The one entry
+   * listing no entities is the default source; none at all keeps the rows in memory.
+   */
+  sources?: Record<string, SourceConfig>;
   /**
    * The names the scan reads instead of deriving them — the import scope, the fronds directory,
-   * the seven convention directories.
+   * every convention directory.
    */
   conventions?: ConventionsInput;
   /** How much every logger says. */
@@ -31,8 +32,8 @@ export interface FougereConfig {
   fronds?: FrondsStated;
   /** What answers a port — a name, or the chain from the outside in. */
   ports?: PortChoice;
-  /** Which protocol adapters this app serves. */
-  adapters?: AdapterConfig;
+  /** The protocols this app serves beside its own calls — named here, made available by an import. */
+  protocols?: ProtocolConfig;
 }
 
 const CONFIG_FILES = ['fougere.config.ts', 'fougere.config.js', 'fougere.config.mjs'];

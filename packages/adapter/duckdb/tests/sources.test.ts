@@ -42,8 +42,10 @@ beforeAll(async () => {
   archive.close();
 
   sources = await connectSources({
-    db: { path: join(dir, 'main.db') },
-    sources: { archive: { path: join(dir, 'archive.db'), entities: ['Book'] } },
+    sources: {
+      main: { path: join(dir, 'main.db') },
+      archive: { path: join(dir, 'archive.db'), entities: ['Book'] },
+    },
     reads: [Loan, Book],
   });
 });
@@ -83,7 +85,7 @@ describe('a query across two sources', () => {
   });
 
   it('attaches only what the scope reads', () => {
-    expect([...sources.attached.keys()].sort()).toEqual(['archive', 'db']);
+    expect([...sources.attached.keys()].sort()).toEqual(['archive', 'main']);
   });
 });
 
@@ -127,8 +129,10 @@ describe('the declared shape is the fence', () => {
 describe('a source DuckDB cannot attach', () => {
   it('is refused by name, and says what to do instead', async () => {
     await expect(connectSources({
-      db: { path: ':memory:' },
-      sources: { legacy: { attach: 'Server=x;', type: 'mssql' as never, entities: ['Book'] } },
+      sources: {
+        main: { path: ':memory:' },
+        legacy: { type: 'mssql', url: 'Server=x;', entities: ['Book'] },
+      },
       reads: [Book],
     })).rejects.toThrow(/DuckDB cannot attach — there is no such extension/);
   });

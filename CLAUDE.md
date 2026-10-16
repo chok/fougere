@@ -776,9 +776,31 @@ was `RecordStorage`. Pinned by `tests/seam.test.ts`.
 dual — read by every boot, where `migrate` is run by `fougere migrate --apply` alone. What a source is MADE OF is not
 there: `adapter/sql` states `dialect`, `db` and `sink` on its own `SqlSource`. The migration
 is the source's own gesture; the router partitions and hands each source its `SourceView`.
-`source:` names the ADAPTER and `dialect` stays SQL's. No `transacted` means a frame
-compensates instead of transacting, and the boot says so per frame. Pinned by
-`defaults/tests/sources.test.ts`.
+No `transacted` means a frame compensates instead of transacting, and the boot says so per
+frame. Pinned by `defaults/tests/sources.test.ts`.
+
+**`sources:` is the one key, and an entry is its TYPE's** — `FougereSources`
+(`core/src/FougereSources.ts`), an empty interface each adapter augments beside its
+`Sources.register` (`adapter/sql/src/SqlSourceTypes.ts`, `adapter/file`, `adapter/memory`), from
+a `Format` declared ONCE: the editor reads it as a type (`Accepted<typeof …>`) and
+`Sources.open` judges the entry by it, so `pathh` is refused in both. `db:` is gone — the entry
+listing no `entities` is the default, two refuse naming both, none falls back to memory with a
+warning (`defaults/src/storage/ResolvedStorage.ts`, `defaultOf`). A type per engine (`sqlite`,
+the conventional one, `pg`, `mysql`, `mssql`, `d1`, `file`, `memory`), so a server's `url` is
+required by the format itself. NOTHING is imported for the app: a config imports
+`@fougere/adapter-sql`, and with no import no entry is a word the editor admits nor a type the
+boot answers. That entry loads on any runtime — an engine reads `node:fs`/`node:module` through
+`process.getBuiltinModule` when it OPENS (`driver/Builtin.ts`), so opening stays synchronous; `d1`
+reads its binding from `cloudflare:workers` at the driver's `init()`. Pinned by
+`adapter/sql/tests/driver.test.ts` and `defaults/tests/no-db.test.ts`.
+
+**`protocols:` serves, an import makes available** — `FougereProtocols` and the `Protocols`
+registry (`core/src/Protocol.ts`), augmented by `adapter-rest` and `adapter-graphql` at import.
+`protocols: { graphql: {} }` with no import refuses the boot naming it (`boot/protocols.ts`); an
+import alone serves nothing, since a helper imported anywhere would otherwise open `/graphql`.
+The host reads the registry (`app/shared/src/graphql.ts`) and never imports a package by name.
+It replaced `adapters: { rest: true }`, whose open index admitted `grapql: true` in silence and
+whose word already meant the storage engines on an entity.
 
 **`enforces?` is not a gesture but a promise** — the constraints a source refuses AT THE ROWS,
 which the judge at the door cannot: it refuses the duplicate it can SEE, and two writes arriving
@@ -867,7 +889,7 @@ compares two `rpc.discover` cards through `Card.diff`.
 
 **A frond names where its op answers, on every surface** — `graphql: 'posts'` and
 `rest: { path: '/articles' }` in `frond.config.ts`, read by `adapter/graphql`
-(`pothos.ts`) and `adapter/rest` (`routes.ts`). REST had no such key: the path lived in
+(`OperationsConfig.ts`) and `adapter/rest` (`routes.ts`). REST had no such key: the path lived in
 whatever host called `generateRoutes`, so one surface was named beside the operation and
 the other three files away. The PREFIX stays the host's — naming is the frond's, mounting
 is not — and a host's `overrides:` still wins, since it is deciding for someone else's
@@ -939,7 +961,7 @@ said so and `Emit` returns void, so nothing could tell it otherwise. Filtering b
 whoever announces, or to each reader.
 
 A link is CALLED, so it needs an address — local, or named in `fronds:`. A carrier has no
-address, so a link can never live behind one, the same line `Ask` draws. It is a HARD
+address, so a link can never live behind one, the same line `Emit<T, A>` draws. It is a HARD
 dependency where a subscriber is not — a subscriber that throws is
 logged and the announcer goes on, a link that throws stops the announcement, and behind
 `fronds:` that makes announcing depend on another process. Pinned by `tests/pipe.test.ts`
@@ -1000,7 +1022,7 @@ X), `useFormFor` (contract, not rendering; local validator = remote validator), 
   `vue-tsc` needs `typescript/lib/tsc`, a path the native tsc no longer exports. Rejected
   2026-08-06; revisit when vue-tsc runs on TS 7.
 - `"types": ["node"]` explicit in tsconfig.base — TS 7 dropped automatic @types
-- `resolveStorage()` (`@fougere/defaults`) is the single place that defaults a missing db path
+- `resolveStorage()` (`@fougere/defaults`) is the single place that reads `sources:`
 - `graphql` deduplicated across the workspace (override + hoist)
 - `better-sqlite3` bindings may need `npx prebuild-install` in its pnpm dir
 - **Measure before concluding.** On a design question, run the grep or the probe FIRST and
@@ -1016,6 +1038,9 @@ X), `useFormFor` (contract, not rendering; local validator = remote validator), 
   nothing there. Never a file path — the route survives the file moving, the same reason a
   reference here is a path plus a SYMBOL and never a line number. Only where the page
   explains the concept, never as a second description of what the code already shows.
+- **A fact of the docs lives in ONE page** — a number, a name, a behaviour — and the others
+  link to it. A fact copied into two pages is a fact one of them will stop telling: measured
+  2026-10-16, five such facts, and in every one a copy had drifted.
 - **Never cite a line number in this file.** A path plus a SYMBOL survives a refactor;
   `bootstrap.ts:295` survives neither an edit nor a move. Measured 2026-08-17: five of eleven
   line references already pointed at a blank line or an unrelated comment.

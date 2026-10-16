@@ -1,4 +1,5 @@
 import type { Container } from '@fougere/container';
+import type { ProtocolConfig } from '../Protocol.js';
 import type { FrondDescriptor } from '../descriptor/FrondDescriptor.js';
 import type { FrondsStated } from '../FrondsStated.js';
 import type { ScanResult } from '../scan.js';
@@ -75,8 +76,8 @@ export interface CreateAppOptions {
    * here — a storage connection is the one case today.
    */
   onDispose?: () => Promise<void> | void;
-  /** Which protocol adapters this app serves — see `FougereConfig.adapters`. */
-  adapters?: Record<string, boolean | undefined>;
+  /** The protocols this app serves — see `FougereConfig.protocols`. */
+  protocols?: ProtocolConfig;
   /** Carries an announced fact out of this process — a broker, a queue, a log. */
   onEmit?: (fact: string, payload: unknown) => void | Promise<void>;
 }

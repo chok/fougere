@@ -1,5 +1,4 @@
 export default {
-  db: false,
   fronds: {
     '@fougere/log': {},
     // `billing` serves nothing. It holds what its family shares, and the two below

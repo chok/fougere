@@ -1,17 +1,16 @@
 /**
  * One handler, two guarantees, and the config line that decides which.
  *
- * Run it as it stands: `sources:` is commented out, everything shares one engine, and the
+ * Run it as it stands: the two sources are commented out, everything shares one engine, and the
  * frames are transactions. Uncomment the block in fougere.config.ts and run again — the
  * same handlers, the same results, and one line of boot output that is not the same.
  */
 import { scanProject } from '@fougere/compiler';
 import { log } from '@fougere/log';
-import { createApp, createLocalRunner, migrating, type App, Invocation } from '@fougere/core';
+import { createApp, createLocalRunner, migrating, type App, type FougereConfig, Invocation } from '@fougere/core';
 import { createContainer } from '@fougere/container';
-import { layerOf, storageFrom } from '@fougere/defaults';
-import { createSqliteSource } from '@fougere/adapter-sql/sqlite';
-import { createFileSource } from '@fougere/adapter-file';
+import { layerOf, resolveStorage } from '@fougere/defaults';
+import { createSqliteSource } from '@fougere/adapter-sql';
 import { observeWith } from '../fronds/banking/extensions/observe.js';
 import { rmSync } from 'node:fs';
 import { join } from 'node:path';
@@ -21,25 +20,10 @@ const data = join(root, '.data');
 rmSync(data, { recursive: true, force: true });
 
 /** Read the demo's own config the way the boot does, so the comment block is the switch. */
-const { default: config } = await import(join(root, 'fougere.config.ts')) as {
-  default: { sources?: Record<string, { source?: string; path: string; entities: string[] }> };
-};
-const split = config.sources !== undefined;
+const { default: config } = await import(join(root, 'fougere.config.ts')) as { default: FougereConfig };
+const split = Object.keys(config.sources ?? {}).length > 1;
 
-const storage = storageFrom({
-  db: createSqliteSource({ path: join(data, 'app.db') }),
-  // `source:` names the adapter; what sits below it belongs to that adapter. Two of them
-  // here, and the routing above reads neither — it asks each for the same four gestures.
-  sources: Object.fromEntries(Object.entries(config.sources ?? {}).map(([name, declared]) => [
-    name,
-    {
-      source: declared.source === 'file'
-        ? createFileSource({ path: join(root, declared.path) })
-        : createSqliteSource({ path: join(root, declared.path) }),
-      entities: declared.entities,
-    },
-  ])),
-});
+const storage = resolveStorage(config.sources, root);
 
 console.log(`\n${'─'.repeat(72)}`);
 console.log(split
@@ -127,8 +111,8 @@ console.log(split
   : '`ledger.currency` cannot name a rate card that is not there, and nothing read anything\n'
     + 'to find out: both tables are in one engine, so the foreign key answered.');
 console.log(split
-  ? 'Comment `sources:` out in fougere.config.ts and run again. The handlers do not change.'
-  : 'Uncomment `sources:` in fougere.config.ts and run again. The handlers do not change.');
+  ? 'Comment the two sources out in fougere.config.ts and run again. The handlers do not change.'
+  : 'Uncomment the two sources in fougere.config.ts and run again. The handlers do not change.');
 console.log(`${'─'.repeat(72)}\n`);
 
 await outside.db.destroy();

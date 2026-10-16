@@ -201,7 +201,7 @@ function resolveOperation(resolving: Resolving, name: string, rawContract: Opera
     reach: reachOf(handler.deps, frond.name, served, options.remotes ?? {}),
     exposure: {
       surfaces: servedSurfaces(frond, handler).map((surface) => surface ?? 'default'),
-      adapters: exposedAdapters(handler, options.adapters),
+      adapters: exposedAdapters(handler, options.protocols),
     },
     outputClosed: output.closed,
     semantics: EFFECTIVE_OPERATION_SEMANTICS,
@@ -568,14 +568,11 @@ function effectiveOutput(
 
 function exposedAdapters(
   handler: HandlerEntry,
-  adapters: Record<string, boolean | undefined> | undefined,
+  protocols: Record<string, unknown> | undefined,
 ): string[] {
   if (handler.exposed === false && !handler.surface) return [];
 
-  return Object.entries(adapters ?? {})
-    .filter(([, enabled]) => enabled === true)
-    .map(([adapter]) => adapter)
-    .sort();
+  return Object.keys(protocols ?? {}).sort();
 }
 
 function uniqueDiagnostics(diagnostics: readonly Diagnostic[]): Diagnostic[] {

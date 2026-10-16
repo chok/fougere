@@ -225,7 +225,7 @@ export function registerFrames(
  * compensate a frame whose own engine holds transactions.
  */
 function frameOver(key: string, members: Members, scope: Container, world: FrameWorld): Frame {
-  const sources = new Set(members.entities.map((member) => world.sourceOf?.(member.name) ?? 'db'));
+  const sources = new Set(members.entities.map((member) => world.sourceOf?.(member.name) ?? 'default'));
   const validator = (storage: Storage, name: string, schema: SchemaView) =>
     new StorageGuard(schema.getFields(), name, {}, heldBy(schema, name, world.hosting), releasing(world.hosting)).guard(storage);
 
@@ -244,7 +244,7 @@ function frameOver(key: string, members: Members, scope: Container, world: Frame
   // write and replays the inverses itself. `validator` stays OUTSIDE `recording`, so a write the
   // entity refuses never enters the journal.
   const why = sources.size > 1
-    ? members.entities.map((one) => `${one.name} in '${world.sourceOf?.(one.name) ?? 'db'}'`).join(', ')
+    ? members.entities.map((one) => `${one.name} in '${world.sourceOf?.(one.name) ?? 'default'}'`).join(', ')
     : 'this storage hands out no transaction';
   world.log.info(`${key} — compensated: ${why} — no isolation`);
 

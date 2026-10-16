@@ -55,13 +55,14 @@ export default class MigrateHandler {
 
     const config = await loadConfig(scan.root);
     const { bootApp, resolveStorage } = await import('@fougere/defaults');
-    const storage = resolveStorage(config.db ?? {}, (config as { sources?: never }).sources, scan.root);
-    if (!storage.db) {
+    const storage = resolveStorage(config.sources, scan.root);
+    const engines = (storage.sources?.() ?? []).filter((source) => storage.dbOf?.(source) !== undefined);
+    if (engines.length === 0) {
       await storage.close?.();
 
       return {
         chain, changes: [], added: [], warnings: [], ran: [],
-        refusals: [{ entity: '*', field: '*', reason: 'no `db` in fougere.config.ts — nothing to migrate' }],
+        refusals: [{ entity: '*', field: '*', reason: 'no SQL source in fougere.config.ts — nothing to migrate' }],
       };
     }
 
@@ -76,15 +77,14 @@ export default class MigrateHandler {
       const tables = desiredTables(sourceViewOf(app.fronds));
       const frozen = collapseChain(perFrond.map((one) => collapseChain(one.map(({ step }) => step))));
       const composed = collapseChain([frozen, declaredStep(app, frozen)]);
-      const sourceOf = storage.sourceOf ?? (() => 'db');
+      const sourceOf = storage.sourceOf ?? (() => engines[0]!);
 
       const changes: StepChange[] = [];
       const refusals: Plan['refusals'] = [];
       const warnings: string[] = [];
       const plans: { plan: Plan; db: Parameters<typeof actualState>[0] }[] = [];
-      for (const source of storage.sources?.() ?? ['db']) {
-        const db = (source === 'db' ? storage.db : storage.dbOf?.(source)) as Parameters<typeof actualState>[0];
-        if (!db) continue;
+      for (const source of engines) {
+        const db = storage.dbOf!(source) as Parameters<typeof actualState>[0];
 
         const actual = await actualState(db);
         const plan = planStep(onSource(composed, source, sourceOf), tables, { actual });

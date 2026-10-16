@@ -2,10 +2,10 @@
 import { mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { lowerFirst, Visibility, type SchemaView } from '@fougere/schema';
+import { Format, lowerFirst, Visibility, type Accepted, type SchemaView } from '@fougere/schema';
 import {
   Sources, storageOver,
-  type Store, type Values, type Source, type SourceConfig, type SourceView,
+  type Store, type Values, type Source, type SourceView,
 } from '@fougere/core';
 
 /** A key becomes a filename, so it may not leave the directory it addresses. */
@@ -86,11 +86,16 @@ export function createFileSource(opts: FileSourceOptions): Source {
   };
 }
 
-Sources.register('file', (conf: SourceConfig): Source => {
-  const path = conf.path as string | undefined;
-  if (!path) {
-    throw new Error("source 'file': no `path` — a directory is what it is told to open.");
-  }
+const FILE = Format.of('source/file')
+  .key('type', Format.tokens(['file']))
+  .key('path', Format.text)
+  .needs('type', 'path')
+  .closed();
 
-  return createFileSource({ path });
-});
+declare module '@fougere/core' {
+  interface FougereSources {
+    file: Accepted<typeof FILE>;
+  }
+}
+
+Sources.register('file', { format: FILE, open: (entry) => createFileSource({ path: entry.path }) });

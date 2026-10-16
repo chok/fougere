@@ -3,6 +3,7 @@ import {
   callValueOf,
   ErrorCode,
   FougereError,
+  serves,
   toHttpError,
   type App,
   type BootRefusal,
@@ -78,9 +79,9 @@ export function rpcParseError() {
  */
 export async function serveRest(app: App, request: DoorRequest): Promise<Outcome> {
   // The app decides, not the host. A route file may exist and a middleware may be
-  // installed; if `fougere.config.ts` does not declare `adapters: { rest: true }`,
+  // installed; if `fougere.config.ts` does not name `protocols: { rest: {} }`,
   // this serves nothing and the request carries on to whatever the app itself routes.
-  if (!app.adapters?.rest) return { kind: 'pass' };
+  if (!serves(app.protocols, 'rest')) return { kind: 'pass' };
 
   const segments = request.path.split('/').filter(Boolean);
   if (segments.length < 2) return { kind: 'pass' };

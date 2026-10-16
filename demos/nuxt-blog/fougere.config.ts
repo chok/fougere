@@ -1,12 +1,15 @@
+import '@fougere/adapter-rest';
+import '@fougere/adapter-graphql';
+import '@fougere/adapter-sql';
 import { defineFougere } from '@fougere/core';
 import { betterAuth } from '@fougere/auth-better';
 import User from './fronds/user/entities/User';
 
 export default defineFougere({
-  db: 'sqlite',
+  sources: { main: {} },
   // Ce que cette app publie. Absent = non servi : le module monte la porte, la
   // config décide si elle sert quelque chose.
-  adapters: { rest: true, graphql: true },
+  protocols: { rest: {}, graphql: {} },
   fronds: {
     '@fougere/log': {},
     // La Frond blog vit dans un autre process (pnpm dev:blog). Commenter cette

@@ -1,6 +1,7 @@
 import { migrating, type App } from '@fougere/core';
 import { boot } from '@fougere/compiler';
-import { remoteTransport, resolveStorage, type DbConfig } from '@fougere/defaults';
+import '@fougere/adapter-sql';
+import { remoteTransport, resolveStorage } from '@fougere/defaults';
 import { installStubs, type Stub } from '../stub/Stub.js';
 import type { Port } from '../stub/Port.js';
 import { scopeOfRun } from '../scope.js';
@@ -17,7 +18,6 @@ export interface TestApp extends App {
 
 /** An app to ask questions of, wired the conventional way. */
 export async function testApp(options: TestAppOptions = {}): Promise<TestApp> {
-  const db: DbConfig = { dialect: 'sqlite', path: options.db ?? ':memory:' };
   // The position is consulted only for what the caller did not state: an explicit `root`
   // or `fronds` wins, the way a config key wins over a convention everywhere else.
   const scope = (options.root && options.fronds) ? undefined
@@ -26,7 +26,7 @@ export async function testApp(options: TestAppOptions = {}): Promise<TestApp> {
   // One entry per announcement, in order. `Emissions.announce` calls the carrier for
   // every fact, so this sees them all — including those nobody in this process listens to.
   const heard: { fact: string; payload: unknown }[] = [];
-  const storage = resolveStorage(db);
+  const storage = resolveStorage({ main: { path: options.db ?? ':memory:' } });
 
   const app = await boot({
     onEmit: (fact, payload) => { heard.push({ fact, payload }); },
@@ -38,7 +38,7 @@ export async function testApp(options: TestAppOptions = {}): Promise<TestApp> {
     // placed elsewhere and a test runs what it declares.
     config: options.topology ? undefined : { fronds: {} },
     ...(options.topology ? { remoteTransport: await remoteTransport() } : { remotes: {} }),
-    db: () => storage,
+    storage: () => storage,
     extensions: [migrating(storage.migrate)],
   });
 

@@ -42,8 +42,8 @@ describe('a constraint the source does not keep', () => {
     const said = warned(await booting(() => false));
 
     expect(said).toHaveLength(1);
-    expect(said[0]).toContain("bike in 'db'");
-    expect(said[0]).toContain("ride in 'db'");
+    expect(said[0]).toContain("bike in 'default'");
+    expect(said[0]).toContain("ride in 'default'");
     expect(said[0]).toContain('two concurrent writes can both pass');
   });
 

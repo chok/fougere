@@ -2,6 +2,7 @@
  * A web host reads the schema and never writes it: a database behind the entities refuses the
  * boot, and only a process whose database is born with it says it migrates.
  */
+import '@fougere/adapter-sql';
 import { describe, it, expect } from 'vitest';
 import { entity, primary, text } from '@fougere/schema';
 import { BootRefusal, frond } from '@fougere/core';
@@ -15,7 +16,7 @@ import { refusedRpc } from '../src/Outcome.js';
 class Note extends entity({ id: primary(), title: text() }) {}
 
 const fronds = [frond('notes', { entities: [Note] })];
-const config = { db: { dialect: 'sqlite', path: ':memory:' } } as never;
+const config = { sources: { main: { path: ':memory:' } } } as never;
 
 describe('the schema on a web host', () => {
   it('refuses a database behind the entities, naming the table', async () => {
@@ -42,10 +43,10 @@ describe('the schema on a web host', () => {
 
   it('boots at the next call once the database caught up — a refusal is not kept', async () => {
     const path = join(mkdtempSync(join(tmpdir(), 'schema-')), 'app.db');
-    configureFougere({ fronds, config: { db: { dialect: 'sqlite', path } } as never });
+    configureFougere({ fronds, config: { sources: { main: { path } } } as never });
     await expect(useFougereApp()).rejects.toThrow(/behind the entities/);
 
-    const storage = resolveStorage({ dialect: 'sqlite', path });
+    const storage = resolveStorage({ main: { path } });
     await storage.migrate?.({ fronds } as never);
     await storage.close?.();
 
@@ -56,8 +57,8 @@ describe('the schema on a web host', () => {
 
   it('keeps a storage the host handed in open across a refusal — the host closes what it opened', async () => {
     const path = join(mkdtempSync(join(tmpdir(), 'schema-')), 'app.db');
-    const storage = resolveStorage({ dialect: 'sqlite', path });
-    configureFougere({ fronds, config: { db: { dialect: 'sqlite', path } } as never, storage });
+    const storage = resolveStorage({ main: { path } });
+    configureFougere({ fronds, config: { sources: { main: { path } } } as never, storage });
     await expect(useFougereApp()).rejects.toThrow(/behind the entities/);
 
     await storage.migrate?.({ fronds } as never);

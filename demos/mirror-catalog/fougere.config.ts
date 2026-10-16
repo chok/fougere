@@ -1,6 +1,7 @@
+import '@fougere/adapter-sql';
 import { defineFougere } from '@fougere/core';
 
 export default defineFougere({
-  db: { dialect: 'sqlite', path: '.fougere/catalog.db' },
+  sources: { main: { path: '.fougere/catalog.db' } },
   fronds: { '@fougere/log': {} },
 });
