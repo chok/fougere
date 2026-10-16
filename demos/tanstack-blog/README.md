@@ -39,7 +39,9 @@ The route files put the facades in place. What they serve is declared once, in
 `fougere.config.ts`:
 
 ```ts
-adapters: { rest: true }
+import '@fougere/adapter-rest';
+
+protocols: { rest: {} }
 ```
 
 Remove it and `/api/...` stops answering while the pages keep working — the host does

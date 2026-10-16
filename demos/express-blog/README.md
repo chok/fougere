@@ -22,7 +22,9 @@ But mounting is not publishing. Whether REST answers at all is declared in
 `fougere.config.ts`:
 
 ```ts
-adapters: { rest: true }
+import '@fougere/adapter-rest';
+
+protocols: { rest: {} }
 ```
 
 Take that away and `/api/blog/posts` returns Express's own 404 while the envelope, the
@@ -32,7 +34,9 @@ app decides what it serves.
 The same holds for GraphQL, and it is the whole GraphQL setup:
 
 ```ts
-adapters: { rest: true, graphql: true }
+import '@fougere/adapter-graphql';
+
+protocols: { rest: {}, graphql: {} }
 ```
 
 ```bash

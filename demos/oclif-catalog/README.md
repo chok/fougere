@@ -56,7 +56,9 @@ private.
 ## The database is the one thing a terminal changes
 
 ```ts
-db: { dialect: 'sqlite', path: '.fougere/catalog.db' }
+import '@fougere/adapter-sql';
+
+sources: { main: { path: '.fougere/catalog.db' } }
 ```
 
 A command is a process that starts and stops, so an in-memory row would die between

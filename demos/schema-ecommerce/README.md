@@ -2,7 +2,7 @@
 
 ## Why this one still wires GraphQL by hand
 
-Every other demo declares `adapters: { graphql: true }` and writes no schema code at
+Every other demo declares `protocols: { graphql: {} }` and writes no schema code at
 all. This one deliberately does not: it uses the low-level primitives
 (`registerType`, `registerInput`, `registerOperations`) against ORMs it built itself,
 with no frond, no scan and no `fougere.config.ts`.
