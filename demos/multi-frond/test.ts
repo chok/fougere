@@ -63,7 +63,7 @@ async function main() {
 
   try {
     try {
-      await waitForServer(`http://localhost:${PORT}/api/posts`);
+      await waitForServer(`http://localhost:${PORT}/api/blog/posts`);
     } catch (error) {
       console.error(said.join('') || '  the server said nothing');
       throw error;
@@ -93,7 +93,7 @@ async function main() {
 
     // 3. Test REST API works
     log('Testing REST API...');
-    const postsRes = await fetch(`http://localhost:${PORT}/api/posts`);
+    const postsRes = await fetch(`http://localhost:${PORT}/api/blog/posts`);
     // A paged op answers `{ items, total, hasMore, endCursor }` — the counts are FIELDS, so
     // they survive the wire. Carried as properties of an array, JSON kept only the indices.
     const { items: posts } = await postsRes.json() as { items: any[] };

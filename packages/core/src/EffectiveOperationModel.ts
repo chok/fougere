@@ -5,12 +5,14 @@ import { computeBindingPlan, type BindingPlan } from './wire/binding.js';
 import { targetOf } from './prefab/prefab.js';
 import { EFFECTIVE_OPERATION_SEMANTICS } from './EffectiveOperationSemantics.js';
 import type { CollectorEntry } from './descriptor/CollectorEntry.js';
-import type { FrondDescriptor } from './descriptor/FrondDescriptor.js';
+import { isScanned, type FrondDescriptor } from './descriptor/FrondDescriptor.js';
 import type { HandlerEntry } from './descriptor/HandlerEntry.js';
+import { OperationOverrides, type OperationOverrideEntry } from './descriptor/OperationOverrides.js';
 import { servedSurfaces } from './descriptor/surface.js';
 import type { Diagnostic } from './diagnostic.js';
 import { verify } from './verify.js';
-import { inferOperationKind, knownVerbs, type OperationContract } from './wire/OperationContract.js';
+import { inferOperationKind, knownVerbs, wordsOf, type OperationContract } from './wire/OperationContract.js';
+import { RouteAddress } from './wire/RouteAddress.js';
 import { type OperationKind } from './wire/OperationKind.js';
 import { type OperationsMap } from './wire/OperationsMap.js';
 import { type TypeRef } from './wire/TypeRef.js';
@@ -97,10 +99,12 @@ export function resolveEffectiveOperations(
     refuseAmbiguousCollectors(frond, collectorsByType, diagnostics);
 
     const collectorNames = new Set(frond.collectors.map((collector) => collector.typeName));
+    const overrides = OperationOverrides.of(frond);
+    diagnostics.push(...overrides.refusals());
     for (const handler of frond.handlers) {
       const effective = new Map<string, EffectiveOperation>();
       byHandler.set(handler, effective);
-      const contracts = resolveContracts(handler, frond.operationsOverrides, collectorNames);
+      const contracts = resolveContracts(handler, overrides.at(handler.address), collectorNames);
       // A statement wins over the scan on purpose; saying so is what keeps the win from hiding a rename.
       diagnostics.push(...statementDrift(frond, handler));
       diagnostics.push(...unansweredOperations(frond, handler, contracts.keys()));
@@ -186,7 +190,8 @@ function resolveOperation(resolving: Resolving, name: string, rawContract: Opera
     operation: `${className}.${name}`,
     name,
     kind,
-    kindSource: frond.operationsOverrides?.[name]?.kind ? 'explicit' : 'convention',
+    kindSource: OperationOverrides.of(frond).get(handler.address, name)?.kind ? 'explicit' : 'convention',
+    protocols: OperationOverrides.of(frond).protocols(handler.address, name),
     handler: { className: handler.ctor.name, address: handler.address, filePath: handler.filePath },
     implementation,
     binding: contract.binding,
@@ -233,8 +238,8 @@ function answersData({ frond, handler, diagnostics }: Resolving, name: string, c
 
 /** Stated in `frond.config.ts`, or read off the verb the name leads with — never guessed between two. */
 function kindOf({ frond, handler, diagnostics }: Resolving, name: string): OperationKind | undefined {
-  const stated = frond.operationsOverrides?.[name]?.kind;
-  if (stated) return stated;
+  const declared = OperationOverrides.of(frond).get(handler.address, name)?.kind;
+  if (declared) return declared;
 
   const inference = inferOperationKind(name);
   const inferred = new Set<OperationKind>();
@@ -244,6 +249,7 @@ function kindOf({ frond, handler, diagnostics }: Resolving, name: string): Opera
   if (inferred.size === 1) return [...inferred][0];
 
   const subject = `${handler.ctor.name}.${name}`;
+  const route = new RouteAddress({ address: handler.address, operation: name });
   const ambiguous = inferred.size > 1;
   diagnostics.push({
     severity: 'blocking',
@@ -253,16 +259,34 @@ function kindOf({ frond, handler, diagnostics }: Resolving, name: string): Opera
     subject,
     message: ambiguous
       ? `Cannot resolve the kind of ${subject}: its name carries query evidence `
-        + `(${inference.queryMatches.join(', ')}) and command evidence `
-        + `(${inference.commandMatches.join(', ')}). `
-        + `Declare operations.${name}.kind.`
-      : `Cannot resolve the kind of ${subject}: '${name}' leads with no known verb. `
-        + `Rename it to lead with one, or declare operations.${name}.kind in `
-        + `frond.config.ts.\n  query:   ${knownVerbs().query.join(', ')}`
-        + `\n  command: ${knownVerbs().command.join(', ')}`,
+        + `(${inference.queryMatches.join(', ')}) and command evidence (${inference.commandMatches.join(', ')}).\n\n`
+        + `  State it ${kindStatedIn(frond, route, 'command')}`
+      : `Cannot resolve the kind of ${subject}: '${name}' leads with no known verb.\n\n`
+        + '  Rename it to lead with a known verb:\n'
+        + `    query:   ${knownVerbs().query.join(', ')}\n`
+        + `    command: ${knownVerbs().command.join(', ')}\n\n`
+        + `  Or state it ${kindStatedIn(frond, route, 'query')}\n\n`
+        + `  Or teach the verb ${verbTaughtIn(frond, wordsOf(name)[0] ?? name)}`,
   });
 
   return undefined;
+}
+
+/** The line that states an op's kind, and the file it goes in — the remedy a refusal hands over. */
+function kindStatedIn(frond: FrondDescriptor, route: RouteAddress, likely: OperationKind): string {
+  const other = likely === 'query' ? 'command' : 'query';
+  const where = isScanned(frond)
+    ? [`in ${frond.source.path}/frond.config.ts:`, `operations: { '${route}': { kind: '${likely}' } },`]
+    : [`in the frond('${frond.name}') declaration:`, `operationsOverrides: { '${route}': { kind: '${likely}' } },`];
+
+  return `for this operation, ${where[0]}\n    ${where[1]}   // or '${other}'`;
+}
+
+/** The line that teaches a verb once, for every op of the frond that leads with it. */
+function verbTaughtIn(frond: FrondDescriptor, verb: string): string {
+  const where = isScanned(frond) ? `in ${frond.source.path}/vocabulary/verbs.ts` : 'before the app boots';
+
+  return `once, ${where}:\n    Verbs.register('${verb}', 'query');   // or 'command'`;
 }
 
 function parametersOf(contract: BoundContract): EffectiveParameter[] {
@@ -395,7 +419,7 @@ function validateProvenance(
   const declared = opsOf(handler.ctor)[name];
   const explicitBinding = declared?.binding !== undefined
     || handler.operations.get(name)?.binding !== undefined
-    || frond.operationsOverrides?.[name]?.binding !== undefined;
+    || OperationOverrides.of(frond).get(handler.address, name)?.binding !== undefined;
   const ambiguousInput = diagnostics.some((diagnostic) =>
     diagnostic.code === 'input-contract-ambiguous'
     && diagnostic.subject === `${handler.ctor.name}.${name}`);
@@ -502,7 +526,7 @@ function implementationOf(
   name: string,
   diagnostics: Diagnostic[],
 ): EffectiveOperation['implementation'] | undefined {
-  const override = frond.operationsOverrides?.[name];
+  const override = OperationOverrides.of(frond).get(handler.address, name);
   const candidates = override?.handlerName
     ? frond.handlers.filter((candidate) => candidate.ctor.name === override.handlerName)
     : [handler];
@@ -590,7 +614,7 @@ function uniqueDiagnostics(diagnostics: readonly Diagnostic[]): Diagnostic[] {
 /** The contract of every operation a handler serves — the three producers, merged once. */
 function resolveContracts(
   handler: Pick<HandlerEntry, 'ctor' | 'operations'>,
-  overrides: FrondDescriptor['operationsOverrides'],
+  overrides: Map<string, OperationOverrideEntry>,
   collectorTypeNames: Set<string>,
 ): OperationsMap {
   const declared = opsOf(handler.ctor);
@@ -605,7 +629,7 @@ function resolveContracts(
     });
   }
 
-  for (const [opName, override] of Object.entries(overrides ?? {})) {
+  for (const [opName, override] of overrides) {
     const { input, output, binding, description } = override;
     if (input === undefined && output === undefined && binding === undefined && description === undefined) continue;
     contracts.set(opName, {

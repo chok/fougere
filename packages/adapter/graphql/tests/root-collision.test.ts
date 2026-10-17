@@ -24,9 +24,9 @@ const ofBook = {
   returnType: { raw: 'Promise<Note[]>', name: 'Note', array: true },
 };
 
-function build(fronds: { name: string; handler: string; overrides?: Record<string, unknown> }[]) {
+function build(fronds: { name: string; handler: string; protocols?: { graphql?: string } }[]) {
   const app = {
-    fronds: fronds.map(({ name, handler, overrides }) => ({
+    fronds: fronds.map(({ name, handler }) => ({
       name,
       entities: [{ name: name === 'annotation' ? 'note' : 'chapter', entityClass: name === 'annotation' ? Note : Chapter }],
       handlers: [{
@@ -35,13 +35,16 @@ function build(fronds: { name: string; handler: string; overrides?: Record<strin
         operations: new Map([['ofBook', { kind: 'query', signature: ofBook, output: name === 'annotation' ? Note : Chapter }]]),
       }],
       presenters: [],
-      operationsOverrides: overrides,
     })),
     presenterFor: () => undefined,
     resolve: () => { throw new Error('no such registration'); },
     facadeFor: () => ({ ofBook: async () => [] }),
-    operationsFor: (address: string) =>
-      new Map([['ofBook', { kind: 'query', signature: ofBook, output: address === 'note' ? Note : Chapter }]]),
+    operationsFor: (address: string) => new Map([['ofBook', {
+      kind: 'query',
+      signature: ofBook,
+      output: address === 'note' ? Note : Chapter,
+      protocols: fronds.find((one) => (one.name === 'annotation' ? 'note' : 'chapter') === address)?.protocols ?? {},
+    }]]),
   } as never;
 
   const builder = new SchemaBuilder({});
@@ -97,7 +100,7 @@ describe('two operations claiming one root field', () => {
   it('lets the named field through — the frond that yields says so in its config', () => {
     const schema = build([
       { name: 'annotation', handler: 'NoteHandler' },
-      { name: 'catalog', handler: 'ChapterHandler', overrides: { ofBook: { graphql: 'chaptersOfBook' } } },
+      { name: 'catalog', handler: 'ChapterHandler', protocols: { graphql: 'chaptersOfBook' } },
     ]);
     // Both explicitly declare query intent. What this pins is the NAME, not the kind.
     const roots = ['Query', 'Mutation'].flatMap(

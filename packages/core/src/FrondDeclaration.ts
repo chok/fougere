@@ -58,7 +58,7 @@ function statedOperations(h: Ctor | DeclaredHandler): Map<string, OperationContr
 }
 
 /** What a declaration states about one frond. Everything else is derived from the classes. */
-export interface FrondDeclaration extends Pick<FrondConfig, 'pipes' | 'surfaces'> {
+export interface FrondDeclaration extends Pick<FrondConfig, 'pipes' | 'surfaces' | 'protocols'> {
   entities?: SchemaView[];
   handlers?: (Ctor | DeclaredHandler)[];
   presenters?: (Ctor | DeclaredSubject)[];
@@ -168,6 +168,7 @@ export function frond(name: string, declared: FrondDeclaration = {}): FrondDescr
     name,
     source: { path: '', package: `${scope}/${name}` },
     ...(declared.operationsOverrides ? { operationsOverrides: declared.operationsOverrides } : {}),
+    ...(declared.protocols ? { protocols: declared.protocols } : {}),
     providers,
     entities,
     handlers,

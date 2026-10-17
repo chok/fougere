@@ -7,6 +7,6 @@ import { defineFrond } from '@fougere/core/node';
  */
 export default defineFrond({
   operations: {
-    report: { kind: 'query' },
+    'cart.report': { kind: 'query' },
   },
 });

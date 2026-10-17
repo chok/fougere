@@ -95,7 +95,7 @@ export async function serveRest(app: App, request: DoorRequest): Promise<Outcome
       kind: 'error',
       status: 405,
       body: {
-        message: `Method ${method} not allowed on /${request.path} — try ${match.allow.join(', ')}`,
+        message: `Method ${method} not allowed on ${request.path} — try ${match.allow.join(', ')}`,
         allow: match.allow,
       },
       headers: { allow: match.allow.join(', ') },

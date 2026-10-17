@@ -41,6 +41,7 @@ export interface FougereServerConfig {
 // ── State ────────────────────────────────────────
 
 let _config: FougereServerConfig = {};
+let _configPromise: Promise<FougereConfig> | null = null;
 let _appPromise: Promise<App> | null = null;
 let _replaced: Promise<App>[] = [];
 
@@ -64,6 +65,59 @@ export function extendFougere(config: Partial<FougereServerConfig>) {
 function replace() {
   if (_appPromise) _replaced.push(_appPromise);
   _appPromise = null;
+  _configPromise = null;
+}
+
+/**
+ * What `fougere.config.ts` says, read once and without booting — what a door asks to tell its own
+ * path from a stranger's, so `/healthz` never waits for a scan.
+ */
+export function useFougereConfig(): Promise<FougereConfig> {
+  _configPromise ??= readConfig().catch((refusal: unknown) => {
+    _configPromise = null;
+    throw refusal;
+  });
+
+  return _configPromise;
+}
+
+async function readConfig(): Promise<FougereConfig> {
+  // The host's word wins, for the reason it wins on `scan`: it read the file already,
+  // and where there is no file a second read finds nothing and says nothing.
+  if (_config.config) return _config.config as FougereConfig;
+
+  // The config names the scope the aliases are built from, so reading it must not need them.
+  // Nothing in `fougere.config.ts` may import `@fronds/*`.
+  await installLoader();
+  // Config cascades along the workspace→app frontier: the workspace root (via
+  // FOUGERE_ROOT, where `remotes`/shared db live) is the base, the app (cwd)
+  // overrides. Same boundary the fronds cascade along. No `root` → both equal.
+  const configRoot = process.cwd();
+
+  return loadCascadedConfig(process.env.FOUGERE_ROOT ?? configRoot, configRoot);
+}
+
+/**
+ * Whether anything will READ a source. A host that handed in its config and its fronds — scanned
+ * or stated — has nothing left to load, and jiti cannot run where there is no module resolver:
+ * measured on workerd, `createJiti` threw `Cannot read properties of undefined (reading 'paths')`
+ * and every request answered 500 — the loader was being built for files that no longer needed
+ * opening.
+ */
+function reads(): boolean {
+  return (_config.scan === undefined && _config.fronds === undefined) || _config.config === undefined;
+}
+
+/**
+ * Nitro serves from a bundle, but the scan still reads frond sources from disk — so the named form
+ * a frond uses for its neighbour has to resolve here too. A module key is resolved against
+ * whoever made the loader, so it is made from the project.
+ */
+async function installLoader(alias?: Record<string, string>): Promise<void> {
+  if (!reads()) return;
+  const { createJiti } = await import('jiti');
+  const jiti = createJiti(pathToFileURL(resolve(process.cwd()) + sep).href, { interopDefault: true, ...(alias ? { alias } : {}) });
+  setModuleLoader((filePath) => jiti.import(filePath) as Promise<Record<string, unknown>>);
 }
 
 /**
@@ -108,36 +162,8 @@ async function boot(): Promise<App> {
 
   log.info(`booting (${_config.host ?? 'app'})`);
 
-  const { createJiti } = await import('jiti');
-  // Nitro serves from a bundle, but the scan still reads frond sources from disk — so the
-  // named form a frond uses for its neighbour has to resolve here too.
-  //
-  // Installed twice: the config names the scope the aliases are built from, so reading it
-  // must not need them. Nothing in `fougere.config.ts` may import `@fronds/*`.
-  //
-  // And installed only when something is going to READ a source. A host that handed in
-  // its config and its fronds — scanned or stated — has nothing left to load, and jiti cannot run where
-  // there is no module resolver: measured on workerd, `createJiti` threw
-  // `Cannot read properties of undefined (reading 'paths')` and every request answered
-  // 500 — the loader was being built for files that no longer needed opening.
-  const reads = (_config.scan === undefined && _config.fronds === undefined) || _config.config === undefined;
-  const installLoader = (alias?: Record<string, string>): void => {
-    if (!reads) return;
-    // From the project: a module key is resolved against whoever made the loader.
-    const jiti = createJiti(pathToFileURL(resolve(process.cwd()) + sep).href, { interopDefault: true, ...(alias ? { alias } : {}) });
-    setModuleLoader((filePath) => jiti.import(filePath) as Promise<Record<string, unknown>>);
-  };
-  installLoader();
-
-  // Config cascades along the workspace→app frontier: the workspace root (via
-  // FOUGERE_ROOT, where `remotes`/shared db live) is the base, the app (cwd)
-  // overrides. Same boundary the fronds cascade along. No `root` → both equal.
-  const configRoot = process.cwd();
-  const root = process.env.FOUGERE_ROOT ?? configRoot;
-  // The host's word wins, for the reason it wins on `scan`: it read the file already,
-  // and where there is no file a second read finds nothing and says nothing.
-  const fileConfig: FougereConfig = (_config.config as FougereConfig | undefined)
-    ?? (await loadCascadedConfig(root, configRoot));
+  const root = process.env.FOUGERE_ROOT ?? process.cwd();
+  const fileConfig = await useFougereConfig();
   // What a re-read config changes in a running process — the same call `boot()` makes in
   // core, and the only place `logLevel:` takes effect. Without it a web host read the key
   // and did nothing with it: the file said `debug` and the threshold stayed where the
@@ -147,7 +173,7 @@ async function boot(): Promise<App> {
   const conventions = resolveConventions(fileConfig.conventions);
   // `frondAliases` reads a directory listing, so it is asked only when the loader it
   // feeds is going to exist at all.
-  if (reads) installLoader(await frondAliases(root, conventions));
+  if (reads()) await installLoader(await frondAliases(root, conventions));
 
   // Auto-resolve the data layer from `sources:` when the user didn't provide a
   // custom one via configureFougere. The resolution itself lives in @fougere/defaults

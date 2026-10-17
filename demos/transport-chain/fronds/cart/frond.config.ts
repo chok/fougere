@@ -1,1 +1,1 @@
-export default { operations: { checkout: { kind: 'command' } } };
+export default { operations: { 'cart.checkout': { kind: 'command' } } };

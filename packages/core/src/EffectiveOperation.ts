@@ -5,6 +5,7 @@ import { type OperationKind } from './wire/OperationKind.js';
 import type { EffectiveParameter } from './EffectiveParameter.js';
 import type { EffectiveCollector } from './EffectiveCollector.js';
 import type { Placement } from './wire/Placement.js';
+import type { FougereOperationProtocols } from './FougereOperationProtocols.js';
 
 export interface EffectiveOperation extends OperationContract {
   /** Stable qualified identity: `blog/public/Post.publish`. */
@@ -14,6 +15,8 @@ export interface EffectiveOperation extends OperationContract {
   name: string;
   kind: OperationKind;
   kindSource: 'explicit' | 'convention';
+  /** What `frond.config.ts` says about this op to each protocol — read by the adapter that serves it. */
+  protocols: FougereOperationProtocols;
   handler: {
     className: string;
     address: string;

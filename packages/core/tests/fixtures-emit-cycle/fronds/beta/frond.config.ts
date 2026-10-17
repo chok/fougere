@@ -1,5 +1,5 @@
 export default {
   operations: {
-    onBeta: { kind: 'command' },
+    'beta.onBeta': { kind: 'command' },
   },
 };

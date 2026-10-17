@@ -4,7 +4,7 @@ import { nameOf, type CollectorEntry, type EntityEntry, type FrondDescriptor, ty
 import { dirname, relative } from 'node:path';
 
 import { type Aliases } from './Aliases.js';
-import { lit, operationsOf, schemaRef, type Live } from './Live.js';
+import { lit, operationsOf, overridesOf, schemaRef, type Live } from './Live.js';
 
 export interface EmitOptions {
   /** Where the generated module will sit. Imports are written relative to it. */
@@ -122,6 +122,9 @@ function frondOf(f: FrondDescriptor, imports: Imports): string {
     list('middlewares', f.middlewares.map((m) => middlewareOf(m, imports))),
     f.surfaces ? `    surfaces: ${lit(f.surfaces)},` : '',
     f.reads ? `    reads: ${lit(f.reads)},` : '',
+    f.protocols ? `    protocols: ${lit(f.protocols)},` : '',
+    f.pipes ? `    pipes: ${lit(f.pipes)},` : '',
+    f.operationsOverrides ? `    operationsOverrides: ${overridesOf(f, imports)},` : '',
     '  }',
   ].filter(Boolean).join('\n');
 }

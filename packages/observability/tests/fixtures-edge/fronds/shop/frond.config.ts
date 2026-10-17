@@ -1,1 +1,1 @@
-export default { operations: { servable: { kind: 'query' } } };
+export default { operations: { 'cart.servable': { kind: 'query' } } };

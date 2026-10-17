@@ -1,6 +1,6 @@
 export default {
   operations: {
-    nest: { kind: 'command' },
-    overdraw: { kind: 'command' },
+    'nested.nest': { kind: 'command' },
+    'transfer.overdraw': { kind: 'command' },
   },
 };

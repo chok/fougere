@@ -1,4 +1,4 @@
-import { DEFAULT_CONVENTIONS, Middleware, frondDirsOf, frondPackage, providerDirsOf, resolveConventions, togetherKeyOf, type Conventions, type ConventionsInput, type Diagnostic, type ScanResult } from '@fougere/core';
+import { DEFAULT_CONVENTIONS, Middleware, RouteAddress, frondDirsOf, frondPackage, providerDirsOf, resolveConventions, togetherKeyOf, type Conventions, type ConventionsInput, type Diagnostic, type ScanResult } from '@fougere/core';
 import { Fronds, addressOf, awaitKeyOf, cardinalityOf, computeBindingPlan, opsOf, emitKeyOf, getPresenterFields, outputOf, ownedBy, repositoryKeyOf, storageKeyOf, targetOf, type CollectorEntry, type EntityEntry, type FrondDescriptor, type HandlerEntry, type MiddlewareEntry, type OperationContract, type OperationsMap, type PresenterEntry, type ProviderEntry, type SeedEntry, type TypeRef, viewsOf, isExtension, type ExtensionEntry } from '@fougere/core/descriptor';
 import { getModuleLoader, loadFrondConfig } from '@fougere/core/node';
 import type { FrondConfig, ErrorCode } from '@fougere/core';
@@ -359,7 +359,7 @@ function inputOf(
     subject,
     message: `Cannot infer the input contract for ${subject}: ${candidates.length} entity `
       + `candidates — ${candidates.map(({ param }) => `${param.name}: ${param.type.raw}`).join('; ')}. `
-      + `Declare operations.${method.name}.input in frond.config.ts.`,
+      + `Declare it in frond.config.ts: operations: { '${new RouteAddress({ address: addressOf(handlerName), operation: method.name })}': { input } }.`,
   });
 
   return undefined;
@@ -479,7 +479,8 @@ async function inferOperations(
     map.set(method.name, contractOf(method, {
       handlerName, filePath, moduleExports, collectorTypeNames,
       refused: refusals.get(`${handlerName}.${method.name}`),
-      stated: declared[method.name]?.input !== undefined || explicitInputs.has(method.name),
+      stated: declared[method.name]?.input !== undefined
+        || explicitInputs.has(new RouteAddress({ address: addressOf(handlerName), operation: method.name }).toString()),
     }));
   }
 
@@ -695,8 +696,8 @@ function overridesOf(
   if (!operations) return undefined;
 
   return Object.fromEntries(
-    Object.entries(operations).map(([opName, { handler, ...rest }]) => [
-      opName,
+    Object.entries(operations).map(([key, { handler, ...rest }]) => [
+      key,
       { ...rest, handlerName: handler?.name },
     ]),
   );
@@ -771,6 +772,7 @@ async function scanFrond(frondPath: string, name: string, source: FrondDescripto
     ...(frondConfig?.pipes ? { pipes: frondConfig.pipes } : {}),
     surfaces: frondConfig?.surfaces,
     reads: frondConfig?.reads,
+    ...(frondConfig?.protocols ? { protocols: frondConfig.protocols } : {}),
     operationsOverrides,
   };
 }

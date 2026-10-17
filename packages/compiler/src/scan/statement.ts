@@ -4,7 +4,7 @@ import { nameOf, type FrondDescriptor } from '@fougere/core/descriptor';
 import { relative } from 'node:path';
 
 import { type Aliases } from './Aliases.js';
-import { operationsOf, type Live } from './Live.js';
+import { operationsOf, overridesOf, type Live } from './Live.js';
 
 /**
  * A file becomes the specifier the PROJECT already uses for it: `@fronds/blog/…`, the import scope
@@ -124,12 +124,14 @@ function frondOf(frond: FrondDescriptor, imports: Imports): string {
     members.push(`seeds: ${JSON.stringify(frond.seeds.map((s) => ({ entityName: s.entityName, data: s.data })))}`);
   }
   if (frond.surfaces) members.push(`surfaces: ${JSON.stringify(frond.surfaces)}`);
+  if (frond.protocols) members.push(`protocols: ${JSON.stringify(frond.protocols)}`);
+  if (frond.pipes) members.push(`pipes: ${JSON.stringify(frond.pipes)}`);
   // What `frond.config.ts` states — read BY the scan, so a host that boots from a written
   // statement never sees the file. It is the only answer for the kind of an op whose name
   // leads with no known verb, and the only one for a method inherited from a base class
   // the workspace scan cannot see.
   if (frond.operationsOverrides && Object.keys(frond.operationsOverrides).length) {
-    members.push(`operationsOverrides: ${JSON.stringify(frond.operationsOverrides)}`);
+    members.push(`operationsOverrides: ${overridesOf(frond, imports)}`);
   }
 
   const scope = (frond.source.package as string | undefined)?.split('/')[0];

@@ -8,11 +8,11 @@ import Note from './entities/Note.js';
 export default defineFrond({
   operations: {
     // The scan derived the binding (an object param → input) but no validator. Name it.
-    retitle: {
+    'note.retitle': {
       input: Note.pick('title'),
     },
     // The scan never saw this method. State the whole contract and it exists.
-    archive: {
+    'note.archive': {
       kind: 'command',
       binding: [{ name: 'id', source: { kind: 'param', name: 'id' }, optional: false }],
     },

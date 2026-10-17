@@ -12,6 +12,7 @@ import {
 } from '@nuxt/kit';
 import type { Nuxt } from '@nuxt/schema';
 import { orderSeeds, serves } from '@fougere/core';
+import { prefixOf } from '@fougere/app';
 import { scanProject, emitStatement, emitFacade, emitNames, frondAliases, packagesImportedBy } from '@fougere/compiler';
 import { frondPackage, resolveConventions, statedFronds, statesModule, type Conventions } from '@fougere/core';
 import { configFileIn, setModuleLoader, loadCascadedConfig, projectRootOf, remotesOf } from '@fougere/core/node';
@@ -263,7 +264,7 @@ const module = defineNuxtModule<FougereModuleOptions>({
     addPlugin({ src: runtimeResolve('plugins/session.server'), mode: 'server' });
     if (serves(config.protocols, 'rest')) {
       addServerHandler({
-        route: '/api/**',
+        route: `${prefixOf(config.protocols)}/**`,
         handler: runtimeResolve('server/api/crud'),
       });
     }

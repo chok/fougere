@@ -18,18 +18,13 @@ export function tableOf(app: App): Matchable[] {
   const cached = tables.get(app);
   if (cached) return cached;
 
-  const table = app.fronds.flatMap((frond) =>
-    generateRoutes(app, {
-      prefix: `/${frond.name}`,
-      filter: (_address, frondName) => frondName === frond.name,
-    }).map((route) => ({
-      method: route.method as string,
-      segments: route.path.split('/').filter(Boolean),
-      path: route.path,
-      address: route.address,
-      operationName: route.operationName,
-    })),
-  );
+  const table = generateRoutes(app).map((route) => ({
+    method: route.method as string,
+    segments: route.path.split('/').filter(Boolean),
+    path: route.path,
+    address: route.address,
+    operationName: route.operationName,
+  }));
 
   tables.set(app, table);
 
@@ -55,9 +50,6 @@ function openness(route: Matchable): number {
   return route.segments.filter((s) => s.startsWith(':')).length;
 }
 
-/** Verbs this facade accepts in place of the one the table names. */
-const ALIASES: Record<string, string> = { PATCH: 'PUT' };
-
 /** Path first, method second — a router's order, and what makes a 405 possible at all. */
 export function matchRoute(table: Matchable[], method: string, segments: string[]): RouteMatch {
   const matches = table
@@ -69,8 +61,7 @@ export function matchRoute(table: Matchable[], method: string, segments: string[
   const best = Math.min(...matches.map((m) => openness(m.route)));
   const candidates = matches.filter((m) => openness(m.route) === best);
 
-  const wanted = ALIASES[method] ?? method;
-  const matched = candidates.find((m) => m.route.method === wanted);
+  const matched = candidates.find((m) => m.route.method === method);
   if (matched) return { kind: 'match', route: matched.route, params: matched.params };
 
   return {

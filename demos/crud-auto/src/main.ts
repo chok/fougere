@@ -28,7 +28,7 @@ hono.post('/graphql', (c) => graphql(c.req.raw));
 // schema-rest's structural `AppLike` disagree on `HandlerEntry.ctor`, and a projection
 // package is structurally typed on purpose so the two drifted. Not introduced here —
 // only made visible, because this demo's typecheck now covers src/ and used not to.
-const routes = generateRoutes(app as never, { prefix: '/api' });
+const routes = generateRoutes(app as never);
 
 const port = Number(process.env.PORT ?? 4000);
 serve({ fetch: hono.fetch, port });
@@ -64,7 +64,7 @@ console.log(`
   GET    ${url}/api/blog/posts
   GET    ${url}/api/blog/posts?limit=10&page=2
   POST   ${url}/api/blog/posts           { "authorId": "<id>", "title": "Hello", "body": "World" }
-  PUT    ${url}/api/blog/posts/:id       { "title": "Updated" }
+  PATCH  ${url}/api/blog/posts/:id       { "title": "Updated" }
   DELETE ${url}/api/blog/posts/:id
   GET    ${url}/api/blog/posts/search-by-title?title=Hello
   POST   ${url}/api/blog/posts/publish   { "id": "<post-id>" }

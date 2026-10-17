@@ -25,7 +25,8 @@ const facade = {
 
 /** What `Crud` declares for the three ops acting on one row — the path reads it. */
 const byId = [{ name: 'id', source: { kind: 'param', name: 'id', identifies: 'Post' }, optional: false }];
-const bindings: Record<string, unknown> = { findById: byId, update: byId, delete: byId };
+const body = { name: 'input', source: { kind: 'input' }, optional: false };
+const bindings: Record<string, unknown> = { findById: byId, update: [...byId, body], delete: byId };
 
 // The scan registers an entity under its lowercase-first name (`lowerFirst`,
 // scanner.ts:385) — which is what makes the served path `/blog/posts`, as documented.
@@ -39,7 +40,6 @@ function appOf(options: { exposed?: boolean; overrides?: Record<string, { kind?:
       ],
       handlers: [{ address: 'post', operations: new Map(), surface: undefined }],
       presenters: [],
-      operationsOverrides: options.overrides,
     }],
     resolve: () => undefined as never,
     facadeFor: (name: string) => (name === 'post' || name === 'secret' ? facade : undefined),
@@ -50,6 +50,7 @@ function appOf(options: { exposed?: boolean; overrides?: Record<string, { kind?:
           kind: options.overrides?.[op]?.kind
             ?? (op === 'list' || op === 'findById' ? 'query' : 'command'),
           binding: bindings[op],
+          ...(op === 'update' ? { input: Post.partial() } : {}),
         },
       ]))
       : undefined),
@@ -58,7 +59,7 @@ function appOf(options: { exposed?: boolean; overrides?: Record<string, { kind?:
 
 const table = tableOf(appOf());
 const segmentsOf = (path: string) => path.split('/').filter(Boolean);
-const match = (method: string, path: string) => matchRoute(table, method, segmentsOf(path));
+const match = (method: string, path: string) => matchRoute(table, method, segmentsOf(`/api/${path}`));
 
 describe('the verb decides, not the operation name', () => {
   it('refuses a mutating op reached by GET, and says which verb it wants', () => {
@@ -85,7 +86,7 @@ describe('the verb decides, not the operation name', () => {
 
   it('still routes the ordinary CRUD verbs on a row', () => {
     expect(match('GET', 'blog/posts/abc')).toMatchObject({ kind: 'match', route: { operationName: 'findById' } });
-    expect(match('PUT', 'blog/posts/abc')).toMatchObject({ kind: 'match', route: { operationName: 'update' } });
+    expect(match('PATCH', 'blog/posts/abc')).toMatchObject({ kind: 'match', route: { operationName: 'update' } });
     expect(match('DELETE', 'blog/posts/abc')).toMatchObject({ kind: 'match', route: { operationName: 'delete' } });
   });
 
@@ -125,7 +126,7 @@ describe('frond.config.ts still decides an op kind', () => {
     // never through a second rule written here.
     const stated = tableOf(appOf({ overrides: { bySlug: { kind: 'query' } } }));
 
-    expect(matchRoute(stated, 'GET', segmentsOf('blog/posts/by-slug')))
+    expect(matchRoute(stated, 'GET', segmentsOf('/api/blog/posts/by-slug')))
       .toMatchObject({ kind: 'match', route: { operationName: 'bySlug' } });
   });
 
@@ -136,16 +137,12 @@ describe('frond.config.ts still decides an op kind', () => {
 });
 
 describe('the verbs this facade promised', () => {
-  it('keeps PATCH on update, which the table spells PUT', () => {
-    // Documented as `PUT · PATCH` in docs/infra/surfaces. The table gives `update` one
-    // verb; the alias keeps the promise without inventing a second route.
-    expect(match('PATCH', 'blog/posts/abc')).toMatchObject({
-      kind: 'match',
-      route: { operationName: 'update' },
-    });
+  it('answers update on PATCH alone — it merges, so PUT, which replaces, is refused and the right verb named', () => {
+    expect(match('PATCH', 'blog/posts/abc')).toMatchObject({ kind: 'match', route: { operationName: 'update' } });
+    expect(match('PUT', 'blog/posts/abc')).toMatchObject({ kind: 'method-not-allowed', allow: expect.arrayContaining(['PATCH']) });
   });
 
-  it('does not let an alias reach a verb the table never gave', () => {
+  it('does not let a verb reach a path the table never gave it', () => {
     expect(match('PATCH', 'blog/posts')).toMatchObject({ kind: 'method-not-allowed' });
   });
 });

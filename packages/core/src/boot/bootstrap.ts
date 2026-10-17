@@ -152,7 +152,7 @@ async function readFronds(
   const operationModel = resolveEffectiveOperations(ordered, {
     diagnostics,
     remotes: options.remotes,
-    protocols: servedProtocols(options.protocols),
+    protocols: servedProtocols(options.protocols, ordered),
   });
   const scanMs = (performance.now() - scanStart).toFixed(0);
   log.info(`read ${ordered.length} frond(s) in ${scanMs}ms`

@@ -2,6 +2,7 @@ import { resolve } from 'node:path';
 import type { NameOf } from './NameOf.js';
 import { existsSync } from 'node:fs';
 import type { OperationOverride } from './OperationOverride.js';
+import type { FougereFrondProtocols } from './FougereFrondProtocols.js';
 
 export interface FrondConfig {
   /** Class names exposed as the frond's public contract (all surfaces). */
@@ -18,8 +19,10 @@ export interface FrondConfig {
    * ran first, and scan order is not an answer.
    */
   pipes?: Record<NameOf<'entity'>, NameOf<'handler'>[]>;
-  /** Per-operation overrides. Key = operation name (method name on a handler). */
-  operations?: Record<string, OperationOverride>;
+  /** What the frond says to each protocol about itself — `rest: { path: '/journal' }`. */
+  protocols?: FougereFrondProtocols;
+  /** Per-operation overrides, keyed the way an op is named: `post.list`. */
+  operations?: Record<`${string}.${string}`, OperationOverride>;
 }
 
 // ── Helper ───────────────────────────────────────

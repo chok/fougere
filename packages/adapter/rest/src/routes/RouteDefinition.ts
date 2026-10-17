@@ -1,10 +1,11 @@
 import type { Fields } from '@fougere/schema';
-import { Visibility } from '@fougere/schema';
+import { Card, Visibility } from '@fougere/schema';
 import type { HttpMethod } from '@fougere/http';
-import type { HandlerEntry as CoreHandlerEntry, OperationOverride } from '@fougere/core';
+import { RouteAddress, wordsOf, type FougereFrondProtocols, type HandlerEntry as CoreHandlerEntry, type ProtocolConfig } from '@fougere/core';
 import type { BindingPlan } from '@fougere/core/descriptor';
 import type { OperationMeta } from './OperationMeta.js';
 import type { GenerateRoutesOptions } from './GenerateRoutesOptions.js';
+import { prefixOf, type RestRoute } from '../RestProtocol.js';
 
 export interface RouteDefinition {
   method: HttpMethod;
@@ -47,12 +48,13 @@ interface FrondLike {
   handlers: HandlerEntry[];
   presenters: PresenterEntry[];
   surfaces?: Record<string, string[]>;
-  /** What `frond.config.ts` said per op — `rest:` is read here, `graphql:` next facade. */
-  operationsOverrides?: Record<string, Pick<OperationOverride, 'rest'>>;
+  protocols?: FougereFrondProtocols;
 }
 
 interface AppLike {
   fronds: FrondLike[];
+  /** What `fougere.config.ts` says to each protocol — where REST is mounted, a third party's routes. */
+  protocols?: ProtocolConfig;
   /** The façade an address serves to one audience — `undefined` when none. */
   facadeFor(address: string, surface?: string): Record<string, Function> | undefined;
   /** Canonical operation table produced by core. */
@@ -72,33 +74,70 @@ function pluralize(name: string): string {
     : name + 's';
 }
 
-/** Derive HTTP method from operation name, honoring frond.config.ts overrides. */
-function deriveMethod(
-  opName: string,
-  resolvedKind: OperationMeta['kind'],
-): HttpMethod {
-  if (!resolvedKind) {
+/** The verbs whose op makes the row it designates disappear — the one method still read off the name. */
+const REMOVING = new Set(['delete', 'remove']);
+
+/** Where a request puts what it carries — the path, the query string, the body. */
+const CARRIED = new Set(['param', 'input', 'query']);
+
+/**
+ * What an op that designates one row does to it, read off its contract: hand the row whole — a
+ * replacement — or hand what changes, a `Partial<Post>` or parameters that are all its fields.
+ * Those `fields` travel in the body: the path designates, the body carries the change.
+ */
+interface Change {
+  kind: 'replacement' | 'modification';
+  fields: string[];
+}
+
+function changeOf({ binding = [], input }: OperationMeta): Change | undefined {
+  const designated = new Set(binding.flatMap(({ source }) => (source.kind === 'param' && source.identifies ? [source.identifies] : [])));
+  if (designated.size !== 1) return undefined;
+  const [entity] = designated;
+
+  const carried = binding.filter(({ source }) => CARRIED.has(source.kind) && !(source.kind === 'param' && source.identifies));
+  if (carried.some(({ source }) => source.kind === 'input')) {
+    if (!input || Card.titleOf(input) !== entity) return undefined;
+    if (input.getOpts().patch) return { kind: 'modification', fields: [] };
+
+    return input.derivation ? undefined : { kind: 'replacement', fields: [] };
+  }
+
+  const fields = carried.flatMap(({ source }) => (source.kind === 'param' && source.field?.entity === entity ? [source.name] : []));
+
+  return fields.length > 0 && fields.length === carried.length ? { kind: 'modification', fields } : undefined;
+}
+
+/**
+ * Read off the contract: a query is a GET, an op whose verb removes the row a DELETE, a change of
+ * one row a PATCH or a PUT — and anything else a POST, which promises nothing and so cannot lie.
+ */
+function deriveMethod(opName: string, meta: OperationMeta): HttpMethod {
+  if (!meta.kind) {
     throw new Error(
       `REST cannot project '${opName}' without its resolved operation kind. `
       + 'Build routes from App.operationsFor(), the EffectiveOperation table produced by core.',
     );
   }
-  if (resolvedKind === 'query') return 'GET';
-  if (opName.startsWith('create')) return 'POST';
-  if (opName.startsWith('update') || opName.startsWith('edit')) return 'PUT';
-  if (opName.startsWith('delete') || opName.startsWith('remove')) return 'DELETE';
+  if (meta.kind === 'query') return 'GET';
+  if (REMOVING.has(wordsOf(opName)[0] ?? '')) return 'DELETE';
 
-  return 'POST';
+  const change = changeOf(meta)?.kind;
+  if (change === 'modification') return 'PATCH';
+
+  return change === 'replacement' ? 'PUT' : 'POST';
 }
 
 /**
  * Read off the signature: what designates a row comes before the op, the other required values
- * after it, and an optional one is left to the query string.
- * `publish(id: Post['id'])` → `/posts/:id/publish`, `move(id: Post['id'], position: number)` →
- * `/posts/:id/move/:position`, `byTag(tag: string)` → `/posts/by-tag/:tag`.
+ * after it, and an optional one is left to the query string — save the fields a change carries,
+ * which the body holds. `publish(id: Post['id'])` → `/posts/:id/publish`,
+ * `move(id: Post['id'], position: number)` → `/posts/:id/move/:position`,
+ * `retitle(id: Post['id'], title: Post['title'])` → `/posts/:id/retitle`, `byTag(tag: string)` → `/posts/by-tag/:tag`.
  */
-function derivePath(address: string, opName: string, binding: BindingPlan = []): string {
-  const required = binding.flatMap(({ source, optional }) => source.kind === 'param' && !optional ? [source] : []);
+function derivePath(address: string, opName: string, binding: BindingPlan = [], inBody: string[] = []): string {
+  const required = binding.flatMap(({ source, optional }) =>
+    source.kind === 'param' && !optional && !inBody.includes(source.name) ? [source] : []);
   const designating = required.filter((param) => param.identifies);
   const following = required.filter((param) => !param.identifies);
   const named = CRUD.has(opName) ? [] : [opName.replace(/[A-Z]/g, (letter) => '-' + letter.toLowerCase())];
@@ -110,12 +149,6 @@ function segmentOf({ name }: { name: string }): string {
   return `:${name}`;
 }
 
-// ─── Route generation helpers ───────────────────
-
-// Update routes carry the SAME fields: input omissibility is a projection of the
-// route's MODE (operationName 'update' → patch), never forged per-field flags.
-// Membership is the axes-derived `Visibility.input` projection from @fougere/schema.
-
 // ─── Public API ─────────────────────────────────
 
 /** Generate REST route definitions from a fougere App — one route per operation, per address served. */
@@ -123,6 +156,13 @@ export function generateRoutes(app: AppLike, options: GenerateRoutesOptions = {}
   return app.fronds.flatMap((frond) =>
     [...new Set(frond.handlers.map((handler) => handler.address))]
       .flatMap((address) => routesOf(app, frond, address, options)));
+}
+
+/** `/api/blog` — where the app mounts REST, then the segment the frond answers under. */
+function baseOf(app: AppLike, frond: FrondLike): string {
+  const segment = frond.protocols?.rest?.path ?? `/${frond.name}`;
+
+  return prefixOf(app.protocols) + segment;
 }
 
 /** What one address answers on REST — nothing, when this surface does not serve it. */
@@ -152,38 +192,35 @@ function routesOf(
   // facades, which intentionally cannot enumerate their keys before discovery.
   return [...effectiveOperations.keys()].map((opName) => routeFor({
     address,
-    frond,
+    base: baseOf(app, frond),
     facade,
     opName,
     meta: effectiveOperations.get(opName),
-    options,
+    thirdParty: app.protocols?.rest?.overrides?.[new RouteAddress({ address, operation: opName }).toString()],
   }));
 }
 
 /** One operation at one address, and everything that decides how it is addressed. */
 interface Projecting {
   address: string;
-  frond: FrondLike;
+  /** `/api/blog` — what every path of this frond starts with. */
+  base: string;
   facade: HandlerFacade;
   opName: string;
   meta: OperationMeta | undefined;
-  options: GenerateRoutesOptions;
+  /** What `fougere.config.ts` says of this op — only ever a frond the project cannot edit. */
+  thirdParty: RestRoute | undefined;
 }
 
-function routeFor({ address, frond, facade, opName, meta, options }: Projecting): RouteDefinition {
+function routeFor({ address, base, facade, opName, meta, thirdParty }: Projecting): RouteDefinition {
   if (!meta) {
     throw new Error(
       `REST facade '${address}' exposes '${opName}' but its EffectiveOperation table does not.`,
     );
   }
 
-  // What the FROND said, then what this call said, then the convention. The frond comes first
-  // because it names the operation; a host that overrides is deciding for someone else's,
-  // which is what `overrides:` is for and why it wins.
-  const stated = frond.operationsOverrides?.[opName]?.rest as
-    { method?: HttpMethod; path?: string; status?: number } | undefined;
-  const override = { ...stated, ...(options.overrides?.[address] ?? {})[opName] } as
-    { method?: HttpMethod; path?: string; status?: number };
+  // What the app said of a frond it cannot edit, then what the frond said, then the contract.
+  const override: RestRoute = { ...meta.protocols?.rest, ...thirdParty };
 
   // Handler and method overrides are already executed by the facade, from the same
   // EffectiveOperation local and RPC use. The adapter never resolves DI itself.
@@ -193,8 +230,8 @@ function routeFor({ address, frond, facade, opName, meta, options }: Projecting)
   }
 
   return {
-    method: override.method ?? deriveMethod(opName, meta.kind),
-    path: (options.prefix ?? '') + (override.path ?? derivePath(address, opName, meta.binding)),
+    method: override.method ?? deriveMethod(opName, meta),
+    path: base + (override.path ?? derivePath(address, opName, meta.binding, changeOf(meta)?.fields)),
     operationName: opName,
     address,
     handler: (invocation) => op(invocation),

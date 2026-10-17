@@ -11,5 +11,5 @@ export default [frond('ops', {
       hang: op({ cardinality: 'one', description: 'Never answer — what a drain with a deadline is for.' }),
     },
   }],
-  operationsOverrides: { work: { kind: 'command' }, boom: { kind: 'command' }, hang: { kind: 'command' } },
+  operationsOverrides: { 'slow.work': { kind: 'command' }, 'slow.boom': { kind: 'command' }, 'slow.hang': { kind: 'command' } },
 })];

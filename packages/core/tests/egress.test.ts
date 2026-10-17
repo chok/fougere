@@ -34,7 +34,7 @@ class SecretHandler extends Crud(Secret) {
 const vault = frond('vault', {
   entities: [Secret],
   handlers: [{ ctor: SecretHandler, operations: { audit: op({ cardinality: 'one' }) } }],
-  operationsOverrides: { audit: { kind: 'query' } },
+  operationsOverrides: { 'secret.audit': { kind: 'query' } },
 });
 
 /** The real shape: ListResult IS an array, carrying its cursor on itself. */

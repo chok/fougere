@@ -1,4 +1,4 @@
-export type { HttpMethod } from './router/HttpMethod.js';
+export { HTTP_METHODS, type HttpMethod } from './router/HttpMethod.js';
 export type { RequestContext } from './router/RequestContext.js';
 export type { ResponseResult } from './router/ResponseResult.js';
 export type { Handler } from './router/Handler.js';

@@ -568,7 +568,9 @@ a NAME is the declaration, and the only ones a project may restate (`conventions
 `fougere.config.ts`). Two of them extend the FRAMEWORK rather than declare a domain, and one
 of those two is the only directory with an ORDER: `vocabulary/` is read before `entities/`,
 because a file there registers a word at module level (`Generators.register('ulid', …)`) and
-an entity beside it may write that name — a registry refuses one it does not hold. The other,
+an entity beside it may write that name — a registry refuses one it does not hold. A verb is such
+a word too: `Verbs.register('total', 'query')` tells the kind of every op whose name leads with it,
+and the refusal of an op whose kind nothing tells names that line with the two others. The other,
 `extensions/`, is recognized by its FORM, a module stating `up` or `down`, and it travels with
 its frond: behind `fronds:` it mounts on the process serving it there, which is why no key
 widens it — what must be everywhere is a frond that is everywhere, which `Extension.fronds`
@@ -887,16 +889,26 @@ reads the axes and nothing else), the DOUBLES from a port's prototype (`stubOf`)
 LEVEL from where the file sits. `checkDoors` compares REST against GraphQL; `driftOf`
 compares two `rpc.discover` cards through `Card.diff`.
 
-**A frond names where its op answers, on every surface** — `graphql: 'posts'` and
-`rest: { path: '/articles' }` in `frond.config.ts`, read by `adapter/graphql`
-(`OperationsConfig.ts`) and `adapter/rest` (`routes.ts`). REST had no such key: the path lived in
-whatever host called `generateRoutes`, so one surface was named beside the operation and
-the other three files away. The PREFIX stays the host's — naming is the frond's, mounting
-is not — and a host's `overrides:` still wins, since it is deciding for someone else's
-frond. A route or a root field is one op at one ADDRESS: `generateRoutes` and `registerAll`
-walk the handlers, never the entities, so a handler with no entity (`checkout.pay`) is served
-and the fields come from the op's own contract. A GraphQL TYPE is built from a schema an op
-returns, once per entity. Pinned by `adapter/rest/tests/stated.test.ts` and `routes.test.ts`.
+**A frond names where its op answers, on every surface** — `operations: { 'post.list': { graphql:
+'posts', rest: { path: '/articles' } } }` in `frond.config.ts`, keyed the way an op is named
+everywhere else (`RouteAddress`), read through `OperationOverrides` (`core/src/descriptor/`). A
+bare `list` named every handler's `list` at once and is refused now, naming the keys it could have
+been. core names no protocol: `FougereOperationProtocols` and `FougereFrondProtocols` are empty
+interfaces each adapter augments, and `EffectiveOperation.protocols` carries what the frond said to
+the protocols this process registered, so an adapter reads its own key off the op and never off
+the config. A REST URL is three levels, each derived and each said by its owner: `/api`
+(`protocols: { rest: { prefix } }` in `fougere.config.ts`), `/blog` (the frond's name, or
+`protocols: { rest: { path } }` in its `frond.config.ts`), then the op. The segment of the frond
+used to be added by the web hosts alone, so a server calling `generateRoutes` answered `/api/posts`
+where Nuxt answered `/api/blog/posts`. `fougere.config.ts` may name an op's route only for a frond
+with no sources here (`isScanned`): `ProtocolType.refusals` is how an adapter judges its entry
+against the fronds at boot, and for a scanned frond it refuses with the line to write in that
+frond's file. A host that routes by FILE mounts REST where the file sits, which no config moves,
+so `rest(request)` answers a `404` naming the prefix when the file is elsewhere. A route or a root
+field is one op at one ADDRESS: `generateRoutes` and `registerAll` walk the handlers, never the
+entities, so a handler with no entity (`checkout.pay`) is served and the fields come from the op's
+own contract. A GraphQL TYPE is built from a schema an op returns, once per entity. Pinned by
+`adapter/rest/tests/stated.test.ts`, `routes.test.ts` and `core/tests/operation-overrides.test.ts`.
 
 **A REST path is read off the signature, never off the op's name** — `derivePath`
 (`adapter/rest/src/routes/RouteDefinition.ts`) over the binding plan. A primitive typed by an
@@ -907,6 +919,19 @@ query string. The checker answers `string` for `Post['id']`, so the parser reads
 entity's primary (`identifying`, `scanner.ts`). `Crud` declares it on its three `byId`. A `ById`
 in a name used to decide, so `publish(id: string)` and `publishById` answered different paths for
 one signature. Pinned by `adapter/rest/tests/routes.test.ts` and `compiler/tests/identifies.test.ts`.
+
+**The METHOD is read off the contract too, and the name only for a removal** — `deriveMethod` and
+`changeOf` (`RouteDefinition.ts`). A query is a `GET`; a name whose first word (`wordsOf`, core's
+reading) is `delete` or `remove` a `DELETE`; an op designating one row and taking a `patch` view
+(`Partial<Post>`, which the scan reads as `Post.partial()`, alias included) or only FIELDS of that
+row (`retitle(id: Post['id'], title: Post['title'])`) a `PATCH`; one taking the entity whole a
+`PUT`; anything else a `POST`, which promises nothing and so cannot lie. `Crud.update` merges, so
+it is a `PATCH`, and the `PATCH → PUT` alias the hosts carried is gone. The fields of a change
+travel in the BODY — the path designates, the body carries what changes — so `ArgumentResolver`
+reads a field of the designated row from the body when neither the path nor the query holds it,
+and a plain parameter never (`compiler/tests/narrow-signature.test.ts`). A `startsWith` used to
+decide, and `editorPick` would have answered `PUT`. Pinned by `adapter/rest/tests/routes.test.ts`
+and `core/tests/argument-resolver.test.ts`.
 
 **A parameter typed by a field obeys that field** — `age: Sample['age']` carries `field` on its
 binding, and `ArgumentResolver.judged` passes the value, once the query string is read, through

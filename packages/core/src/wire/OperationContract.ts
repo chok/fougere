@@ -4,6 +4,7 @@ import type { Signature } from './Signature.js';
 import type { TypeRef } from './TypeRef.js';
 import type { ErrorCode } from './ErrorCode.js';
 import type { OperationKind } from './OperationKind.js';
+import { Verbs } from './Verbs.js';
 import type { OperationKindInference } from './OperationKindInference.js';
 import type { Cardinality } from './Cardinality.js';
 
@@ -47,34 +48,17 @@ export function cardinalityOf(type: TypeRef | undefined): OperationContract['car
 /** A return that carries no schema — the card has nothing to project onto it. */
 const PRIMITIVE_RETURNS = new Set(['boolean', 'string', 'number', 'void', 'undefined', 'unknown', 'any']);
 
-/** Deliberately finite. */
-const QUERY_VERBS = new Set([
-  'all', 'can', 'check', 'count', 'exists', 'fetch', 'find', 'get', 'has', 'health', 'is',
-  'list', 'load', 'mine', 'ping', 'quote', 'read', 'search', 'stats', 'status', 'who',
-]);
-
-/**
- * Leading verbs whose write intent is strong enough to infer. Domain words (`mine`,
- * `drafts`, `bySlug`) stay out: a convention may omit syntax, but may not invent intent.
- */
-const COMMAND_VERBS = new Set([
-  'add', 'apply', 'archive', 'assign', 'charge', 'checkout', 'complete', 'create',
-  'deactivate', 'delete', 'disable', 'edit', 'enable', 'execute', 'link', 'move', 'notify',
-  'open', 'pay', 'post', 'publish', 'queue', 'rebuild', 'record', 'refresh', 'refund',
-  'reindex', 'remove', 'rename', 'republish', 'reserve', 'restore', 'retitle', 'run',
-  'schedule', 'send', 'set', 'settle', 'stop', 'sync', 'toggle', 'track', 'transfer',
-  'unassign', 'update', 'upsert', 'withdraw', 'write',
-]);
-
 const COMPOUND_CONNECTORS = new Set(['and', 'or', 'then']);
 
-/** The two lists, for a refusal that has to say what a name could have led with. */
+/** The verbs of each kind, for a refusal that has to say what a name could have led with. */
 export function knownVerbs(): { query: string[]; command: string[] } {
-  return { query: [...QUERY_VERBS].sort(), command: [...COMMAND_VERBS].sort() };
+  const of = (kind: OperationKind) => Verbs.entries.filter(([, told]) => told === kind).map(([verb]) => verb).sort();
+
+  return { query: of('query'), command: of('command') };
 }
 
 /** `getOrCreatePost` → `['get', 'or', 'create', 'post']`; `hash` never becomes `has`. */
-function wordsOf(name: string): string[] {
+export function wordsOf(name: string): string[] {
   return name
     .replace(/([a-z\d])([A-Z])/g, '$1 $2')
     .replace(/([A-Z]+)([A-Z][a-z])/g, '$1 $2')
@@ -90,11 +74,7 @@ function wordsOf(name: string): string[] {
 export function inferOperationKind(name: string): OperationKindInference {
   const words = wordsOf(name);
   const first = words[0];
-  const primary = first && QUERY_VERBS.has(first)
-    ? 'query'
-    : first && COMMAND_VERBS.has(first)
-      ? 'command'
-      : undefined;
+  const primary = first ? Verbs.find(first) : undefined;
 
   if (!primary) return { kind: undefined, queryMatches: [], commandMatches: [] };
 
@@ -102,8 +82,9 @@ export function inferOperationKind(name: string): OperationKindInference {
   const commandMatches = primary === 'command' ? [first] : [];
   for (let i = 1; i < words.length; i++) {
     if (!COMPOUND_CONNECTORS.has(words[i - 1])) continue;
-    if (QUERY_VERBS.has(words[i])) queryMatches.push(words[i]);
-    if (COMMAND_VERBS.has(words[i])) commandMatches.push(words[i]);
+    const told = Verbs.find(words[i]!);
+    if (told === 'query') queryMatches.push(words[i]!);
+    if (told === 'command') commandMatches.push(words[i]!);
   }
 
   return {
@@ -148,7 +129,7 @@ function requireOperationKind(
   const kind = resolveOperationKind(name, overrides);
   if (kind) return kind;
   throw new Error(
-    `Cannot infer operation kind from '${name}'. `
-    + `Declare operations.${name}.kind as 'query' or 'command' in frond.config.ts.`,
+    `Cannot infer operation kind from '${name}'. State it in frond.config.ts — `
+    + `operations: { '<address>.${name}': { kind: 'query' } } — or teach the verb in the frond's vocabulary/.`,
   );
 }

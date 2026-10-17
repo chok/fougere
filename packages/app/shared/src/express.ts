@@ -4,7 +4,8 @@ import { maxBodyBytes } from '@fougere/core';
 import { rpcParseError, serveRest, serveRpc } from './Outcome.js';
 import { serveGraphQL } from './graphql.js';
 import { sessionViewOf } from './session.js';
-import { useFougereApp } from './boot.js';
+import { useFougereApp, useFougereConfig } from './boot.js';
+import { prefixOf } from '@fougere/adapter-rest';
 
 /** What a middleware reads off an Express request. Structural, not imported. */
 interface ExpressRequest {
@@ -93,18 +94,20 @@ export function session(mountPath = '/_fougere/session'): ExpressMiddleware {
   };
 }
 
-/** The REST projection, under `/api` by default. */
-export function rest(mountPath = '/api'): ExpressMiddleware {
+/** The REST projection, where `protocols.rest.prefix` mounts it — `/api` unless it says otherwise. */
+export function rest(): ExpressMiddleware {
   return (req, res, next) => {
     const path = pathOf(req);
-    if (!path.startsWith(`${mountPath}/`)) return next();
 
     void (async () => {
       try {
+        const { protocols } = await useFougereConfig();
+        if (!path.startsWith(`${prefixOf(protocols)}/`)) return next();
+
         const app = await useFougereApp();
         const outcome = await serveRest(app, {
           method: req.method,
-          path: path.slice(mountPath.length + 1),
+          path,
           query: queryOf(req),
           body: await readExpressBody(req, maxBodyBytes()),
           state: stateOf(req),

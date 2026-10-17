@@ -16,6 +16,6 @@ export default [
         collectorFirst: op({ params: [typed('user', 'User', { optional: true }), { name: 'input', type: { raw: 'Post', name: 'Post' } }], input: Post }),
       },
     }],
-    operationsOverrides: { bodyFirst: { kind: 'command' }, collectorFirst: { kind: 'command' } },
+    operationsOverrides: { 'post.bodyFirst': { kind: 'command' }, 'post.collectorFirst': { kind: 'command' } },
   }),
 ];

@@ -29,7 +29,7 @@ const frondStating = (bound: string[]): FrondDescriptor => ({
   name: 'blog', source: { path: '', package: '@fronds/blog' },
   providers: [], entities: [], handlers: [], presenters: [], collectors: [], seeds: [],
   operationsOverrides: {
-    publish: { binding: bound.map((name) => ({ name, source: { kind: 'param' as const, name }, optional: false })) },
+    'post.publish': { binding: bound.map((name) => ({ name, source: { kind: 'param' as const, name }, optional: false })) },
   },
 } as unknown as FrondDescriptor);
 
@@ -71,7 +71,7 @@ describe('a stated binding, against the signature it is about', () => {
   it('leaves alone a statement that binds nothing', () => {
     const noBinding = {
       ...frondStating([]),
-      operationsOverrides: { publish: { description: 'just a sentence' } },
+      operationsOverrides: { 'post.publish': { description: 'just a sentence' } },
     } as unknown as FrondDescriptor;
 
     expect(statementDrift(noBinding, handlerWith(['id']))).toEqual([]);

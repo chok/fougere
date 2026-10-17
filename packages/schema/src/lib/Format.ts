@@ -36,6 +36,11 @@ export class Format<T = unknown> {
     return new Format({ enum: [...words] });
   }
 
+  /** A map whose keys are the caller's to choose — `{ 'post.list': { path } }` — each value one format. */
+  static recordOf<Value>(format: Format<Value>): Format<Record<string, Value>> {
+    return new Format({ type: 'object', additionalProperties: format.schema });
+  }
+
   /** `enum`, `required` — a list of one format, so `enum: 'draft'` is refused as the scalar it is. */
   static listOf<Value>(format: Format<Value>): Format<Value[]> {
     return new Format({ type: 'array', items: format.schema });

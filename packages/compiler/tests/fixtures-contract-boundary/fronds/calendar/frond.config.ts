@@ -1,5 +1,5 @@
 export default {
   operations: {
-    passthrough: { kind: 'command' },
+    'event.passthrough': { kind: 'command' },
   },
 };

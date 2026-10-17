@@ -1,5 +1,6 @@
 /** The three facades as Web-standard handlers: `Request` in, `Response` out. */
-import { serveRest, serveRpc, rpcParseError, useFougereApp, serveGraphQL } from './index.js';
+import { serveRest, serveRpc, rpcParseError, useFougereApp, useFougereConfig, serveGraphQL } from './index.js';
+import { prefixOf } from '@fougere/adapter-rest';
 import { maxBodyBytes } from '@fougere/core';
 import { sessionViewOf } from './session.js';
 import { stateFor } from './state.js';
@@ -30,15 +31,26 @@ export async function call(request: Request): Promise<Response> {
   );
 }
 
-/** The REST projection, mounted under `/api`. */
+/** The REST projection, where `protocols.rest.prefix` mounts it — `/api` unless it says otherwise. */
 export async function rest(request: Request): Promise<Response> {
-  const app = await useFougereApp();
   const url = new URL(request.url);
   const method = request.method.toUpperCase();
 
+  // A host that routes by FILE mounts this where the file sits, and a config cannot move a file.
+  // Saying so is what keeps a stale route file from reading as an app with no routes.
+  const prefix = prefixOf((await useFougereConfig()).protocols);
+  if (!url.pathname.startsWith(`${prefix}/`)) {
+    return Response.json({
+      message: `${url.pathname} reached the REST door, which protocols.rest.prefix mounts at ${prefix} — `
+        + `move the route file that calls rest() under ${prefix}, or change the prefix.`,
+    }, { status: 404 });
+  }
+
+  const app = await useFougereApp();
+
   const outcome = await serveRest(app, {
     method,
-    path: url.pathname.replace(/^\/api\//, ''),
+    path: url.pathname,
     query: Object.fromEntries(url.searchParams),
     body: WITH_BODY.has(method) ? await request.json().catch(() => undefined) : undefined,
     state: await stateFor(request.headers),

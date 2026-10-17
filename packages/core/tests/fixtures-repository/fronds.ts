@@ -13,5 +13,5 @@ export default [frond('mesures', {
     { ctor: NodeHandler, deps: ['NodeRepository'], operations: { all: op({ output: Node, cardinality: 'page' }) } },
     { ctor: ReadingHandler, deps: ['ReadingRepository'], operations: { loud: op({ output: Reading, cardinality: 'many' }) } },
   ],
-  operationsOverrides: { loud: { kind: 'query' } },
+  operationsOverrides: { 'reading.loud': { kind: 'query' } },
 })];

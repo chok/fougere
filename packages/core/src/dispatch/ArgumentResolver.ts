@@ -1,4 +1,4 @@
-import { FieldValueValidator, type SchemaView } from '@fougere/schema';
+import { FieldValueValidator, InputRefusal, type SchemaView } from '@fougere/schema';
 import type { InvocationContext } from '../wire/InvocationContext.js';
 import type { BindingPlan } from '../wire/binding.js';
 import { ErrorCode } from '../wire/ErrorCode.js';
@@ -19,6 +19,7 @@ export class ArgumentResolver {
 
   async resolve(plan: BindingPlan, ctx: InvocationContext): Promise<unknown[]> {
     const args: unknown[] = [];
+    const body = ArgumentResolver.bodyOf(plan, ctx);
 
     for (const binding of plan) {
       switch (binding.source.kind) {
@@ -32,7 +33,7 @@ export class ArgumentResolver {
           break;
         }
         case 'param': {
-          args.push(this.judged(binding.source, ArgumentResolver.param(binding.source, binding.optional, ctx)));
+          args.push(this.judged(binding.source, ArgumentResolver.param(binding.source, binding.optional, ctx, body)));
           break;
         }
         case 'fact':
@@ -96,13 +97,36 @@ export class ArgumentResolver {
   }
 
   /**
-   * A value the caller typed in a path or a query string. `null` is a value, not a miss: only
-   * `undefined` means absent, so `T | null` stays apart from `T | undefined`.
+   * The body, when it carries the change of a row the call designates rather than an input —
+   * `PATCH /posts/:id/retitle { title }`. Only a FIELD of that row is read there: a plain
+   * parameter never comes from a body. Once one is, a key naming no parameter is refused, the way
+   * an input refuses one.
    */
-  private static param(source: ParamSource, optional: boolean, ctx: InvocationContext): unknown {
+  private static bodyOf(plan: BindingPlan, ctx: InvocationContext): Record<string, unknown> | undefined {
+    if (plan.some((binding) => binding.source.kind === 'input')) return undefined;
+    if (!ctx.input || typeof ctx.input !== 'object' || Array.isArray(ctx.input)) return undefined;
+
+    const params = plan.flatMap(({ source }) => (source.kind === 'param' ? [source] : []));
+    const designated = new Set(params.flatMap((param) => (param.identifies ? [param.identifies] : [])));
+    const changed = params.filter((param) => !param.identifies && param.field && designated.has(param.field.entity));
+    const body = ctx.input as Record<string, unknown>;
+    const read = changed.some(({ name }) => ctx.params[name] === undefined && ctx.query[name] === undefined && body[name] !== undefined);
+    if (!read) return undefined;
+
+    const names = new Set(params.map((param) => param.name));
+    const stranger = Object.keys(body).find((key) => !names.has(key));
+    if (stranger !== undefined) throw refused(stranger, InputRefusal.unknownField);
+
+    return Object.fromEntries(changed.map(({ name }) => [name, body[name]]));
+  }
+
+  /**
+   * A value the caller typed in a path, a query string, or a body that carries parameters. `null`
+   * is a value, not a miss: only `undefined` means absent, so `T | null` stays apart from `T | undefined`.
+   */
+  private static param(source: ParamSource, optional: boolean, ctx: InvocationContext, body?: Record<string, unknown>): unknown {
     const { name, coerce } = source;
-    const fromParams = ctx.params[name];
-    const value: unknown = fromParams === undefined ? ctx.query[name] : fromParams;
+    const value: unknown = [ctx.params[name], ctx.query[name], body?.[name]].find((one) => one !== undefined);
 
     if (value === undefined) {
       if (optional) return undefined;

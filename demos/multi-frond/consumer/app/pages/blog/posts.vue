@@ -29,7 +29,7 @@ function validate() {
 async function submit() {
   const data = validate();
   if (!data) return;
-  // In a real app: fetch('http://remote-blog:4001/api/posts', { method: 'POST', body: JSON.stringify(data) })
+  // In a real app: fetch('http://remote-blog:4001/api/blog/posts', { method: 'POST', body: JSON.stringify(data) })
   created.value.push({ ...data, id: crypto.randomUUID(), createdAt: new Date().toISOString() });
   form.title = '';
   form.body = '';

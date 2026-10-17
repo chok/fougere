@@ -1,7 +1,7 @@
 export default {
   operations: {
-    work: { kind: 'command' },
-    boom: { kind: 'command' },
-    hang: { kind: 'command' },
+    'slow.work': { kind: 'command' },
+    'slow.boom': { kind: 'command' },
+    'slow.hang': { kind: 'command' },
   },
 };

@@ -1,5 +1,5 @@
 export default {
   operations: {
-    loud: { kind: 'query' },
+    'reading.loud': { kind: 'query' },
   },
 };

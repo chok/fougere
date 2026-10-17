@@ -1,5 +1,5 @@
 export default {
   operations: {
-    onAlpha: { kind: 'command' },
+    'alpha.onAlpha': { kind: 'command' },
   },
 };

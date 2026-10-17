@@ -1,1 +1,1 @@
-export default { operations: { onHand: { kind: 'query' } } };
+export default { operations: { 'stock.onHand': { kind: 'query' } } };

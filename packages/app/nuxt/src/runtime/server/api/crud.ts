@@ -11,7 +11,7 @@ export default defineEventHandler(async (event) => {
 
   const outcome = await serveRest(app, {
     method,
-    path: event.path.replace(/^\/api\//, '').replace(/\?.*$/, ''),
+    path: event.path.replace(/\?.*$/, ''),
     query: getQuery(event) as Record<string, string>,
     body: hasBody ? await readBody(event) : undefined,
     state: stateOf(event),

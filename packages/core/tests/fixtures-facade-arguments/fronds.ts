@@ -28,5 +28,5 @@ export default frond('stock', {
       }),
     },
   }],
-  operationsOverrides: { restock: { kind: 'command' } },
+  operationsOverrides: { 'article.restock': { kind: 'command' } },
 });

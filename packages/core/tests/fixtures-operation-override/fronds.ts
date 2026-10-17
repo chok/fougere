@@ -11,6 +11,6 @@ export default [
       { ctor: PostHandler, operations: { publish: op({ args: [input()], input: Post }) } },
       { ctor: ArchiveHandler, operations: { execute: op({ args: [input()], input: Post }) } },
     ],
-    operationsOverrides: { publish: { kind: 'command', handlerName: 'ArchiveHandler', method: 'execute' } },
+    operationsOverrides: { 'post.publish': { kind: 'command', handlerName: 'ArchiveHandler', method: 'execute' } },
   }),
 ];

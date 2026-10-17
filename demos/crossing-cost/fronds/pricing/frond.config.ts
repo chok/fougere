@@ -1,1 +1,1 @@
-export default { operations: { total: { kind: 'query' } } };
+export default { operations: { 'price.total': { kind: 'query' } } };

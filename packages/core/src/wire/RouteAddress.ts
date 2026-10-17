@@ -26,6 +26,14 @@ export class RouteAddress {
     Object.freeze(this);
   }
 
+  /** Reads back what `toString` writes for an address with no surface — `post.list`. */
+  static parse(written: string): RouteAddress | undefined {
+    const dot = written.indexOf('.');
+    if (dot <= 0 || dot === written.length - 1) return undefined;
+
+    return new RouteAddress({ address: written.slice(0, dot), operation: written.slice(dot + 1) });
+  }
+
   /** Serializes the three segments so a route can be looked up in a `Map`. */
   key(): string {
     return JSON.stringify([this.surface ?? null, this.address, this.operation]);

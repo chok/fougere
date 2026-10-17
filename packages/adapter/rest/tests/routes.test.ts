@@ -51,10 +51,10 @@ const bindings: Record<string, unknown[]> = {
 /** Build an OperationsMap from op names + optional ops with meta. */
 function opsMap(
   ops: string[],
-  custom?: Record<string, { input?: any; output?: any }>,
+  custom?: Record<string, { input?: any; output?: any; protocols?: any }>,
 ): Map<string, any> {
   const map = new Map<string, any>();
-  for (const op of ops) map.set(op, { kind: operationKinds[op], binding: bindings[op] });
+  for (const op of ops) map.set(op, { kind: operationKinds[op], binding: bindings[op], ...(op === 'update' ? { input: Post.partial() } : {}) });
   if (custom) {
     for (const [name, meta] of Object.entries(custom)) {
       map.set(name, { kind: operationKinds[name], ...meta });
@@ -64,10 +64,14 @@ function opsMap(
   return map;
 }
 
+/** Every path here is read below its base, which `mounts` pins on its own. */
+const BARE = { protocols: { rest: { prefix: '' } }, frond: { rest: { path: '' } } };
+
 function fakeApp(
   facades: Record<string, any>,
   handlers: any[] = [],
   surfaces?: Record<string, string[]>,
+  base: { protocols?: object; frond?: object } = BARE,
 ) {
   // What serves is what a real app lists: one handler per façade key, `<surface>:<address>Handler`.
   const served = Object.keys(facades).map((key) => {
@@ -81,7 +85,8 @@ function fakeApp(
     // `presenters` was missing: the real scanner always answers an array, empty when
     // a frond declares none. Omitting it made this stand-in a shape the source never
     // produces — no test here exercises presenters, so the empty list is the truth.
-    fronds: [{ name: 'test', handlers: served, presenters: [], surfaces }],
+    protocols: base.protocols,
+    fronds: [{ name: 'test', handlers: served, presenters: [], surfaces, protocols: base.frond }],
     resolve: <T>(name: string) => facades[name] as unknown as T,
     // Mirrors App.facadeFor (bootstrap.ts): naming an audience closes it —
     // the `surfaces:` list when it exists, else a façade under the surface key.
@@ -135,7 +140,7 @@ describe('generateRoutes', () => {
       'GET /posts',
       'GET /posts/:id',
       'POST /posts',
-      'PUT /posts/:id',
+      'PATCH /posts/:id',
       'DELETE /posts/:id',
     ]);
   });
@@ -157,15 +162,15 @@ describe('generateRoutes', () => {
     ]);
   });
 
-  it('applies prefix', () => {
-    const app = fakeApp(
-      { postHandler: fakeCrud() },
-    );
+  it('mounts under the app prefix, then the segment the frond answers under', () => {
+    const conventional = generateRoutes(fakeApp({ postHandler: fakeCrud() }, [], undefined, {}));
+    const renamed = generateRoutes(fakeApp({ postHandler: fakeCrud() }, [], undefined, {
+      protocols: { rest: { prefix: '/v1' } },
+      frond: { rest: { path: '/journal' } },
+    }));
 
-    const routes = generateRoutes(app, { prefix: '/api' });
-
-    expect(routes[0].path).toBe('/api/posts');
-    expect(routes[1].path).toBe('/api/posts/:id');
+    expect(conventional.map((r) => r.path).slice(0, 2)).toEqual(['/api/test/posts', '/api/test/posts/:id']);
+    expect(renamed[0]!.path).toBe('/v1/journal/posts');
   });
 
   it('pluralizes addresses', () => {
@@ -239,26 +244,76 @@ describe('generateRoutes', () => {
     ]);
   });
 
-  it('supports route overrides', () => {
+  it('reads the method off the contract, and the name only for a removal', () => {
+    const param = (name: string, extra: object = {}) =>
+      ({ name, source: { kind: 'param', name, ...extra }, optional: false });
+    const id = param('id', { identifies: 'Post', field: { entity: 'Post', name: 'id' } });
+    const field = (name: string) => param(name, { field: { entity: 'Post', name } });
+    const body = { name: 'input', source: { kind: 'input' }, optional: false };
+    const ops: Record<string, object> = {
+      edit: { binding: [id, body], input: Post.partial() },
+      replace: { binding: [id, body], input: Post },
+      retitle: { binding: [id, field('title')] },
+      retitleBecause: { binding: [id, field('title'), param('reason')] },
+      publish: { binding: [id] },
+      editorPick: { binding: [id, body], input: Post.pick('title') },
+      deleteAll: { binding: [] },
+      removeTag: { binding: [id, param('tag')] },
+    };
+    const facade = Object.fromEntries(Object.keys(ops).map((name) => [name, vi.fn(async () => ({}))]));
     const app = fakeApp(
-      { postHandler: { ...fakeCrud(), publish: vi.fn(async () => ({})) } },
-      [{
-        address: 'post',
-        operations: opsMap(['list', 'findById'], { publish: { input: Post.pick('id') } }),
-      }],
+      { postHandler: facade },
+      [{ address: 'post', operations: new Map(Object.entries(ops).map(([name, meta]) => [name, { kind: 'command', ...meta }])) }],
     );
 
-    const routes = generateRoutes(app, {
-      overrides: {
-        post: {
-          publish: { method: 'PUT', path: '/posts/:id/publish' },
-        },
-      },
-    });
+    expect(generateRoutes(app).map((r) => `${r.method} ${r.path}`)).toEqual([
+      'PATCH /posts/:id/edit',
+      'PUT /posts/:id/replace',
+      'PATCH /posts/:id/retitle',
+      'POST /posts/:id/retitle-because/:title/:reason',
+      'POST /posts/:id/publish',
+      'POST /posts/:id/editor-pick',
+      'DELETE /posts/delete-all',
+      'DELETE /posts/:id/remove-tag/:tag',
+    ]);
+  });
 
-    const publish = routes.find((r) => r.operationName === 'publish');
+  it('keeps the fields of a change in the body, whatever method a frond states', () => {
+    const id = { name: 'id', source: { kind: 'param', name: 'id', identifies: 'Post' }, optional: false };
+    const title = { name: 'title', source: { kind: 'param', name: 'title', field: { entity: 'Post', name: 'title' } }, optional: false };
+    const routed = (rest: object) => fakeApp(
+      { postHandler: { retitle: vi.fn(async () => ({})) } },
+      [{ address: 'post', operations: new Map([['retitle', { kind: 'command', binding: [id, title], protocols: { rest } }]]) }],
+    );
+
+    expect(generateRoutes(routed({ method: 'POST' }))[0]).toMatchObject({ method: 'POST', path: '/posts/:id/retitle' });
+    expect(generateRoutes(routed({ path: '/posts/:id/retitle/:title' }))[0])
+      .toMatchObject({ method: 'PATCH', path: '/posts/:id/retitle/:title' });
+  });
+
+  it('supports route overrides', () => {
+    const stated = { input: Post.pick('id'), protocols: { rest: { method: 'PUT', path: '/posts/:id/publish' } } };
+    const app = fakeApp(
+      { postHandler: { ...fakeCrud(), publish: vi.fn(async () => ({})) } },
+      [{ address: 'post', operations: opsMap(['list', 'findById'], { publish: stated }) }],
+    );
+
+    const publish = generateRoutes(app).find((r) => r.operationName === 'publish');
     expect(publish?.method).toBe('PUT');
     expect(publish?.path).toBe('/posts/:id/publish');
+  });
+
+  it('lets the app name the route of a frond it cannot edit, over what that frond said', () => {
+    const stated = { input: Post.pick('id'), protocols: { rest: { method: 'PUT', path: '/posts/:id/publish' } } };
+    const app = fakeApp(
+      { postHandler: { ...fakeCrud(), publish: vi.fn(async () => ({})) } },
+      [{ address: 'post', operations: opsMap(['list', 'findById'], { publish: stated }) }],
+      undefined,
+      { ...BARE, protocols: { rest: { prefix: '', overrides: { 'post.publish': { path: '/legacy/:id' } } } } },
+    );
+
+    const publish = generateRoutes(app).find((r) => r.operationName === 'publish');
+    expect(publish).toMatchObject({ method: 'PUT', path: '/legacy/:id' });
   });
 
   it('route handler forwards InvocationContext to facade', async () => {

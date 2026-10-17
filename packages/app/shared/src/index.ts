@@ -3,6 +3,7 @@ export {
   configureFougere,
   extendFougere,
   useFougereApp,
+  useFougereConfig,
   reloadFougere,
   type FougereServerConfig,
 } from './boot.js';
@@ -10,6 +11,7 @@ export {
 export { authOf, useFougereAuth } from './auth.js';
 
 export { tableOf } from './RouteMatch.js';
+export { prefixOf } from '@fougere/adapter-rest';
 
 export { invokeOn, refusedRpc, rpcParseError, serveRest, serveRpc, surfaceOf } from './Outcome.js';
 

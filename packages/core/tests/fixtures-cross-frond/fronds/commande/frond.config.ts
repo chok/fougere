@@ -1,5 +1,5 @@
 export default {
   operations: {
-    servable: { kind: 'query' },
+    'commande.servable': { kind: 'query' },
   },
 };

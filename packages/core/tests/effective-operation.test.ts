@@ -175,7 +175,7 @@ describe('deterministic operation resolution', () => {
     middlewares: [],
     surfaces: { public: ['post'] },
     operationsOverrides: {
-      publish: {
+      'post.publish': {
         kind: 'command',
         // Deliberately reversed: array order is not semantic authority.
         binding: [
@@ -183,7 +183,7 @@ describe('deterministic operation resolution', () => {
           { name: 'input', source: { kind: 'input' }, optional: false },
         ],
       },
-      execute: { kind: 'command' },
+      'post.execute': { kind: 'command' },
     },
   };
 

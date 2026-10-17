@@ -1,8 +1,8 @@
 export default {
   operations: {
-    doublePlain: { kind: 'query' },
+    'invoice.doublePlain': { kind: 'query' },
     // An alias is not enough evidence to guess primitive/input/collector provenance.
-    doubleCents: {
+    'invoice.doubleCents': {
       kind: 'query',
       binding: [{
         name: 'amount',

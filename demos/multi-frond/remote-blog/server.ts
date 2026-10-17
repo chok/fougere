@@ -2,7 +2,7 @@
  * Remote blog server — standalone frond running as its own service.
  *
  * Exposes:
- * - REST CRUD on /api/posts, /api/authors
+ * - REST CRUD on /api/blog/posts, /api/blog/authors
  * - POST /_fougere/call — the envelope, which answers `rpc.discover` with the
  *   identity card `fougere sync` reads. One discovery surface, not two: a
  *   dedicated GET used to publish every entity, façade or not.
@@ -41,7 +41,7 @@ async function main() {
   const router = createHonoRouter(hono);
 
   // REST routes
-  const routes = generateRoutes(app, { prefix: '/api' });
+  const routes = generateRoutes(app);
   registerRoutes(router, routes);
 
   // The envelope — same wire as process-to-process, and the surface `fougere sync`
@@ -58,7 +58,7 @@ async function main() {
     console.log('');
     console.log('  \x1b[32m\uD83C\uDF3F fougere\x1b[0m  remote-blog');
     console.log('');
-    console.log(`  \x1b[2m\u279C\x1b[0m  REST     http://localhost:${PORT}/api/posts`);
+    console.log(`  \x1b[2m\u279C\x1b[0m  REST     http://localhost:${PORT}/api/blog/posts`);
     console.log(`  \x1b[2m\u279C\x1b[0m  Call     http://localhost:${PORT}/_fougere/call  (rpc.discover)`);
     console.log('');
   });

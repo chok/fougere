@@ -52,7 +52,7 @@ export function workflow({ sweepMs = SWEEP_MS }: WorkflowOptions = {}): Extensio
       }],
       // `sweep` leads with no verb core knows, and it is the word the subject uses — so the
       // kind is stated rather than the operation renamed.
-      operationsOverrides: { sweep: { kind: 'command', binding: [] } },
+      operationsOverrides: { 'run.sweep': { kind: 'command', binding: [] } },
     })],
     up: (app: App) => {
       if (sweepMs <= 0) return;

@@ -5,7 +5,6 @@ import type { Entity, Field, SchemaView } from '@fougere/schema';
 import { Boundary, Card, Lifecycle, Visibility } from '@fougere/schema';
 import type { TypeConfig } from './TypeConfig.js';
 import type { InputConfig } from './InputConfig.js';
-import type { OperationOverride } from '@fougere/core';
 import type { Signature } from '@fougere/core/descriptor';
 import type { OperationMeta } from './OperationMeta.js';
 import type { ObjectFieldDef } from './ObjectFieldDef.js';
@@ -23,8 +22,6 @@ export interface OperationsConfig {
   facade: Record<string, Function>;
   /** Operations metadata from scanner (signature + resolved schemas). */
   operations: Map<string, OperationMeta>;
-  /** Per-op kind overrides from frond.config.ts (optional). */
-  operationsOverrides?: Record<string, Pick<OperationOverride, 'kind' | 'graphql'>>;
   /**
    * Who is registering — `catalog/ChapterHandler`, for the message when two ops claim
    * one root field. Absent when a caller builds a type by hand.
@@ -795,7 +792,7 @@ export function registerOperations(builder: InstanceType<typeof SchemaBuilder>, 
     const sig = meta.signature;
     if (!sig) continue;
 
-    const fieldName = config.operationsOverrides?.[opName]?.graphql
+    const fieldName = meta.protocols?.graphql
       ?? graphqlFieldName(opName, config.name);
     claimRootField(builder, fieldName, `${config.origin ?? config.name}.${opName}`);
     const { argsDef, buildInvocation } = buildArgsFromSignature(sig, meta, builder, opName, config.name);

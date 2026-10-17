@@ -12,7 +12,7 @@ export const commande = frond('commande', {
     deps: ['articleHandler'],
     operations: { servable: op({ cardinality: 'none', description: 'Can this order be served from the shelf?' }) },
   }],
-  operationsOverrides: { servable: { kind: 'query' } },
+  operationsOverrides: { 'commande.servable': { kind: 'query' } },
 });
 
 export const stock = frond('stock', {
@@ -21,7 +21,7 @@ export const stock = frond('stock', {
     ctor: ArticleHandler,
     operations: { onHand: op({ cardinality: 'none', description: 'How many of this article are on the shelf.' }) },
   }],
-  operationsOverrides: { onHand: { kind: 'query' } },
+  operationsOverrides: { 'article.onHand': { kind: 'query' } },
 });
 
 export default [commande, stock];

@@ -84,4 +84,41 @@ describe('ArgumentResolver', () => {
         .rejects.toMatchObject({ code: 'VALIDATION_FAILED', details: [{ path: [name] }] });
     });
   });
+
+  describe('a body that carries parameters rather than an input', () => {
+    const retitle: BindingPlan = [
+      { name: 'id', source: { kind: 'param', name: 'id', identifies: 'Post' }, optional: false },
+      { name: 'title', source: { kind: 'param', name: 'title', field: { entity: 'Post', name: 'title' } }, optional: false },
+    ];
+
+    it('reads what the path did not carry — PATCH /posts/:id/retitle { title }', async () => {
+      await expect(new ArgumentResolver().resolve(retitle, Invocation.from({ params: { id: 'p1' }, input: { title: 'Hi' } })))
+        .resolves.toEqual(['p1', 'Hi']);
+    });
+
+    it('lets the path and the query win over the body', async () => {
+      const invocation = Invocation.from({ params: { id: 'p1' }, query: { title: 'Query' }, input: { id: 'body', title: 'Body' } });
+
+      await expect(new ArgumentResolver().resolve(retitle, invocation)).resolves.toEqual(['p1', 'Query']);
+    });
+
+    it('reads nothing from a body that is an input', async () => {
+      const plan: BindingPlan = [...retitle, { name: 'input', source: { kind: 'input' }, optional: false }];
+
+      await expect(new ArgumentResolver().resolve(plan, Invocation.from({ params: { id: 'p1' }, input: { title: 'Hi' } })))
+        .rejects.toMatchObject({ message: 'title: Required' });
+    });
+
+    it('never reads a plain parameter there — only a field of the row the call designates', async () => {
+      const plain: BindingPlan = [retitle[0]!, { name: 'reason', source: { kind: 'param', name: 'reason' }, optional: false }];
+
+      await expect(new ArgumentResolver().resolve(plain, Invocation.from({ params: { id: 'p1' }, input: { reason: 'typo' } })))
+        .rejects.toMatchObject({ message: 'reason: Required' });
+    });
+
+    it('refuses a key of that body which names no parameter', async () => {
+      await expect(new ArgumentResolver().resolve(retitle, Invocation.from({ params: { id: 'p1' }, input: { title: 'Hi', nawak: 1 } })))
+        .rejects.toMatchObject({ code: 'VALIDATION_FAILED', message: 'nawak: Unknown field' });
+    });
+  });
 });

@@ -10,6 +10,7 @@ import type { MiddlewareEntry } from './MiddlewareEntry.js';
 import type { SeedEntry } from './SeedEntry.js';
 import type { FrondSource } from './FrondSource.js';
 import type { ExtensionEntry } from './ExtensionEntry.js';
+import type { FougereFrondProtocols } from '../FougereFrondProtocols.js';
 
 /**
  * The key a provider answers under. What the source said, and the class's own name only
@@ -43,11 +44,21 @@ export interface FrondDescriptor extends Pick<FrondConfig, 'pipes' | 'surfaces' 
    * flat, and a directory says nothing about who shares its code.
    */
   extends?: string;
-  /** Per-operation overrides from frond.config.ts. */
+  /** What `frond.config.ts` says to each protocol about the whole frond. */
+  protocols?: FougereFrondProtocols;
+  /** Per-operation overrides from frond.config.ts, keyed `post.list` — read through `OperationOverrides`. */
   operationsOverrides?: Record<string, OperationContract & Omit<OperationOverride, 'handler'> & {
     /** The handler CLASS of `frond.config.ts`, by the name DI resolves it under. */
     handlerName?: string;
   }>;
+}
+
+/**
+ * Read from this project's sources, so it has a `frond.config.ts` of its own to be told things in.
+ * A frond written with `frond()` — what a package brings, `betterAuth()` — has no directory here.
+ */
+export function isScanned(frond: Pick<FrondDescriptor, 'source'>): boolean {
+  return frond.source.path !== '';
 }
 
 /** Recognized by its FORM, like everything a config holds: a name and the lists every frond carries. */

@@ -1,6 +1,7 @@
 /** Where a STATED contract and the signature it is about have stopped agreeing. */
 import type { FrondDescriptor } from '../descriptor/FrondDescriptor.js';
 import type { HandlerEntry } from '../descriptor/HandlerEntry.js';
+import { OperationOverrides } from '../descriptor/OperationOverrides.js';
 import type { Diagnostic } from '../diagnostic.js';
 import type { BindingPlan } from '../wire/binding.js';
 import type { Signature } from '../wire/Signature.js';
@@ -16,7 +17,7 @@ function namesDisagreeing(plan: BindingPlan, signature: Signature): string[] {
 export function statementDrift(frond: FrondDescriptor, handler: HandlerEntry): Diagnostic[] {
   const found: Diagnostic[] = [];
 
-  for (const [name, override] of Object.entries(frond.operationsOverrides ?? {})) {
+  for (const [name, override] of OperationOverrides.of(frond).at(handler.address)) {
     if (!override.binding) continue;
 
     // The scan's own reading of this method. Absent means config is stating what nothing

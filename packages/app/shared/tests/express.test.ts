@@ -96,11 +96,6 @@ describe('what a middleware declines', () => {
     expect(next).toHaveBeenCalledOnce();
     expect(sent.status).toBeUndefined();
   });
-
-  it('honours a mount point the app chose', async () => {
-    const onAdmin = rest('/admin');
-    expect((await run(onAdmin, { method: 'GET', path: '/api/blog/posts' })).next).toHaveBeenCalledOnce();
-  });
 });
 
 describe('the session facade', () => {

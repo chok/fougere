@@ -4,7 +4,7 @@ import type SchemaBuilder from '@pothos/core';
 import type { Fields, SchemaView } from '@fougere/schema';
 import { Shapes } from '@fougere/schema';
 import { type OperationMeta } from './OperationMeta.js';
-import type { EntityEntry as CoreEntityEntry, HandlerEntry as CoreHandlerEntry, OperationOverride } from '@fougere/core';
+import type { EntityEntry as CoreEntityEntry, HandlerEntry as CoreHandlerEntry } from '@fougere/core';
 import { registerOperations, registerType } from './OperationsConfig.js';
 
 type HandlerFacade = Record<string, Function>;
@@ -128,7 +128,6 @@ interface FrondLike {
   handlers: HandlerEntry[];
   presenters: PresenterEntry[];
   surfaces?: Record<string, string[]>;
-  operationsOverrides?: Record<string, Pick<OperationOverride, 'graphql'>>;
 }
 
 interface AppLike {
@@ -292,7 +291,6 @@ export function registerAll(
         type: rows ? typeOf(rows, name) : undefined,
         facade,
         operations,
-        operationsOverrides: frond.operationsOverrides,
         // Named so a root-field clash can say WHICH two handlers, in which fronds.
         origin: `${frond.name}/${handler?.ctor?.name ?? `${name}Handler`}`,
         viewType: (view, opName) => typeOf(view, `${name}${upperFirst(opName)}`),

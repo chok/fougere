@@ -2,7 +2,7 @@ import ArchiveHandler from './handlers/ArchiveHandler.js';
 
 export default {
   operations: {
-    publish: {
+    'post.publish': {
       kind: 'command',
       handler: ArchiveHandler,
       method: 'execute',

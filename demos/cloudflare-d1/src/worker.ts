@@ -58,7 +58,7 @@ async function open() {
   // instead — `fougere keys` / `fougere grant`, and the three env vars as secrets.
   const envelope = receive(createLocalRunner(app), { allowUnsigned: true });
   const hono = new Hono();
-  registerRoutes(createHonoRouter(hono), generateRoutes(app as never, { prefix: '/api' }));
+  registerRoutes(createHonoRouter(hono), generateRoutes(app as never));
   hono.get('/', (c) => c.html(landing(app)));
 
   // The envelope keeps its own path rather than becoming a hono route: it is a wire
@@ -91,10 +91,9 @@ export default {
 
 /** What is served, read off the app itself — never a list written twice. */
 function landing(app: App): string {
-  const rows = app.fronds.flatMap((frond) =>
-    frond.handlers.map((handler) => `<li><code>${frond.name}</code> — <code>${handler.address}</code>
-      · <a href="/api/${handler.address}s">/api/${handler.address}s</a></li>`),
-  );
+  const rows = generateRoutes(app as never)
+    .filter((route) => route.operationName === 'list')
+    .map((route) => `<li><code>${route.address}</code> · <a href="${route.path}">${route.path}</a></li>`);
 
   return `<!doctype html><meta charset=utf-8><title>Fougere on Workers</title>
 <style>body{font:16px/1.6 ui-sans-serif,system-ui;max-width:44rem;margin:4rem auto;padding:0 1.5rem}

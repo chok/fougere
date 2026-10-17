@@ -51,7 +51,7 @@ function appOf(protocols: Record<string, object> = { rest: {} }) {
 
 const app = appOf();
 const request = (method: string, path: string) =>
-  serveRest(app, { method, path, query: {}, state: {} });
+  serveRest(app, { method, path: `/api/${path}`, query: {}, state: {} });
 
 describe('surfaceOf', () => {
   it('names no audience on the bare facade', () => {
@@ -70,13 +70,13 @@ describe('surfaceOf', () => {
 describe('the app decides which protocols it serves', () => {
   it('serves nothing when the app names no protocol — the route file is not the decision', async () => {
     const closed = appOf({});
-    const outcome = await serveRest(closed, { method: 'GET', path: 'blog/posts', query: {}, state: {} });
+    const outcome = await serveRest(closed, { method: 'GET', path: '/api/blog/posts', query: {}, state: {} });
     expect(outcome).toEqual({ kind: 'pass' });
   });
 
   it('serves nothing when it declares another adapter but not rest', async () => {
     const closed = appOf({ graphql: {} });
-    expect(await serveRest(closed, { method: 'GET', path: 'blog/posts', query: {}, state: {} }))
+    expect(await serveRest(closed, { method: 'GET', path: '/api/blog/posts', query: {}, state: {} }))
       .toEqual({ kind: 'pass' });
   });
 
@@ -84,12 +84,12 @@ describe('the app decides which protocols it serves', () => {
     // `pass`, never a 404: the app that mounted the facade may serve `/api/...` itself,
     // and an undeclared adapter must not take that path away from it.
     const closed = appOf({});
-    const outcome = await serveRest(closed, { method: 'DELETE', path: 'blog/posts', query: {}, state: {} });
+    const outcome = await serveRest(closed, { method: 'DELETE', path: '/api/blog/posts', query: {}, state: {} });
     expect(outcome).toEqual({ kind: 'pass' });
   });
 
   it('consults the table once declared — the same request, a different answer', async () => {
-    const closed = { method: 'DELETE', path: 'blog/posts', query: {}, state: {} };
+    const closed = { method: 'DELETE', path: '/api/blog/posts', query: {}, state: {} };
 
     // Undeclared: the facade never looks. Declared: it looks, and refuses the verb.
     expect(await serveRest(appOf({}), closed)).toEqual({ kind: 'pass' });

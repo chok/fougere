@@ -9,6 +9,10 @@ declare module '@fougere/core' {
   interface FougereProtocols {
     graphql: Accepted<typeof GRAPHQL>;
   }
+  interface FougereOperationProtocols {
+    /** The root field this op answers to — `posts` rather than the derived name. */
+    graphql?: string;
+  }
 }
 
 // The host answers `/graphql` through what is registered here, never by importing a package by name.

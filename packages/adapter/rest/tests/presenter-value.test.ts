@@ -47,7 +47,7 @@ async function getPosts(app: never) {
   let handler!: (ctx: unknown) => Promise<{ status: number; data: unknown }>;
   const router = {
     on: (method: string, path: string, fn: never) => {
-      if (method === 'GET' && path === '/posts') handler = fn;
+      if (method === 'GET' && path === '/api/blog/posts') handler = fn;
     },
   };
   registerRoutes(router as never, routes);
