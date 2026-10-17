@@ -8,17 +8,18 @@ description: One idea — you declare the domain, and everything else derives fr
 Fougere is a TypeScript framework built on one idea: **you declare the domain, and
 everything else derives from it — down to the process it runs in.**
 
-Stated in the negative, it becomes checkable: *the declaration names nothing outside
-itself.* No table, no protocol, no host, no address appears in it. Two consequences follow,
-and they are ordinarily sold as two separate features:
+The rule behind it: *Fougere tells what your code is from how it runs.* A table, a
+protocol, a host, an address are how it runs. Two consequences follow, and they are
+usually sold as two separate features:
 
-| The declaration does not name… | so that thing is… | its usual name |
+| From what your code is… | that thing is… | its usual name |
 |---|---|---|
-| its table, its GraphQL type, its form, its validator | **derived** from it | single-schema |
-| its host, its storage, its facade, its address | **chosen outside** it | the gradient |
+| its table, its GraphQL type, its form, its validator | **derived** | single-schema |
+| its host, its storage, its facade, its address | **chosen apart** | the gradient |
 
-One rule read in two directions — what a declaration produces, and what it may be
-surrounded by. The rest of this page is those two readings.
+You may write a detail of how it runs next to your code — a column type for one field —
+when that is simpler. It fixes the value, and nothing derived from your code reads it. The
+rest of this page is those two readings.
 
 Read a third way, it is about you: one field changes, and there is one place to read. The
 projections cannot drift from it, and what the framework can prove wrong is refused at boot

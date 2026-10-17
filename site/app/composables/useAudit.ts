@@ -33,9 +33,10 @@ improves.
 The docs explain it at ${origin}/docs. Claim nothing beyond what
 this section states.
 
-One rule: a declaration names nothing outside itself — no table, no
-protocol, no host, no address. What it does not name is either derived
-from it, or chosen outside it.
+One rule: Fougere tells what your code is from how it runs — a table,
+a protocol, a host, an address are how it runs. What your code is
+derives everything else; how it runs is chosen apart, and changing it
+never touches your code.
 
 - Shape. A business object is declared once, as a class:
 

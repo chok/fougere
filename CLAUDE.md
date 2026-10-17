@@ -4,13 +4,17 @@ Guidance for Claude Code working in this repository.
 
 ## What is this
 
-Fougere is a TypeScript framework built on ONE idea, stated in the negative because that
-is the form that can be checked: **the declaration names nothing outside itself** — no
-table, no protocol, no host, no address. The two things this file used to call its two
-ideas are its two readings, and calling them two hid the rule that produces both:
+Fougere is a TypeScript framework built on ONE idea: **the core tells what a thing IS from
+how it is realized, wherever either is written.** Derivations read the first only, so the
+second changes without touching it. A realization written inside a definition — a column
+type on a field, a table on an entity — is accepted sugar: it fixes the value for every
+reader, and moving it to the config later changes nothing derived. What to check is never
+"does it name something outside itself" but "does a derivation read a realization": `schema`
+reads nothing of `adapters:`, which only `adapter/sql` reads. The two things this file used
+to call its two ideas are its two readings:
 
-1. **Single-schema** — what the declaration does not name is *derived* from it: one Entity class (`class Post extends entity({...})`) generates validation, DB tables (Kysely), GraphQL types (Pothos), form contracts, API surfaces.
-2. **The gradient** — what it does not name is *chosen outside* it: a Frond (entities + handlers + collectors + seeds) runs in-process or in its own process behind JSON-RPC, with **identical user code**. `fronds:` in `fougere.config.ts` is the whole statement — an entry per frond, whose `extends:` names the one it inherits code from, whose `remote:` says where it answers, and whose key names a module when a package brings it.
+1. **Single-schema** — what a definition yields is *derived* from it: one Entity class (`class Post extends entity({...})`) generates validation, DB tables (Kysely), GraphQL types (Pothos), form contracts, API surfaces.
+2. **The gradient** — how it is realized is *chosen apart* from it: a Frond (entities + handlers + collectors + seeds) runs in-process or in its own process behind JSON-RPC, with **identical user code**. `fronds:` in `fougere.config.ts` is the whole statement — an entry per frond, whose `extends:` names the one it inherits code from, whose `remote:` says where it answers, and whose key names a module when a package brings it.
 
 Reference docs: `site/content/`.
 
