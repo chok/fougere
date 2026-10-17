@@ -321,15 +321,16 @@ function registerProviders(
     for (const wrapper of wrappers.slice(1).reverse()) {
       const deps = ownLogger(nameOf(wrapper), wrapper.deps).map((dep) => (dep === port ? inner : dep));
       inner = nameOf(wrapper);
-      scope.register(inner, wrapper.ctor, { deps, ...lifetimeOf(wrapper.ctor) });
+      scope.replace(inner, wrapper.ctor, { deps, ...lifetimeOf(wrapper.ctor) });
     }
     const outermost = chain[0]!;
     const outermostOptions = {
       deps: ownLogger(nameOf(outermost), outermost.deps).map((dep) => (dep === port ? inner : dep)),
       ...lifetimeOf(outermost.ctor),
     };
-    if (wrappers.length > 0) scope.register(nameOf(outermost), outermost.ctor, outermostOptions);
-    scope.register(port, outermost.ctor, outermostOptions);
+    if (wrappers.length > 0) scope.replace(nameOf(outermost), outermost.ctor, outermostOptions);
+    if (scope.has(port)) scope.replace(port, outermost.ctor, outermostOptions);
+    else scope.register(port, outermost.ctor, outermostOptions);
     boundPorts.add(port);
     frondLog.debug(`port ${port} → ${chain.map((one) => one.ctor.name).join(' → ')}`);
   }

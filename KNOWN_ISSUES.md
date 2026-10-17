@@ -174,11 +174,6 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
   remains open — a page size is not a constant, so there is no threshold to hard-code.
 - **`storage.client` remains the anonymous multi-statement path, validator off** — everything else
   writes through a guarded port, `Together<[…]>` included.
-- **A provider class named `<Entity>Storage` is DISCARDED, not honoured** — the entry used to
-  say the opposite. `bootstrap.ts` registers providers before storages and `registerValue` is a
-  plain `registry.set`, so the entity's storage overwrites the provider. `refuseStorageInUserCode`
-  does not cover it: it reads `decl.deps`, never `decl.ctor.name`. Measured 2026-09-09. The name
-  is already wrong by two rules, which is why nothing hits it; left as is.
 - **`Mirror` holds a loop and a page contract, and nothing else** (`core/src/prefab/MirrorConstructor.ts`).
   What it held of its own is gone — `StorageGuard` guards every write gesture now, so a page is
   judged where every other row is. The mark is the CALLER's since it read one off its own rows,
@@ -242,9 +237,18 @@ One line each, kept because a past version of this file asserted the opposite.
   class DECLARES against `has()` in the scope of its frond, after the ascent since `up` registers
   too (`boot/unregistered.ts`, `dependency-unregistered`). A seam is answered by its link and a
   facade another process serves by its stand-in, so neither refuses. The rule is the boot's: the
-  container answers `has()` and knows no policy. Pinned by `core/tests/unregistered.test.ts`. A neighbour's `AuthorRepository` used to
+  container answers `has()` and knows no policy about what a class may ask for. Pinned by `core/tests/unregistered.test.ts`. A neighbour's `AuthorRepository` used to
   answer `'AuthorRepository' is not registered` at the first call; the check found a seam link
   registered under its own name, which nothing could ever resolve, and it no longer is.
+- **A key has one owner in a scope, and replacing it is said** — `ScopeContainer.register` and
+  `registerValue` refuse a name the scope already holds; `replace`/`replaceValue` stand in place
+  of what answers, here or above, and refuse a name nothing holds. A child scope masking its parent
+  is still a registration. Both used to be a silent `registry.set`, which every boot rule guarding
+  a key (`frond-key-taken`, `storage-key-is-provider`) existed to get ahead of. Such a rule still
+  answers first: a frond failing to install once a check refused it is answered by the check,
+  with the fronds after it still installed and judged (`installing`, `boot/bootstrap.ts`). Measured 2026-10-17 over 861
+  tests: the only replacements were the port chains (`install.ts`, `registerProviders`) and
+  `installStubs`. Pinned by `container/tests/container.test.ts` and `core/tests/key-owner.test.ts`.
 - **A Nuxt server build keeps what a package the config NAMES runs at load** — Nitro reads every
   module as free of side effects but its own, so `import '@fougere/adapter-sql/sqlite'` was dropped
   and a built site answered `Unknown source 'sql' … answers memory`. `@fougere/nuxt` keeps every

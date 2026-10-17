@@ -184,7 +184,7 @@ function claimFacades(
           message:
             `[claim] Two remotes serve '${facade.name}': '${first}' and '${label}'.\n`
             + `  A call names an address, not a frond, so nothing could choose between them.\n`
-            + `  - Keep one of the two out of \`remotes:\`, or\n`
+            + `  - give only one of them an address in \`fronds:\`, or\n`
             + `  - expose one of them under a different address.`,
           address: facade.name,
         });

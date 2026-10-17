@@ -24,22 +24,19 @@ export class ScopeContainer implements Container {
   }
 
   register<T>(name: string, ctor: Constructor<T>, options?: RegisterOptions): void {
-    const lifetime = options?.lifetime ?? 'transient';
-
-    const deps = options?.deps ?? [];
-
-    this.registry.set(name, {
-      factory: (c) => new ctor(...deps.map((d) => c.resolve(d))),
-      lifetime,
-    });
+    this.claim(name, ScopeContainer.built(ctor, options));
   }
 
   registerValue<T>(name: string, value: T): void {
-    this.registry.set(name, {
-      factory: () => value,
-      lifetime: 'singleton',
-      instance: value,
-    });
+    this.claim(name, ScopeContainer.held(value));
+  }
+
+  replace<T>(name: string, ctor: Constructor<T>, options?: RegisterOptions): void {
+    this.substitute(name, ScopeContainer.built(ctor, options));
+  }
+
+  replaceValue<T>(name: string, value: T): void {
+    this.substitute(name, ScopeContainer.held(value));
   }
 
   resolve<T>(name: string): T {
@@ -161,6 +158,25 @@ export class ScopeContainer implements Container {
     return made as T;
   }
 
+  private claim(name: string, entry: Entry): void {
+    if (this.registry.has(name)) {
+      throw new ContainerError(
+        `'${name}' is already registered in this scope — a second registration would silently replace the first. `
+          + 'Use replace() when standing in its place is the point.',
+      );
+    }
+
+    this.registry.set(name, entry);
+  }
+
+  private substitute(name: string, entry: Entry): void {
+    if (!this.has(name)) {
+      throw new ContainerError(`'${name}' is not registered, so nothing can be replaced — use register().`);
+    }
+
+    this.registry.set(name, entry);
+  }
+
   private forget(child: ScopeContainer): void {
     const at = this.children.indexOf(child);
 
@@ -170,6 +186,19 @@ export class ScopeContainer implements Container {
   /** What this scope will close. A value that answers neither `[Symbol.asyncDispose]` nor `[Symbol.dispose]` is not one of them. */
   private remember(value: unknown): void {
     if (ScopeContainer.disposable(value)) this.built.push(value);
+  }
+
+  private static built<T>(ctor: Constructor<T>, options?: RegisterOptions): Entry {
+    const deps = options?.deps ?? [];
+
+    return {
+      factory: (c) => new ctor(...deps.map((d) => c.resolve(d))),
+      lifetime: options?.lifetime ?? 'transient',
+    };
+  }
+
+  private static held(value: unknown): Entry {
+    return { factory: () => value, lifetime: 'singleton', instance: value };
   }
 
   private static disposable(value: unknown): value is AsyncDisposable | Disposable {

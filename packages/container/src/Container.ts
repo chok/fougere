@@ -3,11 +3,17 @@ import type { RegisterOptions } from './registration/RegisterOptions.js';
 
 /** DI container interface — the only thing application code sees. */
 export interface Container {
-  /** The container builds it: `register('UserService', UserService, { deps: ['UserRepository'] })`. */
+  /** The container builds it: `register('UserService', UserService, { deps: ['UserRepository'] })`. A name already registered in this scope is refused. */
   register<T>(name: string, ctor: Constructor<T>, options?: RegisterOptions): void;
 
   /** Already built, so never disposed here — `registerValue('Logger', new Logger('app'))`, a scope, a config. */
   registerValue<T>(name: string, value: T): void;
+
+  /** Stands in place of what already answers the name, here or in a parent — a port's chain, a test double. */
+  replace<T>(name: string, ctor: Constructor<T>, options?: RegisterOptions): void;
+
+  /** `replace`, for a value already built. */
+  replaceValue<T>(name: string, value: T): void;
 
   /** Throws when nothing answers the name; `has` asks without throwing. */
   resolve<T>(name: string): T;

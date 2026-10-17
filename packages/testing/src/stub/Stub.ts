@@ -45,7 +45,7 @@ export function installStubs(app: App, ports: Port[]): Map<Port, Stub<unknown>> 
       );
     }
     const double = stubOf(port);
-    for (const scope of answering) scope.registerValue(port.name, double);
+    for (const scope of answering) scope.replaceValue(port.name, double);
     doubles.set(port, double);
   }
 

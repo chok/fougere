@@ -113,6 +113,34 @@ describe('Container', () => {
     });
   });
 
+  describe('one key, one owner', () => {
+    it('refuses a second registration under a name this scope holds', () => {
+      const container = createContainer();
+      container.register('Logger', Logger);
+
+      expect(() => container.registerValue('Logger', new Logger())).toThrow(/'Logger' is already registered in this scope/);
+      expect(() => container.register('Logger', Logger)).toThrow(/Use replace\(\)/);
+    });
+
+    it('replaces what this scope or a parent holds', () => {
+      const container = createContainer();
+      container.registerValue('config', { env: 'prod' });
+      container.replaceValue('config', { env: 'staging' });
+
+      const scope = container.createScope();
+      scope.replaceValue('config', { env: 'test' });
+
+      expect(container.resolve('config')).toEqual({ env: 'staging' });
+      expect(scope.resolve('config')).toEqual({ env: 'test' });
+    });
+
+    it('refuses to replace a name nothing holds', () => {
+      const container = createContainer();
+
+      expect(() => container.replace('Logger', Logger)).toThrow(/'Logger' is not registered, so nothing can be replaced/);
+    });
+  });
+
   describe('fallback', () => {
     it('fabricates what no scope holds', () => {
       const container = createContainer();

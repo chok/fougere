@@ -8,6 +8,7 @@ import type { PresenterEntry } from '../descriptor/PresenterEntry.js';
 import { hostedBy } from './hosted.js';
 import { nestingOf, parentsFirst } from './nesting.js';
 import type { Fronds } from '../descriptor/Fronds.js';
+import type { FrondDescriptor } from '../descriptor/FrondDescriptor.js';
 import { installFrond, type Assembly } from './install.js';
 import { dependentsOf, releasing, unfinishable, unheldAmong, unpaired } from './relations.js';
 import { release as releaseRow } from '../dispatch/Release.js';
@@ -66,8 +67,8 @@ const LOG_LINE = lowerFirst(LogLine.name);
 /** The one wording for "nobody hosts this here", with both ways out. */
 const notLoaded = (entity: string) =>
   `Frond for '${entity}' is not loaded.\n` +
-  `  - Add '${entity}' to --fronds flag\n` +
-  `  - Or declare a remote: remotes: { ${entity}: 'http://...' }`;
+  `  - Keep its frond in this process (only:), or\n` +
+  `  - give that frond an address: fronds: { <frond>: { remote: 'http://...' } }`;
 
 /** Two fronds cannot claim one name — said at boot, because nothing else says it. */
 function keyClaims(
@@ -89,7 +90,7 @@ function keyClaims(
         subject: key,
         message: `'${first}' and '${frond}' both claim the key '${key}'. A ${what} is registered `
           + 'under a key that names no frond, so one would silently replace the other. Rename one '
-          + 'of the two classes, or keep one frond out of this process (--fronds). '
+          + 'of the two classes, or keep one frond out of this process (only:). '
           + `'${first}' declares it in ${fileOf.get(key)}.`,
       });
 
@@ -560,6 +561,18 @@ function refuseWhatDoesNotHold(refused: Diagnostic[]): void {
 }
 
 /**
+ * A frond that fails to install after a check already refused it is answered by that check, with
+ * the fronds after it — so the refusal still names every frond, not the first.
+ */
+async function installing(frond: FrondDescriptor, assembly: Assembly): Promise<void> {
+  try {
+    await installFrond(frond, assembly);
+  } catch (failure) {
+    if (!assembly.refused.some((one) => one.severity === 'blocking')) throw failure;
+  }
+}
+
+/**
  * A `ports:` key no port matched reads as a choice that was made. Said once every frond is
  * installed: the entry is app-wide, and no single frond can tell a typo from a neighbour's port.
  */
@@ -705,7 +718,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
       getMiddlewares, use, middlewaresOf: new Map(), seamsOf: new Map(), log, options,
       state: appLifecycle.state(),
     };
-    for (const frond of fronds) await installFrond(frond, assembly);
+    for (const frond of fronds) await installing(frond, assembly);
 
     warnAboutRelations(relations, hosting, log);
     refused.push(...unpaired(fronds.flatMap((frond) => frond.entities), hosting));
