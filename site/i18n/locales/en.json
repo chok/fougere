@@ -11,9 +11,9 @@
     "builtWith": "Built with Fougere and Nuxt, hosted on GitHub Pages."
   },
   "home": {
-    "title": "TypeScript business code first. Deployment and API later.",
+    "title": "The TypeScript framework where you write business code first, choose deployment and API later.",
     "subtitle": "Declare your domain once. Validation, tables, API and forms derive from it, and one config line decides where each part runs.",
-    "slogan": "TypeScript {code} first. Deployment and API {later}.",
+    "slogan": "The TypeScript framework where you write {code} first, choose deployment and API {later}.",
     "sloganCode": "business code",
     "sloganLater": "later",
     "plateName": "Fougère mâle · Aspidium filix-mas",
