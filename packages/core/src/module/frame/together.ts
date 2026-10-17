@@ -12,6 +12,7 @@ import { type StorageFactory } from '../../storage/StorageFactory.js';
 import type { Logger } from '../../builtin/Logger.js';
 import type { ProviderEntry } from '../../descriptor/ProviderEntry.js';
 import { StorageGuard } from '../../dispatch/StorageGuard.js';
+import { RelationGuard } from '../relation/RelationGuard.js';
 import { heldBy, releasing } from '../relation/relations.js';
 import type { Hosting } from '../relation/Hosting.js';
 import { recording, unwind, type Undo } from './frame.js';
@@ -227,7 +228,7 @@ export function registerFrames(
 function frameOver(key: string, members: Members, scope: Container, world: FrameWorld): Frame {
   const sources = new Set(members.entities.map((member) => world.sourceOf?.(member.name) ?? 'default'));
   const validator = (storage: Storage, name: string, schema: SchemaView) =>
-    new StorageGuard(schema.getFields(), name, {}, heldBy(schema, name, world.hosting), releasing(world.hosting)).guard(storage);
+    new StorageGuard(schema.getFields(), name).guard(new RelationGuard(name, heldBy(schema, name, world.hosting), releasing(world.hosting)).guard(storage));
 
   const source = sources.size === 1 ? [...sources][0]! : undefined;
   if (world.transacted && source !== undefined && (world.transacts?.(source) ?? true)) {

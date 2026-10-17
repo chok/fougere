@@ -37,6 +37,7 @@ import { declares } from '../Source.js';
 import { heldBy, refuseUnwritableNull, releasing } from '../module/relation/relations.js';
 import type { Hosting } from '../module/relation/Hosting.js';
 import type { RelationCheck } from '../module/relation/RelationCheck.js';
+import { RelationGuard } from '../module/relation/RelationGuard.js';
 import { exposePresenters, registerPresenters } from '../module/presenter/install.js';
 import { presented } from '../module/presenter/presented.js';
 import { registerCollectors } from '../module/collector/install.js';
@@ -234,9 +235,8 @@ function registerStorages(
     refused.push(...refuseUnwritableNull(entity.entityClass, entity.name, entity.filePath));
     const relations = heldBy(entity.entityClass, entity.name, assembly.hosting);
     assembly.relations.push(...relations);
-    const guarded = new StorageGuard(
-      entity.entityClass.getFields(), entity.name, {}, relations, release,
-    ).guard(linked);
+    const guarded = new StorageGuard(entity.entityClass.getFields(), entity.name)
+      .guard(new RelationGuard(entity.name, relations, release).guard(linked));
     scope.registerValue(key, guarded);
 
     // The default repository IS the guarded port — it already answers every gesture a
@@ -368,7 +368,7 @@ function registerSurfaceStorage(
   const guarded = new StorageGuard(entity.entityClass.getFields(), entity.name, {
     ...(narrowed ? { view: (outputSchema as { getFields(): Fields }).getFields() } : {}),
     outOfView: (message) => frondLog.warn(message),
-  }, heldBy(entity.entityClass, entity.name, assembly.hosting), releasing(assembly.hosting)).guard(scoped);
+  }).guard(new RelationGuard(entity.name, heldBy(entity.entityClass, entity.name, assembly.hosting), releasing(assembly.hosting)).guard(scoped));
 
   surfaceScope.registerValue(storageKeyOf(entity.name), guarded);
   surfaceScope.registerValue(repositoryKeyOf(entity.name), guarded);

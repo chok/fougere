@@ -10,11 +10,12 @@ import { nestingOf, parentsFirst } from './nesting.js';
 import type { Fronds } from '../descriptor/Fronds.js';
 import type { FrondDescriptor } from '../descriptor/FrondDescriptor.js';
 import { installFrond, type Assembly } from './install.js';
-import { dependentsOf, releasing, unfinishable, unheldAmong, unpaired } from '../module/relation/relations.js';
-import { release as releaseRow } from '../module/relation/Release.js';
+import { releasing, unpaired } from '../module/relation/relations.js';
+import { hostingFor } from '../module/relation/hostingFor.js';
+import { serveRelationReadings } from '../module/relation/readings.js';
+import { warnAboutRelations } from '../module/relation/warnAboutRelations.js';
 import type { Hosting } from '../module/relation/Hosting.js';
-import { peerOver } from '../module/relation/peerOver.js';
-import { JOURNAL, type Journal } from '../module/relation/Journal.js';
+import type { Journal } from '../module/relation/Journal.js';
 import type { RelationCheck } from '../module/relation/RelationCheck.js';
 import { refusalOf, type Diagnostic } from '../diagnostic.js';
 import type { App } from './App.js';
@@ -30,7 +31,6 @@ import { emitKeyOf, type Emit } from '../wire/Emit.js';
 
 import { Config } from '../builtin/config.js';
 import { createRemoteRouter, createRemoteFacade, type RemoteRouter } from './remote.js';
-import type { Peer } from '../module/relation/Peer.js';
 
 import { Emissions } from '../module/fact/Emissions.js';
 
@@ -41,7 +41,6 @@ import { type EffectiveOperationsMap } from '../EffectiveOperationsMap.js';
 
 import { InFlight } from '../dispatch/InFlight.js';
 import { RPC_ADDRESS } from '../wire/RpcAnswer.js';
-import { Invocation } from '../wire/Invocation.js';
 import { addressOf, facadeKeyOf, isFacadeKey } from '../wire/Facade.js';
 import { identityCardOf } from './card.js';
 import { AppLifecycle, checking, closeAll } from './AppLifecycle.js';
@@ -182,65 +181,7 @@ function serveCoreRpc(
   storageFor: (entity: string) => Storage | undefined,
 ): void {
   app.serveRpc('discover', (_invocation, surface) => identityCardOf(app, surface));
-
-  app.serveRpc('holds', async (invocation) => {
-    const named = String(invocation.params.entity);
-    const keys = (invocation.params.keys ?? []) as readonly unknown[];
-    const rows = storageFor(named);
-    if (!rows) return { missing: [] };
-    const found = await rows.findByKeys(keys.map(String));
-
-    return { missing: keys.filter((key) => !found.has(String(key))) };
-  });
-
-  app.serveRpc('dependents', (invocation) => dependentsOf(String(invocation.params.entity), hosting));
-
-  app.serveRpc('release', async (invocation) => {
-    await releaseRow(String(invocation.params.entity), invocation.params.key, releasing(hosting),
-      (invocation.params.visited ?? []) as readonly string[]);
-
-    return { released: true };
-  });
-}
-
-/**
- * What no single frond can see about a `ref()`, so it is said once every frond is installed.
- *
- * A target belongs to another frond, and a journal arrives with an extension, which rises last.
- */
-function warnAboutRelations(relations: RelationCheck[], hosting: Hosting, log: Logger): void {
-  const unfinished = unfinishable(hosting);
-  if (unfinished.length > 0) {
-    log.warn(
-      `[relations] ${unfinished.join(', ')} — declared, and this process keeps nothing on `
-      + 'restart: a release interrupted here is not resumed. Install @fougere/workflow, or '
-      + 'expect to finish one by hand.',
-    );
-  }
-
-  const unheld = unheldAmong(relations, hosting);
-  if (unheld.length > 0) {
-    log.warn(
-      `[relations] ${unheld.join(', ')} — declared, and nothing in this process holds them: `
-      + 'no foreign key, and the target answers elsewhere. A row may name one that is gone.',
-    );
-  }
-}
-
-/** The process that serves an entity, asked the three questions a release travels on. */
-function peerBehind(entity: string, router: RemoteRouter): Peer {
-  const ask = async (op: string, params: Record<string, unknown>): Promise<unknown> =>
-    (await router.route(entity)).transport(
-      { address: RPC_ADDRESS, op },
-      { ...Invocation.empty, params: params as never },
-    );
-
-  return {
-    dependents: async (named) => await ask('dependents', { entity: named }) as never,
-    missing: async (named, keys) =>
-      (await ask('holds', { entity: named, keys }) as { missing: readonly unknown[] }).missing,
-    release: async (named, key) => { await ask('release', { entity: named, key }); },
-  };
+  serveRelationReadings(app.serveRpc, hosting, storageFor);
 }
 
 function ownedBy<T>(fronds: Fronds, container: Container, entity: string, key: string): T | undefined {
@@ -348,59 +289,6 @@ function whatTheAppKnows(
 }
 
 /** What every check of the boot asks about where a row lives, and who else might hold one. */
-interface Hosted {
-  fronds: Fronds;
-  container: Container;
-  options: CreateAppOptions;
-  remoteRouter: RemoteRouter | undefined;
-  entityByName: Map<string, SchemaView>;
-  frondOf: Map<string, string>;
-  storageOf: (entity: string) => Storage | undefined;
-}
-
-function hostingFor(
-  { fronds, container, options, remoteRouter, entityByName, frondOf, storageOf }: Hosted,
-): { hosting: Hosting; journalOf: () => Journal | undefined } {
-  // What carries a release writes none: an instrumentation frond's own rows are kept while a
-  // release happens, and journalling them would begin one inside the one being written down.
-  const carriesRelease = new Set(
-    fronds.filter((one) => one.brought).flatMap((one) => one.entities.map((entity) => entity.name)),
-  );
-
-  /**
-   * The journal a package registered, found where its own frond put it — a provider lands in its
-   * frond's scope, and the app container sees none of them. Resolved per call and never at boot:
-   * the package that registers it rises in the ascent, long after this answer is built.
-   */
-  const journalOf = (): Journal | undefined => {
-    for (const frond of fronds) {
-      if (!frond.brought) continue;
-      const scope = container.resolve<Container>(`frond:${frond.name}`);
-      if (scope.has(JOURNAL)) return scope.resolve<Journal>(JOURNAL);
-    }
-
-    return undefined;
-  };
-
-  const hosting: Hosting = {
-    hostedHere: (entity) => !(options.remotes && (frondOf.get(entity) ?? '') in options.remotes),
-    sourceOf: (name) => options.sourceOf?.(name) ?? 'default',
-    enforces: (source, constraint) => options.enforces?.(source, constraint) ?? false,
-    storageOf,
-    entities: () => entityByName,
-    journal: (entity) => (carriesRelease.has(entity) ? undefined : journalOf()),
-    // Built from `remotes:` itself and not from the router: the router indexes by ENTITY, read
-    // off a card, while the question here is asked of a PROCESS about rows it may be alone in
-    // knowing about. Nothing is cached — a peer that was down at boot answers the next call.
-    peers: () => (options.remoteTransport
-      ? Object.values(options.remotes ?? {}).map((url) => peerOver(options.remoteTransport!(url)))
-      : []),
-    peerOf: (entity) => (remoteRouter ? peerBehind(entity, remoteRouter) : undefined),
-  };
-
-  return { hosting, journalOf };
-}
-
 /** What the readings below are built from — every one of them answers about a SERVED entity. */
 interface Serving {
   container: Container;

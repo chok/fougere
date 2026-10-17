@@ -88,8 +88,9 @@ packages/
                          thirteen gestures from four (store.ts), and what a criterion compares
     src/module/          a SUBJECT the kernel wires but does not know — `fact/` (the emission, and
                          the `fact`/`pipe` binding sources), `collector/` (its binding source and its
-                         installation), `presenter/` (an answer step), `relation/` (refs, onDelete and
-                         the four readings across processes), `frame/` (Together), `topology/` (the
+                         installation), `presenter/` (an answer step), `relation/` (refs and onDelete
+                         under the guard, `Hosting`, the three readings it serves across processes),
+                         `frame/` (Together), `topology/` (the
                          declared half). The kernel is cut by PHASE, a module by SUBJECT;
                          `arch:cycles` reads each `module/<x>` as a family, so two modules reading
                          each other fail CI. A module plugs into two primitives: a BINDING SOURCE
@@ -833,7 +834,8 @@ rather than refusing them. Pinned by `core/tests/enforced.test.ts`.
 `heldBy`. `relation` is the second member of `Constraint`, and the PAIR decides, never the
 engine: SQL keeps a foreign key over rows it can see, so a key holds only when the target is
 hosted here, in the SAME source, and that source keeps relations. Anything else becomes a
-`RelationCheck` that `StorageGuard` reads before a write — one read per relation and per page —
+`RelationCheck` that `RelationGuard` (`module/relation/`) reads before a write, under the `StorageGuard`
+that parsed it — one read per relation and per page —
 and a target nothing in this process answers is named once, after every frond installed. Not a
 transaction: the read and the write sit in two engines by construction, so a target deleted
 between them passes. `Hosting` reaches the target through its OWNING frond, because a scope
@@ -861,7 +863,7 @@ is nothing to undo, only something to finish. Pinned by `core/tests/on-delete.te
 `defaults/tests/on-delete.test.ts`, the bench that runs one declaration at six placements.
 
 **Core serves four readings in EVERY process** — `discover`, `holds`, `dependents`, `release`
-(`boot/bootstrap.ts`). All four read the STORAGE and never a facade: a facade answers what its
+(`discover` in `boot/bootstrap.ts`, the other three in `module/relation/readings.ts`). All four read the STORAGE and never a facade: a facade answers what its
 handler chose to show, so `PostHandler.list` hiding drafts would hide exactly the row the
 question exists to find. `holds` is the write's question asked across, `release` the delete's;
 `peers()` is built from `fronds:` itself and not from the router, because the router indexes by
