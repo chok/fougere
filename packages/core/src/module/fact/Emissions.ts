@@ -1,16 +1,16 @@
 import { applyCreate, dotted, lowerFirst, type SchemaView } from '@fougere/schema';
-import { addressOf, facadeKeyOf } from '../wire/Facade.js';
+import { addressOf, facadeKeyOf } from '../../wire/Facade.js';
 import type { Container } from '@fougere/container';
-import { validationErrorsOf } from '../wire/FougereError.js';
-import { awaitKeyOf, emitKeyOf, factsAnnouncedBy, factsAwaitedBy } from '../wire/Emit.js';
+import { validationErrorsOf } from '../../wire/FougereError.js';
+import { awaitKeyOf, emitKeyOf, factsAnnouncedBy, factsAwaitedBy } from '../../wire/Emit.js';
 import { ambient } from '#ambient';
-import type { Diagnostic } from '../diagnostic.js';
-import { Invocation } from '../wire/Invocation.js';
-import type { Logger } from '../builtin/Logger.js';
-import type { Fronds } from '../descriptor/Fronds.js';
-import type { OperationsMap } from '../wire/OperationsMap.js';
-import type { RemoteRouter } from './remote.js';
-import { LOG_LINE } from '../builtin/LogLine.js';
+import type { Diagnostic } from '../../diagnostic.js';
+import { Invocation } from '../../wire/Invocation.js';
+import type { Logger } from '../../builtin/Logger.js';
+import type { Fronds } from '../../descriptor/Fronds.js';
+import type { OperationsMap } from '../../wire/OperationsMap.js';
+import type { Elsewhere } from './Elsewhere.js';
+import { LOG_LINE } from '../../builtin/LogLine.js';
 
 /** A facade and the op on it that accepts a fact. */
 interface Listener {
@@ -52,7 +52,7 @@ export class Emissions {
     private readonly log: Logger,
     private readonly refused: Diagnostic[],
     private readonly carry?: Carrier,
-    private readonly elsewhere?: Pick<RemoteRouter, 'listenersOf'>,
+    private readonly elsewhere?: Elsewhere,
   ) {
     for (const frond of fronds) {
       this.fileOf.set(frond.name, frond.source.path);

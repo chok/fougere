@@ -2,24 +2,17 @@ import type { Fields } from '@fougere/schema';
 import type { Container } from '@fougere/container';
 import { runMiddlewares } from '../wire/AppMiddleware.js';
 import { type OperationContext } from '../wire/OperationContext.js';
-import type { CollectorResolver } from './CollectorResolver.js';
-import { collectorKeyOf } from '../prefab/collector.js';
 import { inheritsCrud, subjectOf } from '../prefab/CrudConstructor.js';
-import { presenterKeyOf } from '../prefab/presenter.js';
 import { repositoryKeyOf } from '../prefab/RepositoryConstructor.js';
 import type { OperationContract } from '../wire/OperationContract.js';
 import type { OperationsMap } from '../wire/OperationsMap.js';
 import type { EffectiveOperation } from '../EffectiveOperation.js';
 import type { EffectiveOperationsMap } from '../EffectiveOperationsMap.js';
-import type { BindingPlan } from '../wire/binding.js';
 import { Invocation } from '../wire/Invocation.js';
 import { type InvocationContext } from '../wire/InvocationContext.js';
 import type { HandlerEntry } from '../descriptor/HandlerEntry.js';
-import type { PresenterEntry } from '../descriptor/PresenterEntry.js';
 import { ArgumentResolver } from './ArgumentResolver.js';
 import { OutputView } from './OutputView.js';
-import { PresenterExecutor } from './PresenterExecutor.js';
-import { presenterArguments, presenterPlans } from './presenterArguments.js';
 import { validateInput } from './validateInput.js';
 import { FougereError } from '../wire/FougereError.js';
 import type { Facade } from './Facade.js';
@@ -36,13 +29,6 @@ export class HandlerFacade {
   private readonly implementationKeys = new Map<string, string>();
   private readonly implementationInstances = new Map<string, any>();
   private readonly arguments: ArgumentResolver;
-  /** A computed field's parameters and the collectors in scope are both boot-time facts. */
-  private readonly presenterPlans: Map<string, BindingPlan>;
-
-  private collectorResolver = (typeName: string): CollectorResolver | undefined => {
-    try { return this.scope.resolve(collectorKeyOf(typeName)) as CollectorResolver; }
-    catch { return undefined; }
-  };
 
   constructor(
     private readonly handler: HandlerEntry,
@@ -50,11 +36,7 @@ export class HandlerFacade {
     private readonly facade: Facade,
   ) {
     this.refuseCrudWithoutRepository(handler);
-    this.arguments = new ArgumentResolver((typeName) => this.collectorResolver(typeName), facade.entities);
-
-    this.presenterPlans = facade.presenter
-      ? presenterPlans(facade.presenter, facade.collectors)
-      : new Map();
+    this.arguments = new ArgumentResolver(scope, facade.entities);
 
     scope.register(this.handlerKey, handler.ctor, { deps: this.depsOf(handler) });
 
@@ -132,10 +114,7 @@ export class HandlerFacade {
     const answered = await instance[method](...args);
 
     const view = this.viewOf(op);
-    const { presenter } = this.facade;
-    const computed = written || view.closed || !presenter
-      ? answered
-      : await this.present(op, presenter, answered, validated);
+    const computed = written || view.closed || this.facade.steps.length === 0 ? answered : await this.stepped(answered, validated);
 
     return view.project(computed);
   }
@@ -148,25 +127,12 @@ export class HandlerFacade {
     return this.arguments.resolve(contract.binding, invocation);
   }
 
-  /**
-   * The computed fields a presenter adds, over the rows the handler answered and BEFORE the
-   * view projects them. A presenter runs on the server, so what it reads is the row the
-   * storage holds: a `writeOnly` field is gone by the time the client sees it, and deriving
-   * from one is the whole reason to declare it.
-   */
-  private present(
-    op: string,
-    presenter: PresenterEntry,
-    output: unknown,
-    invocation: InvocationContext,
-  ): Promise<unknown> {
-    const executor = new PresenterExecutor(
-      this.facade.presenterScope.resolve(presenterKeyOf(this.handler.address)),
-      presenter.fields,
-    );
+  /** The facade's steps over the answer, in order, each handed what the one before it answered. */
+  private async stepped(answered: unknown, invocation: InvocationContext): Promise<unknown> {
+    let value = answered;
+    for (const step of this.facade.steps) value = await step(value, invocation, this.arguments);
 
-    return presenterArguments(this.presenterPlans, invocation, this.arguments)
-      .then((args) => executor.present(output, args));
+    return value;
   }
 
   private get handlerKey(): string {

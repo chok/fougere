@@ -1,10 +1,12 @@
 import { lowerFirst, type SchemaView } from '@fougere/schema';
 import { statementDrift, unansweredOperations } from './boot/statement-drift.js';
-import { reachedBy, servedBy } from './boot/declared.js';
-import { computeBindingPlan, type BindingPlan } from './wire/binding.js';
+import { reachedBy, servedBy } from './module/topology/declared.js';
+import type { BindingPlan } from './wire/binding.js';
+import { computeBindingPlan } from './bindingPlan.js';
 import { targetOf } from './prefab/prefab.js';
 import { EFFECTIVE_OPERATION_SEMANTICS } from './EffectiveOperationSemantics.js';
 import type { CollectorEntry } from './descriptor/CollectorEntry.js';
+import { collectorsOf, groupedCollectors, refuseAmbiguousCollectors } from './module/collector/operation.js';
 import { isScanned, type FrondDescriptor } from './descriptor/FrondDescriptor.js';
 import type { HandlerEntry } from './descriptor/HandlerEntry.js';
 import { OperationOverrides, type OperationOverrideEntry } from './descriptor/OperationOverrides.js';
@@ -23,7 +25,6 @@ import type { EffectiveOperationOptions } from './EffectiveOperationOptions.js';
 import type { Placement } from './wire/Placement.js';
 import type { Binding } from './Binding.js';
 import { opsOf } from './prefab/opsOf.js';
-
 
 /** A contract whose parameters are all bound. */
 type BoundContract = OperationContract & { binding: BindingPlan };
@@ -47,7 +48,6 @@ function reachOf(
 
   return { fronds, hops: fronds.filter((one) => one.placement === 'remote').length };
 }
-
 
 /**
  * One resolved program. The handler map preserves object identity from the scan, so the
@@ -128,26 +128,6 @@ export function resolveEffectiveOperations(
     resolution,
     byHandler,
   );
-}
-
-function refuseAmbiguousCollectors(
-  frond: FrondDescriptor,
-  collectorsByType: Map<string, CollectorEntry[]>,
-  diagnostics: Diagnostic[],
-): void {
-  for (const [typeName, collectors] of collectorsByType) {
-    if (collectors.length < 2) continue;
-    diagnostics.push({
-      severity: 'blocking',
-      code: 'collector-ambiguous',
-      filePath: collectors[0]!.filePath,
-      frond: frond.name,
-      subject: typeName,
-      message: `Frond '${frond.name}' declares ${collectors.length} collectors for '${typeName}' — `
-        + `${collectors.map((collector) => collector.ctor.name).sort().join(', ')}. `
-        + 'Exactly one collector must own a parameter type.',
-    });
-  }
 }
 
 /** One operation, or nothing when a refusal was written for it. */
@@ -308,25 +288,6 @@ function parametersOf(contract: BoundContract): EffectiveParameter[] {
   });
 }
 
-function collectorsOf(
-  parameters: readonly EffectiveParameter[],
-  collectorsByType: Map<string, CollectorEntry[]>,
-  frond: FrondDescriptor,
-): EffectiveOperation['collectors'] {
-  return parameters.flatMap((parameter) => {
-    if (parameter.binding.source.kind !== 'collector') return [];
-    const collector = collectorsByType.get(parameter.binding.source.typeName)?.[0];
-
-    return collector ? [{
-      parameter: parameter.name,
-      typeName: collector.typeName,
-      className: collector.ctor.name,
-      frond: frond.name,
-      filePath: collector.filePath,
-    }] : [];
-  });
-}
-
 /** A dependency on a frond that actually runs elsewhere is a refusal, not the warning a future split deserves. */
 function placementRefusals(fronds: readonly FrondDescriptor[], options: EffectiveOperationOptions): Diagnostic[] {
   return verify({ fronds }).map((misplaced) => {
@@ -337,17 +298,6 @@ function placementRefusals(fronds: readonly FrondDescriptor[], options: Effectiv
       ? { ...misplaced, severity: 'blocking' as const }
       : misplaced;
   });
-}
-
-function groupedCollectors(collectors: readonly CollectorEntry[]): Map<string, CollectorEntry[]> {
-  const grouped = new Map<string, CollectorEntry[]>();
-  for (const collector of collectors) {
-    const sameName = grouped.get(collector.typeName) ?? [];
-    sameName.push(collector);
-    grouped.set(collector.typeName, sameName);
-  }
-
-  return grouped;
 }
 
 function normalizeBinding(

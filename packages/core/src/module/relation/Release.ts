@@ -2,8 +2,8 @@
 import { FieldSet, type SchemaView } from '@fougere/schema';
 import type { Dependent } from './Dependent.js';
 import type { Journal } from './Journal.js';
-import { ErrorCode } from '../wire/ErrorCode.js';
-import { FougereError } from '../wire/FougereError.js';
+import { ErrorCode } from '../../wire/ErrorCode.js';
+import { FougereError } from '../../wire/FougereError.js';
 
 /** The gestures a release reaches a dependent's rows through. */
 export interface Rows {

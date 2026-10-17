@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { entity, number, primary, text } from '@fougere/schema';
 import type { BindingPlan } from '../src/wire/binding.js';
 import { Invocation } from '../src/wire/Invocation.js';
+import { createContainer } from '@fougere/container';
 import { ArgumentResolver } from '../src/dispatch/ArgumentResolver.js';
+import { collectorKeyOf } from '../src/prefab/collector.js';
 
 describe('ArgumentResolver', () => {
   it('resolves the plan in declaration order', async () => {
@@ -19,13 +21,14 @@ describe('ArgumentResolver', () => {
       .resolves.toEqual(['p1', { name: 'Fern' }]);
   });
 
-  it('uses the collector lookup owned by the resolver', async () => {
+  it('finds the collector in the scope it resolves in', async () => {
     const plan: BindingPlan = [
       { name: 'actor', source: { kind: 'collector', typeName: 'user' }, optional: false },
     ];
     const actor = { id: 'u1' };
-    const resolver = new ArgumentResolver((typeName) =>
-      typeName === 'user' ? { collect: async () => actor } : undefined);
+    const scope = createContainer();
+    scope.registerValue(collectorKeyOf('user'), { collect: async () => actor });
+    const resolver = new ArgumentResolver(scope);
 
     await expect(resolver.resolve(plan, Invocation.from()))
       .resolves.toEqual([actor]);

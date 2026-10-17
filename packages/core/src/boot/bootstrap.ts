@@ -10,12 +10,12 @@ import { nestingOf, parentsFirst } from './nesting.js';
 import type { Fronds } from '../descriptor/Fronds.js';
 import type { FrondDescriptor } from '../descriptor/FrondDescriptor.js';
 import { installFrond, type Assembly } from './install.js';
-import { dependentsOf, releasing, unfinishable, unheldAmong, unpaired } from './relations.js';
-import { release as releaseRow } from '../dispatch/Release.js';
-import type { Hosting } from './Hosting.js';
-import { peerOver } from './peerOver.js';
-import { JOURNAL, type Journal } from '../dispatch/Journal.js';
-import type { RelationCheck } from '../dispatch/RelationCheck.js';
+import { dependentsOf, releasing, unfinishable, unheldAmong, unpaired } from '../module/relation/relations.js';
+import { release as releaseRow } from '../module/relation/Release.js';
+import type { Hosting } from '../module/relation/Hosting.js';
+import { peerOver } from '../module/relation/peerOver.js';
+import { JOURNAL, type Journal } from '../module/relation/Journal.js';
+import type { RelationCheck } from '../module/relation/RelationCheck.js';
 import { refusalOf, type Diagnostic } from '../diagnostic.js';
 import type { App } from './App.js';
 import type { Extension } from './Extension.js';
@@ -30,9 +30,9 @@ import { emitKeyOf, type Emit } from '../wire/Emit.js';
 
 import { Config } from '../builtin/config.js';
 import { createRemoteRouter, createRemoteFacade, type RemoteRouter } from './remote.js';
-import type { Peer } from './Peer.js';
+import type { Peer } from '../module/relation/Peer.js';
 
-import { Emissions } from './Emissions.js';
+import { Emissions } from '../module/fact/Emissions.js';
 
 import type { OperationContract } from '../wire/OperationContract.js';
 import type { OperationsMap } from '../wire/OperationsMap.js';

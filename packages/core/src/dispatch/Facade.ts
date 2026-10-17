@@ -1,11 +1,10 @@
-import type { Container } from '@fougere/container';
 import { type AppMiddleware } from '../wire/AppMiddleware.js';
 import type { EffectiveOperationsMap } from '../EffectiveOperationsMap.js';
 import type { HandlerEntry } from '../descriptor/HandlerEntry.js';
-import type { PresenterEntry } from '../descriptor/PresenterEntry.js';
 import type { StateShape } from '../wire/StateShape.js';
 import type { OwnLogger } from '../builtin/OwnLoggers.js';
 import type { EntityLookup } from './EntityLookup.js';
+import type { AnswerStep } from './AnswerStep.js';
 
 /** What boot resolved around one handler, beyond the handler and the scope it resolves in. */
 export interface Facade {
@@ -19,12 +18,8 @@ export interface Facade {
   operations: EffectiveOperationsMap;
   /** Where a parameter typed `Post['title']` finds the rules of `title`. */
   entities: EntityLookup;
-  /** Entity names this frond has a collector for. */
-  collectors: Set<string>;
-  /** The presenter over this handler's entity, when the frond declares one. */
-  presenter: PresenterEntry | undefined;
-  /** Presenters live in the frond's own scope, whatever sub-scope this facade resolves in. */
-  presenterScope: Container;
+  /** What runs over an answer before the view projects it — empty when nothing does. */
+  steps: readonly AnswerStep[];
   /** The middlewares that apply to this address, read at call time and never at boot. */
   middlewares: () => AppMiddleware[];
   /** What a call's `state` may hold in this process. */

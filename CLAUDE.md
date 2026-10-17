@@ -72,7 +72,7 @@ packages/
                                                 needs a filesystem and a TypeScript program
   core/                @fougere/core          the phases below, and what sits outside them
     src/descriptor/      what a frond is made of, whoever produced it: FrondDescriptor, the entries, Fronds
-    src/boot/            what createApp does with it: bootstrap, install, Emissions, AppLifecycle, seed,
+    src/boot/            what createApp does with it: bootstrap, install, AppLifecycle, seed,
                          remote, and what is BUILT from an app: its identity card, its runners
     src/dispatch/        what happens per call: HandlerFacade, Dispatcher, the route registry, the validators and projectors, argument resolution, InFlight
     src/wire/            what travels, and the values a call is made of: Call, Invocation, RouteAddress, Emit,
@@ -86,6 +86,21 @@ packages/
                          read by the scan. The main entry serves what an app RUNS
     src/storage/         where rows live from core's side: the port, the frame that derives its
                          thirteen gestures from four (store.ts), and what a criterion compares
+    src/module/          a SUBJECT the kernel wires but does not know — `fact/` (the emission, and
+                         the `fact`/`pipe` binding sources), `collector/` (its binding source and its
+                         installation), `presenter/` (an answer step), `relation/` (refs, onDelete and
+                         the four readings across processes), `frame/` (Together), `topology/` (the
+                         declared half). The kernel is cut by PHASE, a module by SUBJECT;
+                         `arch:cycles` reads each `module/<x>` as a family, so two modules reading
+                         each other fail CI. A module plugs into two primitives: a BINDING SOURCE
+                         (`BindingSources`, `wire/BindingSourceType.ts` — claim a parameter, resolve
+                         it, judge a value code wrote), asked before the request's own parts, and an
+                         ANSWER STEP (`dispatch/AnswerStep.ts`, run over an answer before the view
+                         projects it). What a subject puts ON THE WIRE stays in `wire/`, `storage/`
+                         and `prefab/` (`Emit`, `Fact`, `Pipe`, `Together`, the `kind`s of a binding,
+                         `Presenter()`, `Collector()`): the scan and the card read it, and moving it
+                         would tie `descriptor/` to a module. The operation model judges that
+                         vocabulary and stays in the kernel
     src/*.ts             what belongs to no phase: the two published entry points, frond(),
                          the effective operation model, the checkers
   http/                @fougere/http          the HttpRouter port + its express/fastify/hono adapters
@@ -316,7 +331,7 @@ invocation is `crossed`, which only the transport receiver writes and a caller m
 that is where it entered. A receiver declares nothing: the envelope proves which process wrote the
 state, and judging it again made every receiver know declarations that are not its own — the blog
 process of `demos/nuxt-blog` has no auth and refused `state.user`. What a handler READS is read by
-the type it asks for: `collectedAs` (`prefab/collector.ts`) passes what a `Collector(User)`
+the type it asks for: `collectedAs` (`module/collector/collectedAs.ts`) passes what a `Collector(User)`
 answered through `json(User)`, judged and rebuilt. It used to be a `Record<string, unknown>` that
 crossed as raw JSON, so `state.user.since` was a `Date` in process and a string split — measured
 by the site-only audit, 2026-09-23. Core holds no user: `betterAuth()` declares `user` and
@@ -387,7 +402,7 @@ refuse in opposite ways: `up` stops at the first refusal, `down` releases every 
 sends the refusals together in an `AggregateError`. An extension belongs to the PROCESS, not
 to a frond. Pinned by `tests/lifecycle.test.ts`.
 
-**A topology has two halves, and neither may be read as the other** — `boot/declared.ts`,
+**A topology has two halves, and neither may be read as the other** — `module/topology/declared.ts`,
 `declaredTopologyOf`, the dual of `identityCardOf`: the card says what this app SERVES, this
 says where the rest is supposed to be. It reads `app.remotes` and `handler.deps` and calls
 nobody, so `TopologyReport.declared` sits beside `fronds` and `edges` — which stay COUNTED —
@@ -493,7 +508,7 @@ nothing would stop the consumer's build. A host that never generates falls back 
 **An op's REACH is the dual of its placement** — `EffectiveOperation.reach`, filled where
 `placement` already is. `placement` says where an op ANSWERS, `reach` where its work GOES: the
 fronds its handler crosses to, and how many of those are a process away. Both halves read the
-same index — `servedBy`/`reachedBy` (`boot/declared.ts`), shared with the declared topology so a
+same index — `servedBy`/`reachedBy` (`module/topology/declared.ts`), shared with the declared topology so a
 crossing is recognized once. Read from the HANDLER: a dependency is declared on the constructor,
 so every op of one handler reaches the same fronds, and saying otherwise would dress a structural
 fact as a precise effect. Three constants are written down today that are all a function of one
@@ -810,11 +825,11 @@ whose word already meant the storage engines on an entity.
 
 **`enforces?` is not a gesture but a promise** — the constraints a source refuses AT THE ROWS,
 which the judge at the door cannot: it refuses the duplicate it can SEE, and two writes arriving
-together see the same absence. `declares(schema, 'unique')` is its dual, read by `boot/frame.ts`
+together see the same absence. `declares(schema, 'unique')` is its dual, read by `module/frame/frame.ts`
 too. SQL states `sqlEnforces`; a Map states nothing, and the boot names the entities that costs
 rather than refusing them. Pinned by `core/tests/enforced.test.ts`.
 
-**A `ref()` is held by a key, read by the guard, or named at boot** — `boot/relations.ts`,
+**A `ref()` is held by a key, read by the guard, or named at boot** — `module/relation/relations.ts`,
 `heldBy`. `relation` is the second member of `Constraint`, and the PAIR decides, never the
 engine: SQL keeps a foreign key over rows it can see, so a key holds only when the target is
 hosted here, in the SAME source, and that source keeps relations. Anything else becomes a
@@ -830,11 +845,11 @@ a presenter handed the PAGE and a collector reading what the door filled — ove
 matrix, plus the two refusals no placement may soften (a collector where nothing consumes it,
 a frame whose member answers elsewhere).
 
-**A deletion is the dual of a write, and the ORDER is the guarantee** — `dispatch/Release.ts`,
+**A deletion is the dual of a write, and the ORDER is the guarantee** — `module/relation/Release.ts`,
 `release`. `ref(User, { onDelete })` states `restrict` (the default, since a key with nothing
 said already refuses), `cascade` or `set null`; `refuseUnwritableNull` refuses the third on a
 field admitting no null, read off the FIELD because `optional()` wraps `ref()` and only the
-final one knows. Who carries it out is `keyed` (`boot/relations.ts`), and one hop decides for
+final one knows. Who carries it out is `keyed` (`module/relation/relations.ts`), and one hop decides for
 the WHOLE tree: an engine's cascade never passes through the guard, so a keyed hop above an
 unkeyed one would take rows out with their own dependents left behind — one unkeyed hop
 anywhere below and the guard takes all of it, the engine's cascade then finding nothing to do.
@@ -997,7 +1012,7 @@ logged and the announcer goes on, a link that throws stops the announcement, and
 and `demos/pipe-split`. `Fact` and `Pipe` are both transparent (`= T`), so the scan keeps
 them by NAME (`handler-parser.ts`, `ANNOUNCED`) — the checker keeps nothing of an alias.
 
-**`Emit<T>` / `Fact<T>`** (`core/src/wire/emit.ts`, dispatched by `boot/Emissions.ts`) — every
+**`Emit<T>` / `Fact<T>`** (`core/src/wire/emit.ts`, dispatched by `module/fact/Emissions.ts`) — every
 other call names ONE recipient; an emission names a SUBJECT. Accepting a `Fact<T>` IS the
 subscription — no topic, no register call. It is a resolver, not a channel: nothing is
 durable, and a subscriber keeps its validator, its binding and its middlewares. That is

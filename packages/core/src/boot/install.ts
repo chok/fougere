@@ -9,7 +9,7 @@ import { ownLoggers, type OwnLogger } from '../builtin/OwnLoggers.js';
 import { basesOf } from '../descriptor/bases.js';
 import type { Dispatcher } from '../dispatch/Dispatcher.js';
 import type { RouteRegistry } from '../dispatch/RouteRegistry.js';
-import type { Emissions } from './Emissions.js';
+import type { Emissions } from '../module/fact/Emissions.js';
 import type { EffectiveOperationModel } from '../EffectiveOperationModel.js';
 import type { EffectiveOperationsMap } from '../EffectiveOperationsMap.js';
 import { nameOf } from '../descriptor/FrondDescriptor.js';
@@ -19,9 +19,9 @@ import type { HandlerEntry } from '../descriptor/HandlerEntry.js';
 import type { OperationsMap } from '../wire/OperationsMap.js';
 import type { AppMiddleware } from '../wire/AppMiddleware.js';
 import type { CreateAppOptions } from './CreateAppOptions.js';
-import { registerFrames } from './together.js';
+import { registerFrames } from '../module/frame/together.js';
 import { ambient } from '#ambient';
-import { lifetimeOf } from './lifetime.js';
+import { lifetimeOf } from '../lifetime.js';
 import type { Diagnostic } from '../diagnostic.js';
 import { HandlerFacade } from '../dispatch/HandlerFacade.js';
 import { targetOf } from '../prefab/prefab.js';
@@ -34,11 +34,12 @@ import { inheritsCrud, subjectOf } from '../prefab/CrudConstructor.js';
 import { repositoryKeyOf } from '../prefab/RepositoryConstructor.js';
 import { storageKeyOf } from '../storage/Storage.js';
 import { declares } from '../Source.js';
-import { heldBy, refuseUnwritableNull, releasing } from './relations.js';
-import type { Hosting } from './Hosting.js';
-import type { RelationCheck } from '../dispatch/RelationCheck.js';
-import { presenterKeyOf } from '../prefab/presenter.js';
-import { collectorKeyOf } from '../prefab/collector.js';
+import { heldBy, refuseUnwritableNull, releasing } from '../module/relation/relations.js';
+import type { Hosting } from '../module/relation/Hosting.js';
+import type { RelationCheck } from '../module/relation/RelationCheck.js';
+import { exposePresenters, registerPresenters } from '../module/presenter/install.js';
+import { presented } from '../module/presenter/presented.js';
+import { registerCollectors } from '../module/collector/install.js';
 import { RouteAddress } from '../wire/RouteAddress.js';
 import { servedSurfaces } from '../descriptor/surface.js';
 import { OperationRoute } from '../dispatch/OperationRoute.js';
@@ -373,31 +374,6 @@ function registerSurfaceStorage(
   surfaceScope.registerValue(repositoryKeyOf(entity.name), guarded);
 }
 
-/**
- * A presenter is about an entity — computed fields sit on a shape — so this walks entities.
- * Exposed lazily: the bridge resolves the instance on first access.
- */
-function exposePresenters(
-  frond: FrondDescriptor,
-  presenterMap: Map<string, unknown>,
-  container: Container,
-  scope: Container,
-): void {
-  for (const entity of frond.entities) {
-    if (!presenterMap.has(entity.name)) continue;
-
-    const presenterKey = presenterKeyOf(entity.name);
-    let instance: Record<string | symbol, unknown> | undefined;
-    container.registerValue(presenterKey, new Proxy({} as Record<string, unknown>, {
-      get(_target, prop) {
-        instance ??= scope.resolve<Record<string | symbol, unknown>>(presenterKey);
-
-        return instance[prop];
-      },
-    }));
-  }
-}
-
 /** What a facade is built out of, for one frond. */
 interface Building {
   frond: FrondDescriptor;
@@ -436,9 +412,7 @@ function buildFacadeInto(
     handlers: frond.handlers,
     operations: operationModel.forHandler(handler),
     entities: (name) => assembly.entityByName.get(lowerFirst(name)),
-    collectors: collectorTypeNames,
-    presenter: presenterMap.get(handler.address),
-    presenterScope: scope,
+    steps: presented(presenterMap.get(handler.address), scope, collectorTypeNames, handler.address),
     middlewares: () => getMiddlewares(handler.address),
     state: assembly.state,
     enterOperation: ambient.enterOperation,
@@ -518,28 +492,6 @@ function registerFramesOf(frond: FrondDescriptor, assembly: Assembly, scope: Con
     hosting,
     log: frondLog,
   }, refused);
-}
-
-function registerPresenters(frond: FrondDescriptor, scope: Container, ownLogger: OwnLogger, frondLog: Logger): Map<string, PresenterEntry> {
-  for (const presenter of frond.presenters) {
-    scope.register(presenterKeyOf(presenter.entityName), presenter.ctor, { deps: ownLogger(presenter.ctor.name, presenter.deps), ...lifetimeOf(presenter.ctor) });
-  }
-  if (frond.presenters.length > 0) {
-    frondLog.debug(`${frond.presenters.length} presenter(s): ${frond.presenters.map((p) => p.entityName).join(', ')}`);
-  }
-
-  return new Map(frond.presenters.map((presenter) => [presenter.entityName, presenter]));
-}
-
-function registerCollectors(frond: FrondDescriptor, scope: Container, ownLogger: OwnLogger, frondLog: Logger): Set<string> {
-  for (const collector of frond.collectors) {
-    scope.register(collectorKeyOf(collector.typeName), collector.ctor, { deps: ownLogger(collector.ctor.name, collector.deps), ...lifetimeOf(collector.ctor) });
-  }
-  if (frond.collectors.length > 0) {
-    frondLog.debug(`${frond.collectors.length} collector(s): ${frond.collectors.map((c) => c.typeName).join(', ')}`);
-  }
-
-  return new Set(frond.collectors.map((collector) => collector.typeName));
 }
 
 function sayFacade(building: Building, facadeKey: string, entity: EntityEntry | undefined): void {

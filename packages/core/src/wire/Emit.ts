@@ -1,5 +1,5 @@
 import { lowerFirst } from '@fougere/schema';
-import { computeBindingPlan } from './binding.js';
+import { computeBindingPlan } from '../bindingPlan.js';
 import type { OperationContract } from './OperationContract.js';
 import type { OperationsMap } from './OperationsMap.js';
 

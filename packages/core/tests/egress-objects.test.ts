@@ -1,7 +1,7 @@
 import { text, writeOnly } from '@fougere/schema';
 import { describe, expect, it } from 'vitest';
 import { OutputView } from '../src/dispatch/OutputView.js';
-import { PresenterExecutor } from '../src/dispatch/PresenterExecutor.js';
+import { PresenterExecutor } from '../src/module/presenter/PresenterExecutor.js';
 
 describe('OutputView.project', () => {
   const fields = { name: text(), secret: writeOnly(text()) };

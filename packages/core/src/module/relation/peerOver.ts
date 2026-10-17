@@ -1,7 +1,7 @@
 /** The two readings core serves everywhere, asked of one process over one transport. */
-import { Invocation } from '../wire/Invocation.js';
-import { RPC_ADDRESS } from '../wire/RpcAnswer.js';
-import type { Transport } from '../wire/Transport.js';
+import { Invocation } from '../../wire/Invocation.js';
+import { RPC_ADDRESS } from '../../wire/RpcAnswer.js';
+import type { Transport } from '../../wire/Transport.js';
 import type { Peer } from './Peer.js';
 
 export function peerOver(transport: Transport): Peer {

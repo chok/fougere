@@ -1,8 +1,8 @@
 import type { SchemaView } from '@fougere/schema';
-import type { Constraint } from '../Constraint.js';
+import type { Constraint } from '../../Constraint.js';
 import type { Peer } from './Peer.js';
-import type { Journal } from '../dispatch/Journal.js';
-import type { Storage } from '../storage/Storage.js';
+import type { Journal } from './Journal.js';
+import type { Storage } from '../../storage/Storage.js';
 
 /**
  * Where an entity's rows are hosted, and what the host keeps — what a `ref()` asks the boot.

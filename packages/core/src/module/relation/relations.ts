@@ -1,11 +1,11 @@
 /** Who holds a `ref()`: the source it lives in, this process, or nobody. */
 import { lowerFirst, Role, Shapes, type SchemaView } from '@fougere/schema';
-import type { Dependent } from '../dispatch/Dependent.js';
-import type { RelationCheck } from '../dispatch/RelationCheck.js';
+import type { Dependent } from './Dependent.js';
+import type { RelationCheck } from './RelationCheck.js';
 import type { Hosting } from './Hosting.js';
-import type { Diagnostic } from '../diagnostic.js';
-import type { Releasing } from '../dispatch/Release.js';
-import type { EntityEntry } from '../descriptor/EntityEntry.js';
+import type { Diagnostic } from '../../diagnostic.js';
+import type { Releasing } from './Release.js';
+import type { EntityEntry } from '../../descriptor/EntityEntry.js';
 
 /**
  * Does a foreign key hold this reference? Both sides in ONE source that keeps relations — two

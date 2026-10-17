@@ -4,18 +4,18 @@
  * Documented: [together](https://fougere.dev/docs/business/together).
  */
 import { ambient } from '#ambient';
-import { lifetimeOf } from './lifetime.js';
+import { lifetimeOf } from '../../lifetime.js';
 import { upperFirst, lowerFirst, type SchemaView } from '@fougere/schema';
 import type { Container } from '@fougere/container';
-import { entityOfStorageKey, membersOfTogetherKey, storageKeyOf, type Storage } from '../storage/Storage.js';
-import { type StorageFactory } from '../storage/StorageFactory.js';
-import type { Logger } from '../builtin/Logger.js';
-import type { ProviderEntry } from '../descriptor/ProviderEntry.js';
-import { StorageGuard } from '../dispatch/StorageGuard.js';
-import { heldBy, releasing } from './relations.js';
-import type { Hosting } from './Hosting.js';
+import { entityOfStorageKey, membersOfTogetherKey, storageKeyOf, type Storage } from '../../storage/Storage.js';
+import { type StorageFactory } from '../../storage/StorageFactory.js';
+import type { Logger } from '../../builtin/Logger.js';
+import type { ProviderEntry } from '../../descriptor/ProviderEntry.js';
+import { StorageGuard } from '../../dispatch/StorageGuard.js';
+import { heldBy, releasing } from '../relation/relations.js';
+import type { Hosting } from '../relation/Hosting.js';
 import { recording, unwind, type Undo } from './frame.js';
-import type { Diagnostic } from '../diagnostic.js';
+import type { Diagnostic } from '../../diagnostic.js';
 
 /** Everything the boot knows that a frame needs, gathered once for every frond. */
 export interface FrameWorld {

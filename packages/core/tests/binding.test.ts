@@ -1,7 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { computeBindingPlan, type BindingPlan } from '../src/wire/binding.js';
+import type { BindingPlan } from '../src/wire/binding.js';
+import { computeBindingPlan } from '../src/bindingPlan.js';
 import { ArgumentResolver } from '../src/dispatch/ArgumentResolver.js';
-import { type CollectorLookup } from '../src/dispatch/CollectorLookup.js';
+import { createContainer } from '@fougere/container';
+import { collectorKeyOf } from '../src/prefab/collector.js';
+import type { CollectorResolver } from '../src/module/collector/CollectorResolver.js';
 import { lowerFirst } from '@fougere/schema';
 import type { Param } from '../src/wire/Param.js';
 import type { InvocationContext } from '../src/wire/InvocationContext.js';
@@ -14,8 +17,16 @@ function ctx(overrides: Partial<InvocationContext> = {}): InvocationContext {
   return { params: {}, query: {}, input: undefined, state: {}, ...overrides };
 }
 
-const resolve = (plan: BindingPlan, invocation: InvocationContext, collectors?: CollectorLookup) =>
-  new ArgumentResolver(collectors).resolve(plan, invocation);
+/** A scope holding these collectors, the way a frond's scope holds its own. */
+function scopeWith(collectors: Record<string, CollectorResolver>) {
+  const scope = createContainer();
+  for (const [typeName, collector] of Object.entries(collectors)) scope.registerValue(collectorKeyOf(typeName), collector);
+
+  return scope;
+}
+
+const resolve = (plan: BindingPlan, invocation: InvocationContext, collectors: Record<string, CollectorResolver> = {}) =>
+  new ArgumentResolver(scopeWith(collectors)).resolve(plan, invocation);
 
 describe('computeBindingPlan', () => {
   const noCollectors = new Set<string>();
@@ -179,11 +190,7 @@ describe('ArgumentResolver', () => {
     const plan: BindingPlan = [
       { name: 'author', source: { kind: 'collector', typeName: 'user' }, optional: false },
     ];
-    const args = await resolve(plan, ctx({ state: { userId: 'u1' } }), (typeName) => {
-      if (typeName === 'user') return { collect: async () => fakeUser };
-
-      return undefined;
-    });
+    const args = await resolve(plan, ctx({ state: { userId: 'u1' } }), { user: { collect: async () => fakeUser } });
     expect(args).toEqual([fakeUser]);
   });
 
@@ -204,11 +211,7 @@ describe('ArgumentResolver', () => {
       { name: 'data', source: { kind: 'input' }, optional: false },
       { name: 'author', source: { kind: 'collector', typeName: 'user' }, optional: false },
     ];
-    const args = await resolve(plan, ctx({ input, state: { userId: 'u1' } }), (name) => {
-      if (name === 'user') return { collect: async () => user };
-
-      return undefined;
-    });
+    const args = await resolve(plan, ctx({ input, state: { userId: 'u1' } }), { user: { collect: async () => user } });
     expect(args).toEqual([input, user]);
   });
 });

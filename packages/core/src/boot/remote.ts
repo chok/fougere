@@ -17,6 +17,7 @@ import { FougereError } from '../wire/FougereError.js';
 import { Card, type SchemaView } from '@fougere/schema';
 import { dynamicOperations } from '../entry/facade.js';
 import { decoded } from '../dispatch/decoded.js';
+import type { RemoteListener } from '../module/fact/RemoteListener.js';
 
 interface Route {
   frond: string;
@@ -26,12 +27,6 @@ interface Route {
    * shape `entity({...})` produces, live validation included.
    */
   outputs: Map<string, SchemaView>;
-}
-
-/** An op another process serves that is handed a fact when it is announced. */
-export interface RemoteListener {
-  address: string;
-  op: string;
 }
 
 export interface RemoteRouter {

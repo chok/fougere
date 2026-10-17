@@ -45,10 +45,10 @@ export { Call } from './contract.js';
 export { RouteAddress } from './contract.js';
 export { DispatchLifecycle } from './dispatch/DispatchLifecycle.js';
 export { Dispatcher } from './dispatch/Dispatcher.js';
-export { release, type Releasing } from './dispatch/Release.js';
-export { releasing } from './boot/relations.js';
-export { type Dependent } from './dispatch/Dependent.js';
-export { JOURNAL, type Journal } from './dispatch/Journal.js';
+export { release, type Releasing } from './module/relation/Release.js';
+export { releasing } from './module/relation/relations.js';
+export { type Dependent } from './module/relation/Dependent.js';
+export { JOURNAL, type Journal } from './module/relation/Journal.js';
 // The class and not only its type: an observer RECEIVES these, so a package that folds
 // them — or a test of one — has to be able to make one through the facade.
 export { DispatchEvent } from './dispatch/DispatchEvent.js';
@@ -83,7 +83,7 @@ export type { FrondDeclaration } from './FrondDeclaration.js';
 export { identityCardOf } from './boot/card.js';
 // Its dual: what the app declares about its NEIGHBOURS. Read by `rpc.topology`, by
 // `@fougere/calls` and by `fougere graph`, which each held their own half of it.
-export { declaredTopologyOf } from './boot/declared.js';
+export { declaredTopologyOf } from './module/topology/declared.js';
 // Both halves of what a call can refuse, put together where they are READ — the framework's
 // follows from `kind` and `input`, so only the frond's travels.
 export { refusalsOf, type Refusable } from './wire/refusals.js';

@@ -1,7 +1,8 @@
-import { computeBindingPlan, type BindingPlan } from '../wire/binding.js';
-import type { InvocationContext } from '../wire/InvocationContext.js';
-import type { PresenterEntry } from '../descriptor/PresenterEntry.js';
-import type { ArgumentResolver } from './ArgumentResolver.js';
+import type { BindingPlan } from '../../wire/binding.js';
+import { computeBindingPlan } from '../../bindingPlan.js';
+import type { InvocationContext } from '../../wire/InvocationContext.js';
+import type { PresenterEntry } from '../../descriptor/PresenterEntry.js';
+import type { ArgumentResolver } from '../../dispatch/ArgumentResolver.js';
 import type { PresenterArgs } from './PresenterArgs.js';
 
 /**
@@ -10,7 +11,7 @@ import type { PresenterArgs } from './PresenterArgs.js';
  */
 export function presenterPlans(
   meta: PresenterEntry,
-  collectorTypes: Set<string>,
+  collectorTypes: ReadonlySet<string>,
 ): Map<string, BindingPlan> {
   const plans = new Map<string, BindingPlan>();
   for (const field of meta.fieldMeta) {

@@ -3,9 +3,9 @@ import type { InvocationContext } from '../wire/InvocationContext.js';
 import type { BindingPlan } from '../wire/binding.js';
 import { ErrorCode } from '../wire/ErrorCode.js';
 import { FougereError } from '../wire/FougereError.js';
-import type { CollectorLookup } from './CollectorLookup.js';
+import type { Container } from '@fougere/container';
 import type { EntityLookup } from './EntityLookup.js';
-import { collectedAs } from '../prefab/collector.js';
+import { BindingSources } from '../BindingSources.js';
 import { validateInput } from './validateInput.js';
 
 type ParamSource = Extract<BindingPlan[number]['source'], { kind: 'param' }>;
@@ -13,7 +13,7 @@ type ParamSource = Extract<BindingPlan[number]['source'], { kind: 'param' }>;
 /** Resolves an operation's declared binding plan against one invocation. */
 export class ArgumentResolver {
   constructor(
-    private readonly collectors?: CollectorLookup,
+    private readonly scope?: Container,
     private readonly entities?: EntityLookup,
   ) {}
 
@@ -23,30 +23,12 @@ export class ArgumentResolver {
 
     for (const binding of plan) {
       switch (binding.source.kind) {
-        case 'collector': {
-          const collector = this.collectors?.(binding.source.typeName);
-          args.push(collector ? collectedAs(collector, await collector.collect(ctx)) : undefined);
-          break;
-        }
         case 'context': {
           args.push(ctx);
           break;
         }
         case 'param': {
           args.push(this.judged(binding.source, ArgumentResolver.param(binding.source, binding.optional, ctx, body)));
-          break;
-        }
-        case 'fact':
-        case 'pipe': {
-          // A fact IS the payload — the whole of what happened, never a piece of it. The
-          // same holds before it is final: an op that finishes one is handed all of it,
-          // and answers all of it.
-          //
-          // Identical to `input` today, and deliberately not sharing its branch: the two
-          // agree by coincidence, not by rule, and the day `input` learns to look up a
-          // value by parameter name a subscriber would receive ONE FIELD of the fact it
-          // subscribed to. Splitting it costs nothing and removes that trap.
-          args.push(ctx.input);
           break;
         }
         case 'input': {
@@ -57,6 +39,8 @@ export class ArgumentResolver {
           args.push(ctx.query);
           break;
         }
+        default:
+          args.push(await BindingSources.resolve(binding.source.kind).resolve(binding.source, { ctx, scope: this.scope }));
       }
     }
 
@@ -65,7 +49,7 @@ export class ArgumentResolver {
 
   /**
    * The arguments code wrote, judged where a door would have judged them: the input against
-   * the op's view, a value a collector would have produced through that collector's entity —
+   * the op's view, a value a binding source fills judged by that source —
    * which also puts back a `Date` that crossed a wire as text. Nothing is collected: what the
    * caller left out stays out.
    */
@@ -78,20 +62,15 @@ export class ArgumentResolver {
         case 'context':
           return ctx;
         case 'input':
-        case 'fact':
-        case 'pipe':
           return validateInput(input, { ...ctx, input: value }).input;
-        case 'collector': {
-          const collector = this.collectors?.(binding.source.typeName);
-
-          return collector ? collectedAs(collector, value) : value;
-        }
         case 'param':
           if (value === undefined && !binding.optional) throw refused(binding.source.name, 'Required');
 
           return this.judged(binding.source, value);
         case 'query':
           return value;
+        default:
+          return BindingSources.resolve(binding.source.kind).given(binding.source, value, { ctx, scope: this.scope, input });
       }
     });
   }

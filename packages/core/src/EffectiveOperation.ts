@@ -3,7 +3,7 @@ import { type BindingPlan } from './wire/binding.js';
 import { type OperationContract } from './wire/OperationContract.js';
 import { type OperationKind } from './wire/OperationKind.js';
 import type { EffectiveParameter } from './EffectiveParameter.js';
-import type { EffectiveCollector } from './EffectiveCollector.js';
+import type { EffectiveCollector } from './module/collector/EffectiveCollector.js';
 import type { Placement } from './wire/Placement.js';
 import type { FougereOperationProtocols } from './FougereOperationProtocols.js';
 

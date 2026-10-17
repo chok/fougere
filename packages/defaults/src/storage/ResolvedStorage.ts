@@ -150,7 +150,7 @@ export function storageFrom(sources: Record<string, SourceEntities>): ResolvedSt
     // Asked of the source that will run the work, never of the default one: a frame whose
     // members all live in a transactional source gets its transaction even when the default
     // source has none. A source that hands out none leaves the answer `false`, and a frame reads it:
-    // `boot/together.ts` compensates instead, and says which of the two it built.
+    // `module/frame/together.ts` compensates instead, and says which of the two it built.
     transacts: (source) => engineOf(source)?.transacted !== undefined,
     // Absent means the judge is alone with it: a source that keeps no constraint of its own
     // says nothing, the way one that hands out no transaction says nothing.

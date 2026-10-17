@@ -1,8 +1,8 @@
-import { ErrorCode } from '../wire/ErrorCode.js';
-import { FougereError } from '../wire/FougereError.js';
-import { preserveArrayProperties } from './ArrayResult.js';
+import { ErrorCode } from '../../wire/ErrorCode.js';
+import { FougereError } from '../../wire/FougereError.js';
+import { preserveArrayProperties } from '../../dispatch/ArrayResult.js';
 import type { PresenterArgs } from './PresenterArgs.js';
-import { asPage } from '../wire/Page.js';
+import { asPage } from '../../wire/Page.js';
 
 /** Adds a presenter's computed fields after output projection. */
 export class PresenterExecutor {

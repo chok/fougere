@@ -13,14 +13,14 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
 - **A remote that never answered is a hole only `Emit<T, A>` refuses.** Asked at the first
   announcement and unreachable, its listeners are unknown: `Emit<T>` warns that the fact did not
   reach it and goes on, `Emit<T, A>` refuses the announcement (`listenersElsewhere`,
-  `boot/Emissions.ts`). Once reached, a remote that stops is a subscriber that fails — `ERR …
+  `module/fact/Emissions.ts`). Once reached, a remote that stops is a subscriber that fails — `ERR …
   unreachable`, the announcement goes on. Nothing is queued in either case: that is a carrier's.
 - **A `Pipe<T>` link in a frond the announcer did not read is not found.** The card states the
   `Fact<T>` an op listens to and never a link (`facadeOps`, `boot/card.ts`): a link is ordered by
   the fact's owner and stops the announcement when it throws, which a card read late cannot
   promise.
 - **The declared topology and an op's `reach` count the listeners read from CODE, never those
-  read off a card** — `declaredTopologyOf` (`boot/declared.ts`) and `reachOf`. A served frond
+  read off a card** — `declaredTopologyOf` (`module/topology/declared.ts`) and `reachOf`. A served frond
   reaching `mail` through its card draws no edge to it.
 - **A log line never crosses** — `listenersElsewhere` leaves `logLine` out, since delivering it
   is a call and a call writes lines. A destination in another process receives that process's
@@ -47,7 +47,7 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
   once every neighbour answered, a `visited` trail, and a guess between serial and parallel calls —
   all of which a trace already MEASURES. When the threshold proves wrong, it is set from traces.
 - **A fact received with a field its reader does not declare is refused** — `deliver`
-  (`boot/Emissions.ts`) hands it to the local dispatch, whose validator refuses unknown keys
+  (`module/fact/Emissions.ts`) hands it to the local dispatch, whose validator refuses unknown keys
   (`InputValidator.unknownIn`): strict like an input, where a fact read off a wire would rather
   be tolerant. Hence the order `wire/drift.ts` asks for — readers first, then the sender — even
   for a field ADDED. Measured 2026-10-08 on `demos/emit-multirepo/search`: `postPublished` with
@@ -167,7 +167,7 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
   `orderBy` is REFUSED at the door now rather than swallowed, so the join it would need is
   named as missing instead of answered unordered. The next step is the two-source demo.
 - **A computed field that reads still issues N queries — and it is now COUNTED.** The façade
-  hands the presenter the PAGE (`dispatch/PresenterExecutor.ts`), so one query per page is
+  hands the presenter the PAGE (`module/presenter/PresenterExecutor.ts`), so one query per page is
   possible, and `Promise.all(rows.map(...))` inside the field body is still not refused. What
   changed is that nothing has to notice by reading: `statementsOf` (`@fougere/testing`) is the
   number in a test, `FinishedSpan.statements` is the same number in production. Refusing it

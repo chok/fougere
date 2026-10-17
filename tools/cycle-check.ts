@@ -39,7 +39,13 @@ const STATED = new Map([
     'because the field vocabulary is what they address.'],
 ]);
 
-const familyOf = (rel: string): string => (rel.includes(path.sep) ? rel.split(path.sep)[0] : '(root)');
+/** A directory under `module/` is a family of its own: two modules reading each other is the cycle that matters. */
+const familyOf = (rel: string): string => {
+  const [first, second, ...rest] = rel.split(path.sep);
+  if (first === 'module' && second !== undefined && rest.length > 0) return `module/${second}`;
+
+  return second === undefined ? '(root)' : first!;
+};
 
 function tsFiles(dir: string, out: string[] = []): string[] {
   for (const entry of readdirSync(dir)) {

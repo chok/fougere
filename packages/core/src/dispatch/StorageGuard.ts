@@ -4,8 +4,8 @@ import { assertListOptions } from '../storage/Storage.js';
 import { ErrorCode } from '../wire/ErrorCode.js';
 import { FougereError } from '../wire/FougereError.js';
 import type { GuardReport } from './GuardReport.js';
-import type { RelationCheck } from './RelationCheck.js';
-import { release, type Releasing } from './Release.js';
+import type { RelationCheck } from '../module/relation/RelationCheck.js';
+import { release, type Releasing } from '../module/relation/Release.js';
 
 /** The gestures this guard grafts onto. */
 interface Writer {

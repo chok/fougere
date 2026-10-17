@@ -11,7 +11,7 @@ import { createContainer } from '@fougere/container';
 import { createApp, createLocalRunner, Crud, frond } from '../src/index.js';
 import { op } from './contract.js';
 import type { StorageFactory } from '../src/index.js';
-import { PresenterExecutor } from '../src/dispatch/PresenterExecutor.js';
+import { PresenterExecutor } from '../src/module/presenter/PresenterExecutor.js';
 
 const SECRET = '$2b$10$SUPERSECRET';
 const row = { id: 'a1', label: 'prod key', passwordHash: SECRET };

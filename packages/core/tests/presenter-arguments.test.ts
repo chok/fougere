@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { Invocation } from '../src/wire/Invocation.js';
 import { ArgumentResolver } from '../src/dispatch/ArgumentResolver.js';
-import { presenterArguments, presenterPlans } from '../src/dispatch/presenterArguments.js';
+import { presenterArguments, presenterPlans } from '../src/module/presenter/presenterArguments.js';
 import type { PresenterEntry } from '../src/descriptor/PresenterEntry.js';
 
 const meta = {

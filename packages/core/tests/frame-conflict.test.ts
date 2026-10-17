@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { entity, primary, text, json } from '@fougere/schema';
-import { recording, type Undo } from '../src/boot/frame.js';
+import { recording, type Undo } from '../src/module/frame/frame.js';
 
 /**
  * The optimistic check a compensated frame runs before it takes a write back.

@@ -1,4 +1,4 @@
-import type { Call } from '../wire/Call.js';
+import type { Call } from '../../wire/Call.js';
 
 /**
  * What writes a release down while it happens, when a package provides one.
