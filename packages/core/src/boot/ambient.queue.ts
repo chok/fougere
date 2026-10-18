@@ -33,10 +33,8 @@ export const ambient: Ambient = {
       const left = deadline - Date.now();
       if (left <= 0) {
         throw new Error(
-          `Together<[…]> (${key}) waited ${NESTED_TIMEOUT_MS}ms for ${holder} and gave up. `
-          + `This runtime has no async context, so a frame opened inside another waits for `
-          + `itself instead of being refused. Two frames that must both hold are ONE frame — `
-          + `declare a single Together naming every member.`,
+          `Together ${key} waited ${NESTED_TIMEOUT_MS}ms for ${holder} and gave up: it was probably opened inside it. `
+          + `Use one Together that lists every entity of both.`,
         );
       }
       await raceWith(busy, left);

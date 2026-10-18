@@ -34,9 +34,9 @@ export function refuseArityDrift(frond: FrondDescriptor, refused: Diagnostic[]):
       filePath,
       frond: frond.name,
       subject: ctor.name,
-      message: `${ctor.name}'s constructor takes ${ctor.length} parameter(s) and ${deps.length} `
-        + `dependenc${deps.length === 1 ? 'y is' : 'ies are'} declared (${deps.join(', ') || 'none'}) — `
-        + 'the rest would be handed `undefined`.',
+      message: `${ctor.name}'s constructor takes ${ctor.length} parameter(s), but only ${deps.length} `
+        + `${deps.length === 1 ? 'is' : 'are'} typed (${deps.join(', ') || 'none'}). Type each parameter, `
+        + 'or the others receive undefined.',
     });
   }
 }

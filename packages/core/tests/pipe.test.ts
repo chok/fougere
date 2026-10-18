@@ -99,7 +99,7 @@ describe('an op that finishes a fact', () => {
     // Nothing says which of two finishes the fact, and scan order is not an answer — the
     // same refusal two implementations of a port get, and two remotes over one entity.
     await expect(createApp({ fronds: [subject(), links(First, Second)], createContainer }))
-      .rejects.toThrow(/2 ops finish the fact 'postPublished'.*firstHandler\.set.*secondHandler\.set/s);
+      .rejects.toThrow(/firstHandler\.set and secondHandler\.set both change postPublished/s);
   });
 
   it('runs them in the order the fact\'s OWNER declared', async () => {
@@ -121,7 +121,7 @@ describe('an op that finishes a fact', () => {
     await expect(createApp({
       fronds: [subject({ postPublished: ['FirstHandler'] }), links(First, Second)],
       createContainer,
-    })).rejects.toThrow(/secondHandler\.set finishes the fact 'postPublished'.*not said/s);
+    })).rejects.toThrow(/secondHandler\.set changes postPublished, but pipes: for postPublished lists only/s);
   });
 
   it('refuses a link that answers nothing, rather than letting it suppress the fact', async () => {
@@ -137,7 +137,7 @@ describe('an op that finishes a fact', () => {
     // reading it. A fact is what HAPPENED — the announcer already said so, and `Emit`
     // returning void means nothing could tell it otherwise.
     await expect(announce({ id: 'x', title: 'a' }))
-      .rejects.toThrow(/silentHandler\.set finishes the fact 'postPublished' and answered nothing/);
+      .rejects.toThrow(/silentHandler\.set takes Pipe<postPublished> and returned nothing/);
   });
 
   it('refuses a frond that orders a fact it does not own', async () => {
@@ -145,7 +145,7 @@ describe('an op that finishes a fact', () => {
     await expect(createApp({
       fronds: [subject(), frond('elsewhere', { pipes: { postPublished: ['FirstHandler'] } })],
       createContainer,
-    })).rejects.toThrow(/orders the links of 'postPublished', which it does not own/);
+    })).rejects.toThrow(/gives an order for postPublished, but postPublished is declared in another frond/);
   });
 });
 

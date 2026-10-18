@@ -35,7 +35,7 @@ const booting = async (enforces?: (source: string, constraint: Constraint) => bo
   return lines;
 };
 
-const warned = (lines: string[]) => lines.filter((line) => line.includes('unique declared'));
+const warned = (lines: string[]) => lines.filter((line) => line.includes('does not enforce it'));
 
 describe('a constraint the source does not keep', () => {
   it('names the entities that declared one, on the field and on the group alike', async () => {
@@ -44,7 +44,7 @@ describe('a constraint the source does not keep', () => {
     expect(said).toHaveLength(1);
     expect(said[0]).toContain("bike in 'default'");
     expect(said[0]).toContain("ride in 'default'");
-    expect(said[0]).toContain('two concurrent writes can both pass');
+    expect(said[0]).toContain('two writes at the same moment can both pass');
   });
 
   it('leaves out the entity that declared none', async () => {

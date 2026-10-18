@@ -18,7 +18,7 @@ const boot = (vocabulary = [] as ReturnType<typeof StringFormats.term>[]) => cre
 
 describe('the terms an entity names', () => {
   it('refuses the boot when nothing answers one, naming the field and the term', async () => {
-    await expect(boot()).rejects.toThrow(/Shelf\.mark names the format 'shelfmark'/);
+    await expect(boot()).rejects.toThrow(/Shelf\.mark uses the format 'shelfmark', which is not defined/);
   });
 
   it('boots once the process lists it', async () => {

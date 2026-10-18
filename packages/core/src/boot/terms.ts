@@ -14,7 +14,7 @@ export function termRefusals(fronds: readonly FrondDescriptor[]): Diagnostic[] {
       frond: frond.name,
       subject: entityClass.name,
       filePath,
-      message: `${entityClass.name}.${term.field} names the ${term.kind} '${term.name}', and nothing in this process `
-        + "answers it. Export its term from a vocabulary/ file and list it in the statement's `vocabulary`.",
+      message: `${entityClass.name}.${term.field} uses the ${term.kind} '${term.name}', which is not defined. `
+        + 'Export it from a file in vocabulary/.',
     }))));
 }

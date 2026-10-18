@@ -208,9 +208,8 @@ function answersData({ frond, handler, diagnostics }: Resolving, name: string, c
     filePath: handler.filePath,
     frond: frond.name,
     subject,
-    message: `${subject}() answers ${contract.signature.notData}, which carries methods.\n`
-      + '  An operation answers data — what JSON keeps.\n'
-      + '  Declare the output as an entity, whose fields convert it, or answer what it produces.',
+    message: `${subject}() returns ${contract.signature.notData}, which has methods, and an operation returns plain data.\n`
+      + '  Return an entity, or the plain values you need.',
   });
 
   return false;
@@ -238,10 +237,10 @@ function kindOf({ frond, handler, diagnostics }: Resolving, name: string): Opera
     frond: frond.name,
     subject,
     message: ambiguous
-      ? `Cannot resolve the kind of ${subject}: its name carries query evidence `
-        + `(${inference.queryMatches.join(', ')}) and command evidence (${inference.commandMatches.join(', ')}).\n\n`
+      ? `Fougere cannot tell whether ${subject} reads or writes: its name looks like both `
+        + `(${inference.queryMatches.join(', ')} / ${inference.commandMatches.join(', ')}).\n\n`
         + `  State it ${kindStatedIn(frond, route, 'command')}`
-      : `Cannot resolve the kind of ${subject}: '${name}' leads with no known verb.\n\n`
+      : `Fougere cannot tell whether ${subject} reads or writes: '${name}' starts with no known verb.\n\n`
         + '  Rename it to lead with a known verb:\n'
         + `    query:   ${knownVerbs().query.join(', ')}\n`
         + `    command: ${knownVerbs().command.join(', ')}\n\n`
@@ -316,7 +315,7 @@ function normalizeBinding(
       filePath: handler.filePath,
       frond: frond.name,
       subject: `${handler.ctor.name}.${name}`,
-      message: `${handler.ctor.name}.${name} declares ${params.length} parameter(s) and has no binding plan.`,
+      message: `${handler.ctor.name}.${name} takes ${params.length} parameter(s), and nothing says where each comes from. Give it a binding.`,
     });
 
     return undefined;
@@ -341,8 +340,8 @@ function normalizeBinding(
       filePath: handler.filePath,
       frond: frond.name,
       subject: `${handler.ctor.name}.${name}`,
-      message: `Binding plan for ${handler.ctor.name}.${name} must bind every parameter exactly once by name. `
-        + `${invalid.length ? `Invalid: ${invalid.map((param) => param.name).join(', ')}. ` : ''}`
+      message: `The binding of ${handler.ctor.name}.${name} must name each parameter once. `
+        + `${invalid.length ? `Missing or repeated: ${invalid.map((param) => param.name).join(', ')}. ` : ''}`
         + `${extras.length ? `Unknown: ${extras.join(', ')}.` : ''}`,
     });
 
@@ -389,9 +388,9 @@ function validateProvenance(
           filePath: handler.filePath,
           frond: frond.name,
           subject: `${handler.ctor.name}.${name}`,
-          message: `Cannot resolve which parameter of ${handler.ctor.name}.${name} receives the input: `
-            + `${matches.map((parameter) => `${parameter.name}: ${parameter.type ?? 'unknown'}`).join('; ')} `
-            + 'all match the resolved input contract. Declare an explicit binding plan.',
+          message: `Several parameters of ${handler.ctor.name}.${name} could take the request body: `
+            + `${matches.map((parameter) => `${parameter.name}: ${parameter.type ?? 'unknown'}`).join('; ')}. `
+            + 'Give it a binding that says which.',
         });
 
         return false;
@@ -420,8 +419,9 @@ function validateProvenance(
           frond: frond.name,
           subject: `${handler.ctor.name}.${name}(${parameter.name})`,
           message: matches.length === 0
-            ? `No collector in frond '${frond.name}' resolves ${parameter.name}: ${parameter.type ?? source.typeName}.`
-            : `${matches.length} collectors in frond '${frond.name}' resolve '${source.typeName}'.`,
+            ? `${handler.ctor.name}.${name} takes ${parameter.name}: ${parameter.type ?? source.typeName}, and no collector in ${frond.name} provides one. `
+              + `Add one in ${frond.name}/collectors/: class … extends Collector(${parameter.type ?? source.typeName}).`
+            : `${matches.length} collectors in ${frond.name} provide ${source.typeName}. Keep one.`,
         });
       }
       continue;
@@ -450,9 +450,8 @@ function validateProvenance(
       filePath: handler.filePath,
       frond: frond.name,
       subject: `${handler.ctor.name}.${name}(${parameter.name})`,
-      message: `Cannot resolve a provenance for ${handler.ctor.name}.${name}(`
-        + `${parameter.name}: ${parameter.type ?? 'unknown'}). It is not a primitive, context, fact, `
-        + 'local collector or resolved input schema. Declare an explicit binding.',
+      message: `Fougere cannot tell where ${parameter.name}: ${parameter.type ?? 'unknown'} of ${handler.ctor.name}.${name} comes from. `
+        + 'Type it as an entity or a view of one, a primitive, a Fact<…>, or a type a collector of this frond provides.',
     });
   }
 
@@ -487,8 +486,8 @@ function implementationOf(
       filePath: handler.filePath,
       frond: frond.name,
       subject: `${handler.ctor.name}.${name}`,
-      message: `Operation ${handler.ctor.name}.${name} names handler '${override?.handlerName}', `
-        + `but ${candidates.length} matching handlers were found.`,
+      message: `${handler.ctor.name}.${name} names the handler '${override?.handlerName}', and `
+        + `${candidates.length === 0 ? 'no handler has that name' : `${candidates.length} handlers have that name`}.`,
     });
 
     return undefined;
@@ -505,8 +504,7 @@ function implementationOf(
       filePath: handler.filePath,
       frond: frond.name,
       subject: `${handler.ctor.name}.${name}`,
-      message: `Operation ${handler.ctor.name}.${name} resolves to `
-        + `${implementation.ctor.name}.${method}, but that method does not exist.`,
+      message: `${handler.ctor.name}.${name} points to ${implementation.ctor.name}.${method}, which does not exist.`,
     });
 
     return undefined;

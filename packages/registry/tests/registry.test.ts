@@ -24,7 +24,7 @@ describe('Registry', () => {
     point.register('ulid', ulid);
 
     expect(() => point.register('ulid', other)).toThrow(RegistryError);
-    expect(() => point.register('ulid', other)).toThrow(/'ulid' is answered twice for generator/);
+    expect(() => point.register('ulid', other)).toThrow(/Two generators are named 'ulid'/);
     expect(point.resolve('ulid')).toBe(ulid);
   });
 
@@ -34,7 +34,7 @@ describe('Registry', () => {
     point.replace('ulid', other);
 
     expect(point.resolve('ulid')).toBe(other);
-    expect(() => point.replace('cuid', ulid)).toThrow(/'cuid' answers nothing for generator yet/);
+    expect(() => point.replace('cuid', ulid)).toThrow(/No generator is named 'cuid', so it cannot be replaced/);
   });
 
   it('lets a reload replace, and tells who reloaded', async () => {
@@ -60,7 +60,7 @@ describe('Registry', () => {
     const point = new Registry<number>('source type', 'import the adapter that answers it', [['sqlite', 1]]);
 
     expect(() => point.resolve('redis', 'sources.cache.type'))
-      .toThrow("sources.cache.type: Unknown source type 'redis' — import the adapter that answers it. This process answers sqlite.");
+      .toThrow("sources.cache.type: Unknown source type 'redis'. Known: sqlite. To add one, import the adapter that answers it.");
   });
 });
 

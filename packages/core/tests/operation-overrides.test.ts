@@ -80,7 +80,7 @@ describe('the refusal of an op whose kind nothing tells', () => {
   it('hands over the three remedies, each with the line to write and where', () => {
     const { message } = refusalOf(post);
 
-    expect(message).toContain("'tally' leads with no known verb.");
+    expect(message).toContain("'tally' starts with no known verb.");
     expect(message).toContain('Rename it to lead with a known verb:');
     expect(message).toContain(`in /app/fronds/blog/frond.config.ts:\n    operations: { 'post.tally': { kind: 'query' } },   // or 'command'`);
     expect(message).toContain(`in /app/fronds/blog/vocabulary/verbs.ts, listed in the statement's \`vocabulary\`:\n    export const tally = Verbs.term('tally', 'query');`);

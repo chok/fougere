@@ -124,7 +124,7 @@ export class StorageGuard {
     if (errors.length > 0) {
       throw new FougereError({
         code: ErrorCode.BAD_REQUEST,
-        message: `Refused as a filter on ${this.entity} — ${errors.join(', ')}`,
+        message: `Invalid filter on ${this.entity}: ${errors.join(', ')}`,
         details: errors,
       });
     }
@@ -215,7 +215,7 @@ export class StorageGuard {
     if (errors.length > 0) {
       throw new FougereError({
         code: ErrorCode.INTERNAL_ERROR,
-        message: `Refused on the way out of ${this.entity}.${operation} — ${errors.join(', ')}`,
+        message: `${this.entity}.${operation} was given an invalid row: ${errors.join(', ')}`,
         details: errors,
       });
     }

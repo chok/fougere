@@ -75,7 +75,7 @@ describe('a compensated update, replayed', () => {
     const { journal } = await updateThenUnwind(stored, wrote);
 
     await expect(journal[0]!.run())
-      .rejects.toThrow(/no longer holds what this frame wrote \(payload\)/);
+      .rejects.toThrow(/was changed by someone else since Together wrote it \(payload\)/);
   });
 
   /**

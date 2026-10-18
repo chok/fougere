@@ -161,8 +161,7 @@ export class ScopeContainer implements Container {
   private claim(name: string, entry: Entry): void {
     if (this.registry.has(name)) {
       throw new ContainerError(
-        `'${name}' is already registered in this scope — a second registration would silently replace the first. `
-          + 'Use replace() when standing in its place is the point.',
+        `'${name}' is already registered in this scope. Use replace() to replace it.`,
       );
     }
 
@@ -171,7 +170,7 @@ export class ScopeContainer implements Container {
 
   private substitute(name: string, entry: Entry): void {
     if (!this.has(name)) {
-      throw new ContainerError(`'${name}' is not registered, so nothing can be replaced — use register().`);
+      throw new ContainerError(`'${name}' is not registered, so it cannot be replaced. Use register().`);
     }
 
     this.registry.set(name, entry);

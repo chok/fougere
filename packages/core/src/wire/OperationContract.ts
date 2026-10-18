@@ -129,7 +129,7 @@ function requireOperationKind(
   const kind = resolveOperationKind(name, overrides);
   if (kind) return kind;
   throw new Error(
-    `Cannot infer operation kind from '${name}'. State it in frond.config.ts — `
-    + `operations: { '<address>.${name}': { kind: 'query' } } — or teach the verb in the frond's vocabulary/.`,
+    `Fougere cannot tell whether '${name}' reads or writes. Say it in frond.config.ts: `
+    + `operations: { '<address>.${name}': { kind: 'query' } }, or add its verb in vocabulary/.`,
   );
 }

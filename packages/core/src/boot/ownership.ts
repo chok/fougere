@@ -1,9 +1,9 @@
-import { lowerFirst } from '@fougere/schema';
+import { lowerFirst, upperFirst } from '@fougere/schema';
 import { nameOf, type FrondDescriptor } from '../descriptor/FrondDescriptor.js';
 import { type ProviderEntry } from '../descriptor/ProviderEntry.js';
 import { inheritsCrud } from '../prefab/CrudConstructor.js';
 import { targetOf } from '../prefab/prefab.js';
-import { ownedBy, repositoryKeyOf } from '../prefab/RepositoryConstructor.js';
+import { ownedBy } from '../prefab/RepositoryConstructor.js';
 import { entityOfStorageKey, membersOfTogetherKey } from '../storage/Storage.js';
 import type { Diagnostic } from '../diagnostic.js';
 
@@ -21,9 +21,7 @@ export function sharedNames(frond: FrondDescriptor, refused: Diagnostic[]): void
         filePath: provider.filePath,
         frond: frond.name,
         subject: name,
-        message: `${first} already declares ${name}. A frond registers both under one key, so the `
-          + `second replaces the first and whoever asks for ${name} is handed whichever was `
-          + 'scanned last. Rename one of the two.',
+        message: `Two classes are named ${name}, here and in ${first}. Rename one.`,
       });
     }
     declared.set(name, provider.filePath);
@@ -55,8 +53,7 @@ export function ownersOf(
           filePath: provider.filePath,
           frond,
           subject: name,
-          message: `${first} and ${provider.ctor.name} both own ${name}. An entity has one owner: `
-            + 'merge the two, or take it out of one of them.',
+          message: `${name} is in both ${first} and ${provider.ctor.name}. Keep it in one.`,
         });
         contested.add(name);
         continue;
@@ -108,9 +105,7 @@ function refuseStorageKeyAsProvider(
     filePath: provider.filePath,
     frond,
     subject: registered,
-    message: `${registered} is a provider, and it is the container key of ${held}'s own storage `
-      + '— the storage is registered second, so the provider is never resolved. Name it for '
-      + 'what it holds; `<Entity>Storage` belongs to the entity.',
+    message: `The name ${registered} is taken by ${held}'s storage. Rename this class.`,
   });
 }
 
@@ -147,10 +142,8 @@ function refuseStorageReached(
       filePath: decl.filePath,
       frond,
       subject: `${decl.ctor.name}(${dep})`,
-      message: `${decl.ctor.name} asks for ${dep}. Storage is reached through a repository, never `
-        + `through the port: constructor(private ${entity}: ${repositoryKeyOf(entity)}) {}. It `
-        + `answers every gesture ${dep} does, whether or not anyone wrote the file — and the day `
-        + `${entity} belongs to an aggregate, this line does not move.`,
+      message: `${decl.ctor.name} asks for ${dep}. Ask for the repository instead: `
+        + `constructor(private ${entity}: Repository<${upperFirst(entity)}>) {}.`,
     });
   }
 }
@@ -173,9 +166,8 @@ function reachesOwned(
     filePath: decl.filePath,
     frond,
     subject: `${decl.ctor.name}(${dep})`,
-    message: `${decl.ctor.name} asks for ${dep}, and ${owner} owns ${entity}. Nothing else `
-      + `reaches an owned entity's storage — name the operation on ${owner} and ask for it: `
-      + `constructor(private ${entity}: ${owner}) {}`,
+    message: `${decl.ctor.name} asks for ${dep}, but ${entity} belongs to ${owner}. Ask for that instead: `
+      + `constructor(private ${entity}: ${owner}) {}.`,
   });
 
   return true;
@@ -217,10 +209,8 @@ export function crudOnOwned(
       filePath: handler.filePath,
       frond: frond.name,
       subject: handler.ctor.name,
-      message: `${handler.ctor.name} takes the five gestures on ${handler.address}, which ${owner} `
-        + 'owns. An owned entity has no automatic CRUD: nothing writes it but its owner, so there '
-        + `is no storage to hand this handler. Name the operations on ${owner} and call them: `
-        + `constructor(private ${handler.address}: ${owner}) {}`,
+      message: `${handler.ctor.name} extends Crud, but ${handler.address} belongs to ${owner}. Drop Crud `
+        + `and ask for it: constructor(private ${handler.address}: ${owner}) {}.`,
     });
   }
 }

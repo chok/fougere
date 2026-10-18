@@ -44,6 +44,6 @@ describe('boot, on a project whose config states a tree', () => {
     // `only:` narrows what one process holds; it may not cut a family in half, since the code
     // `cart` resolves would simply not be there.
     await expect(boot({ root, createContainer, remoteTransport, only: ['cart'] }))
-      .rejects.toThrow(/frond-family-split[\s\S]*'cart' inherits from 'shop'/);
+      .rejects.toThrow(/frond-family-split[\s\S]*cart extends shop, which this process leaves out/);
   });
 });

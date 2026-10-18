@@ -27,6 +27,6 @@ const COMMAND = [
  */
 export const Verbs = new Registry<OperationKind>(
   'verb',
-  "export Verbs.term('<verb>', 'query' | 'command') from a vocabulary/ file and list it in the statement's `vocabulary`",
+  "export Verbs.term('<verb>', 'query' | 'command') from a file in vocabulary/",
   [...QUERY.map((verb) => [verb, 'query'] as const), ...COMMAND.map((verb) => [verb, 'command'] as const)],
 );

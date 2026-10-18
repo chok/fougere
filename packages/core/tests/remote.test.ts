@@ -71,7 +71,7 @@ describe('a named surface across a process', () => {
     stop();
     const said = lines.filter((line) => line.includes("'admin'"));
     expect(said).toHaveLength(1);
-    expect(said[0]).toMatch(/serves nothing for 'product'/);
+    expect(said[0]).toMatch(/The surface '\w+' of product is not served/);
 
     await consumer.dispose();
     await host.dispose();
@@ -233,7 +233,7 @@ describe('remote façade (repli)', () => {
 
   it('without remotes, an unknown handler still fails fast at resolve', async () => {
     const app = await createApp({ fronds: [], createContainer });
-    expect(() => app.resolve('productHandler')).toThrow(/is not loaded/);
+    expect(() => app.resolve('productHandler')).toThrow(/is not in this process/);
     await app.dispose();
   });
 
@@ -282,7 +282,7 @@ describe('remote façade (repli)', () => {
     expect(valid.success).toBe(true);
 
     // `product` is stored there too, and no operation takes or answers it: its shape stays home.
-    await expect(consumer.schemaFor('product')).rejects.toThrow(/No remote stores 'product'/);
+    await expect(consumer.schemaFor('product')).rejects.toThrow(/product is not stored by this process or any remote/);
 
     await consumer.dispose();
     await host.dispose();
@@ -298,7 +298,7 @@ describe('remote façade (repli)', () => {
 
   it('schemaFor rejects an entity nothing declares, local or remote', async () => {
     const app = await createApp({ fronds: [], createContainer });
-    await expect(app.schemaFor('unicorn')).rejects.toThrow(/is not loaded/);
+    await expect(app.schemaFor('unicorn')).rejects.toThrow(/is not in this process/);
     await app.dispose();
   });
 

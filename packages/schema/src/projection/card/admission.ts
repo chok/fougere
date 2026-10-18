@@ -7,7 +7,7 @@ import { SchemaError } from '../../SchemaError.js';
  * `refuse('role.relation.kind is "maybe"', 'Expected one of one, many.')`
  */
 export function refuse(what: string, fix: string): never {
-  throw new SchemaError(`This card cannot be read: ${what}.\n  ${fix}`);
+  throw new SchemaError(`The description received from the other process cannot be read: ${what}.\n  ${fix}`);
 }
 
 /**

@@ -15,7 +15,7 @@ group('bundle registration collisions', () => {
 
     // Refusing protects both derivations from being silently replaced under their shared root key.
     expect(() => Bundle.fromSchemas([first, second])).toThrow(
-      "Schemas 'Post' and 'Post' both claim bundle key 'post'",
+      "Two schemas are registered as 'post' ('Post' and 'Post')",
     );
   });
 });

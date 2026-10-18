@@ -203,7 +203,7 @@ describe('a Crud handler that declares a constructor', () => {
       createContainer,
       storageFactory: () => fakeStorage(),
     });
-    await expect(boot).rejects.toThrow(/ItemHandler extends Crud\(\)/);
+    await expect(boot).rejects.toThrow(/ItemHandler extends Crud and has a constructor/);
     await expect(boot).rejects.toThrow(/constructor\(repo: ItemRepository, …\) \{ super\(repo\); \}/);
   });
 });

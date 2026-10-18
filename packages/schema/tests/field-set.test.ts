@@ -9,7 +9,7 @@ describe('FieldSet', () => {
 
   it('refuses two primary fields and names both', () => {
     expect(() => FieldSet.of({ id: primary(), externalId: primary() }).primary)
-      .toThrow(/"id".*"externalId"/);
+      .toThrow(/'id' and 'externalId' are both primary\(\)/);
   });
 
   it('leaves a composite group to the schema, which is what it constrains', () => {

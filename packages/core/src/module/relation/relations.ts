@@ -109,9 +109,8 @@ export function refuseUnwritableNull(entity: SchemaView, name: string, filePath:
       code: 'on-delete-null-refused',
       filePath,
       subject: `${name}.${field}`,
-      message: `${name}.${field} states onDelete 'set null', and the field admits no null — so the `
-        + 'row could neither be emptied nor kept. Wrap it in `optional()`, or state `cascade` '
-        + 'to take the row out with its target.',
+      message: `${name}.${field} has onDelete: 'set null', but it cannot be null. `
+        + "Wrap it in optional(), or use onDelete: 'cascade'.",
     });
   }
 
@@ -144,9 +143,8 @@ export function unpaired(entities: readonly EntityEntry[], hosting: Hosting): Di
         code: 'many-without-reference',
         filePath: entry.filePath,
         subject: `${entry.name}.${field}`,
-        message: `${entry.entityClass.name}.${field} states many(${target}), and no field of `
-          + `${target} references ${entry.entityClass.name}: the relation is declared on neither `
-          + `side, so nothing can fill it. Declare the ref() on ${target}.`,
+        message: `${entry.entityClass.name}.${field} is many(${target}), but no field of ${target} points back `
+          + `to ${entry.entityClass.name}. Add one on ${target}: ref(${entry.entityClass.name}).`,
       });
     }
   }

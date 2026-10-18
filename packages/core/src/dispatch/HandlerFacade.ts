@@ -153,10 +153,9 @@ export class HandlerFacade {
     const repoTypeName = repositoryKeyOf(subjectOf(handler.ctor, handler.address));
     if (!inheritsCrud(handler.ctor) || handler.deps.length === 0 || handler.deps.includes(repoTypeName)) return;
     throw new Error(
-      `${handler.ctor.name} extends Crud() and declares a constructor, so its storage is no ` +
-      `longer injected for it — but it does not take any.\n` +
-      `  Add it and hand it to super():\n` +
-      `    constructor(repo: ${repoTypeName}, …) { super(repo); }`,
+      `${handler.ctor.name} extends Crud and has a constructor, so the constructor must take the repository `
+      + `and pass it to super():\n`
+      + `    constructor(repo: ${repoTypeName}, …) { super(repo); }`,
     );
   }
 

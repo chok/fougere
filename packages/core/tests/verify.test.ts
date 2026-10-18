@@ -108,7 +108,7 @@ describe('verify — cross-frond dependency', () => {
       ],
     };
 
-    expect(() => assertSplittable(app)).toThrow(/does not survive a split/);
+    expect(() => assertSplittable(app)).toThrow(/would break this app once its fronds run in separate processes/);
     expect(() => assertSplittable(app)).toThrow(/PostHandler/);
   });
 

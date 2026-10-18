@@ -198,8 +198,7 @@ function reconstructField(
   const shape = reconstructShape(property);
   if (!shape) {
     throw new SchemaError(
-      `Field '${key}': the card carries no \`type\` for it, so there is no shape to rebuild. ` +
-        'A field always states one.',
+      `Field '${key}' has no type in the description received from the other process.`,
     );
   }
   admitPatterns(shape, `Field '${key}'`);

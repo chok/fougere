@@ -71,8 +71,8 @@ function entitiesNamed(
     refused.push({
       ...asked,
       code: 'together-entity-unknown',
-      message: `Together<[…${member}…]>: no entity named '${member}' is scanned in this app. `
-        + 'The first list names entities; a class of this frond goes in the second.',
+      message: `Together<[…${member}…]>: there is no entity named ${member}. `
+        + 'The first list takes entities; a repository or a service goes in the second.',
     });
 
     return [];
@@ -96,9 +96,8 @@ function providersNamed(
     refused.push({
       ...asked,
       code: 'together-provider-unknown',
-      message: `Together<[…], [… ${member} …]>: this frond declares no class named '${member}'. `
-        + 'The second list names providers to rebuild inside the frame — a service, a mirror, '
-        + 'a repository — so that what they write is covered by the unwind.',
+      message: `Together<[…], [… ${member} …]>: this frond has no class named ${member}. `
+        + 'The second list takes repositories and services of this frond.',
     });
 
     return [];
@@ -116,9 +115,8 @@ function remoteMembers(members: Members, world: FrameWorld, asked: Asked, refuse
       refused.push({
         ...asked,
         code: 'together-member-remote',
-        message: `'${member.name}' belongs to frond '${frond}', which this process declares in `
-          + 'remotes: — it registers no storage here, so its writes cannot be part of a frame. '
-          + 'Host the frond here, or split the work and join the halves with a fact.',
+        message: `${member.name} belongs to ${frond}, which runs in another process, so Together cannot include it. `
+          + 'Run that frond here, or split the work in two and link the halves with a fact.',
       });
     }
   }
@@ -135,9 +133,8 @@ function uncoveredWrites(members: Members, world: FrameWorld, asked: Asked, refu
         ...asked,
         filePath: provider.filePath,
         code: 'together-write-uncovered',
-        message: `${provider.ctor.name} writes ${entity}, which is not in the frame's entity list `
-          + `— its writes would escape the unwind. Add it: `
-          + `Together<[…, ${upperFirst(entity)}], [… ${provider.ctor.name} …]>.`,
+        message: `${provider.ctor.name} writes ${entity}, which this Together does not list. Add it: `
+          + `Together<[…, ${upperFirst(entity)}], …>.`,
       });
     }
   }
@@ -196,7 +193,7 @@ export function registerFrames(
       refused.push({
         ...asked,
         code: 'together-needs-storage',
-        message: `Together<[${names.entities.join(', ')}]> needs storage, and this boot declares none.`,
+        message: `Together<[${names.entities.join(', ')}]> needs a storage, and this app has none.`,
       });
       continue;
     }
@@ -212,8 +209,7 @@ export function registerFrames(
 
   if (registered > 0 && ambient.degraded) {
     world.log.warn(
-      'no async context on this runtime — frames run one at a time, and a frame opened '
-      + 'inside another times out instead of being refused',
+      'This runtime has no async context: Together runs one at a time, and one opened inside another times out.',
     );
   }
 }

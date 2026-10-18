@@ -31,7 +31,7 @@ describe('maxBodyBytes', () => {
   });
 
   it('refuses what is not a positive whole number of bytes', () => {
-    expect(() => applyConfig({ maxBodyBytes: 0 })).toThrow('maxBodyBytes: a positive whole number of bytes');
+    expect(() => applyConfig({ maxBodyBytes: 0 })).toThrow('maxBodyBytes must be a positive whole number of bytes');
     expect(() => setMaxBodyBytes(1.5)).toThrow();
   });
 });

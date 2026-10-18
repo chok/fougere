@@ -34,10 +34,8 @@ const pick = (row: Record<string, unknown>, keys: readonly string[]): Record<str
 /** Refused where it is used, naming the group that makes the inverse ambiguous. */
 function refuseAmbiguousUpsert(entity: string, gesture: string): never {
   throw new Error(
-    `${entity}.${gesture}() cannot be unwound: ${entity} declares a unique constraint besides ` +
-    `its key, so an upsert may overwrite a row this frame never read — and there is no ` +
-    `transaction here to take it back. Put the members in one source, or write ` +
-    `create/update explicitly.`,
+    `${entity}.${gesture}() cannot be undone inside Together: ${entity} has a unique field besides its key, `
+    + 'and this source has no transactions. Use create() or update() instead, or put the entities in one SQL source.',
   );
 }
 
@@ -61,8 +59,7 @@ export function recording<T extends object>(storage: T, entity: string, schema: 
   const key = FieldSet.of(schema.getFields()).primary;
   if (!key) {
     throw new Error(
-      `${entity} declares no primary field, so a write to it cannot be taken back by ` +
-      `identity — and this frame has no transaction to do it instead.`,
+      `${entity} has no primary field, so its writes cannot be undone inside Together on this source. Add one: id: primary().`,
     );
   }
 
@@ -113,8 +110,8 @@ function recordUpdate({ base, recorded, entity, journal }: Recording): void {
         const moved = touched.filter((field) => !dequal(current[field], wrote[field]));
         if (moved.length > 0) {
           throw new Error(
-            `${entity}#${id} no longer holds what this frame wrote (${moved.join(', ')}), so ` +
-            `restoring the previous values would drop whatever replaced them`,
+            `${entity}#${id} was changed by someone else since Together wrote it (${moved.join(', ')}), `
+            + 'so it is left as it is',
           );
         }
         await base.update.call(this, id, pick(before, touched));
@@ -193,15 +190,14 @@ export async function unwind(journal: readonly Undo[], cause: unknown, log: Logg
       await undo.run();
     } catch (failure) {
       stuck.push(`${undo.what} — ${(failure as Error).message}`);
-      log.error(`frame could not undo ${undo.what}`, failure);
+      log.error(`Together could not undo ${undo.what}`, failure);
     }
   }
   if (stuck.length === 0) throw cause;
 
   throw new Error(
-    `The frame failed and ${stuck.length} of ${journal.length} write(s) could not be taken back: ` +
-    `${stuck.join('; ')}. What remains is in the database. Original failure: ` +
-    `${(cause as Error)?.message ?? String(cause)}`,
+    `Together failed, and ${stuck.length} of ${journal.length} write(s) could not be undone and stay in the database: `
+    + `${stuck.join('; ')}. The failure was: ${(cause as Error)?.message ?? String(cause)}`,
     { cause },
   );
 }

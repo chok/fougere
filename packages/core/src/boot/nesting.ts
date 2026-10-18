@@ -27,10 +27,8 @@ function refuseServingParent(
     filePath: parent.handlers[0]!.filePath,
     frond: parent.name,
     subject: parent.name,
-    message: `'${parent.name}' has children (${children.join(', ')}) and answers at `
-      + `${served.join(', ')}. A frond its family inherits from holds the code they share and `
-      + 'nothing else — with no façade, nothing can call it and nothing can place it elsewhere. '
-      + 'Move its handlers into a child, or take the children out.',
+    message: `${parent.name} is extended by ${children.join(', ')}, so it cannot have handlers (${served.join(', ')}). `
+      + 'Move its handlers into one of them.',
   });
 
   return true;
@@ -50,10 +48,9 @@ function refuseParentEntities(
     filePath: parent.entities[0]!.filePath,
     frond: parent.name,
     subject: parent.name,
-    message: `'${parent.name}' has children (${children.join(', ')}) and declares `
-      + `${parent.entities.map((entity) => entity.name).join(', ')}. A frond they inherit from `
-      + 'holds code, not rows. Declare the entity in a child and import it from there — '
-      + `\`import X from '@fronds/<child>/entities/X.js'\` reaches it from anywhere.`,
+    message: `${parent.name} is extended by ${children.join(', ')}, so it cannot have entities `
+      + `(${parent.entities.map((entity) => entity.name).join(', ')}). Move them into one of them, `
+      + `and import them from there: import X from '@fronds/<child>/entities/X.js'.`,
   });
 }
 
@@ -88,11 +85,9 @@ export function nestingOf(
       code: 'frond-extends-chain',
       filePath: 'fougere.config.ts',
       subject: statement.path,
-      message: `'${statement.key}' inherits from '${statement.extends}', which inherits from `
-        + `'${statedFronds(stated).find((one) => one.key === statement.extends)?.extends}'. `
-        + 'Inheriting goes one level: a scope hangs off the one above it, and a chain would make '
-        + 'a frond depend on code its own family never named. Move what they share into one '
-        + 'frond they both inherit from.',
+      message: `${statement.key} extends ${statement.extends}, which extends `
+        + `${statedFronds(stated).find((one) => one.key === statement.extends)?.extends}. `
+        + 'A frond can extend only one level. Move what they share into the frond they both extend.',
     });
   }
 
@@ -111,10 +106,8 @@ export function nestingOf(
         filePath: frond.source.path,
         frond: frond.name,
         subject: parent,
-        message: `'${parent}' is inherited from by ${children.join(', ')} and is placed at `
-          + `${address ?? remotes?.[parent]}. A frond they inherit from stands in every process `
-          + 'that holds one of them, so it has no address of its own. Give the address to one of '
-          + 'them, or have them inherit from somewhere else.',
+        message: `${parent} is extended by ${children.join(', ')}, so it cannot have an address `
+          + `(${address ?? remotes?.[parent]}). Give the address to one of them instead.`,
       });
     }
 
@@ -137,8 +130,7 @@ export function nestingOf(
           code: 'frond-unknown',
           filePath: 'fougere.config.ts',
           subject: statement.path,
-          message: `'${statement.path}' names no frond this project holds. It has `
-            + `${[...here.keys()].join(', ') || 'none'}. Check the spelling, or drop the entry.`,
+          message: `No frond is named ${statement.path}. This project has: ${[...here.keys()].join(', ') || 'none'}.`,
         });
       }
       continue;
@@ -151,9 +143,8 @@ export function nestingOf(
         filePath: frond.source.path,
         frond: frond.name,
         subject: statement.path,
-        message: `'${statement.key}' inherits from '${statement.extends}', which this process does `
-          + 'not carry. A frond cannot leave the code it resolves behind — carry the two '
-          + `together, or take '${statement.key}' out from under '${statement.extends}'.`,
+        message: `${statement.key} extends ${statement.extends}, which this process leaves out. `
+          + `Run the two in the same process, or remove extends: '${statement.extends}'.`,
       });
       continue;
     }

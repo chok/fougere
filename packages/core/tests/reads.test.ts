@@ -70,7 +70,7 @@ describe('a boot that ignores the clause', () => {
 
     const said = warn.mock.calls.map((c) => c.join(' ')).join('\n');
     expect(said).toMatch(/\[reads\] Order, Line/);
-    expect(said).toMatch(/sourcesFactory/);
+    expect(said).toMatch(/nothing here can read across sources/);
     warn.mockRestore();
   });
 });

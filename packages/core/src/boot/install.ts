@@ -116,9 +116,8 @@ async function registerReads(
 
   if (!sourcesFactory) {
     frondLog.warn(
-      `[reads] ${frond.reads.join(', ')} — declared in frond.config.ts, but this boot passes no `
-      + '`sourcesFactory`, so no reader is registered and a handler asking for `Reads` will fail '
-      + 'at its first call. Pass one (`@fougere/adapter-duckdb`), or drop the clause.',
+      `[reads] ${frond.reads.join(', ')}: in frond.config.ts, but nothing here can read across sources, `
+      + 'so a handler asking for Reads fails at its first call. Install @fougere/adapter-duckdb, or remove reads:.',
     );
 
     return;
@@ -130,8 +129,7 @@ async function registerReads(
   if (named.length !== frond.reads.length) {
     const missing = frond.reads.filter((name) => !entityByName.has(lowerFirst(name)));
     frondLog.warn(
-      `[reads] ${missing.join(', ')} — named in frond.config.ts but scanned nowhere in this app, `
-      + 'so a query naming one would find no table. Check the spelling, or the entity file.',
+      `[reads] ${missing.join(', ')}: in frond.config.ts, but no such entity exists in this app. Check the spelling.`,
     );
   }
 
@@ -270,8 +268,7 @@ function registerStorages(
   // together see the same absence, and only the place they land can refuse the second.
   if (unenforced.length > 0) {
     frondLog.warn(
-      `unique declared, and the source does not enforce it: ${unenforced.join(', ')} — `
-      + 'two concurrent writes can both pass',
+      `${unenforced.join(', ')}: unique, but this source does not enforce it, so two writes at the same moment can both pass.`,
     );
   }
 }

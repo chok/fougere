@@ -106,7 +106,7 @@ describe('a class that stands in front of a seam', () => {
 
   it('refuses a `ports:` entry naming a class that stands in front of nothing', async () => {
     await expect(app({ Storage: ['Absent'] }))
-      .rejects.toThrow(/\[port-not-extended\][\s\S]*Storage: 'Absent' does not extend it/);
+      .rejects.toThrow(/\[port-not-extended\][\s\S]*No class Absent extends Storage/);
   });
 });
 

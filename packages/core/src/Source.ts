@@ -67,5 +67,5 @@ class SourceRegistry extends Registry<SourceType> {
 
 export const Sources = new SourceRegistry(
   'source type',
-  'import the adapter that answers it, or call Sources.register(name, { format, open })',
+  'import the adapter that provides it',
 );

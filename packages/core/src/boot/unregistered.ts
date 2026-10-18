@@ -29,8 +29,8 @@ export function unregistered(
           frond: frond.name,
           subject: ctor.name,
           filePath,
-          message: `${ctor.name} asks for ${missing}, and nothing in frond '${frond.name}' or above it answers that name. `
-            + `A class of that name in a convention directory, or one extending it, would.`,
+          message: `${ctor.name} asks for ${missing}, and nothing in ${frond.name} provides it. `
+            + `Add a class named ${missing} (in services/, for example), or check the spelling.`,
         });
       }
     }

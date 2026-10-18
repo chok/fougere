@@ -23,7 +23,7 @@ describe('ambient.queue', () => {
       // Asserted BEFORE the clock moves: the rejection would otherwise cross a microtask
       // with nobody listening, and vitest reports that as an unhandled error.
       const refused = expect(ambient.enterFrame('B', async () => 'never'))
-        .rejects.toThrow(/\(B\) waited 5000ms for A/);
+        .rejects.toThrow(/Together B waited 5000ms for A/);
       await vi.advanceTimersByTimeAsync(5_000);
       await refused;
     });

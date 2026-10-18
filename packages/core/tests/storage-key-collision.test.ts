@@ -38,7 +38,7 @@ const messageOf = (frond: FrondDescriptor) => refusalsOf(frond).map((one) => one
 
 describe('a provider registered under an entity storage key', () => {
   it('is refused, naming the entity that holds the key', () => {
-    expect(messageOf(frondWith({ ctor: PostStorage }))).toMatch(/PostStorage is a provider/);
+    expect(messageOf(frondWith({ ctor: PostStorage }))).toMatch(/The name PostStorage is taken by post/);
     expect(messageOf(frondWith({ ctor: PostStorage }))).toMatch(/post's/);
     expect(refusalsOf(frondWith({ ctor: PostStorage }))[0]?.code).toBe('storage-key-is-provider');
   });
@@ -47,7 +47,7 @@ describe('a provider registered under an entity storage key', () => {
     // A bundler lowering a static field renames the declaration; `ProviderEntry.name` is
     // what the container is keyed on, and it is what collides.
     expect(messageOf(frondWith({ name: 'PostStorage', ctor: class _P {} })))
-      .toMatch(/PostStorage is a provider/);
+      .toMatch(/The name PostStorage is taken by post/);
   });
 
   it('lets a name that is not a storage key through', () => {

@@ -30,8 +30,7 @@ export class StateShape {
         const owner = owners.get(member);
         if (owner) {
           throw new Error(
-            `[state] '${member}' is declared by two extensions, '${owner}' and '${name}'.\n`
-            + '  A member has one owner — keep one of them out of `extensions:`.',
+            `[state] Two extensions declare '${member}': '${owner}' and '${name}'. Keep one of them out of \`extensions:\`.`,
           );
         }
         owners.set(member, name);
@@ -65,7 +64,7 @@ export class StateShape {
     throw new FougereError({
       code: ErrorCode.VALIDATION_FAILED,
       message: errors.map((error) => `${dotted(error.path)}: ${error.message}`).join(', ')
-        + (declared.length ? ` — this process declares ${declared.join(', ')}` : ' — this process declares no state member'),
+        + (declared.length ? ` (known state: ${declared.join(', ')})` : ' (this process declares no state)'),
       details: errors,
       address,
       operation,

@@ -394,7 +394,7 @@ describe('what a placement may not soften — the refusals', () => {
     // `Together<[…]>` states that these two may not be separated by a change of topology —
     // the one place where moving a boundary is refused out loud instead of quietly weakening.
     await expect(world({ apart: true, frame: true }))
-      .rejects.toThrow(/remotes:/);
+      .rejects.toThrow(/runs in another process, so Together cannot include it/);
   });
 });
 

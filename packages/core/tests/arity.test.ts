@@ -45,7 +45,7 @@ const boot = (handlers: FrondDeclaration['handlers']) =>
 describe('a constructor asking for more than it is declared', () => {
   it('refuses the boot, naming the class and what was declared', async () => {
     await expect(boot([{ ctor: ClockedHandler, deps: ['PostRepository'] }]))
-      .rejects.toThrow(/\[constructor-arity\] ClockedHandler[\s\S]*takes 2 parameter\(s\) and 1 dependency is declared \(PostRepository\)/);
+      .rejects.toThrow(/\[constructor-arity\] ClockedHandler[\s\S]*takes 2 parameter\(s\), but only 1 is typed \(PostRepository\)/);
   });
 
   it('boots once every parameter is declared', async () => {

@@ -42,9 +42,8 @@ export function seamChains(
         code: 'seam-not-wrapped',
         filePath: provider.filePath,
         subject: nameOf(provider),
-        message: `${nameOf(provider)} extends ${seam}, and a seam's realization is handed in rather `
-          + 'than declared — so a class extending one can only stand IN FRONT of it, which it says '
-          + `by asking for it: constructor(private inner: ${seam}).`,
+        message: `${nameOf(provider)} extends ${seam} but takes no ${seam}. To wrap it, take it: `
+          + `constructor(private inner: ${seam}). To keep rows somewhere new, register a source type instead (Sources.register).`,
       });
       continue;
     }
@@ -143,7 +142,7 @@ function statedChain(
       code: 'port-not-extended',
       filePath: all[0]?.filePath ?? 'fougere.config.ts',
       subject: `ports: { ${port}: '${name}' }`,
-      message: `${port}: '${name}' does not extend it. What does: ${all.map(nameOf).join(', ')}.`,
+      message: `No class ${name} extends ${port}. These do: ${all.map(nameOf).join(', ')}.`,
     });
 
     return [];
@@ -167,9 +166,8 @@ function refuseUndecided(
       code: 'port-implemented-twice',
       filePath: impls[0]!.filePath,
       subject: port,
-      message: `${impls.map(nameOf).join(' and ')} both extend ${port}, and nothing says which one `
-        + 'answers it. Which realization a deployment uses is not a fact about the code — state it: '
-        + `ports: { ${port}: '${nameOf(impls[0]!)}' } in fougere.config.ts.`,
+      message: `${impls.map(nameOf).join(' and ')} both extend ${port}. Pick one in fougere.config.ts: `
+        + `ports: { ${port}: '${nameOf(impls[0]!)}' }.`,
     });
   }
 
@@ -179,10 +177,8 @@ function refuseUndecided(
       code: 'port-wrapped-twice',
       filePath: wrappers[0]!.filePath,
       subject: port,
-      message: `${wrappers.map(nameOf).join(' and ')} both wrap ${port}, and nothing says which `
-        + 'stands in front. State the chain, outside in: '
-        + `ports: { ${port}: [${[...wrappers, ...impls].map((one) => `'${nameOf(one)}'`).join(', ')}] } `
-        + 'in fougere.config.ts.',
+      message: `${wrappers.map(nameOf).join(' and ')} both wrap ${port}. Give the order in fougere.config.ts, `
+        + `outermost first: ports: { ${port}: [${[...wrappers, ...impls].map((one) => `'${nameOf(one)}'`).join(', ')}] }.`,
     });
   }
 }

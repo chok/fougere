@@ -36,7 +36,7 @@ describe('RelationGuard', () => {
     const guarded = new RelationGuard('post', [authors(['ada'])]).guard(rows);
 
     await expect(guarded.create({ id: 'p1', title: 't', authorId: 'bob' }))
-      .rejects.toThrow(/post\.create — authorId "bob" — no author holds it/);
+      .rejects.toThrow(/post\.create names rows that do not exist: authorId "bob" — no author holds it/);
     expect(rows.create).not.toHaveBeenCalled();
   });
 

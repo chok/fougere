@@ -414,7 +414,7 @@ describe('a fact that would cause itself', () => {
     await settle();
 
     const refusal = heard().find((line) => line.startsWith('refused:'));
-    expect(refusal).toMatch(/Emission cycle/);
+    expect(refusal).toMatch(/Facts announced in a loop/);
     expect(refusal).toMatch(/alpha → beta → alpha/);
   });
 });

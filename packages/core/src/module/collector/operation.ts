@@ -28,9 +28,8 @@ export function refuseAmbiguousCollectors(
       filePath: collectors[0]!.filePath,
       frond: frond.name,
       subject: typeName,
-      message: `Frond '${frond.name}' declares ${collectors.length} collectors for '${typeName}' — `
-        + `${collectors.map((collector) => collector.ctor.name).sort().join(', ')}. `
-        + 'Exactly one collector must own a parameter type.',
+      message: `${collectors.length} collectors in ${frond.name} provide ${typeName}: `
+        + `${collectors.map((collector) => collector.ctor.name).sort().join(', ')}. Keep one.`,
     });
   }
 }

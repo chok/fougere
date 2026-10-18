@@ -52,8 +52,7 @@ export class Registry<T> {
       const replaced = Registry.replaced;
       if (!replaced) {
         throw new RegistryError(
-          `'${name}' is answered twice for ${this.label} — a second answer would silently replace the first. `
-            + 'Name one of them differently, or call replace() when standing in its place is the point.',
+          `Two ${this.label}s are named '${name}'. Rename one, or use replace() to replace the first.`,
         );
       }
       replaced(this.label, name);
@@ -71,7 +70,7 @@ export class Registry<T> {
 
   replace(name: string, value: T): T {
     if (!this.held.has(name)) {
-      throw new RegistryError(`'${name}' answers nothing for ${this.label} yet, so nothing can be replaced — use register().`);
+      throw new RegistryError(`No ${this.label} is named '${name}', so it cannot be replaced. Use register().`);
     }
 
     this.held.set(name, value);
@@ -89,8 +88,8 @@ export class Registry<T> {
     if (found !== undefined) return found;
 
     throw new RegistryError(
-      `${path ? `${path}: ` : ''}Unknown ${this.label} '${name}'${this.hint ? ` — ${this.hint}` : ''}. `
-        + `This process answers ${this.names.join(', ') || 'nothing yet'}.`,
+      `${path ? `${path}: ` : ''}Unknown ${this.label} '${name}'. Known: ${this.names.join(', ') || 'none'}.`
+        + `${this.hint ? ` To add one, ${this.hint}.` : ''}`,
     );
   }
 

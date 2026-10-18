@@ -22,7 +22,7 @@ describe('the schema on a web host', () => {
   it('refuses a database behind the entities, naming the table', async () => {
     configureFougere({ fronds, config });
 
-    await expect(useFougereApp()).rejects.toThrow(/behind the entities \(1\):\n {2}notes — no table/);
+    await expect(useFougereApp()).rejects.toThrow(/missing 1 change\(s\) from the entities:\n {2}notes — no table/);
   });
 
   it('answers a call with the refusal, under the id it was asked with', async () => {
@@ -44,7 +44,7 @@ describe('the schema on a web host', () => {
   it('boots at the next call once the database caught up — a refusal is not kept', async () => {
     const path = join(mkdtempSync(join(tmpdir(), 'schema-')), 'app.db');
     configureFougere({ fronds, config: { sources: { main: { type: 'sqlite', path } } } as never });
-    await expect(useFougereApp()).rejects.toThrow(/behind the entities/);
+    await expect(useFougereApp()).rejects.toThrow(/missing \d+ change\(s\) from the entities/);
 
     const storage = resolveStorage({ main: { type: 'sqlite', path } });
     await storage.migrate?.({ fronds } as never);
@@ -59,7 +59,7 @@ describe('the schema on a web host', () => {
     const path = join(mkdtempSync(join(tmpdir(), 'schema-')), 'app.db');
     const storage = resolveStorage({ main: { type: 'sqlite', path } });
     configureFougere({ fronds, config: { sources: { main: { type: 'sqlite', path } } } as never, storage });
-    await expect(useFougereApp()).rejects.toThrow(/behind the entities/);
+    await expect(useFougereApp()).rejects.toThrow(/missing \d+ change\(s\) from the entities/);
 
     await storage.migrate?.({ fronds } as never);
     const app = await useFougereApp();

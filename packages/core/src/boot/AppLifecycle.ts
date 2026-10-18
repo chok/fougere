@@ -79,9 +79,10 @@ export function checking(pending?: (app: App) => Promise<readonly string[]>): Ex
       if (behind.length === 0) return;
 
       throw new BootRefusal(
-        `Fougere boot refused: the database is behind the entities (${behind.length}):\n`
+        `Fougere boot refused: the database is missing ${behind.length} change(s) from the entities:\n`
         + behind.map((line) => `  ${line}`).join('\n')
-        + '\n  Your database: fougere migrate --latest --apply — a shared one: fougere freeze, then fougere migrate --apply',
+        + '\n  On your machine: fougere migrate --latest --apply'
+        + '\n  On a shared database: fougere freeze, then fougere migrate --apply',
       );
     },
   };

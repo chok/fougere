@@ -19,7 +19,7 @@ export interface ProtocolType<Options = any> {
  */
 export const Protocols = new Registry<ProtocolType>(
   'protocol',
-  'import the adapter that serves it, or call Protocols.register(name, { format })',
+  'import the adapter that provides it',
 );
 
 /** Whether `protocols:` names this one — read by a host that imports no adapter, so by name. */

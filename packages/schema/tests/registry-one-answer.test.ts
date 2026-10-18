@@ -19,6 +19,6 @@ describe('a generator name has one answer', () => {
 
     expect(C.name).toBe('C');
     expect(() => entity({ id: primary({ generate: ['clashId', () => 'd'] }), name: text() }))
-      .toThrow(/'clashId' is answered twice for generator/);
+      .toThrow(/Two generators are named 'clashId'/);
   });
 });

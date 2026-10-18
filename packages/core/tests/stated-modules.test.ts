@@ -39,7 +39,7 @@ describe('statedModules', () => {
 
   it('names the export a module was supposed to have', async () => {
     await expect(statedModules({ '@acme/silent': {} }))
-      .rejects.toThrow(/exports no 'silent'/);
+      .rejects.toThrow(/has no export named silent/);
   });
 
   it('says nothing about the fronds a scan finds on disk', async () => {
@@ -57,6 +57,6 @@ describe('statedModules', () => {
   });
 
   it('refuses an entry whose key is not the name of the frond it holds', async () => {
-    await expect(statedModules({ login: frond('auth') })).rejects.toThrow("Name the entry 'auth'");
+    await expect(statedModules({ login: frond('auth') })).rejects.toThrow("Rename the entry 'auth'");
   });
 });

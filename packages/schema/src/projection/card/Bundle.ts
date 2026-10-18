@@ -29,8 +29,7 @@ export class Bundle {
       const previous = claimedBy.get(key);
       if (previous !== undefined) {
         throw new SchemaError(
-          `Schemas '${previous}' and '${entry.name}' both claim bundle key '${key}'. `
-          + 'Each schema in a bundle must have a distinct registration key.',
+          `Two schemas are registered as '${key}' ('${previous}' and '${entry.name}'). Rename one.`,
         );
       }
       claimedBy.set(key, entry.name);

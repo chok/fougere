@@ -36,13 +36,13 @@ export class Role {
     if (role.isPrimary() && Shapes.isNullable(declaration.shape as Shape))
       errors.push({
         path: ['role', 'primary'],
-        message: 'A primary key admits no null — a row is addressed by it',
+        message: 'A primary key cannot be null',
       });
 
     if (role.isCollection() && (role.isUnique() || role.isIndexed()))
       errors.push({
         path: ['role', role.isUnique() ? 'unique' : 'index'],
-        message: 'A collection has no column of its own, so there is nothing to index',
+        message: 'many() has no column of its own, so it cannot be unique or indexed',
       });
 
     return errors;

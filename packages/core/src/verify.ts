@@ -156,5 +156,5 @@ export function assertSplittable(app: { fronds: readonly FrondDescriptor[] }): v
   const violations = verify(app);
   if (violations.length === 0) return;
   const lines = violations.map((v) => `  [${v.code}] ${v.frond}/${v.subject}\n    ${v.message}\n    ${v.filePath}`);
-  throw new Error(`${violations.length} violation(s) — this app does not survive a split:\n${lines.join('\n')}`);
+  throw new Error(`${violations.length} problem(s) would break this app once its fronds run in separate processes:\n${lines.join('\n')}`);
 }

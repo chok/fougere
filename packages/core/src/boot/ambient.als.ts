@@ -13,9 +13,8 @@ export const ambient: Ambient = {
     const open = frame.getStore();
     if (open !== undefined) {
       return Promise.reject(new Error(
-        `Together<[…]> (${key}) cannot be opened inside ${open}: on one engine the second `
-        + `transaction waits for the first and the call hangs. Two frames that must both hold `
-        + `are ONE frame — declare a single Together naming every member.`,
+        `Together ${key} is opened inside Together ${open}, which would hang. `
+        + `Use one Together that lists every entity of both.`,
       ));
     }
 
@@ -27,9 +26,8 @@ export const ambient: Ambient = {
     if (open === undefined) return Promise.resolve();
 
     return Promise.reject(new Error(
-      `${fact} cannot be announced inside Together<[…]> (${open}): announcing is dispatch, `
-      + `so subscribers and the carrier would have it while these writes can still be taken `
-      + `back. Announce after run() returns, when it is true.`,
+      `${fact} is announced inside Together ${open}, whose writes may still be undone. `
+      + `Announce it after run() returns.`,
     ));
   },
 

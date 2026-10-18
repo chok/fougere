@@ -105,9 +105,9 @@ describe('createLocalRunner', () => {
       await using app = await createApp({ fronds, createContainer, storageFactory });
       app.serveRpc('topology', () => 1);
       // Two packages claiming one name would make the answer depend on wiring order.
-      expect(() => app.serveRpc('topology', () => 2)).toThrow(/already served/);
+      expect(() => app.serveRpc('topology', () => 2)).toThrow(/The rpc operation 'topology' is already served/);
       // And the card cannot be taken over, because it is in the same registry.
-      expect(() => app.serveRpc('discover', () => 'mine')).toThrow(/already served/);
+      expect(() => app.serveRpc('discover', () => 'mine')).toThrow(/The rpc operation 'discover' is already served/);
     });
   });
 

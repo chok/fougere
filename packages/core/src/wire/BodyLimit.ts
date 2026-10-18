@@ -11,7 +11,7 @@ export function maxBodyBytes(): number {
 /** Set by `applyConfig` from `maxBodyBytes:`. */
 export function setMaxBodyBytes(bytes: number): void {
   if (!Number.isInteger(bytes) || bytes <= 0) {
-    throw new Error(`maxBodyBytes: a positive whole number of bytes — got ${String(bytes)}.`);
+    throw new Error(`maxBodyBytes must be a positive whole number of bytes, got ${String(bytes)}.`);
   }
   limit = bytes;
 }

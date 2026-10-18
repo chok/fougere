@@ -37,8 +37,7 @@ function cardRefusal(source: string, what: string): FougereError {
   return new FougereError({
     code: ErrorCode.INTERNAL_ERROR,
     message:
-      `${source} answered an invalid identity card: ${what}.\n`
-      + `  A card is what tells this process what the other one hosts, so nothing can be routed from it.\n`
-      + `  - Check that the address serves a Fougere app, and that its version still speaks this card.`,
+      `${source} answered an invalid description of itself: ${what}. `
+      + 'Check that this address serves a Fougere app of a compatible version.',
   });
 }

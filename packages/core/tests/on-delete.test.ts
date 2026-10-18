@@ -112,7 +112,7 @@ describe('restrict — the row stays until nothing names it', () => {
   it('refuses, naming the entity, the field and how many rows', async () => {
     const world = await populated(await booting());
 
-    await expect(world.users.delete('bob')).rejects.toThrow(/comment\.authorId holds 1 row\(s\)/);
+    await expect(world.users.delete('bob')).rejects.toThrow(/1 comment row\(s\) still point to this one through authorId/);
     expect(await rows(world.users)).toEqual(['ada', 'bob', 'carol']);
     await world.dispose();
   });
@@ -131,7 +131,7 @@ describe('restrict — the row stays until nothing names it', () => {
     await world.users.create({ id: 'ada', name: 'Ada' });
     await world.of('bare').create({ id: 'b1', userId: 'ada' });
 
-    await expect(world.users.delete('ada')).rejects.toThrow(/bare\.userId holds 1 row\(s\)/);
+    await expect(world.users.delete('ada')).rejects.toThrow(/1 bare row\(s\) still point to this one through userId/);
     await world.dispose();
   });
 
@@ -222,7 +222,7 @@ describe('cascade — the rows that name it go first', () => {
     await world.of('note').create({ id: 'n1', userId: 'ada' });
     await world.of('mark').create({ id: 'm1', noteId: 'n1' });
 
-    await expect(world.users.delete('ada')).rejects.toThrow(/mark\.noteId holds 1 row\(s\)/);
+    await expect(world.users.delete('ada')).rejects.toThrow(/1 mark row\(s\) still point to this one through noteId/);
     expect(await rows(world.of('note'))).toEqual(['n1']);
     expect(await rows(world.users)).toEqual(['ada']);
     await world.dispose();
@@ -316,7 +316,7 @@ describe('set null — the row stays, the field is emptied', () => {
     class Tight extends entity({ id: primary(text()), userId: ref(User, { onDelete: 'set null' }) }) {}
 
     await expect(booting({ fronds: [frond('app', { entities: [User, Tight] })] }))
-      .rejects.toThrow(/tight\.userId states onDelete 'set null'/);
+      .rejects.toThrow(/tight\.userId has onDelete: 'set null', but it cannot be null/);
   });
 });
 
@@ -453,14 +453,14 @@ describe('the rows live in another process', () => {
     await world.comments.create({ id: 'c1', body: 'nice', postId: 'p1', authorId: 'bob' });
 
     // `comment.authorId` is restrict, and the comment lives over there — the refusal crosses back.
-    await expect(world.users.delete('bob')).rejects.toThrow(/comment\.authorId holds 1 row\(s\)/);
+    await expect(world.users.delete('bob')).rejects.toThrow(/1 comment row\(s\) still point to this one through authorId/);
     expect(await rows(world.users)).toEqual(['bob']);
     await world.dispose();
   });
 });
 
 describe('a release this process can start and cannot finish', () => {
-  const warned = (world: { warned: string[] }) => world.warned.filter((line) => line.includes('keeps nothing'));
+  const warned = (world: { warned: string[] }) => world.warned.filter((line) => line.includes('will not be finished'));
 
   it('says so at boot, naming the relation and what it declares', async () => {
     // Both halves are local: an entity states `cascade`, and nothing registered a journal.

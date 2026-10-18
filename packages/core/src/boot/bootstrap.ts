@@ -69,9 +69,9 @@ const LOG_LINE = lowerFirst(LogLine.name);
 
 /** The one wording for "nobody hosts this here", with both ways out. */
 const notLoaded = (entity: string) =>
-  `Frond for '${entity}' is not loaded.\n` +
-  `  - Keep its frond in this process (only:), or\n` +
-  `  - give that frond an address: fronds: { <frond>: { remote: 'http://...' } }`;
+  `The frond that serves ${entity} is not in this process.\n` +
+  `  - Keep it in this process (only:), or\n` +
+  `  - give it an address: fronds: { <frond>: { remote: 'http://...' } }`;
 
 /** Two fronds cannot claim one name — said at boot, because nothing else says it. */
 function keyClaims(
@@ -91,10 +91,8 @@ function keyClaims(
         filePath,
         frond,
         subject: key,
-        message: `'${first}' and '${frond}' both claim the key '${key}'. A ${what} is registered `
-          + 'under a key that names no frond, so one would silently replace the other. Rename one '
-          + 'of the two classes, or keep one frond out of this process (only:). '
-          + `'${first}' declares it in ${fileOf.get(key)}.`,
+        message: `${first} and ${frond} both have a ${what} named ${key}, the other in ${fileOf.get(key)}. `
+          + 'Rename one, or leave one frond out of this process (only:).',
       });
 
       return;
@@ -105,7 +103,7 @@ function keyClaims(
 
   for (const frond of fronds) {
     if (remotes && frond.name in remotes) continue;
-    for (const handler of frond.handlers) claim(facadeKeyOf(handler.address, handler.surface), frond.name, 'facade', handler.filePath);
+    for (const handler of frond.handlers) claim(facadeKeyOf(handler.address, handler.surface), frond.name, 'handler', handler.filePath);
     for (const presenter of frond.presenters) claim(presenterKeyOf(presenter.entityName), frond.name, 'presenter', presenter.filePath);
   }
 }
@@ -133,8 +131,7 @@ async function readFronds(
   // condition is the KEY, not the count: a statement that lists no frond is an ordinary answer.
   if (!options.fronds && brought.length === 0) {
     throw new Error(
-      'createApp needs `fronds:` — what this app states, written by hand or by the scan. '
-      + 'None was given, and nothing else declares entities of its own.\n'
+      'createApp needs `fronds:`, the list of fronds this app runs. Pass one:\n'
       + '    createApp({ fronds: [blog] })\n'
       + '    createApp({ ...(await statementOf(root)) })',
     );
@@ -332,7 +329,7 @@ function readings(
       const stored = await remoteRouter.schemaOf(entity);
       if (!stored) {
         throw new Error(
-          `No remote stores '${entity}', so it has no schema. Call its operations through the façade instead.`,
+          `${entity} is not stored by this process or any remote, so it has no schema here. Call its operations instead.`,
         );
       }
 
@@ -376,9 +373,8 @@ function readings(
     if (!remoteRouter || saidAbsent.has(`${surface}:${entity}`)) return;
     saidAbsent.add(`${surface}:${entity}`);
     log.warn(
-      `surface '${surface}' serves nothing for '${entity}' — the frond that declares it runs `
-      + 'elsewhere, and a remote is asked for its facades at the first call, not at boot. '
-      + 'The default facade answers.',
+      `The surface '${surface}' of ${entity} is not served: its frond runs in another process. `
+      + 'The default operations answer instead.',
     );
   };
 
@@ -440,7 +436,7 @@ function remoteRouterOf(options: CreateAppOptions): RemoteRouter | undefined {
 
   if (!options.remoteTransport) {
     throw new Error(
-      'createApp: `remotes` is declared but `remoteTransport` is missing — pass one (e.g. from @fougere/transport-http).',
+      'createApp: fronds have an address, but no remoteTransport is given. Pass one, e.g. from @fougere/transport-http.',
     );
   }
 
@@ -474,8 +470,8 @@ function warnAboutUnboundPorts(options: CreateAppOptions, boundPorts: Set<string
   if (unbound.length === 0) return;
 
   log.warn(
-    `[ports] ${unbound.join(', ')} — named in fougere.config.ts, but no scanned class extends `
-    + 'them, so nothing was chosen. Check the spelling, or drop the entry.',
+    `[ports] ${unbound.join(', ')}: in fougere.config.ts, but no class extends ${unbound.length === 1 ? 'it' : 'them'}. `
+    + 'Check the spelling, or remove the entry.',
   );
 }
 
@@ -526,8 +522,7 @@ function serveRpcOn(routeRegistry: RouteRegistry): App['serveRpc'] {
     const address = new RouteAddress({ address: RPC_ADDRESS, operation: op });
     if (routeRegistry.find(address)) {
       throw new Error(
-        `[claim] rpc operation '${op}' is already served; a second declaration would depend on wiring order.\n`
-        + '  Two extensions declare it — keep one out of `extensions:`.',
+        `[claim] The rpc operation '${op}' is already served. If two extensions serve it, keep one of them out of \`extensions:\`.`,
       );
     }
 

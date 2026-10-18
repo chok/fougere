@@ -113,7 +113,7 @@ describe('two implementations of one port', () => {
   it('refuses a `ports:` entry naming a class that does not extend the port', async () => {
     await expect(
       createApp({ fronds: two, createContainer, ports: { Payment: 'Mailer' } }),
-    ).rejects.toThrow(/does not extend it/);
+    ).rejects.toThrow(/No class \w+ extends/);
   });
 });
 

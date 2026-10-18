@@ -77,10 +77,10 @@ describe('a declared default is validated once, where it is written', () => {
     // is right, the validator answers for what a CALLER sent. So the value is validated here,
     // at the declaration, instead of on every write for the rest of the app's life.
     expect(() => entity({ id: primary(), code: text({ min: 5, default: 'ab' }) }))
-      .toThrow(/declared default "ab" is not a legal value/);
+      .toThrow(/the default "ab" is not valid/);
 
     expect(() => entity({ id: primary(), qty: number({ min: 0, default: -1 }) }))
-      .toThrow(/declared default -1 is not a legal value/);
+      .toThrow(/the default -1 is not valid/);
   });
 
   it('accepts a default that satisfies it', () => {

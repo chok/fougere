@@ -67,7 +67,7 @@ describe('nestingOf', () => {
     const { refused } = nestingOf({ shop: { extends: 'cart' } }, await hosted(), undefined);
 
     expect(codesOf(refused)).toEqual(['frond-parent-serves']);
-    expect(refused[0]?.message).toContain('answers at cart');
+    expect(refused[0]?.message).toContain('cannot have handlers (cart)');
   });
 
   it('refuses a parent placed at an address', async () => {
@@ -105,7 +105,7 @@ describe('nestingOf', () => {
 
     // `shop` also serves, so it is refused twice — both are true, and a boot names them together.
     expect(codesOf(refused)).toContain('frond-extends-chain');
-    expect(refused[0]?.message).toContain("'cart' inherits from 'shop', which inherits from 'blog'");
+    expect(refused[0]?.message).toContain('cart extends shop, which extends blog');
   });
 
   it('answers nothing when the config states no tree', async () => {

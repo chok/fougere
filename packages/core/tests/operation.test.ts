@@ -28,7 +28,7 @@ describe('isReadOp (convention)', () => {
       queryMatches: [],
       commandMatches: [],
     });
-    expect(() => isReadOp('computeReport')).toThrow(/Cannot infer operation kind/);
+    expect(() => isReadOp('computeReport')).toThrow(/cannot tell whether/);
   });
 
   it('refuses contradictory compound evidence', () => {
@@ -37,18 +37,18 @@ describe('isReadOp (convention)', () => {
       queryMatches: ['find'],
       commandMatches: ['archive'],
     });
-    expect(() => isReadOp('getOrCreatePost')).toThrow(/Cannot infer operation kind/);
+    expect(() => isReadOp('getOrCreatePost')).toThrow(/cannot tell whether/);
   });
 
   it('matches whole words, never string prefixes', () => {
-    expect(() => isReadOp('hashPassword')).toThrow(/Cannot infer operation kind/);
+    expect(() => isReadOp('hashPassword')).toThrow(/cannot tell whether/);
   });
 
   it('reads a predicate as a question, whatever verb it asks about', () => {
     expect(isReadOp('canPublish')).toBe(true);
     expect(isReadOp('isAvailable')).toBe(true);
-    expect(() => isReadOp('cancelOrder')).toThrow(/Cannot infer operation kind/);
-    expect(() => isReadOp('issueRefund')).toThrow(/Cannot infer operation kind/);
+    expect(() => isReadOp('cancelOrder')).toThrow(/cannot tell whether/);
+    expect(() => isReadOp('issueRefund')).toThrow(/cannot tell whether/);
   });
 });
 
@@ -61,12 +61,12 @@ describe('resolveIsReadOp (convention + overrides)', () => {
   });
 
   it('overrides convention: a non-read-prefixed name can be declared as query', () => {
-    expect(() => resolveIsReadOp('computeReport')).toThrow(/Cannot infer operation kind/);
+    expect(() => resolveIsReadOp('computeReport')).toThrow(/cannot tell whether/);
     expect(resolveIsReadOp('computeReport', { computeReport: { kind: 'query' } })).toBe(true);
   });
 
   it('overrides convention: a read-prefixed name can be declared as command', () => {
-    expect(() => resolveIsReadOp('findAndArchive')).toThrow(/Cannot infer operation kind/);
+    expect(() => resolveIsReadOp('findAndArchive')).toThrow(/cannot tell whether/);
     expect(resolveIsReadOp('findAndArchive', { findAndArchive: { kind: 'command' } })).toBe(false);
   });
 

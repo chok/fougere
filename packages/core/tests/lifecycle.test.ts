@@ -230,7 +230,7 @@ describe('the conventional ascent', () => {
       pending: async () => ['products — no table', 'orders.total — no column'],
     });
 
-    await expect(booting).rejects.toThrow(/behind the entities \(2\):\n  products — no table\n  orders\.total — no column\n.*fougere migrate --apply/);
+    await expect(booting).rejects.toThrow(/missing 2 change\(s\) from the entities:\n  products — no table\n  orders\.total — no column\n[\s\S]*fougere migrate --apply/);
     await expect(booting).rejects.toBeInstanceOf(BootRefusal);
   });
 

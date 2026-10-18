@@ -200,7 +200,7 @@ describe('announcing a fact around a frame', () => {
     // Announcing hands the fact to every subscriber AND to the carrier, at once. The
     // frame's writes are still provisional, so the fact would outlive them.
     await using app = await boot(false);
-    await expect(app.announceInside()).rejects.toThrow(/cannot be announced inside Together/);
+    await expect(app.announceInside()).rejects.toThrow(/is announced inside Together/);
   });
 
   it('takes the writes back too — the refusal is a failure like any other', async () => {
@@ -219,7 +219,7 @@ describe('announcing a fact around a frame', () => {
 
   it('refuses in a compensated frame too — the two realizations answer the same', async () => {
     await using app = await boot(true);
-    await expect(app.announceInside()).rejects.toThrow(/cannot be announced inside Together/);
+    await expect(app.announceInside()).rejects.toThrow(/is announced inside Together/);
   });
 });
 
@@ -248,7 +248,7 @@ describe('what a frame refuses at boot', () => {
     // Not "compensate what you can": a remote frond registers no storage here, so there is
     // nothing to write through and nothing to take back.
     await expect(bootOf('fixtures-together-remote', { accounting: 'http://elsewhere' }))
-      .rejects.toThrow(/'ledger' belongs to frond 'accounting'.*remotes:/s);
+      .rejects.toThrow(/ledger belongs to accounting, which runs in another process/s);
   });
 
   it('a name that resolves to nothing — a typo, not a member to skip', async () => {
@@ -256,7 +256,7 @@ describe('what a frame refuses at boot', () => {
     // a write that never comes back. The message names the LIST, which the two-tuple
     // declaration makes possible: nothing has to guess what kind the name was meant to be.
     await expect(bootOf('fixtures-together-typo'))
-      .rejects.toThrow(/no entity named 'Ledgre' is scanned in this app/);
+      .rejects.toThrow(/there is no entity named Ledgre/);
   });
 });
 
@@ -269,7 +269,7 @@ describe('a frame opened inside another', () => {
    */
   it('is refused before it can hang, naming the frame that holds', async () => {
     await using app = await boot(false);
-    await expect(app.nest()).rejects.toThrow(/cannot be opened inside/);
+    await expect(app.nest()).rejects.toThrow(/is opened inside Together/);
   });
 
   it('and the outer frame takes its own writes back, like any other failure', async () => {
@@ -280,6 +280,6 @@ describe('a frame opened inside another', () => {
 
   it('answers the same when the members are split — one rule, both realizations', async () => {
     await using app = await boot(true);
-    await expect(app.nest()).rejects.toThrow(/cannot be opened inside/);
+    await expect(app.nest()).rejects.toThrow(/is opened inside Together/);
   });
 });

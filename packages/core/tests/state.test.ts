@@ -47,7 +47,7 @@ describe('the state of a call', () => {
 
     await expect(read(app, { tenant: 'acme' })).rejects.toMatchObject({
       code: ErrorCode.VALIDATION_FAILED,
-      message: 'state.tenant: Unknown field — this process declares user',
+      message: 'state.tenant: Unknown field (known state: user)',
     });
   });
 
@@ -59,7 +59,7 @@ describe('the state of a call', () => {
 
   it('refuses the boot when two extensions declare one member', async () => {
     await expect(built([session, { name: 'other', state: { user: text() } }]))
-      .rejects.toThrow("'user' is declared by two extensions, 'session' and 'other'");
+      .rejects.toThrow("Two extensions declare 'user': 'session' and 'other'");
   });
 
   it('reads the extension that stays, when one replaces another by name', async () => {
@@ -67,7 +67,7 @@ describe('the state of a call', () => {
 
     await expect(read(app, { tenant: 'acme' })).resolves.toBeNull();
     await expect(read(app, { user: { id: 'u1', since: '2026-09-23T00:00:00.000Z' } }))
-      .rejects.toMatchObject({ message: 'state.user: Unknown field — this process declares tenant' });
+      .rejects.toMatchObject({ message: 'state.user: Unknown field (known state: tenant)' });
   });
 
   it('is not judged again when it crossed from the process where it entered', async () => {
@@ -83,7 +83,7 @@ describe('the state of a call', () => {
     await using app = await built([], (state) => { state.touched = true; });
 
     await expect(read(app, { tenant: 'acme' }, true))
-      .rejects.toMatchObject({ message: 'state.touched: Unknown field — this process declares no state member' });
+      .rejects.toMatchObject({ message: 'state.touched: Unknown field (this process declares no state)' });
   });
 
   it('is read by the entity its collector names — rebuilt, or refused when it is not one', async () => {

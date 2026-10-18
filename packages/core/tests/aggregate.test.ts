@@ -98,7 +98,7 @@ describe('an owned entity has no other facade', () => {
     const rejected = boot('fixtures-aggregate-trap');
 
     await expect(rejected).rejects.toThrow(/\[aggregate-storage-reached\]/);
-    await expect(rejected).rejects.toThrow(/AccountRepository owns ledger/);
+    await expect(rejected).rejects.toThrow(/ledger belongs to AccountRepository/);
     await expect(rejected).rejects.toThrow(/constructor\(private ledger: AccountRepository\)/);
   });
 
@@ -106,7 +106,7 @@ describe('an owned entity has no other facade', () => {
     const rejected = createApp({ fronds: bankWith(['AccountRepository'], ['LedgerTogether']), createContainer, storageFactory });
 
     await expect(rejected).rejects.toThrow(/\[aggregate-storage-reached\] LedgerHandler\(LedgerTogether\)/);
-    await expect(rejected).rejects.toThrow(/AccountRepository owns ledger/);
+    await expect(rejected).rejects.toThrow(/ledger belongs to AccountRepository/);
   });
 
   it('lets the owner frame its own members', async () => {
@@ -185,7 +185,7 @@ describe('what the shape refuses, and what a sentence has to refuse instead', ()
     const rejected = boot('fixtures-aggregate-crud');
 
     await expect(rejected).rejects.toThrow(/\[crud-on-owned-entity\]/);
-    await expect(rejected).rejects.toThrow(/which AccountRepository owns/);
+    await expect(rejected).rejects.toThrow(/belongs to AccountRepository\. Drop Crud/);
     await expect(rejected).rejects.toThrow(/constructor\(private ledger: AccountRepository\)/);
   });
 });

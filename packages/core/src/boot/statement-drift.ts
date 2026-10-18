@@ -34,9 +34,8 @@ export function statementDrift(frond: FrondDescriptor, handler: HandlerEntry): D
       filePath: handler.filePath,
       frond: frond.name,
       subject: `${handler.ctor.name}.${name}`,
-      message: `frond.config.ts binds ${orphans.map((o) => `\`${o}\``).join(', ')} on `
-        + `${handler.ctor.name}.${name}, which declares (${signature.params.map((p: { name: string }) => p.name).join(', ')}). `
-        + `The statement wins, so those parameters receive nothing.`,
+      message: `frond.config.ts binds ${orphans.join(', ')} on ${handler.ctor.name}.${name}, which has no such parameter `
+        + `(it has ${signature.params.map((p: { name: string }) => p.name).join(', ') || 'none'}). Fix the names in frond.config.ts.`,
     });
   }
 
@@ -63,7 +62,6 @@ export function unansweredOperations(
       filePath: handler.filePath,
       frond: frond.name,
       subject: `${handler.ctor.name}.${name}`,
-      message: `${handler.ctor.name}.${name} is declared as an operation, and ${handler.ctor.name} `
-        + 'has no method of that name — its first call would fail as a server error.',
+      message: `${handler.ctor.name}.${name} is listed as an operation, but ${handler.ctor.name} has no method ${name}.`,
     }));
 }

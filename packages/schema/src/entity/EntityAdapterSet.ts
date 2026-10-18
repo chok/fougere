@@ -30,8 +30,7 @@ export class EntityAdapterSet {
     for (const [adapter, fields] of Object.entries(adapters)) {
       if (!isObject(fields)) {
         throw new SchemaError(
-          `adapters.${adapter}: expected an object keyed by field name, got ${typeof fields}. ` +
-            `What an adapter is handed is addressed by the field it applies to.`,
+          `adapters.${adapter}: expected an object keyed by field name, got ${typeof fields}.`,
         );
       }
     }

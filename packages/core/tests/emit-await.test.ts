@@ -120,7 +120,7 @@ describe('an announcement that waits', () => {
       fronds: [frond('booking', { entities: [CanBook, Verdict], handlers: [booking] })],
       createContainer,
       onEmit: async () => {},
-    })).rejects.toThrow(/'canBook' is announced with an answer type, and this app has a carrier/);
+    })).rejects.toThrow(/Emit<canBook, …> waits for answers, but this app sends facts through a carrier/);
   });
 });
 
@@ -150,6 +150,6 @@ describe('an announcement that waits on another process', () => {
     await using near = await asked();
 
     // Who should answer is unknown, and an empty answer would read as nobody objecting.
-    await expect(announce(near)({ room: 'library' })).rejects.toThrow(/s0 did not answer, so who listens there is unknown/);
+    await expect(announce(near)({ room: 'library' })).rejects.toThrow(/canBook: s0 did not answer, so its subscribers could not be asked/);
   });
 });

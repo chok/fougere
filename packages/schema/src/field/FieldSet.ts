@@ -64,8 +64,7 @@ export class FieldSet<TFields extends Fields = Fields> {
 
     if (primaries.length > 1) {
       throw new SchemaError(
-        `FieldSet.primary: ${primaries.map((name) => JSON.stringify(name)).join(', ')} all declare ` +
-          '`primary`; a field set can have only one primary field.',
+        `${primaries.map((name) => `'${name}'`).join(' and ')} are ${primaries.length === 2 ? 'both' : 'all'} primary(). An entity has one primary field.`,
       );
     }
 

@@ -104,15 +104,14 @@ export function createRemoteRouter(
       if (pending.size > 0) {
         throw new FougereError({
           code: ErrorCode.SERVICE_UNAVAILABLE,
-          message: `No reachable remote serves '${address}' — unreachable: ${[...pending.keys()].join(', ')}.\n`
-          + '  Placed in `fronds:` with an address, and did not answer.',
+          message: `No remote answered for '${address}'. Not reachable: ${[...pending.keys()].join(', ')}.`,
           address,
         });
       }
       throw new FougereError({
         code: ErrorCode.NOT_FOUND,
-        message: `No declared remote serves '${address}'.\n`
-          + '  Nothing here serves it either — add its frond to `fronds:`, or give the frond that does an address in `fronds:`.',
+        message: `Nothing serves '${address}', here or at any address in \`fronds:\`. `
+          + 'Add its frond to this app, or give the frond that serves it an address in `fronds:`.',
         address,
       });
     },
@@ -177,10 +176,8 @@ function claimFacades(
         throw new FougereError({
           code: ErrorCode.INTERNAL_ERROR,
           message:
-            `[claim] Two remotes serve '${facade.name}': '${first}' and '${label}'.\n`
-            + `  A call names an address, not a frond, so nothing could choose between them.\n`
-            + `  - give only one of them an address in \`fronds:\`, or\n`
-            + `  - expose one of them under a different address.`,
+            `[claim] Two remotes serve '${facade.name}': '${first}' and '${label}'. `
+            + 'Give only one of them an address in `fronds:`, or rename the handler in one of them.',
           address: facade.name,
         });
       }

@@ -55,7 +55,7 @@ export function storageOver(open: (entity: SchemaView, name: string) => Store): 
       const upsert = async (input: Partial<Record<string, unknown>>): Promise<Values> => {
         const created = applyCreate(fields, applyUpdate(fields, input));
         const id = created[pk] as string | undefined;
-        if (id === undefined) throw new Error(`${name}.upsert(): no \`${pk}\` — an upsert needs the key it writes at.`);
+        if (id === undefined) throw new Error(`${name}.upsert() needs a ${pk}.`);
         const previous = await store.get(keyOf(id));
         const values = previous ? { ...previous, ...applyUpdate(fields, input) } : created;
         await store.set(keyOf(id), values);
@@ -123,7 +123,7 @@ export function storageOver(open: (entity: SchemaView, name: string) => Store): 
           // first, in silence — the old version hid this by inventing an `id` field the
           // entity never declared.
           if (id === undefined) {
-            throw new Error(`${name}.create: '${pk}' is the primary key and nothing supplied it — this entity declares no generator for it.`);
+            throw new Error(`${name}.create() needs a ${pk}: nothing generates it. Pass one.`);
           }
           // A create is not an upsert. `Map.set` overwrites, so a second create under the
           // same key answered "created" while destroying the previous instance — SQL answers a

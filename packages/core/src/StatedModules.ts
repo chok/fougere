@@ -37,8 +37,7 @@ export async function statedModules(
     if (entry.held) {
       if (entry.held.name !== entry.key) {
         throw new Error(
-          `Fougere config: the entry '${entry.path}' holds the frond '${entry.held.name}'. `
-          + `Name the entry '${entry.held.name}' — the key is how \`only:\` and an address find it.`,
+          `fougere.config.ts: the entry '${entry.path}' holds the frond '${entry.held.name}'. Rename the entry '${entry.held.name}'.`,
         );
       }
       fronds.push(entry.held);
@@ -51,9 +50,8 @@ export async function statedModules(
     const factory = module[name] ?? module.default;
     if (typeof factory !== 'function') {
       throw new Error(
-        `Fougere config: '${entry.key}' exports no '${name}'. A module a config names hands its `
-        + `frond back from the export its last segment spells — \`export const ${name} = …\` — or `
-        + 'from its default.',
+        `fougere.config.ts: '${entry.key}' has no export named ${name} and no default export. `
+        + `It should export one: export const ${name} = …`,
       );
     }
 

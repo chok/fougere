@@ -68,8 +68,7 @@ export class Field<T = unknown> {
       const checked = FieldValueValidator.of(this).validate(create.value);
       if ('message' in checked)
         throw new SchemaError(
-          `${key ? `Field '${key}': ` : ''}the declared default ${JSON.stringify(create.value)} ` +
-            `is not a legal value for it — ${checked.message}.`,
+          `${key ? `Field '${key}': ` : ''}the default ${JSON.stringify(create.value)} is not valid: ${checked.message}.`,
         );
     }
   }

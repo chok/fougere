@@ -48,8 +48,8 @@ describe('a stated binding, against the signature it is about', () => {
       subject: 'PostHandler.publish',
     });
     // The message carries both halves: what was stated, and what is declared now.
-    expect(found!.message).toContain('`id`');
-    expect(found!.message).toContain('(postId)');
+    expect(found!.message).toContain('binds id on');
+    expect(found!.message).toContain('(it has postId)');
   });
 
   it('warns rather than refuses — the statement is still the author\'s word', () => {

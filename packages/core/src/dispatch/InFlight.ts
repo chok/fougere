@@ -15,7 +15,7 @@ export class InFlight {
     if (!this.accepting) {
       throw new FougereError({
         code: ErrorCode.SERVICE_UNAVAILABLE,
-        message: 'This app is being released and takes no new call — reach the current one through its handle.',
+        message: 'This app is shutting down and takes no new calls.',
         address,
         operation,
       });

@@ -46,7 +46,7 @@ describe('the fallback store realizes what the entity declares', () => {
 
     // `primary(text())` declares no generator, so nothing fills the hole. Storing under
     // `undefined` would make the SECOND create overwrite the first, in silence.
-    await expect(storage.create({ label: 'A chair' })).rejects.toThrow(/'code'/);
+    await expect(storage.create({ label: 'A chair' })).rejects.toThrow(/needs a code/);
   });
 
   it('refuses a duplicate key — a create is not an upsert', async () => {

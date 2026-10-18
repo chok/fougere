@@ -119,7 +119,7 @@ export class RelationGuard {
 
     throw new FougereError({
       code: ErrorCode.VALIDATION_FAILED,
-      message: `Refused on the way out of ${this.entity}.${operation} — ${errors.join(', ')}`,
+      message: `${this.entity}.${operation} names rows that do not exist: ${errors.join(', ')}`,
       details: errors,
     });
   }

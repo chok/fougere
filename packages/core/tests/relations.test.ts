@@ -209,7 +209,7 @@ describe('a many() whose target references nothing back', () => {
     class Piece extends entity({ id: primary(), title: text(), tags: many(Label) }) {}
 
     await expect(booted([Piece, Label]))
-      .rejects.toThrow(/Piece\.tags states many\(Label\), and no field of Label references Piece/);
+      .rejects.toThrow(/Piece\.tags is many\(Label\), but no field of Label points back to Piece/);
   });
 
   it('says nothing once the far side carries the key', async () => {

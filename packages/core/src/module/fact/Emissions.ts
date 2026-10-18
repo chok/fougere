@@ -1,4 +1,4 @@
-import { applyCreate, dotted, lowerFirst, type SchemaView } from '@fougere/schema';
+import { applyCreate, dotted, lowerFirst, upperFirst, type SchemaView } from '@fougere/schema';
 import { addressOf, facadeKeyOf } from '../../wire/Facade.js';
 import type { Container } from '@fougere/container';
 import { validationErrorsOf } from '../../wire/FougereError.js';
@@ -73,8 +73,8 @@ export class Emissions {
             filePath: frond.source.path,
             frond: frond.name,
             subject: fact,
-            message: `Frond '${frond.name}' orders the links of '${fact}', which it does not own. `
-              + 'The order belongs to the frond that declares the entity — state `pipes:` there.',
+            message: `${frond.name} gives an order for ${fact}, but ${fact} is declared in another frond. `
+              + 'Move pipes: to the frond.config.ts of that frond.',
           });
         }
 
@@ -129,11 +129,9 @@ export class Emissions {
           code: 'pipes-unordered',
           filePath: this.fileOf.get(links[0]!.facade) ?? '',
           subject: fact,
-          message: `${links.length} ops finish the fact '${fact}': ${links.map(named).join(', ')}. `
-            + 'They run one after another and nothing says in which order. State it on the frond '
-            + `that owns '${fact}': export default { pipes: { ${fact}: ['FirstHandler', `
-            + "'SecondHandler'] } }; — or make all but one accept `Fact<…>`, which changes nothing "
-            + 'and reads it.',
+          message: `${links.map(named).join(' and ')} ${links.length === 2 ? 'both' : 'all'} change ${fact}, in no set order. Give the order in `
+            + `frond.config.ts of the frond that owns ${fact}: pipes: { ${fact}: [${links.map((one) => `'${upperFirst(one.facade)}'`).join(', ')}] }. `
+            + 'Or, if only one of them changes it, make the others take Fact<…> instead.',
         });
         continue;
       }
@@ -146,9 +144,9 @@ export class Emissions {
           code: 'pipes-unlisted',
           filePath: this.fileOf.get(unlisted[0]!.facade) ?? '',
           subject: fact,
-          message: `${unlisted.map(named).join(', ')} finish${unlisted.length > 1 ? '' : 'es'} the `
-            + `fact '${fact}', and '${fact}' orders ${declared.join(', ')} — so where it runs is `
-            + 'not said. Add it to `pipes:`, or make it accept `Fact<…>`.',
+          message: `${unlisted.map(named).join(', ')} ${unlisted.length > 1 ? 'change' : 'changes'} ${fact}, `
+            + `but pipes: for ${fact} lists only ${declared.join(', ')}. Add ${unlisted.length > 1 ? 'them' : 'it'} to pipes:, `
+            + 'or make it take Fact<…> if it only reads.',
         });
         continue;
       }
@@ -197,17 +195,16 @@ export class Emissions {
           code: 'emit-await-with-carrier',
           filePath: this.fileOf.get(facadeOf(fact)) ?? '',
           subject: fact,
-          message: `'${fact}' is announced with an answer type, and this app has a carrier `
-            + '(`onEmit`). Waiting means knowing who answers; a carrier reaches whoever subscribed '
-            + `elsewhere and brings nothing back. Place the subscribers' fronds in \`fronds:\` with an address, or drop the `
-            + `second type of \`Emit<${fact}, …>\`.`,
+          message: `Emit<${fact}, …> waits for answers, but this app sends facts through a carrier (onEmit), `
+            + "which brings no answer back. Give the subscribers' fronds an address in `fronds:`, "
+            + `or use Emit<${fact}> without the second type.`,
         });
         continue;
       }
       this.container.registerValue(awaitKeyOf(fact), (raw: unknown) => this.announce(fact, raw, true));
     }
     if (ambient.degraded && this.subscribers.size > 0) {
-      this.log.warn('no async context on this runtime — an emission ring is not detected');
+      this.log.warn('This runtime has no async context, so a fact that triggers itself in a loop is not detected.');
     }
   }
 
@@ -312,10 +309,8 @@ export class Emissions {
       // each reader; it is not a link's to decide for everyone.
       if (answered === null || answered === undefined) {
         throw new Error(
-          `${link.facade}.${link.op} finishes the fact '${fact}' and answered nothing.\n`
-          + '  A link says what the fact IS, it does not take it back — the announcer has '
-          + 'already said it happened, and nothing can tell it otherwise.\n'
-          + '  Return the fact, amended or as it stands.',
+          `${link.facade}.${link.op} takes Pipe<${fact}> and returned nothing. `
+          + 'It must return the fact, changed or as it is.',
         );
       }
       carried = answered;
@@ -347,9 +342,9 @@ export class Emissions {
 
     const { listeners, unreachable } = await this.elsewhere.listenersOf(fact);
     if (unreachable.length > 0) {
-      const unknown = `${fact} — ${unreachable.join(', ')} did not answer, so who listens there is unknown`;
-      if (waiting) throw new Error(`${unknown}. An announcement with an answer type waits for everyone: a partial answer would look like a complete one.`);
-      this.log.warn(`${unknown}, and the fact did not reach it.`);
+      const unknown = `${fact}: ${unreachable.join(', ')} did not answer`;
+      if (waiting) throw new Error(`${unknown}, so its subscribers could not be asked. Emit<${fact}, …> needs every answer.`);
+      this.log.warn(`${unknown}, so its subscribers did not receive the fact.`);
     }
 
     const here = new Set((this.subscribers.get(fact) ?? []).map(({ facade, op }) => `${facade}.${op}`));
@@ -368,9 +363,8 @@ export class Emissions {
     const walked = ambient.currentChain();
     if (walked.includes(fact)) {
       throw new Error(
-        `Emission cycle: ${[...walked, fact].join(' → ')}.\n`
-        + '  A fact cannot cause itself. One of the subscribers above announces a fact that leads back here.\n'
-        + '  Make it accept `Fact<…>` and read, or announce outside the subscriber.',
+        `Facts announced in a loop: ${[...walked, fact].join(' → ')}. `
+        + 'One of these subscribers announces a fact that leads back here. Announce it somewhere else.',
       );
     }
 

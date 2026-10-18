@@ -12,6 +12,6 @@ export type GeneratorRef = 'cuid2' | (string & {});
  */
 export const Generators = new Registry<() => string>(
   'generator',
-  "export Generators.term(name, fn) from a vocabulary/ file and list it in the statement's `vocabulary`",
+  'export Generators.term(name, fn) from a file in vocabulary/',
   [['cuid2', createId]],
 );

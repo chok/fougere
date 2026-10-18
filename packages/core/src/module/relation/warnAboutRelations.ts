@@ -12,17 +12,15 @@ export function warnAboutRelations(relations: RelationCheck[], hosting: Hosting,
   const unfinished = unfinishable(hosting);
   if (unfinished.length > 0) {
     log.warn(
-      `[relations] ${unfinished.join(', ')} — declared, and this process keeps nothing on `
-      + 'restart: a release interrupted here is not resumed. Install @fougere/workflow, or '
-      + 'expect to finish one by hand.',
+      `[relations] ${unfinished.join(', ')}: a delete interrupted by a restart will not be finished. `
+      + 'Install @fougere/workflow to resume it.',
     );
   }
 
   const unheld = unheldAmong(relations, hosting);
   if (unheld.length > 0) {
     log.warn(
-      `[relations] ${unheld.join(', ')} — declared, and nothing in this process holds them: `
-      + 'no foreign key, and the target answers elsewhere. A row may name one that is gone.',
+      `[relations] ${unheld.join(', ')}: the target lives in another process, so a row may point to one that was deleted.`,
     );
   }
 }

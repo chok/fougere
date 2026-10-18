@@ -137,7 +137,7 @@ describe('Container', () => {
     it('refuses to replace a name nothing holds', () => {
       const container = createContainer();
 
-      expect(() => container.replace('Logger', Logger)).toThrow(/'Logger' is not registered, so nothing can be replaced/);
+      expect(() => container.replace('Logger', Logger)).toThrow(/'Logger' is not registered, so it cannot be replaced/);
     });
   });
 

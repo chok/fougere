@@ -85,8 +85,7 @@ export class FieldValueValidator {
     const custom = StringFormats.find(name);
     if (!custom && !(name in engineFormats)) {
       throw new SchemaError(
-        `Unknown format: '${name}'. Export StringFormats.term('${name}', …) from a vocabulary/ file and list it in the statement's \`vocabulary\` — ` +
-          `the engine validates ${Object.keys(engineFormats).length} formats natively and this is not one of them.`,
+        `Unknown format '${name}'. Define it in vocabulary/: export const ${name} = StringFormats.term('${name}', …).`,
       );
     }
 

@@ -34,8 +34,7 @@ function subjectOf(ctor: Ctor, kind: string): { name: string } {
   const subject = (ctor as unknown as { __entity?: { name: string } }).__entity;
   if (!subject?.name) {
     throw new Error(
-      `${ctor.name} is declared as a ${kind} but does not extend ${kind === 'presenter' ? 'Presenter(Entity)' : 'Collector(Type)'}, `
-      + `so what it is about cannot be read.`,
+      `${ctor.name} is listed as a ${kind}, so it must extend ${kind === 'presenter' ? 'Presenter(Entity)' : 'Collector(Type)'}.`,
     );
   }
 

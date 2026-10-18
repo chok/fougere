@@ -129,8 +129,8 @@ async function refuseHeld(
 
   throw new FougereError({
     code: ErrorCode.CONFLICT,
-    message: `${dependent.entity}.${dependent.field} holds ${found.length} row(s) naming this one, `
-      + `and states onDelete 'restrict' — take them out first, or declare what should happen.`,
+    message: `${found.length} ${dependent.entity} row(s) still point to this one through ${dependent.field}. `
+      + `Delete them first, or set onDelete on ${dependent.entity}.${dependent.field} ('cascade' or 'set null').`,
   });
 }
 

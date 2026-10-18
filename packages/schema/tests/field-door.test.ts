@@ -106,10 +106,10 @@ describe('the field facade', () => {
   it('refuses a pair whose halves are each legal', () => {
     class Target extends entity({ id: primary() }) {}
 
-    expect(() => nullable(primary())).toThrow(/A primary key admits no null/);
-    expect(() => optional(primary())).toThrow(/A primary key admits no null/);
-    expect(() => unique(many(Target))).toThrow(/A collection has no column of its own/);
-    expect(() => indexed(many(Target))).toThrow(/A collection has no column of its own/);
+    expect(() => nullable(primary())).toThrow(/A primary key cannot be null/);
+    expect(() => optional(primary())).toThrow(/A primary key cannot be null/);
+    expect(() => unique(many(Target))).toThrow(/many\(\) has no column of its own/);
+    expect(() => indexed(many(Target))).toThrow(/many\(\) has no column of its own/);
 
     expect(() => unique(ref(Target))).not.toThrow();
     expect(() => nullable(ref(Target))).not.toThrow();

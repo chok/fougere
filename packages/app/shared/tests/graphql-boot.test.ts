@@ -17,7 +17,7 @@ describe('graphql named on a web host', () => {
   it('refuses the boot, naming the import, when no adapter serves it', async () => {
     declaring();
 
-    await expect(useFougereApp()).rejects.toThrow(/protocols\.graphql: Unknown protocol 'graphql' — import the adapter that serves it/);
+    await expect(useFougereApp()).rejects.toThrow(/protocols\.graphql: Unknown protocol 'graphql'\. Known: .*To add one, import the adapter that provides it/);
   });
 
   it('serves it once the adapter is imported', async () => {
