@@ -17,3 +17,17 @@ describe('NamedTerm.in', () => {
     expect(NamedTerm.in(Card).map((term) => term.answered())).toEqual([true, true, false]);
   });
 });
+
+describe('NamedTerm.in, on a boundary', () => {
+  it('reads the alias a field names, then the codecs its rules name once it is answered', async () => {
+    const { Field, Boundaries } = await import('../src/index.js');
+    class Price extends entity({ id: primary(), cents: new Field<number>({ shape: { type: 'number' }, boundary: 'priceCents' }) }) {}
+    const named = () => NamedTerm.in(Price).filter((term) => term.field === 'cents').map((term) => [term.kind, term.name, term.answered()]);
+
+    expect(named()).toEqual([['boundary', 'priceCents', false]]);
+
+    Boundaries.aliases.register('priceCents', { in: { decode: 'priceFromCents' } });
+
+    expect(named()).toEqual([['boundary', 'priceCents', true], ['decoder', 'priceFromCents', false]]);
+  });
+});
