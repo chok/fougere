@@ -63,7 +63,11 @@ class SourceRegistry extends Registry<SourceType> {
   open(entry: { type?: string }, path: string): Source {
     const name = entry.type ?? this.conventional;
     if (name === undefined) {
-      throw new SchemaError(`${path}: no \`type\`, and no imported adapter claims the conventional one — import the adapter that answers it.`);
+      throw new SchemaError(
+        `${path} names no \`type\`, and no adapter loaded in this process says what that means. `
+        + `Import one in fougere.config.ts — \`import '@fougere/adapter-sql'\` makes it a SQLite file. `
+        + `If the import is there, the bundler dropped it. This process answers ${this.names.join(', ') || 'no source type'}.`,
+      );
     }
     const type = this.resolve(name, `${path}.type`);
     const refusal = JsonSchemaValidator.of(type.format.schema as JsonSchema).refusalOf(entry, [path]);

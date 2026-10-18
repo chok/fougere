@@ -272,7 +272,9 @@ One line each, kept because a past version of this file asserted the opposite.
   the registering file was dropped with the pure entry that reached it (`Unknown protocol 'graphql'`).
   `@fougere/nuxt` used to read the config with TypeScript and keep what it imported, which tied Nuxt
   to the compiler. A third party's adapter states its own `sideEffects`, as npm expects. Measured on
-  a `nuxt build` of `demos/nuxt-blog`, 2026-10-18.
+  a `nuxt build` of `demos/nuxt-blog`, 2026-10-18. Nitro reads no `sideEffects` of a module it leaves
+  EXTERNAL — every one in `nuxt dev` — so `@fougere/nuxt` keeps an external import whole: `door:check`
+  answered 500 in CI until it did.
 - **Core does not depend on the compiler, not even for its tests** — a core test states its fronds
   with `frond()` (`tests/fixtures-*/fronds.ts`, contracts written through `tests/contract.ts`), and
   what the scan DEDUCES is tested in `packages/compiler/tests/`. Core's devDependency on the

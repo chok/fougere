@@ -74,6 +74,17 @@ const module = defineNuxtModule<FougereModuleOptions>({
       process.env.FORCE_COLOR ??= '1';
     }
 
+    // Nitro decides which modules run something at load from its own list, and answers no for
+    // every module it leaves external: `import '@fougere/adapter-sql'` in the config was dropped
+    // from `nuxt dev`, and the boot found no source type. Keeping an external import costs nothing.
+    (nuxt as any).hook('nitro:init', (nitro: any) => {
+      nitro.hooks.hook('rollup:before', (_nitro: unknown, rollupConfig: any) => {
+        const decided = rollupConfig.treeshake?.moduleSideEffects;
+        if (typeof decided !== 'function') return;
+        rollupConfig.treeshake.moduleSideEffects = (id: string, external: boolean) => external || decided(id, external);
+      });
+    });
+
     // The compiler stays out of the server bundle, TypeScript with it: a server boots from the
     // statement the build wrote, and reaches the scan only where a project wrote none and has a
     // disk. Rollup code-splits a dynamic import into the bundle, so only `external` excludes it —
