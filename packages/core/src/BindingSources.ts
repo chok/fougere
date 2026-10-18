@@ -1,4 +1,4 @@
-import { Registry } from '@fougere/schema';
+import { Registry } from '@fougere/registry';
 import type { BindingSourceType } from './wire/BindingSourceType.js';
 import { fact, pipe } from './module/fact/sources.js';
 import { collector } from './module/collector/source.js';

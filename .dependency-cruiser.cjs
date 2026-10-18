@@ -56,10 +56,17 @@ module.exports = {
     },
     {
       name: 'schema-reaches-a-fougere-package',
-      comment: '`@fougere/schema` is the root of the tree — everything derives from it and it derives from nothing.',
+      comment: '`@fougere/schema` is the root of the domain — everything derives from it, and it derives from nothing but `@fougere/registry`, where its own registries come from.',
       severity: 'error',
       from: { path: '^packages/schema/src/' },
-      to: { path: '^packages/(?!schema/)' },
+      to: { path: '^packages/(?!schema/|registry/)' },
+    },
+    {
+      name: 'registry-depends-on-something',
+      comment: '`@fougere/registry` sits under schema, so it imports nothing at all — a registry is a Map with a rule.',
+      severity: 'error',
+      from: { path: '^packages/registry/src/' },
+      to: { pathNot: '^packages/registry/src/' },
     },
   ],
   options: {

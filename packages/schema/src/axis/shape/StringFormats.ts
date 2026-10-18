@@ -1,4 +1,4 @@
-import { Registry } from '../../lib/Registry.js';
+import { Registry } from '@fougere/registry';
 import type { FormatPredicate } from './FormatPredicate.js';
 
 /**

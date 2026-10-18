@@ -1,4 +1,4 @@
-import { Registry } from '@fougere/schema';
+import { Registry } from '@fougere/registry';
 import type { OperationKind } from './OperationKind.js';
 
 /** Deliberately finite. */

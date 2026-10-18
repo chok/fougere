@@ -16,6 +16,11 @@ import {
 } from '../src/index.js';
 import { describe, it, expect } from 'vitest';
 
+/** Cents on the wire, euros in the code — both describes below read this one alias. */
+Boundaries.decoders.register('fromCents', (v) => ({ value: typeof v === 'number' ? v / 100 : v }));
+Boundaries.encoders.register('toCents', (v) => (typeof v === 'number' ? Math.round(v * 100) : v));
+Boundaries.aliases.register('moneyCents', { in: { decode: 'fromCents' }, out: { encode: 'toCents' } });
+
 class Event extends entity({
   id: primary(),
   name: text({ min: 1 }),
@@ -72,9 +77,6 @@ describe('boundary · non-date kinds are identity', () => {
 
 describe('boundary · override slot', () => {
   it('a registered alias overrides the shape-derived default', () => {
-    Boundaries.decoders.register('fromCents', (v) => ({ value: typeof v === 'number' ? v / 100 : v }));
-    Boundaries.encoders.register('toCents', (v) => (typeof v === 'number' ? Math.round(v * 100) : v));
-    Boundaries.aliases.register('moneyCents', { in: { decode: 'fromCents' }, out: { encode: 'toCents' } });
 
     const price = new Field<number>({ shape: { type: 'number' }, boundary: 'moneyCents' });
     const { decode, encode } = Boundary.of(price);
@@ -135,9 +137,6 @@ describe("boundary · 'closed' permissions (readOnly / writeOnly)", () => {
 });
 
 describe('boundary · survives every field transform', () => {
-  Boundaries.decoders.register('fromCents', (v) => ({ value: typeof v === 'number' ? v / 100 : v }));
-  Boundaries.encoders.register('toCents', (v) => (typeof v === 'number' ? Math.round(v * 100) : v));
-  Boundaries.aliases.register('moneyCents', { in: { decode: 'fromCents' }, out: { encode: 'toCents' } });
   const money = () => new Field<number>({ shape: { type: 'number' }, boundary: 'moneyCents' });
 
   it('optional() keeps the boundary', () => {

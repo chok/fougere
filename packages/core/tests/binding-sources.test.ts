@@ -27,21 +27,21 @@ describe('BindingSources', () => {
     expect(binding!.source).toEqual({ kind: 'fact', factName: 'post' });
   });
 
-  it('asks a source a module registers before the request input is assumed', async () => {
+  it('asks a source standing in place of another before the request input is assumed', async () => {
     const tenant: BindingSourceType<'collector'> = {
       claim: (param) => (param.type.name === 'Tenant' ? { kind: 'collector', typeName: 'tenant' } : undefined),
       resolve: () => 'acme',
       given: (_source, value) => value,
     };
     const before = BindingSources.find('collector')!;
-    BindingSources.register('collector', tenant);
+    BindingSources.replace('collector', tenant);
     try {
       const plan = computeBindingPlan([typed('tenant', 'Tenant')], new Set());
 
       expect(plan[0]!.source).toEqual({ kind: 'collector', typeName: 'tenant' });
       await expect(new ArgumentResolver().resolve(plan, Invocation.from())).resolves.toEqual(['acme']);
     } finally {
-      BindingSources.register('collector', before);
+      BindingSources.replace('collector', before);
     }
   });
 

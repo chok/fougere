@@ -1,6 +1,6 @@
 import { createId } from '@paralleldrive/cuid2';
 
-import { Registry } from '../../lib/Registry.js';
+import { Registry } from '@fougere/registry';
 
 export type GeneratorRef = 'cuid2' | (string & {});
 

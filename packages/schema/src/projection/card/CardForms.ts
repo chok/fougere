@@ -1,4 +1,4 @@
-import { Registry } from '../../lib/Registry.js';
+import { Registry } from '@fougere/registry';
 import type { CardForm } from './CardForm.js';
 import { roleOnCard } from './RoleDescriptor.js';
 

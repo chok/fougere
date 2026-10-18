@@ -1,4 +1,5 @@
-import { Registry, type Format } from '@fougere/schema';
+import { Registry } from '@fougere/registry';
+import type { Format } from '@fougere/schema';
 import type { FougereProtocols } from './FougereProtocols.js';
 import type { FrondDescriptor } from './descriptor/FrondDescriptor.js';
 

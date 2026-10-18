@@ -67,6 +67,7 @@ alone could be a driver, `nuxt` could only ever be the Nuxt module.
 ```
 packages/
   schema/              @fougere/schema        entity(), field vocabulary, 4 axes, validation
+  registry/            @fougere/registry      one answer per name — under schema, zero deps
   container/           @fougere/container     type-based DI, zero deps
   compiler/            @fougere/compiler      the scan: source → descriptors. The one package that
                                                 needs a filesystem and a TypeScript program
@@ -285,10 +286,19 @@ which is what had `Object.assign(this, init)` refused over `__proto__`. A card f
 `implements` an axis — the axis is its STATIC side — so `Axes.register` is where it is checked.
 Pinned by `schema/tests/axis-registration.test.ts`.
 
-**A registry is an instance of `Registry<T>`** (`schema/src/lib/Registry.ts`). `StringFormats`,
-`Generators` and the three of `Boundaries` are bare instances; `Sources` extends it to add
-`open`, and `Axes` to rebuild the composed format a registration changes. `resolve` throws and lists what the process answers; `find` returns `undefined` for
-a caller that has its own words for the absence.
+**A registry is an instance of `Registry<T>`** (`@fougere/registry`, the one package under schema).
+`StringFormats`, `Generators`, `CardForms`, the three of `Boundaries`, `Protocols`, `Verbs` and
+`BindingSources` are bare instances; `Sources` extends it to add `open`, and `Axes` to rebuild the
+composed format a registration changes. A name has ONE answer: the same answer registered again is a
+no-op, a different one is refused naming the registry, `replace` says standing in its place is the
+point. It used to be a `Map.set`, so two packages registering `sqlite` lost the first in silence. A
+host re-reading the project in the same process says so — `fougere serve --watch` reloads inside
+`Registry.reloading`, where an answer replaces the one it had; the packages it does not re-run keep
+theirs. Measured 2026-10-18: `--watch` re-registers each `vocabulary/` file with a new function, Nuxt
+and Vite restart in a fresh context and re-register nothing. A registry is ONE form of an extension
+point — answered by NAME; the other is answered by TYPE (a port, a seam, a middleware), read off the
+class hierarchy at boot. `resolve` throws and lists what the process answers; `find` returns
+`undefined` for a caller that has its own words for the absence.
 
 **`Repository(…entities)` — the arity is the declaration.** At ONE, the repository IS that
 entity's storage and forwards all thirteen gestures. From TWO on it is an aggregate: no

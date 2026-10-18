@@ -1,5 +1,5 @@
 import type { BoundaryRules } from './Boundary.js';
-import { Registry } from '../../lib/Registry.js';
+import { Registry } from '@fougere/registry';
 import type { Encoder } from './Encoder.js';
 import type { Verdict } from '../../lib/Verdict.js';
 

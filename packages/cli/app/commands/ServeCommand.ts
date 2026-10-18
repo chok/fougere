@@ -2,6 +2,7 @@ import { createLocalRunner, envLevel, identityFromEnv, setLogLevel } from '@foug
 import { loadConfig, remotesOf } from '@fougere/core/node';
 import { installLoader } from '../../src/loader.js';
 
+import { Registry } from '@fougere/registry';
 import { serve } from '@fougere/transport-http';
 import { watch } from 'node:fs';
 import type { App, Transport } from '@fougere/core';
@@ -81,8 +82,9 @@ export default class ServeCommand {
     const reload = async (): Promise<void> => {
       const started = Date.now();
       let next: App;
+      let replaced = 0;
       try {
-        next = await bootApp(root, { only: [frond] });
+        next = await Registry.reloading(() => bootApp(root, { only: [frond] }), () => { replaced += 1; });
       } catch (error) {
         // The previous app keeps serving: a dev loop that dies on a typo is worse than
         // one that holds the last state which booted.
@@ -93,7 +95,7 @@ export default class ServeCommand {
       const previous = hosted;
       hosted = next;
       current = createLocalRunner(next);
-      this.ui.step(`reloaded in ${Date.now() - started} ms`);
+      this.ui.step(`reloaded in ${Date.now() - started} ms${replaced ? ` — ${replaced} answer(s) re-registered` : ''}`);
       // Drain then release, on the OLD app and in that order: a call that started before
       // the swap finishes on the app it started on.
       await previous.drain(DRAIN_MS).catch((e) => this.ui.info(`drain: ${(e as Error).message}`));

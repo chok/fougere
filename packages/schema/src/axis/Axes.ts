@@ -1,4 +1,4 @@
-import { Registry } from '../lib/Registry.js';
+import { Registry } from '@fougere/registry';
 import type { JsonSchema } from '../lib/JsonSchema.js';
 import { fieldFormat } from '../field/FieldFormat.js';
 import type { Axis } from './Axis.js';

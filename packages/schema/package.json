@@ -41,6 +41,7 @@
   },
   "dependencies": {
     "@cfworker/json-schema": "^4.1.1",
+    "@fougere/registry": "workspace:*",
     "@paralleldrive/cuid2": "^3.3.0",
     "@standard-schema/spec": "^1.1.0",
     "dequal": "^2.0.3",

@@ -46,6 +46,7 @@
     "@fougere/container": "workspace:*",
     "@fougere/core": "workspace:*",
     "@fougere/defaults": "workspace:*",
+    "@fougere/registry": "workspace:*",
     "@fougere/schema": "workspace:*",
     "@fougere/testing": "workspace:*",
     "@fougere/transport-http": "workspace:*",
