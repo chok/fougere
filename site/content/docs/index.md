@@ -1,95 +1,93 @@
 ---
 title: What is Fougere
-description: One idea — you declare the domain, and everything else derives from it, down to the process it runs in.
+description: You write your data and what your app does. Fougere writes the rest, and lets you move any part to another process without touching it.
 ---
 
 # What is Fougere
 
-Fougere is a TypeScript framework built on one idea: **you declare the domain, and
-everything else derives from it — down to the process it runs in.**
+You write your data and what your app does with it. Fougere writes the rest: the table,
+the validation, the API, the forms, the typed client, the tests. And any part of your app
+can later run in its own process without a line of your code changing.
 
-The rule behind it: *Fougere tells what your code is from how it runs.* A table, a
-protocol, a host, an address are how it runs. Two consequences follow, and they are
-usually sold as two separate features:
+## What you write
 
-| From what your code is… | that thing is… | its usual name |
-|---|---|---|
-| its table, its GraphQL type, its form, its validator | **derived** | single-schema |
-| its host, its storage, its facade, its address | **chosen apart** | the gradient |
-
-You may write a detail of how it runs next to your code — a column type for one field —
-when that is simpler. It fixes the value, and nothing derived from your code reads it. The
-rest of this page is those two readings.
-
-Read a third way, it is about you: one field changes, and there is one place to read. The
-projections cannot drift from it, and what the framework can prove wrong is refused at boot
-rather than answered. This is the property that decides whether a diff can be reviewed at
-all — the question that arrives the day most of the code was not typed by a human.
-
-## What is derived from it
-
-**Single-schema.** One entity class declares your data once — and validates its own input:
-the same `validate()` runs in the browser and at the façade. That validator is itself a
-projection, derived from the shape axis, but a normative one shipped with the class:
-every other projection must agree with it, and it cannot drift on its own. SQLite tables,
-GraphQL types, form contracts and API surfaces are *projections* of that declaration —
-nothing is written twice.
+A post, in a blog:
 
 ```ts
-import { entity, primary, text, created, oneOf, date, readOnly, optional } from '@fougere/schema';
-
+// fronds/blog/entities/Post.ts
 export default class Post extends entity({
   id: primary(),
   title: text({ min: 1, max: 160 }),
   body: optional(text()),
   createdAt: created(),
   status: readOnly(oneOf('draft', 'published', { default: 'draft' })),
-  publishedAt: readOnly(optional(date())),
 }) {}
 ```
 
-::derivation-diagram
-::
+And what the blog does with it:
 
-That single class is simultaneously:
+```ts
+// fronds/blog/handlers/PostHandler.ts
+export default class PostHandler extends Crud(Post) {
+  constructor(private posts: Repository<Post>) {
+    super(posts);
+  }
 
-- the **TypeScript type** of a row (`function render(p: Post)` — no `Infer<typeof …>`),
-- the **validator** of client input (`Post.validate(input)`),
-- the **metadata** every adapter reads (`Post.getFields()`),
-- the **fields** a form is built from (`useFormFor(Post)`),
-- the **nominal type** dependency injection matches in handler signatures (`user?: User`).
+  async publish(id: Post['id'], user?: User): Promise<Post> {
+    const post = await requireOwn(this.posts, id, user);
+    if (post.status === 'published') {
+      throw new FougereError({ code: ErrorCode.CONFLICT, message: 'Already published' });
+    }
 
-## What is chosen outside it
+    return this.posts.update(id, { status: 'published' });
+  }
+}
+```
 
-**The gradient.** Business logic lives in *Fronds* — self-contained modules of entities,
-handlers, collectors and seeds. A Frond runs in-process today and in its own process
-tomorrow, behind JSON-RPC 2.0, with **identical user code**. The entire topology statement
-is one line of config:
+`fronds/blog/` is a **frond**: one domain of your app, with its data and what it does.
+
+## What you get
+
+Nothing below is written by you:
+
+- **the type** — `Post` is the TypeScript type of a row, no `Infer<…>`;
+- **the validation** — the same rules in the browser and on the server, `title` refused
+  past 160 characters in both;
+- **the table** — and the migration when a field changes
+  ([Storage](/docs/business/storage));
+- **the API** — `POST /api/blog/posts/:id/publish`, a GraphQL mutation, a JSON-RPC call
+  ([Surfaces](/docs/infra/surfaces));
+- **the page's client** — `useCommand(post, 'publish')`, typed down to the errors it can
+  answer: `CONFLICT` here ([Queries & commands](/docs/client/queries-commands));
+- **the form** — `useFormFor(Post)` knows `status` is not the user's to write
+  ([Forms](/docs/client/forms));
+- **the tests** — one line, `checkAll(await testApp())`, tries every refusal the fields
+  imply ([Testing](/docs/infra/testing));
+- **a command line** — the same operations as a terminal tool, flags read off the fields
+  ([demo](/docs/demos));
+- **a refusal at startup** — when something cannot hold, the app does not start, and says
+  which file to fix.
+
+## Where it runs
+
+Today the blog runs inside your Nuxt app. Tomorrow it runs on its own server:
 
 ```ts
 // fougere.config.ts
 fronds: { blog: 'http://127.0.0.1:4100' }
 ```
 
-There is no RPC without travel: a call is a value `(address, operation, invocation)`; the
-runner executes it directly in memory when the Frond is local and frames it onto the wire
-when it is remote. Transports move the value — they never reshape it.
+That line is the whole change. The page still calls `publish`, the handler is the same
+file; the call now crosses the network, and costs that trip and nothing else
+([The gradient](/docs/infra/gradient)).
 
-So the split costs the hop and the JSON that rides it, and nothing else: no serialization
-the local path avoids, no framework tax layered on top of the network.
+## Why it holds
 
-The four families the rule refuses to name, drawn — the gradient being the fourth one read
-as a movement rather than a list:
+Your code never says *how* it runs: no SQL, no route, no HTTP, no host. It says what your
+data is and what your app does. Everything above is read from that, so nothing can drift
+from it, and one field changed is one place to read in a diff.
 
-::agnostic-core
-::
-
-And it is checkable with `diff`: the five demos that serve this same blog under Next,
-TanStack Start, React Router, SvelteKit and Express share a `fronds/` directory that is
-identical byte for byte ([what each host costs](/docs/infra/hosts#what-each-host-costs)). So
-*progressive* here means only this — each step outward
-[states its price](/docs/infra/gradient#five-rungs-and-the-price-of-each), and none of them
-asks you to rewrite what you wrote.
+The longer version: [Philosophy](/docs/concepts/philosophy).
 
 ## Reading order
 
