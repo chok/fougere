@@ -157,6 +157,10 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
   other. Forcing the packages external in webpack moves the failure to `Cannot find package
   '@fougere/app'`, a dependency the demo does not state. An installed app, whose packages sit under
   `node_modules`, is not measured yet.
+- **A SvelteKit server booting from its build's statement is not measured** — `demos/sveltekit-blog`
+  builds with `adapter-auto`, which leaves no Node server to run, and `vite preview` loads the plugin,
+  which imports the compiler. It reaches the boot through `@fougere/app` as `demos/react-router-blog`
+  does, which was measured with the compiler removed. Stated 2026-10-18.
 - **Nothing generates OpenAPI**, so `RouteDefinition.description` is read by nobody. The op's
   sentence has two readers, neither of them REST: `adapter/graphql/src/OperationsConfig.ts` and the
   CLI's `--help`.
