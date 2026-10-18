@@ -9,7 +9,7 @@ import { tmpdir } from 'node:os';
 import { createContainer } from '@fougere/container';
 import { entity, oneOf, primary, readOnly, ref, text } from '@fougere/schema';
 import { createSqliteSource } from '@fougere/adapter-sql';
-import { createApp, Crud, frond, migrating, pageOf } from '@fougere/core';
+import { createApp, Crud, frond, migrating, Page } from '@fougere/core';
 import { layerOf, storageFrom } from '../src/storage/ResolvedStorage.js';
 
 class Author extends entity({ id: primary(), name: text() }) {}
@@ -44,7 +44,7 @@ describe('a seed', () => {
       })],
     } as never);
 
-    const posts = pageOf(await app.storageFor('post')!.list()).items;
+    const posts = Page.of(await app.storageFor('post')!.list()).items;
     expect(posts).toMatchObject([{ title: 'Hello', authorId: 'alice', status: 'published' }]);
   });
 });

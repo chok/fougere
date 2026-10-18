@@ -1,9 +1,9 @@
-import { Crud, type RepositoryOf } from '@fougere/core';
+import { Crud, type Repository } from '@fougere/core';
 import Product from '../entities/Product.js';
 import Pricing from '../services/Pricing.js';
 
 export default class ProductHandler extends Crud(Product) {
-  constructor(products: RepositoryOf<Product>, private pricing: Pricing) {
+  constructor(products: Repository<Product>, private pricing: Pricing) {
     super(products);
   }
 

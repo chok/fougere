@@ -1,9 +1,9 @@
-import { FougereError, ErrorCode, type RepositoryOf } from '@fougere/core';
+import { FougereError, ErrorCode, type Repository } from '@fougere/core';
 import type Product from '../entities/Product.js';
 
 /** The catalog's facade. Nothing here knows it is called from another process. */
 export default class ProductHandler {
-  constructor(private products: RepositoryOf<Product>) {}
+  constructor(private products: Repository<Product>) {}
 
   async list() {
     return this.products.list();

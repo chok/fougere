@@ -1,9 +1,9 @@
-import type { RepositoryOf } from '@fougere/core';
+import type { Repository } from '@fougere/core';
 import Item from '../entities/Item.js';
 
 /** Two ways to answer the same question, and only their cost tells them apart. */
 export default class ItemHandler {
-  constructor(private items: RepositoryOf<Item>) {}
+  constructor(private items: Repository<Item>) {}
 
   async add(input: Item): Promise<Item> {
     return this.items.create(input);

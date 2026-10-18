@@ -4,7 +4,7 @@ import type { ListResult } from '../storage/ListResult.js';
 import type { SelectOption } from '../storage/SelectOption.js';
 import type { Storage } from '../storage/Storage.js';
 import type { SchemaView } from '@fougere/schema';
-import type { AggregateOf } from './AggregateOf.js';
+import type { Aggregate } from './Aggregate.js';
 import type { AggregateConstructor } from './AggregateConstructor.js';
 
 /** The single-entity form: the port, plus whatever the subclass names. */
@@ -13,10 +13,8 @@ export interface RepositoryConstructor<T> {
   readonly __entity: unknown;
 }
 
-/** What an aggregate's subclass sees. */
-declare abstract class AggregateShape<E extends readonly Entity[]> {
-  protected storages: { [K in keyof E]: Storage<InstanceType<E[K]>> };
-}
+/** What a class asks for to reach ONE entity's rows: `constructor(private posts: Repository<Post>)`. */
+export type Repository<T> = Storage<T>;
 
 export function Repository<E extends Entity>(entity: E): RepositoryConstructor<InstanceType<E>>;
 
@@ -61,10 +59,10 @@ function many<E extends readonly Entity[]>(entities: E): AggregateConstructor<E>
     static readonly __entity = entities[0];
     static readonly __owns = entities;
 
-    protected storages: AggregateOf<E>;
+    protected storages: Aggregate<E>['storages'];
 
     constructor(...storages: unknown[]) {
-      this.storages = storages.slice(0, entities.length) as AggregateOf<E>;
+      this.storages = storages.slice(0, entities.length) as Aggregate<E>['storages'];
     }
   }
 

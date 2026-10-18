@@ -1,4 +1,4 @@
-import { Crud, FougereError, ErrorCode, pageOf, type Page } from '@fougere/core';
+import { Crud, FougereError, ErrorCode, Page } from '@fougere/core';
 import Post from '../entities/Post.js';
 
 /**
@@ -12,7 +12,7 @@ export default class PostHandler extends Crud(Post) {
   async list(): Promise<Page<Post>> {
     const { items: all } = await super.list();
 
-    return pageOf(all.filter((post) => post.status === 'published'));
+    return Page.of(all.filter((post) => post.status === 'published'));
   }
 
   /** Everything, drafts included — what an author's own dashboard shows. */

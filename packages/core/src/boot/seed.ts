@@ -1,4 +1,4 @@
-import { pageOf } from '../wire/Page.js';
+import { Page } from '../wire/Page.js';
 import { Role } from '@fougere/schema';
 import type { FrondDescriptor } from '../descriptor/FrondDescriptor.js';
 import type { SeedEntry } from '../descriptor/SeedEntry.js';
@@ -82,7 +82,7 @@ export async function runSeeds(
       continue;
     }
 
-    const existing = pageOf(await storage.list()).items;
+    const existing = Page.of(await storage.list()).items;
     if (existing.length > 0) {
       report(`  ${seed.entityName}: skipped (${existing.length} exist)`);
       continue;

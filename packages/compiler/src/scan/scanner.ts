@@ -149,10 +149,10 @@ function depKeyOf(type: TypeRef): string {
   const frame = type.name === 'Together' ? type.generics?.[0]?.name : undefined;
   if (frame) return togetherKeyOf(tupleMembers(frame), tupleMembers(type.generics?.[1]?.name ?? ''));
 
-  // `RepositoryOf<Post>` — what an author writes when no repository file exists. The dual
+  // `Repository<Post>` — what an author writes when no repository file exists. The dual
   // of the line below: one names the port, the other the holder, and both resolve to a key
   // rather than to a class the author would have to invent.
-  const subject = type.name === 'RepositoryOf' ? type.generics?.[0]?.name : undefined;
+  const subject = type.name === 'Repository' ? type.generics?.[0]?.name : undefined;
   if (subject) return repositoryKeyOf(subject);
 
   // The GENERIC names the subject, so a prefix does not change the key — `MeiliStorage<Card>`

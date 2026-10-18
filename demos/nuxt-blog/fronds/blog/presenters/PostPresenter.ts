@@ -1,5 +1,5 @@
 import { Presenter } from '@fougere/core';
-import type { RepositoryOf } from '@fougere/core';
+import type { Repository } from '@fougere/core';
 import Post from '../entities/Post.js';
 import Author from '../entities/Author.js';
 
@@ -13,7 +13,7 @@ import Author from '../entities/Author.js';
  * stated the list, and an addition they left out stays out.
  */
 export default class PostPresenter extends Presenter(Post) {
-  constructor(private authors: RepositoryOf<Author>) {
+  constructor(private authors: Repository<Author>) {
     super();
   }
 

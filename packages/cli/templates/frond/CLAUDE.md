@@ -48,10 +48,10 @@ Storage is reached through a repository. Never inject `Storage` directly into a 
 presenter or collector — the boot refuses it. With no repository file, ask for the default shape:
 
 ```ts
-import type { RepositoryOf } from '@fougere/core';
+import type { Repository } from '@fougere/core';
 import Product from '../entities/Product.js';
 
-constructor(private products: RepositoryOf<Product>) {}
+constructor(private products: Repository<Product>) {}
 ```
 
 If the handler extends `Crud(Product)`, its inherited `this.storage` is already backed by that

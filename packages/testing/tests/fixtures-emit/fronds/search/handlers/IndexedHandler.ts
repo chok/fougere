@@ -1,9 +1,9 @@
-import { Crud, type RepositoryOf, type Fact } from '@fougere/core';
+import { Crud, type Repository, type Fact } from '@fougere/core';
 import Indexed from '../entities/Indexed.js';
 import PostPublished from '../../blog/entities/PostPublished.js';
 
 export default class IndexedHandler extends Crud(Indexed) {
-  constructor(repo: RepositoryOf<Indexed>) {
+  constructor(repo: Repository<Indexed>) {
     super(repo);
   }
 

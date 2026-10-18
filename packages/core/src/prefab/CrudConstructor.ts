@@ -4,7 +4,7 @@ import type { Storage } from '../storage/Storage.js';
 import type { OperationContract } from '../wire/OperationContract.js';
 import { targetOf } from './prefab.js';
 import type { CrudViews } from './CrudViews.js';
-import { pageOf, type Page } from '../wire/Page.js';
+import { Page } from '../wire/Page.js';
 import type { CrudOps } from './CrudOps.js';
 
 /**
@@ -137,7 +137,7 @@ export function Crud<E extends Entity, V extends CrudViews | Entity = {}>(
       this.#rows = repository as Storage<T>;
     }
 
-    async list(options?: ListOptions): Promise<Page<T>> { return pageOf(await this.#rows.list(options)); }
+    async list(options?: ListOptions): Promise<Page<T>> { return Page.of(await this.#rows.list(options)); }
     async findById(id: string): Promise<T | undefined> { return this.#rows.findById(id); }
     async create(input: Partial<T>): Promise<T> { return this.#rows.create(input); }
     async update(id: string, input: Partial<T>): Promise<T> { return this.#rows.update(id, input); }

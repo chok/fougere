@@ -1,4 +1,4 @@
-import { Crud, FougereError, ErrorCode, pageOf, type Page } from '@fougere/core';
+import { Crud, FougereError, ErrorCode, Page } from '@fougere/core';
 import Post from '../entities/Post.js';
 import User from '@fronds/user/entities/User.js';
 
@@ -10,7 +10,7 @@ export default class PostHandler extends Crud(Post) {
   async list(): Promise<Page<Post>> {
     const { items: all } = await super.list();
 
-    return pageOf(all.filter((p) => p.status === 'published'));
+    return Page.of(all.filter((p) => p.status === 'published'));
   }
 
   /** A post is visible when published, or when it's the reader's own draft. */

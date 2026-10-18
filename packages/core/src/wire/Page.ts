@@ -16,24 +16,26 @@ export interface Page<Row> {
   endCursor?: string;
 }
 
-/**
- * The array `Storage.list` answers, read as the page an operation hands over.
- *
- * A storage handed in by a host may answer the envelope already — `storageFactory` is its door,
- * and nothing there is obliged to subclass an array. Taken as it comes in that case.
- */
-export function pageOf<Row>(rows: Page<Row> | readonly Row[]): Page<Row> {
-  if (!Array.isArray(rows)) return rows as Page<Row>;
+export const Page = {
+  /**
+   * The array `Storage.list` answers, read as the page an operation hands over.
+   *
+   * A storage handed in by a host may answer the envelope already — `storageFactory` is its door,
+   * and nothing there is obliged to subclass an array. Taken as it comes in that case.
+   */
+  of<Row>(rows: Page<Row> | readonly Row[]): Page<Row> {
+    if (!Array.isArray(rows)) return rows as Page<Row>;
 
-  const { total, hasMore, endCursor } = rows as unknown as Omit<Page<Row>, 'items'>;
+    const { total, hasMore, endCursor } = rows as unknown as Omit<Page<Row>, 'items'>;
 
-  return {
-    items: [...rows],
-    ...(total !== undefined && { total }),
-    ...(hasMore !== undefined && { hasMore }),
-    ...(endCursor !== undefined && { endCursor }),
-  };
-}
+    return {
+      items: [...rows],
+      ...(total !== undefined && { total }),
+      ...(hasMore !== undefined && { hasMore }),
+      ...(endCursor !== undefined && { endCursor }),
+    };
+  },
+};
 
 /**
  * The value read as a page, or nothing.

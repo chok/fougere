@@ -154,7 +154,7 @@ describe('storage is reached through a repository, never through the port', () =
     expect(files.path('a')).toBe('/files/a');
   });
 
-  it('resolves a facade that asks for RepositoryOf<E> with no file written', async () => {
+  it('resolves a facade that asks for Repository<E> with no file written', async () => {
     await using app = await boot('fixtures-holder');
     const out = await createLocalRunner(app)({ address: 'bookCard', op: 'list' }, Invocation.empty);
 

@@ -1,4 +1,4 @@
-import { Crud, type Emit, type LogLine, type RepositoryOf } from '@fougere/core';
+import { Crud, type Emit, type LogLine, type Repository } from '@fougere/core';
 import Order from '../entities/Order.js';
 
 /**
@@ -8,7 +8,7 @@ import Order from '../entities/Order.js';
  * `main.ts`, and nothing here changes if it goes somewhere else.
  */
 export default class OrderHandler extends Crud(Order) {
-  constructor(repo: RepositoryOf<Order>, private log: Emit<LogLine>) {
+  constructor(repo: Repository<Order>, private log: Emit<LogLine>) {
     super(repo);
   }
 

@@ -36,9 +36,7 @@ export { Presenter } from './prefab/presenter.js';
 export type { PresenterViews } from './prefab/presenter.js';
 export { Collector } from './prefab/collector.js';
 export { type AggregateConstructor } from './prefab/AggregateConstructor.js';
-export { type AggregateOf } from './prefab/AggregateOf.js';
 export { Repository, type RepositoryConstructor } from './prefab/RepositoryConstructor.js';
-export { type RepositoryOf } from './prefab/RepositoryOf.js';
 export { Invocation } from './contract.js';
 export type { InvocationContext } from './contract.js';
 export type { PartialInvocation } from './contract.js';
@@ -54,7 +52,7 @@ export { JOURNAL, type Journal } from './module/relation/Journal.js';
 // them — or a test of one — has to be able to make one through the facade.
 export { DispatchEvent } from './dispatch/DispatchEvent.js';
 export type { CallPage, CallRecord } from './contract.js';
-export { pageOf, asPage, type Page } from './contract.js';
+export { Page, asPage } from './contract.js';
 export { driftOf, agrees, explain, type CardDrift } from './contract.js';
 export { wordsOf, type OperationContract } from './wire/OperationContract.js';
 export { Verbs } from './wire/Verbs.js';
