@@ -108,7 +108,7 @@ const NAMES = '.fougere/names.generated.d.ts';
  */
 async function writeDoors(app: string, root: string): Promise<void> {
   try {
-    const { scanProject } = await import('@fougere/compiler');
+    const { scanProject, emitStatement } = await import('@fougere/compiler');
     const { emitFacade, emitNames, frondAliases } = await import('@fougere/core/node');
     const { setModuleLoader } = await import('@fougere/core/node');
     const { resolveConventions } = await import('@fougere/core');
@@ -127,6 +127,11 @@ async function writeDoors(app: string, root: string): Promise<void> {
     mkdirSync(dirname(out), { recursive: true });
     const scan = await scanProject(root);
     writeFileSync(out, emitFacade(scan, { outFile: out }));
+    // The statement too, from the same scan: a production install leaves the compiler out, and the
+    // server then boots from what the build wrote here.
+    const statement = join(root, '.fougere', 'fronds.generated.ts');
+    mkdirSync(dirname(statement), { recursive: true });
+    writeFileSync(statement, emitStatement(scan, { outFile: statement }));
     // What a config may NAME, from the same scan.
     writeFileSync(join(app, NAMES), emitNames(scan));
   } catch { /* a host with no fronds, or a scan that could not run */ }

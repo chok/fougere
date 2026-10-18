@@ -1,7 +1,8 @@
 import { Logger, applyConfig, createApp, type App, type CreateAppOptions, type Extension, type FougereConfig, type FrondDescriptor, type Transport } from '@fougere/core';
 import { getModuleLoader, loadConfig, remotesOf, statedModules, statementFileIn, statementIn, type ModuleLoader, type Statement } from '@fougere/core/node';
 import { createJiti } from 'jiti';
-import { resolve, sep } from 'node:path';
+import { join, resolve, sep } from 'node:path';
+import { existsSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 
 import type { Container } from '@fougere/container';
@@ -141,13 +142,21 @@ export async function statementOf(
 /**
  * Scanned for a project that wrote no statement. The compiler is the one package that needs a
  * TypeScript program, so it is imported here and only here — and what it could not settle is said here.
+ * Where it is not installed — a production install, which leaves dev dependencies out — the statement
+ * the BUILD wrote is what boots: `@fougere/vite` and `@fougere/next` write it beside their facade.
  */
 async function written(root: string, conventions: FougereConfig['conventions']): Promise<string> {
   const log = new Logger('boot');
+  const built = join(root, '.fougere', 'fronds.generated.ts');
   const compiler = await import('@fougere/compiler').catch((error: NodeJS.ErrnoException) => {
     if (error.code !== 'ERR_MODULE_NOT_FOUND') throw error;
-    throw new Error(`${root} states no fronds.ts and @fougere/compiler is not installed — write the statement, or install the compiler to read it off the sources.`);
+
+    return undefined;
   });
+  if (!compiler) {
+    if (existsSync(built)) return built;
+    throw new Error(`${root} states no fronds.ts, no build wrote one, and @fougere/compiler is not installed — write the statement, or install the compiler to read it off the sources.`);
+  }
   const { file, diagnostics } = await compiler.writeStatement(root, conventions);
   for (const d of diagnostics.filter((one) => one.severity === 'blocking')) log.error(`[${d.code}] ${d.message}`, d.cause);
   for (const d of diagnostics) if (d.severity === 'warning') log.warn(`[${d.code}] ${d.message}`);

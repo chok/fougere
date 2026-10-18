@@ -16,7 +16,6 @@
     "--empty"
   ],
   "dependencies": {
-    "@fougere/compiler": "latest",
     "@fougere/core": "latest",
     "@fougere/schema": "latest",
     "@fougere/defaults": "latest",
@@ -26,6 +25,9 @@
     "kysely": "^0.28.17",
     "@fougere/next": "latest",
     "@fougere/react": "latest"
+  },
+  "devDependencies": {
+    "@fougere/compiler": "latest"
   },
   "wire": {
     "kind": "wrapExport",

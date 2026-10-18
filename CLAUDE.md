@@ -618,7 +618,9 @@ different way, so `demos/nuxt-blog` in-process served no `publish` and ran no mi
 `fougere serve` did, with every test green. The statement is the PROJECT's, whole — `only:` filters
 what a process reads, and two processes read one file. A contract the scan could not decide is not
 written (`input-contract-ambiguous` refuses `emitStatement`), and the file each value comes from
-travels as `files:` so a refusal still names it. The compiler is an optional peer of
+travels as `files:` so a refusal still names it. A host that BUILDS — `@fougere/vite`, `@fougere/next`,
+Nuxt — writes `.fougere/fronds.generated.ts` beside its facade, and a production install, which leaves
+the compiler out as a dev dependency, boots from it (`demos/react-router-blog`, measured 2026-10-18). The compiler is an optional peer of
 `@fougere/defaults`, `@fougere/app` and `@fougere/nuxt`, imported only where a project wrote no
 statement: an app that writes its own builds and runs with TypeScript never installed
 (`demos/no-compiler`). Measured cost of a boot that scans, 2026-10-18: about 20 ms, the write and the

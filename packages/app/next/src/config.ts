@@ -22,7 +22,7 @@ const SPECIFIER = '@fronds/facade';
  */
 async function writeFacades(root: string, app: string): Promise<void> {
   try {
-    const { scanProject } = await import('@fougere/compiler');
+    const { scanProject, emitStatement } = await import('@fougere/compiler');
     const { emitFacade, frondAliases } = await import('@fougere/core/node');
     const { setModuleLoader } = await import('@fougere/core/node');
     const { resolveConventions } = await import('@fougere/core');
@@ -36,7 +36,13 @@ async function writeFacades(root: string, app: string): Promise<void> {
 
     const out = join(app, FACADE);
     mkdirSync(dirname(out), { recursive: true });
-    writeFileSync(out, emitFacade(await scanProject(root), { outFile: out }));
+    const scan = await scanProject(root);
+    writeFileSync(out, emitFacade(scan, { outFile: out }));
+    // The statement too, from the same scan: a production install leaves the compiler out, and the
+    // server then boots from what the build wrote here.
+    const statement = join(root, '.fougere', 'fronds.generated.ts');
+    mkdirSync(dirname(statement), { recursive: true });
+    writeFileSync(statement, emitStatement(scan, { outFile: statement }));
   } catch { /* a host with no fronds, or a scan that could not run */ }
 }
 

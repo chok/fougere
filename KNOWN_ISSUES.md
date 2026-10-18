@@ -148,6 +148,15 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
 - **A seed cycle is not satisfiable by ordering** — `core/src/boot/seed.ts`, `orderSeeds`.
   It returns them as `cycle` beside `ordered` and the boot NAMES them; they are still planted
   in declaration order and the source answers — the order the statement lists them.
+- **`demos/next-blog` does not build for production** — `next build` stops prerendering `/` on
+  `sources.main: no \`type\`, and no imported adapter claims the conventional one`, though its config
+  imports `@fougere/adapter-sql`. Measured 2026-10-18, and identical at `4fa29d46`, before the boot moved
+  to the statement. Inside this monorepo a `@fougere/*` package is a link to `packages/…`, whose real path
+  holds no `node_modules`, so Next bundles it whatever `serverExternalPackages` says: the server chunk
+  carries its own `@fougere/core`, while `adapter-sql` — loaded outside it — registers `sqlite` in the
+  other. Forcing the packages external in webpack moves the failure to `Cannot find package
+  '@fougere/app'`, a dependency the demo does not state. An installed app, whose packages sit under
+  `node_modules`, is not measured yet.
 - **Nothing generates OpenAPI**, so `RouteDefinition.description` is read by nobody. The op's
   sentence has two readers, neither of them REST: `adapter/graphql/src/OperationsConfig.ts` and the
   CLI's `--help`.
