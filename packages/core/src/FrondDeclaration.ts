@@ -74,6 +74,11 @@ export interface FrondDeclaration extends Pick<FrondConfig, 'pipes' | 'surfaces'
   scope?: string;
   /** What `frond.config.ts` states — the third producer of an operation contract. */
   operationsOverrides?: FrondDescriptor['operationsOverrides'];
+  /**
+   * The file each value is declared in — `[[PostHandler, '/app/fronds/blog/handlers/PostHandler.ts']]` —
+   * which a refusal names. The scan writes it; a statement written by hand may leave it out.
+   */
+  files?: readonly (readonly [unknown, string])[];
   /** The frond's `frond.config.ts`, imported — read the way the scan reads the file. */
   config?: FrondConfig;
   /** What rises with the process serving this frond — the same thing its `extensions/` states. */
@@ -83,11 +88,13 @@ export interface FrondDeclaration extends Pick<FrondConfig, 'pipes' | 'surfaces'
 /** State a frond without reading a disk. */
 export function frond(name: string, declared: FrondDeclaration = {}): FrondDescriptor {
   const scope = declared.scope ?? DEFAULT_CONVENTIONS.scope;
+  const files = new Map<unknown, string>(declared.files ?? []);
+  const fileOf = (value: unknown): string => files.get(value) ?? '';
 
   const entities: EntityEntry[] = (declared.entities ?? []).map((entityClass) => ({
     name: lowerFirst((entityClass as { name: string }).name),
     entityClass,
-    filePath: '',
+    filePath: fileOf(entityClass),
     exposed: true,
   }));
 
@@ -105,7 +112,7 @@ export function frond(name: string, declared: FrondDeclaration = {}): FrondDescr
       entityName: address,
       operations: statedOperations(h),
       deps: depsOf(h),
-      filePath: '',
+      filePath: fileOf(ctor),
       exposed: true,
       ...(surface ? { surface } : {}),
     };
@@ -126,7 +133,7 @@ export function frond(name: string, declared: FrondDeclaration = {}): FrondDescr
       fields,
       fieldMeta: fields.map((field) => written.find((meta) => meta.name === field) ?? { name: field }),
       deps: depsOf(p),
-      filePath: '',
+      filePath: fileOf(ctor),
     };
   });
 
@@ -143,7 +150,7 @@ export function frond(name: string, declared: FrondDeclaration = {}): FrondDescr
       typeName: lowerFirst(subjectOf(ctor, 'collector').name),
       ctor,
       deps: depsOf(c),
-      filePath: '',
+      filePath: fileOf(ctor),
     };
   });
 
@@ -153,21 +160,21 @@ export function frond(name: string, declared: FrondDeclaration = {}): FrondDescr
     ...(typeof p === 'function' || !p.name ? {} : { name: p.name }),
     ctor: ctorOf(p),
     deps: depsOf(p),
-    filePath: '',
+    filePath: fileOf(ctorOf(p)),
     ...(typeof p !== 'function' && p.abstract ? { abstract: true as const } : {}),
   }));
 
   const seeds: SeedEntry[] = (declared.seeds ?? []).map((s) => ({
     entityName: s.entityName,
     data: s.data,
-    filePath: '',
+    filePath: fileOf(s.data),
   }));
 
   const middlewares: MiddlewareEntry[] = (declared.middlewares ?? []).map((m) => ({
     name: ctorOf(m).name,
     ctor: ctorOf(m),
     deps: depsOf(m),
-    filePath: '',
+    filePath: fileOf(ctorOf(m)),
   }));
 
   const config = new FrondConfigReading(declared.config);
@@ -189,7 +196,7 @@ export function frond(name: string, declared: FrondDeclaration = {}): FrondDescr
     ...(declared.pipes ? { pipes: declared.pipes } : {}),
     ...(declared.surfaces ? { surfaces: declared.surfaces } : {}),
     ...(declared.extensions
-      ? { extensions: declared.extensions.map((extension) => ({ name: extension.name, extension, filePath: '' })) }
+      ? { extensions: declared.extensions.map((extension) => ({ name: extension.name, extension, filePath: fileOf(extension) })) }
       : {}),
   };
 }

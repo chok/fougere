@@ -33,12 +33,25 @@ class Imports implements Aliases {
   /** The frond a file belongs to — a named import needs the specifier its default got. */
   private frondOfFile = new Map<string, FrondDescriptor>();
 
+  /** Per frond, the file each imported value is declared in — what a refusal names. */
+  private readonly declaredIn = new Map<string, Map<string, string>>();
+
   constructor(private readonly outFile?: string) {}
+
+  /** `files: [[_0, '/app/fronds/blog/entities/Post.ts'], …]` for the values this frond imported. */
+  filesOf(frond: FrondDescriptor): string {
+    const declared = [...(this.declaredIn.get(frond.name) ?? [])];
+
+    return declared.length ? `files: [${declared.map(([alias, path]) => `[${alias}, ${JSON.stringify(path)}]`).join(', ')}]` : '';
+  }
 
   default(filePath: string, frond: FrondDescriptor, value?: Live): string {
     this.frondOfFile.set(filePath, frond);
+    const declared = this.declaredIn.get(frond.name) ?? new Map<string, string>();
+    this.declaredIn.set(frond.name, declared);
     const known = this.byPath.get(filePath);
     if (known) {
+      declared.set(known, filePath);
       if (value) this.remember(value, known);
 
       return known;
@@ -46,6 +59,7 @@ class Imports implements Aliases {
     const alias = `_${this.byPath.size}`;
     this.lines.push(`import ${alias} from '${specifierOf(filePath, frond, this.outFile)}';`);
     this.byPath.set(filePath, alias);
+    declared.set(alias, filePath);
     if (value) this.remember(value, alias);
 
     return alias;
@@ -165,6 +179,8 @@ function frondOf(frond: FrondDescriptor, imports: Imports): string {
 
   const scope = (frond.source.package as string | undefined)?.split('/')[0];
   if (scope) members.push(`scope: ${JSON.stringify(scope)}`);
+  const files = imports.filesOf(frond);
+  if (files) members.push(files);
 
   return `  frond(${JSON.stringify(frond.name)}, {\n    ${members.join(',\n    ')},\n  })`;
 }
@@ -194,7 +210,7 @@ export function emitStatement(scan: ScanResult, options: { outFile?: string } = 
     `export const vocabulary = [${terms.join(', ')}];`,
     '',
     'export default [',
-    `${fronds.join(',\n')},`,
+    ...fronds.map((one) => `${one},`),
     '];',
     '',
   ].join('\n');

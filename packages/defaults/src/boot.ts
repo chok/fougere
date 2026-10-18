@@ -1,7 +1,8 @@
 import { Logger, applyConfig, createApp, type App, type CreateAppOptions, type Extension, type FougereConfig, type FrondDescriptor, type Transport } from '@fougere/core';
 import { getModuleLoader, loadConfig, remotesOf, statedModules, statementFileIn, type ModuleLoader } from '@fougere/core/node';
 import { createJiti } from 'jiti';
-import { resolve, sep } from 'node:path';
+import { dirname, join, resolve, sep } from 'node:path';
+import { mkdir, rename, writeFile } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
 
 import type { Container } from '@fougere/container';
@@ -70,14 +71,14 @@ export async function boot(options: BootOptions): Promise<App> {
   // What the config names by module — imported here, because core resolves no specifier.
   const stated = await statedModules(config.fronds, fromProject(root));
   const only = options.only ?? options.fronds;
-  const statement = statementFileIn(root);
-  const written = statement ? await statementIn(statement) : { fronds: [], vocabulary: [] };
-  const hosted = [...written.fronds, ...stated.fronds].filter((frond) => !only || only.includes(frond.name));
+  // Every boot starts from a statement: the one the project wrote, or the one the scan writes for it.
+  const statement = await statementOf(root, config.conventions);
+  const hosted = [...statement.fronds, ...stated.fronds].filter((frond) => !only || only.includes(frond.name));
 
-  log.debug('creating app (scan + container)');
+  log.debug('creating app');
   const app = await createApp({
-    ...(hosted.length > 0 ? { fronds: hosted } : {}),
-    ...(statement ? { vocabulary: written.vocabulary } : { scan: await scanned(root, only, config.conventions) }),
+    fronds: hosted,
+    vocabulary: statement.vocabulary,
     createContainer: options.createContainer,
     storageFactory: layer?.storageFactory,
     // The tree's string leaves say the same thing `remotes:` does, and this boot read
@@ -127,22 +128,42 @@ function fromProject(root: string): ModuleLoader {
     : project.import(id) as Promise<Record<string, unknown>>);
 }
 
-/** What a project wrote by hand: its fronds as `frond()` calls, and the terms its process answers. */
-async function statementIn(path: string): Promise<Required<Pick<CreateAppOptions, 'fronds' | 'vocabulary'>>> {
-  const mod = await getModuleLoader()(path);
+/** What a project boots from: its fronds as `frond()` calls, and the terms its process answers. */
+export type Statement = Required<Pick<CreateAppOptions, 'fronds' | 'vocabulary'>>;
+
+/**
+ * The statement a project boots from — the `fronds.ts` it wrote, or the one the scan writes for it
+ * when it wrote none. Every host starts from one, so what booted in dev is what boots in a build.
+ */
+export async function statementOf(root: string, conventions?: FougereConfig['conventions']): Promise<Statement> {
+  const mod = await getModuleLoader()(statementFileIn(root) ?? await written(root, conventions));
 
   return { fronds: mod.default as FrondDescriptor[], vocabulary: (mod.vocabulary ?? []) as NonNullable<CreateAppOptions['vocabulary']> };
 }
 
 /**
- * The fronds read off the sources, for a project that wrote none. The compiler is the one package
- * that needs a TypeScript program, so it is imported here and only here.
+ * The statement the scan writes for a project that wrote none — `.fougere/fronds.generated.ts`, beside
+ * what `fougere build` writes. The compiler is the one package that needs a TypeScript program, so it
+ * is imported here and only here. What the scan could not settle is said here, since the statement
+ * states fronds and nothing else. It is the PROJECT's, whole: a process narrowed by `only:` filters it,
+ * and two of them booting at once read the same file.
  */
-async function scanned(root: string, only: string[] | undefined, conventions: FougereConfig['conventions']) {
+async function written(root: string, conventions: FougereConfig['conventions']): Promise<string> {
+  const log = new Logger('boot');
   const compiler = await import('@fougere/compiler').catch((error: NodeJS.ErrnoException) => {
     if (error.code !== 'ERR_MODULE_NOT_FOUND') throw error;
     throw new Error(`${root} states no fronds.ts and @fougere/compiler is not installed — write the statement, or install the compiler to read it off the sources.`);
   });
+  const scan = await compiler.scanProject(root, undefined, conventions);
+  for (const d of scan.diagnostics.filter((one) => one.severity === 'blocking')) log.error(`[${d.code}] ${d.message}`, d.cause);
+  for (const d of scan.diagnostics) if (d.severity === 'warning') log.warn(`[${d.code}] ${d.message}`);
 
-  return compiler.scanProject(root, only, conventions);
+  const out = join(root, '.fougere', 'fronds.generated.ts');
+  await mkdir(dirname(out), { recursive: true });
+  // Renamed into place, so a second boot of the same project reads a whole file, never half of one.
+  const draft = `${out}.${process.pid}.${Date.now()}`;
+  await writeFile(draft, compiler.emitStatement(scan, { outFile: out }));
+  await rename(draft, out);
+
+  return out;
 }

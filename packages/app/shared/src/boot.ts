@@ -2,12 +2,12 @@
 import { resolve, sep } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { applyConfig, createApp, Logger, migrating } from '@fougere/core';
-import { scanProject, frondAliases } from '@fougere/compiler';
+import { frondAliases } from '@fougere/compiler';
 import { resolveConventions } from '@fougere/core';
 import { loadCascadedConfig, remotesOf, setModuleLoader, statedModules } from '@fougere/core/node';
 
 import type { App, CreateAppOptions, FougereConfig, Transport } from '@fougere/core';
-import { layerOf, remoteTransport, type ResolvedStorage } from '@fougere/defaults';
+import { layerOf, remoteTransport, statementOf, type ResolvedStorage, type Statement } from '@fougere/defaults';
 
 // ── Public types ─────────────────────────────────
 
@@ -198,6 +198,11 @@ async function boot(): Promise<App> {
     transport = await remoteTransport();
   }
 
+  // Named nothing, the host boots from the project's statement — written by hand, or by the scan.
+  const declared: Partial<Statement> = _config.fronds || _config.scan
+    ? { fronds: _config.fronds, vocabulary: _config.vocabulary }
+    : await statementOf(root, fileConfig.conventions);
+
   const app = await createApp({
     // The host's word wins: it scanned at build, and a second scan here would either
     // repeat that work or — where there is no disk — find nothing and say so quietly.
@@ -206,15 +211,9 @@ async function boot(): Promise<App> {
     // then `hostedBy` merges the two: under Nuxt that scan is a BUILD artifact, so leaning
     // on it costs the runtime nothing. What is never done is scanning a disk BECAUSE a
     // statement was incomplete — half a statement would buy nothing the whole one does.
-    ...(_config.fronds ? { fronds: _config.fronds } : {}),
+    ...(declared.fronds || stated.fronds.length > 0 ? { fronds: [...(declared.fronds ?? []), ...stated.fronds] } : {}),
     ...(_config.scan ? { scan: _config.scan } : {}),
-    ...(_config.vocabulary ? { vocabulary: _config.vocabulary } : {}),
-    ...(!_config.fronds && !_config.scan
-      ? { scan: await scanProject(root, undefined, conventions) }
-      : {}),
-    ...(stated.fronds.length > 0
-      ? { fronds: [...(_config.fronds ?? []), ...stated.fronds] }
-      : {}),
+    ...(declared.vocabulary ? { vocabulary: declared.vocabulary } : {}),
     // The layer, spread whole. Naming a few of its members is how `transacted` and `close`
     // were left behind once, under Nuxt only.
     ...layerOf(storage),
