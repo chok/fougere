@@ -1,10 +1,11 @@
 /** @fougere/defaults — the conventional boot, declared once. */
 import { migrating, type App, type CreateAppOptions } from '@fougere/core';
-import { boot } from '@fougere/compiler';
+import { boot } from './boot.js';
 import { loadConfig, remotesOf } from '@fougere/core/node';
 import { resolveStorage, type ResolvedStorage } from './storage/ResolvedStorage.js';
 import { remoteTransport } from './transport/RemoteTransport.js';
 
+export { boot } from './boot.js';
 export { remoteTransport } from './transport/RemoteTransport.js';
 export { declaresStorage } from './storage/DeclaredStorage.js';
 export { layerOf, resolveStorage, storageFrom } from './storage/ResolvedStorage.js';

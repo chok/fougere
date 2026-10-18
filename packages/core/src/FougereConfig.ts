@@ -43,6 +43,13 @@ export function configFileIn(dir: string): string | undefined {
   return CONFIG_FILES.map((file) => resolve(dir, file)).find((path) => existsSync(path));
 }
 
+const STATEMENT_FILES = ['fronds.ts', 'fronds.mts', 'fronds.js', 'fronds.mjs'];
+
+/** The fronds a directory states by hand — `frond()` calls beside the config, booted with no scan. */
+export function statementFileIn(dir: string): string | undefined {
+  return STATEMENT_FILES.map((file) => resolve(dir, file)).find((path) => existsSync(path));
+}
+
 /**
  * The project an app belongs to: the nearest directory, from `dir` up, that holds the fronds —
  * or, holding none yet, a config file. An app under `apps/` finds its workspace, and an app that

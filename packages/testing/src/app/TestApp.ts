@@ -1,5 +1,5 @@
 import { migrating, type App } from '@fougere/core';
-import { boot } from '@fougere/compiler';
+import { boot } from '@fougere/defaults';
 import '@fougere/adapter-sql';
 import { remoteTransport, resolveStorage } from '@fougere/defaults';
 import { installStubs, type Stub } from '../stub/Stub.js';

@@ -54,6 +54,7 @@ pnpm -C demos/crossing-cost dev    # a chain of three, and the config line that 
 pnpm -C demos/oclif-catalog dev --help  # a frond as a terminal — topics, flags and help derived
 pnpm -C demos/boot-refusals dev    # fourteen projects that do not hold — a code, a subject, a file
 pnpm -C demos/on-delete dev        # restrict, cascade, set null — the engine, then the guard
+pnpm -C demos/no-compiler dev      # fronds written by hand, booted by Node alone — no scan, no TypeScript
 pnpm -C demos/test-gradient test   # 53 tests, 44 of them from a one-line file
 pnpm -C demos/test-gradient e2e    # the browser rung — a form that states no rule of its own
 ```
@@ -108,6 +109,8 @@ packages/
   http/                @fougere/http          the HttpRouter port + its express/fastify/hono adapters
   observability/       @fougere/observability optional: a span per op, the four signals, OTLP. Core holds none of it
   defaults/            @fougere/defaults      the conventional boot — the ONE place naming container+storage+transport
+                                                — booted from `fronds.ts` when the project writes one, the compiler
+                                                imported only when it does not
   cli/                 @fougere/cli           commands, scaffolding, and the terminal UI (src/ui.ts)
   testing/             @fougere/testing       cases derived from an entity, doubles derived from a port
   calls/               @fougere/calls         optional: a bounded ring of what this process dispatched, served as rpc.calls
@@ -153,6 +156,7 @@ demos/
   test-gradient/       what the declaration writes on its own, and the four rungs it runs at
   boot-refusals/       fourteen projects that do not hold, and what each refusal names
   on-delete/           what a deletion does to the rows that name it — one line moves who does it
+  no-compiler/         fronds written by hand: Node boots them, and neither the compiler nor TypeScript loads
   anchor-chain/        a path with two stops — which derivations hold rows, and which say nothing
   emit-multirepo/      two repositories, one fact, and the ~80-line carrier that is not Fougere's
   rust-frond/          the far side is not TypeScript, and the validator is still ours
@@ -387,7 +391,7 @@ prints it, booting the app with the schema check and the seeds left out. Pinned 
 
 **The ascent is ORDERED BY CORE, and a host hands over a gesture** — `createApp` puts
 `checking(options.pending)`, `seeding()` and `presenters()` before whatever `extensions:` carries. Four
-hosts assembled those two members themselves (`compiler/src/boot.ts`,
+hosts assembled those two members themselves (`defaults/src/boot.ts`,
 `app/shared/src/boot.ts`, the Nuxt codegen as a STRING, and a demo), and eight demos wrote
 nothing. Rows before a checked schema is not a host's preference to hold. `Source.pending` is
 declared once and travels whole: `layerOf(storage)` (`defaults/src/storage/ResolvedStorage.ts`) is
@@ -741,7 +745,7 @@ under the frond that answers, `← <caller>` when a signed call came from anothe
 (`'@fougere/log': './lines.jsonl'`) brings the file destination as well. It used to be core's
 `loggerMiddleware`, installed by `observability` alone, so an app that did not trace wrote nothing
 about its calls. The starters write the line. `boot()` resolves a PACKAGE key from the project
-(`fromProject`, `compiler/src/boot.ts`): core's own loader took `'@fougere/log'` for a file path,
+(`fromProject`, `defaults/src/boot.ts`): core's own loader took `'@fougere/log'` for a file path,
 so a script calling `bootApp` with no loader of its own refused the config the starter writes.
 Pinned by `log/tests/call-lines.test.ts`.
 

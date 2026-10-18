@@ -40,6 +40,7 @@
     "@fougere/schema": "workspace:^"
   },
   "devDependencies": {
+    "@fougere/defaults": "workspace:*",
     "@fougere/compiler": "workspace:*",
     "@fougere/container": "workspace:*",
     "@fougere/core": "workspace:*",

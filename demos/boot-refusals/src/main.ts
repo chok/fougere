@@ -9,7 +9,7 @@
  * The fifteen not here are the operation-contract family, which `fougere check` already
  * reports without booting, and the variants of a rule a case above already states.
  */
-import { boot } from '@fougere/compiler';
+import { boot } from '@fougere/defaults';
 import { createContainer } from '@fougere/container';
 import type { Storage } from '@fougere/core';
 import { join } from 'node:path';

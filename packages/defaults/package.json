@@ -39,13 +39,22 @@
     "@fougere/core": "workspace:*",
     "@fougere/transport-http": "workspace:*",
     "@fougere/container": "workspace:*",
-    "@fougere/compiler": "workspace:*",
-    "@fougere/adapter-memory": "workspace:*"
+    "@fougere/adapter-memory": "workspace:*",
+    "jiti": "^2.6.1"
+  },
+  "peerDependencies": {
+    "@fougere/compiler": "workspace:^"
+  },
+  "peerDependenciesMeta": {
+    "@fougere/compiler": {
+      "optional": true
+    }
   },
   "publishConfig": {
     "access": "public"
   },
   "devDependencies": {
+    "@fougere/compiler": "workspace:*",
     "@fougere/schema": "workspace:*",
     "kysely": "^0.28.17",
     "better-sqlite3": "^13.0.3",

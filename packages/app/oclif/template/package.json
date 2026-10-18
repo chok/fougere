@@ -7,6 +7,7 @@
   },
   "dependencies": {
     "@fougere/core": "latest",
+    "@fougere/compiler": "latest",
     "@fougere/defaults": "latest",
     "@fougere/oclif": "latest",
     "@fougere/schema": "latest",

@@ -7,7 +7,7 @@
  * level is held for the process and consulted at each emission.
  */
 import { createLocalRunner, applyConfig, logLevel, Invocation } from '@fougere/core';
-import { boot } from '@fougere/compiler';
+import { boot } from '@fougere/defaults';
 import { loadConfig } from '@fougere/core/node';
 import { createContainer } from '@fougere/container';
 import { writeFileSync } from 'node:fs';

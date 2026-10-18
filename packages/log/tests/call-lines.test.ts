@@ -2,7 +2,8 @@
  * Two lines a call, written by the process that answers it — under the frond that answers, and
  * naming the process that signed it when it came from another one.
  */
-import { boot, scanProject } from '@fougere/compiler';
+import { scanProject } from '@fougere/compiler';
+import { boot } from '@fougere/defaults';
 import { afterEach, describe, it, expect, vi } from 'vitest';
 import { join } from 'node:path';
 import { mkdtempSync } from 'node:fs';

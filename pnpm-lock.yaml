@@ -359,6 +359,9 @@ importers:
       '@fougere/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@fougere/defaults':
+        specifier: workspace:*
+        version: link:../../packages/defaults
       '@fougere/schema':
         specifier: workspace:*
         version: link:../../packages/schema
@@ -455,6 +458,9 @@ importers:
       '@fougere/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@fougere/defaults':
+        specifier: workspace:*
+        version: link:../../packages/defaults
       '@fougere/log':
         specifier: workspace:*
         version: link:../../packages/log
@@ -751,6 +757,9 @@ importers:
       '@fougere/adapter-sql':
         specifier: workspace:*
         version: link:../../packages/adapter/sql
+      '@fougere/compiler':
+        specifier: workspace:*
+        version: link:../../packages/compiler
       '@fougere/container':
         specifier: workspace:*
         version: link:../../packages/container
@@ -941,6 +950,18 @@ importers:
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
+
+  demos/no-compiler:
+    dependencies:
+      '@fougere/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@fougere/defaults':
+        specifier: workspace:*
+        version: link:../../packages/defaults
+      '@fougere/schema':
+        specifier: workspace:*
+        version: link:../../packages/schema
 
   demos/nuxt-blog:
     dependencies:
@@ -1196,6 +1217,9 @@ importers:
       '@fougere/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@fougere/defaults':
+        specifier: workspace:*
+        version: link:../../packages/defaults
       '@fougere/log':
         specifier: workspace:*
         version: link:../../packages/log
@@ -1346,6 +1370,9 @@ importers:
       '@fougere/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@fougere/defaults':
+        specifier: workspace:*
+        version: link:../../packages/defaults
       '@fougere/log':
         specifier: workspace:*
         version: link:../../packages/log
@@ -2126,9 +2153,6 @@ importers:
       '@fougere/adapter-memory':
         specifier: workspace:*
         version: link:../adapter/memory
-      '@fougere/compiler':
-        specifier: workspace:*
-        version: link:../compiler
       '@fougere/container':
         specifier: workspace:*
         version: link:../container
@@ -2138,10 +2162,16 @@ importers:
       '@fougere/transport-http':
         specifier: workspace:*
         version: link:../transport/http
+      jiti:
+        specifier: ^2.6.1
+        version: 2.7.0
     devDependencies:
       '@fougere/adapter-sql':
         specifier: workspace:*
         version: link:../adapter/sql
+      '@fougere/compiler':
+        specifier: workspace:*
+        version: link:../compiler
       '@fougere/schema':
         specifier: workspace:*
         version: link:../schema
@@ -2187,6 +2217,9 @@ importers:
       '@fougere/core':
         specifier: workspace:*
         version: link:../core
+      '@fougere/defaults':
+        specifier: workspace:*
+        version: link:../defaults
       '@fougere/schema':
         specifier: workspace:*
         version: link:../schema

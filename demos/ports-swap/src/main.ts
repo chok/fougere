@@ -11,7 +11,7 @@
  * scope keeps it and closes it; one without is built per consumer, and its caller decides.
  */
 import { createLocalRunner, Invocation, type Storage } from '@fougere/core';
-import { boot } from '@fougere/compiler';
+import { boot } from '@fougere/defaults';
 import { createContainer } from '@fougere/container';
 import { join } from 'node:path';
 

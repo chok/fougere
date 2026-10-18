@@ -1,0 +1,15 @@
+{
+  "name": "fougere-demo-no-compiler",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node src/main.ts",
+    "typecheck": "tsc -p . --noEmit"
+  },
+  "dependencies": {
+    "@fougere/core": "workspace:*",
+    "@fougere/defaults": "workspace:*",
+    "@fougere/schema": "workspace:*"
+  }
+}

@@ -11,7 +11,7 @@
  *
  *   pnpm dev
  */
-import { boot } from '@fougere/compiler';
+import { boot } from '@fougere/defaults';
 import { createContainer } from '@fougere/container';
 import { createLocalRunner, Invocation } from '@fougere/core';
 

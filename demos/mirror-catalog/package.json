@@ -11,6 +11,7 @@
     "@fougere/adapter-sql": "workspace:*",
     "@fougere/container": "workspace:*",
     "@fougere/core": "workspace:*",
+    "@fougere/compiler": "workspace:*",
     "@fougere/defaults": "workspace:*",
     "@fougere/log": "workspace:*",
     "@fougere/schema": "workspace:*",

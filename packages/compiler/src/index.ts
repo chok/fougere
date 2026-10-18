@@ -1,5 +1,4 @@
 /** The scan: reading a project's source to produce the descriptors core boots from. */
-export { boot } from './boot.js';
 export { scanProject, frondAliases } from './scan/scanner.js';
 export { RUNTIME_PACKAGES } from './scan/bundling.js';
 export { emitScan } from './scan/emit.js';

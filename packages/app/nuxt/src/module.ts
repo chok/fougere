@@ -15,7 +15,7 @@ import { orderSeeds, serves } from '@fougere/core';
 import { prefixOf } from '@fougere/app';
 import { scanProject, emitStatement, emitFacade, emitNames, frondAliases, packagesImportedBy } from '@fougere/compiler';
 import { frondPackage, resolveConventions, statedFronds, statesModule, type Conventions } from '@fougere/core';
-import { configFileIn, setModuleLoader, loadCascadedConfig, projectRootOf, remotesOf } from '@fougere/core/node';
+import { configFileIn, statementFileIn, setModuleLoader, loadCascadedConfig, projectRootOf, remotesOf } from '@fougere/core/node';
 import { declaresStorage } from '@fougere/defaults';
 import type { SeedEntry, FougereConfig } from '@fougere/core';
 import { createJiti } from 'jiti';
@@ -310,8 +310,7 @@ const module = defineNuxtModule<FougereModuleOptions>({
     // 500 on every call in `nuxt dev`, 200 once the statement is the only source.
     // A codegen inside one repo also had nothing to carry: `fougere sync` writes classes
     // because its source is ANOTHER repo, and here the author can just import.
-    const frondsFile = ['fronds.ts', 'fronds.mts', 'fronds.js', 'fronds.mjs']
-      .map((f) => resolve(scanRoot, f)).find((f) => existsSync(f));
+    const frondsFile = statementFileIn(scanRoot);
 
     // No statement of its own: the build writes the one the scan implies, so the runtime
     // never reaches `scanProject`. That fallback works — it has a disk under Nuxt — but it
