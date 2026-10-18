@@ -8,9 +8,8 @@
  */
 import { createJiti } from 'jiti';
 import { applyConfig, createApp, createLocalRunner, Logger } from '@fougere/core';
-import { frondAliases } from '@fougere/compiler';
 import { statementOf } from '@fougere/defaults';
-import { setModuleLoader, loadConfig, remotesOf } from '@fougere/core/node';
+import { frondAliases, setModuleLoader, loadConfig, remotesOf } from '@fougere/core/node';
 import { createContainer } from '@fougere/container';
 import { resolveStorage, layerOf } from '@fougere/defaults';
 import { serve } from '@fougere/transport-http';

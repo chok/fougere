@@ -55,10 +55,10 @@
     "jiti": "^2.6.1",
     "@fougere/http": "workspace:*",
     "@fougere/container": "workspace:*",
-    "@fougere/adapter-memory": "workspace:*",
-    "@fougere/compiler": "workspace:*"
+    "@fougere/adapter-memory": "workspace:*"
   },
   "devDependencies": {
+    "@fougere/compiler": "workspace:*",
     "@fougere/adapter-graphql": "workspace:*",
     "@fougere/adapter-sql": "workspace:*",
     "vitest": "^4.1.0"
@@ -67,10 +67,14 @@
     "access": "public"
   },
   "peerDependencies": {
-    "@fougere/adapter-graphql": "workspace:^"
+    "@fougere/adapter-graphql": "workspace:^",
+    "@fougere/compiler": "workspace:^"
   },
   "peerDependenciesMeta": {
     "@fougere/adapter-graphql": {
+      "optional": true
+    },
+    "@fougere/compiler": {
       "optional": true
     }
   }

@@ -11,11 +11,10 @@ import {
   useLogger,
 } from '@nuxt/kit';
 import type { Nuxt } from '@nuxt/schema';
-import { orderSeeds, serves } from '@fougere/core';
+import { Fronds, orderSeeds, serves, type FrondDescriptor, type ScanResult } from '@fougere/core';
 import { prefixOf } from '@fougere/app';
-import { scanProject, emitStatement, emitFacade, emitNames, frondAliases } from '@fougere/compiler';
 import { frondPackage, resolveConventions, statedFronds, statesModule, type Conventions } from '@fougere/core';
-import { configFileIn, statementFileIn, setModuleLoader, loadCascadedConfig, projectRootOf, remotesOf } from '@fougere/core/node';
+import { emitFacade, emitNames, frondAliases, configFileIn, getModuleLoader, statementFileIn, setModuleLoader, loadCascadedConfig, projectRootOf, remotesOf } from '@fougere/core/node';
 import { declaresStorage } from '@fougere/defaults';
 import type { SeedEntry, FougereConfig } from '@fougere/core';
 import { createJiti } from 'jiti';
@@ -75,14 +74,15 @@ const module = defineNuxtModule<FougereModuleOptions>({
       process.env.FORCE_COLOR ??= '1';
     }
 
-    // Prevent Nitro from bundling the TypeScript compiler (~9 MB).
-    // @fougere/core lazy-imports it, but Rollup still code-splits dynamic imports
-    // into the bundle — only external truly excludes it.
+    // The compiler stays out of the server bundle, TypeScript with it: a server boots from the
+    // statement the build wrote, and reaches the scan only where a project wrote none and has a
+    // disk. Rollup code-splits a dynamic import into the bundle, so only `external` excludes it —
+    // and an app that states its fronds builds with the compiler not installed at all.
     (nuxt as any).hook('nitro:config', (nitroConfig: any) => {
       nitroConfig.rollupConfig ??= {};
       nitroConfig.rollupConfig.external ??= [];
       if (Array.isArray(nitroConfig.rollupConfig.external)) {
-        nitroConfig.rollupConfig.external.push('typescript');
+        nitroConfig.rollupConfig.external.push('@fougere/compiler');
       }
       // invoke reads the current request (state) through nitro's async context
       nitroConfig.experimental = { ...nitroConfig.experimental, asyncContext: true };
@@ -132,21 +132,27 @@ const module = defineNuxtModule<FougereModuleOptions>({
 
     // Now the names are known, so the loader can resolve them — and the scan below runs
     // with them installed, which is what lets it read a frond that names its neighbour.
-    installLoader(await frondAliases(scanRoot, conventions));
+    const aliases = await frondAliases(scanRoot, conventions);
+    installLoader(aliases);
 
-    // ── 1. Scan fronds (filtered by FOUGERE_FRONDS env var) ──
+    // ── 1. What the app hosts: the `fronds.ts` it wrote, or the scan of its sources ──
+    // Filtered by FOUGERE_FRONDS. The compiler is imported only to scan, so an app that states
+    // its fronds builds without it.
     const frondsFilter = process.env.FOUGERE_FRONDS?.split(',').map((s) => s.trim()).filter(Boolean);
-    const scan = await scanProject(scanRoot, frondsFilter, conventions);
+    const frondsFile = statementFileIn(scanRoot);
+    const { scan, statement } = frondsFile
+      ? { scan: await statedIn(frondsFile, frondsFilter), statement: undefined }
+      : await scanned(scanRoot, frondsFilter, conventions);
     const { fronds } = scan;
 
     // ── 1b. Register @fronds/* aliases for all fronds, and watch them ──
-    // The scanned fronds ARE the watch list — nothing to declare. Without this, a
+    // The frond directories ARE the watch list — nothing to declare. Without this, a
     // frond under `apps/../..` sits outside rootDir, so Nuxt never restarts: the scan,
     // the additive migration (once per boot) and the seeds all keep the previous shape,
     // and a field you just added is simply absent with no error anywhere.
-    for (const frond of fronds) {
-      nuxt.options.alias[frond.source.package] = frond.source.path;
-      const watched = [frond.source.path];
+    for (const [specifier, path] of Object.entries(aliases)) {
+      nuxt.options.alias[specifier] = path;
+      const watched = [path];
       // Nuxt reads this list TWICE and a directory serves only the first read: the
       // watcher adds string entries, while the restart test is `pattern === path`
       // against the changed FILE — which a directory never equals. So each dir goes
@@ -290,8 +296,6 @@ const module = defineNuxtModule<FougereModuleOptions>({
     // 500 on every call in `nuxt dev`, 200 once the statement is the only source.
     // A codegen inside one repo also had nothing to carry: `fougere sync` writes classes
     // because its source is ANOTHER repo, and here the author can just import.
-    const frondsFile = statementFileIn(scanRoot);
-
     // No statement of its own: the build writes the one the scan implies, so the runtime
     // never reaches `scanProject`. That fallback works — it has a disk under Nuxt — but it
     // loads `typescript` into a production boot, which is the whole of what a build is for.
@@ -303,7 +307,7 @@ const module = defineNuxtModule<FougereModuleOptions>({
     const statedPath = frondsFile ?? addTemplate({
       filename: 'fougere-fronds.ts',
       write: true,
-      getContents: () => emitStatement(scan),
+      getContents: () => statement!,
     }).dst;
 
     // The facades, beside the two modules above — one export per address, and nothing but the
@@ -332,7 +336,8 @@ const module = defineNuxtModule<FougereModuleOptions>({
     });
 
     // ── 6b. Boot plugin (virtual — lives in .nuxt/) ───
-    const { ordered, cycle } = orderSeeds(fronds);
+    // Planted by the plugin when the scan found them; a stated `fronds.ts` carries its own.
+    const { ordered, cycle } = frondsFile ? { ordered: [], cycle: [] } : orderSeeds(fronds);
     const allSeeds = [...ordered, ...cycle];
     const bootTpl = addTemplate({
       filename: 'fougere-boot.ts',
@@ -374,6 +379,27 @@ function configFilesOf(rootDir: string, scanRoot: string): string[] {
  * The entity names a SYNCED remote brought in — `fougere sync` writes the classes under
  * `.fougere/`, and a consumer designates them exactly as it designates its own.
  */
+/** The fronds a `fronds.ts` states, read the way the boot will read them — no scan, no compiler. */
+async function statedIn(frondsFile: string, only: string[] | undefined): Promise<ScanResult> {
+  const stated = (await getModuleLoader()(frondsFile)).default as FrondDescriptor[];
+
+  return { fronds: Fronds.hosting(only ? stated.filter((frond) => only.includes(frond.name)) : stated), diagnostics: [] };
+}
+
+/**
+ * The fronds read off the sources, and the statement the build writes from them. The compiler is
+ * the one package that needs a TypeScript program, so it is imported here and only here.
+ */
+async function scanned(root: string, only: string[] | undefined, conventions: Conventions): Promise<{ scan: ScanResult; statement: string }> {
+  const compiler = await import('@fougere/compiler').catch((error: NodeJS.ErrnoException) => {
+    if (error.code !== 'ERR_MODULE_NOT_FOUND') throw error;
+    throw new Error(`${root} states no fronds.ts and @fougere/compiler is not installed — write the statement, or install the compiler to read it off the sources.`);
+  });
+  const scan = await compiler.scanProject(root, only, conventions);
+
+  return { scan, statement: compiler.emitStatement(scan) };
+}
+
 async function syncedEntityNames(rootDir: string, conventions: Conventions): Promise<string[]> {
   const remotesPath = resolve(rootDir, '.fougere', 'remotes.json');
   if (!existsSync(remotesPath)) return [];

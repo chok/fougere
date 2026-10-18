@@ -9,9 +9,8 @@
  */
 import { createServer, type Socket } from 'node:net';
 import { createApp, createLocalRunner } from '@fougere/core';
-import { frondAliases } from '@fougere/compiler';
 import { statementOf } from '@fougere/defaults';
-import { setModuleLoader } from '@fougere/core/node';
+import { frondAliases, setModuleLoader } from '@fougere/core/node';
 import { createContainer } from '@fougere/container';
 
 const PORT = Number(process.env.FLEET_PORT ?? 4500);

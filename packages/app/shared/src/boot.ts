@@ -2,9 +2,8 @@
 import { resolve, sep } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { applyConfig, createApp, Logger, migrating } from '@fougere/core';
-import { frondAliases } from '@fougere/compiler';
 import { resolveConventions } from '@fougere/core';
-import { loadCascadedConfig, remotesOf, setModuleLoader, statedModules } from '@fougere/core/node';
+import { frondAliases, loadCascadedConfig, remotesOf, setModuleLoader, statedModules } from '@fougere/core/node';
 
 import type { App, CreateAppOptions, FougereConfig, Transport } from '@fougere/core';
 import { layerOf, remoteTransport, statementOf, type ResolvedStorage, type Statement } from '@fougere/defaults';

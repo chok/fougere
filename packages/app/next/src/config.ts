@@ -22,7 +22,8 @@ const SPECIFIER = '@fronds/facade';
  */
 async function writeFacades(root: string, app: string): Promise<void> {
   try {
-    const { scanProject, emitFacade, frondAliases } = await import('@fougere/compiler');
+    const { scanProject } = await import('@fougere/compiler');
+    const { emitFacade, frondAliases } = await import('@fougere/core/node');
     const { setModuleLoader } = await import('@fougere/core/node');
     const { resolveConventions } = await import('@fougere/core');
     const { createJiti } = await import('jiti');

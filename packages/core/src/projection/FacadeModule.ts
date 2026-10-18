@@ -1,6 +1,8 @@
 import { dirname, relative } from 'node:path';
-import { ErrorCode, refusalsOf, type Refusable, type ScanResult } from '@fougere/core';
-import { servedSurfaces } from '@fougere/core/descriptor';
+import { ErrorCode } from '../wire/ErrorCode.js';
+import { refusalsOf, type Refusable } from '../wire/refusals.js';
+import type { ScanResult } from '../scan.js';
+import { servedSurfaces } from '../descriptor/surface.js';
 import type { FacadeOptions } from './FacadeOptions.js';
 
 /**

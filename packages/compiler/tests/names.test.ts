@@ -8,7 +8,7 @@
 import { describe, it, expect } from 'vitest';
 import { join } from 'node:path';
 import { scanProject } from '../src/index.js';
-import { emitNames } from '../src/scan/names.js';
+import { emitNames } from '@fougere/core/node';
 
 const at = (fixture: string) => join(import.meta.dirname, fixture);
 

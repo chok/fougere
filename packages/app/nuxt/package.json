@@ -42,10 +42,10 @@
     "@fougere/core": "workspace:*",
     "@fougere/defaults": "workspace:*",
     "@nuxt/kit": "^4.5.1",
-    "jiti": "^2.6.1",
-    "@fougere/compiler": "workspace:*"
+    "jiti": "^2.6.1"
   },
   "devDependencies": {
+    "@fougere/compiler": "workspace:*",
     "@nuxt/schema": "^4.6.0",
     "h3": "^1.15.11",
     "nitropack": "^2.13.2",
@@ -57,7 +57,8 @@
     "h3": "^1.15.0",
     "nuxt": "^4.0.0",
     "vue": "^3.5.0",
-    "nitropack": "*"
+    "nitropack": "*",
+    "@fougere/compiler": "workspace:^"
   },
   "publishConfig": {
     "access": "public"

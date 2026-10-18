@@ -6,9 +6,8 @@
  * and it pushes a name rather than a row.
  */
 import { createApp, createLocalRunner } from '@fougere/core';
-import { frondAliases } from '@fougere/compiler';
 import { statementOf } from '@fougere/defaults';
-import { setModuleLoader } from '@fougere/core/node';
+import { frondAliases, setModuleLoader } from '@fougere/core/node';
 import type { App, InvocationContext } from '@fougere/core';
 import { createContainer } from '@fougere/container';
 import { createMemoryStorage } from '@fougere/adapter-memory';

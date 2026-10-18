@@ -8,9 +8,8 @@
  * Nothing here is about emission. It is the same app, reachable.
  */
 import { createApp, createAppRunner } from '@fougere/core';
-import { frondAliases } from '@fougere/compiler';
 import { statementOf } from '@fougere/defaults';
-import { setModuleLoader } from '@fougere/core/node';
+import { frondAliases, setModuleLoader } from '@fougere/core/node';
 import { createContainer } from '@fougere/container';
 import { serve } from '@fougere/transport-http';
 

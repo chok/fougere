@@ -1,6 +1,7 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname, join, relative, resolve } from 'node:path';
-import { emitFacade, emitNames, emitStatement } from '@fougere/compiler';
+import { emitStatement } from '@fougere/compiler';
+import { emitFacade, emitNames } from '@fougere/core/node';
 import ProjectScan from '../services/ProjectScan.js';
 import type Build from '../entities/Build.js';
 

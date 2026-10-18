@@ -1,11 +1,9 @@
 /** The scan: reading a project's source to produce the descriptors core boots from. */
-export { scanProject, frondAliases } from './scan/scanner.js';
+export { scanProject } from './scan/scanner.js';
 export { RUNTIME_PACKAGES } from './scan/bundling.js';
 export { emitScan } from './scan/emit.js';
 export { emitStatement } from './scan/statement.js';
 // The third projection of one scan: the facades as TYPES, so a client can narrow a refusal.
-export { codesOf, emitFacade, facadeModule, type Served } from './scan/Served.js';
-export { emitNames } from './scan/names.js';
 export { adaptersOf } from './scan/adapters.js';
 export { crossFrondImports } from './imports.js';
 export { handlerDeclarations } from './declarations.js';

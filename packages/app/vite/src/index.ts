@@ -108,7 +108,8 @@ const NAMES = '.fougere/names.generated.d.ts';
  */
 async function writeDoors(app: string, root: string): Promise<void> {
   try {
-    const { scanProject, emitFacade, emitNames, frondAliases } = await import('@fougere/compiler');
+    const { scanProject } = await import('@fougere/compiler');
+    const { emitFacade, emitNames, frondAliases } = await import('@fougere/core/node');
     const { setModuleLoader } = await import('@fougere/core/node');
     const { resolveConventions } = await import('@fougere/core');
     const { createJiti } = await import('jiti');

@@ -7,9 +7,8 @@
  * and the same typed failure down all three paths.
  */
 import { createApp, createLocalRunner, FougereError } from '@fougere/core';
-import { frondAliases } from '@fougere/compiler';
 import { statementOf } from '@fougere/defaults';
-import { setModuleLoader } from '@fougere/core/node';
+import { frondAliases, setModuleLoader } from '@fougere/core/node';
 import type { App, InvocationContext, Transport } from '@fougere/core';
 import { createContainer } from '@fougere/container';
 import { serve, createHttpTransport } from '@fougere/transport-http';

@@ -12,8 +12,9 @@
  *
  * Documented: [ports](https://fougere.dev/docs/business/ports).
  */
-import { basesOf, type FrondDescriptor } from '@fougere/core/descriptor';
-import { type ScanResult } from '@fougere/core';
+import { basesOf } from '../descriptor/bases.js';
+import type { FrondDescriptor } from '../descriptor/FrondDescriptor.js';
+import type { ScanResult } from '../scan.js';
 
 /** Sorted, deduplicated, and quoted — the union as it is written. */
 function union(names: Iterable<string>): string {

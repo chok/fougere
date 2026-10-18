@@ -9,7 +9,7 @@ import { FacadeTypes } from '../../../src/typescript/FacadeTypes.js';
 import { assertIdentityCard, type IdentityCard } from '@fougere/core';
 import { resolveConventions, frondPackage } from '@fougere/core';
 import { loadConfig } from '@fougere/core/node';
-import { codesOf, facadeModule, type Served } from '@fougere/compiler';
+import { codesOf, facadeModule, type Served } from '@fougere/core/node';
 
 function assertSafeName(kind: string, name: string): void {
   if (typeof name !== 'string' || !/^[A-Za-z_$][A-Za-z0-9_$-]*$/.test(name)) {
@@ -255,7 +255,7 @@ export default class SyncHandler {
      * synthetic interface written above stands in its place: it names the same operations with
      * the same answers, which is what a page reads.
      *
-     * `facadeModule` is the compiler's own, not a copy: two spellings of one format would
+     * `facadeModule` is core's own, not a copy: two spellings of one format would
      * drift the day either gained a member.
      */
     writeFileSync(join(frondDir, 'facade.ts'), facadeModule(served, `${baseUrl} — a card, not a scan`));

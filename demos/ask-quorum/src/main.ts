@@ -17,9 +17,8 @@
  *   pnpm rooms & pnpm billing & pnpm calendar # then: SPLIT=1 pnpm dev
  */
 import { createApp, createLocalRunner, Invocation } from '@fougere/core';
-import { frondAliases } from '@fougere/compiler';
 import { statementOf } from '@fougere/defaults';
-import { setModuleLoader } from '@fougere/core/node';
+import { frondAliases, setModuleLoader } from '@fougere/core/node';
 import { createContainer } from '@fougere/container';
 import { createHttpTransport } from '@fougere/transport-http';
 import { createJiti } from 'jiti';

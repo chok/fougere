@@ -1850,9 +1850,6 @@ importers:
       '@fougere/app':
         specifier: workspace:*
         version: link:../shared
-      '@fougere/compiler':
-        specifier: workspace:*
-        version: link:../../compiler
       '@fougere/core':
         specifier: workspace:*
         version: link:../../core
@@ -1866,6 +1863,9 @@ importers:
         specifier: ^2.6.1
         version: 2.7.0
     devDependencies:
+      '@fougere/compiler':
+        specifier: workspace:*
+        version: link:../../compiler
       '@nuxt/schema':
         specifier: ^4.6.0
         version: 4.6.0
@@ -1940,9 +1940,6 @@ importers:
       '@fougere/adapter-rest':
         specifier: workspace:*
         version: link:../../adapter/rest
-      '@fougere/compiler':
-        specifier: workspace:*
-        version: link:../../compiler
       '@fougere/container':
         specifier: workspace:*
         version: link:../../container
@@ -1971,6 +1968,9 @@ importers:
       '@fougere/adapter-sql':
         specifier: workspace:*
         version: link:../../adapter/sql
+      '@fougere/compiler':
+        specifier: workspace:*
+        version: link:../../compiler
       vitest:
         specifier: ^4.1.0
         version: 4.1.2(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(jsdom@27.4.0(@noble/hashes@2.0.1)(supports-color@10.2.2))(vite@8.3.3(@types/node@24.13.3)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.46.1)(tsx@4.21.0)(yaml@2.9.0))

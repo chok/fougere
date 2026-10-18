@@ -1,6 +1,6 @@
 import { DEFAULT_CONVENTIONS, Middleware, RouteAddress, frondDirsOf, frondPackage, providerDirsOf, resolveConventions, togetherKeyOf, type Conventions, type ConventionsInput, type Diagnostic, type ScanResult } from '@fougere/core';
 import { Fronds, addressOf, awaitKeyOf, cardinalityOf, computeBindingPlan, opsOf, emitKeyOf, getPresenterFields, outputOf, ownedBy, repositoryKeyOf, storageKeyOf, targetOf, type CollectorEntry, type EntityEntry, type FrondDescriptor, type HandlerEntry, type MiddlewareEntry, type OperationContract, type OperationsMap, type PresenterEntry, type ProviderEntry, type SeedEntry, type TypeRef, viewsOf, isExtension, FrondConfigReading, Term, type ExtensionEntry, type VocabularyEntry } from '@fougere/core/descriptor';
-import { getModuleLoader, loadFrondConfig } from '@fougere/core/node';
+import { frondNameOf, getModuleLoader, loadFrondConfig } from '@fougere/core/node';
 import type { FrondConfig, ErrorCode } from '@fougere/core';
 import type { Param, Signature } from '@fougere/core/descriptor';
 import { readdir, readFile } from 'node:fs/promises';
@@ -776,47 +776,6 @@ async function scanFrond(frondPath: string, name: string, source: FrondDescripto
     ...(extensions.length > 0 ? { extensions } : {}),
     ...reading.members(),
   };
-}
-
-/** The frond's name — the directory, unless its `package.json` renames it. */
-async function frondNameOf(frondPath: string, dirName: string): Promise<string> {
-  try {
-    const pkg = JSON.parse(await readFile(join(frondPath, 'package.json'), 'utf8')) as {
-      fougere?: { frond?: unknown };
-    };
-    const declared = pkg.fougere?.frond;
-
-    return typeof declared === 'string' && declared.length > 0 ? declared : dirName;
-  } catch {
-    return dirName;
-  }
-}
-
-/** `@fronds/<name>` → the directory it names, for every frond of a project. */
-export async function frondAliases(root: string, conventions: Conventions = DEFAULT_CONVENTIONS): Promise<Record<string, string>> {
-  const frondsDir = join(root, conventions.fronds);
-  const aliases: Record<string, string> = {};
-
-  for (const dir of await dirs(frondsDir)) {
-    const path = join(frondsDir, dir);
-    aliases[frondPackage(await frondNameOf(path, dir), conventions)] = resolvePath(path);
-  }
-
-  /** A SYNCED frond answers to the same name. */
-  try {
-    const registry = JSON.parse(
-      await readFile(join(root, '.fougere', 'remotes.json'), 'utf8'),
-    ) as Record<string, { path?: string }>;
-    for (const [name, entry] of Object.entries(registry)) {
-      if (typeof entry?.path !== 'string' || aliases[frondPackage(name, conventions)]) continue;
-      aliases[frondPackage(name, conventions)] = resolvePath(entry.path);
-    }
-  } catch {
-    // No registry, or an unreadable one: nothing was synced here. Not this function's
-    // complaint — `sync` owns that file and reports on it.
-  }
-
-  return aliases;
 }
 
 export async function scanProject(

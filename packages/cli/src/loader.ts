@@ -1,8 +1,7 @@
 import { resolve, sep } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { frondAliases } from '@fougere/compiler';
 import { resolveConventions } from '@fougere/core';
-import { setModuleLoader, loadConfig } from '@fougere/core/node';
+import { frondAliases, setModuleLoader, loadConfig } from '@fougere/core/node';
 import type { Conventions } from '@fougere/core';
 
 /**

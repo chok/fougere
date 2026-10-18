@@ -8,7 +8,8 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 import { createJiti } from 'jiti';
 import { resolveEffectiveOperations, type FrondDescriptor } from '@fougere/core';
-import { scanProject, emitStatement, frondAliases } from '../src/index.js';
+import { scanProject, emitStatement } from '../src/index.js';
+import { frondAliases } from '@fougere/core/node';
 
 async function stated(fixture: string): Promise<{ scanned: FrondDescriptor; written: FrondDescriptor; statement: string }> {
   const root = join(import.meta.dirname, fixture);

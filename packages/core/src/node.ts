@@ -8,3 +8,6 @@ export { defineFrond, frondConfigFileIn, loadFrondConfig } from './FrondConfig.j
 // a filesystem — the CLI speaking. Verifying happens per call, everywhere, and stays on
 // the main entry behind `#crypto`.
 export { generateKeyPair, issueGrant } from './identity-keys.js';
+export { frondAliases, frondNameOf } from './FrondAliases.js';
+export { codesOf, emitFacade, facadeModule, type Served } from './projection/FacadeModule.js';
+export { emitNames } from './projection/NamesModule.js';

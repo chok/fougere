@@ -5,9 +5,8 @@
  * A link does not know it is second: the order is applied where the fact is announced.
  */
 import { createApp, createLocalRunner } from '@fougere/core';
-import { frondAliases } from '@fougere/compiler';
 import { statementOf } from '@fougere/defaults';
-import { setModuleLoader } from '@fougere/core/node';
+import { frondAliases, setModuleLoader } from '@fougere/core/node';
 import { createContainer } from '@fougere/container';
 import { serve } from '@fougere/transport-http';
 import { createJiti } from 'jiti';

@@ -1,7 +1,7 @@
 import { type FougereConfig, type ScanResult } from '@fougere/core';
-import { scanProject, frondAliases } from '@fougere/compiler';
+import { scanProject } from '@fougere/compiler';
 import { nested, resolveConventions } from '@fougere/core';
-import { setModuleLoader, loadConfig } from '@fougere/core/node';
+import { frondAliases, setModuleLoader, loadConfig } from '@fougere/core/node';
 import { resolve } from 'node:path';
 
 /**

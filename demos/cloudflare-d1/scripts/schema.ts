@@ -13,9 +13,8 @@
  */
 import { writeFile, mkdir } from 'node:fs/promises';
 import { createApp, sourceViewOf, type Storage } from '@fougere/core';
-import { frondAliases } from '@fougere/compiler';
 import { statementOf } from '@fougere/defaults';
-import { setModuleLoader } from '@fougere/core/node';
+import { frondAliases, setModuleLoader } from '@fougere/core/node';
 import { createContainer } from '@fougere/container';
 import { generateSQL } from '@fougere/adapter-sql';
 import { createJiti } from 'jiti';
