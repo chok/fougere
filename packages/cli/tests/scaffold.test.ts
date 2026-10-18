@@ -105,8 +105,12 @@ describe('the versions a fresh project depends on', () => {
     expect(app.dependencies['@fougere/core']).toBe(cli.version);
     expect(Object.values(app.dependencies)).not.toContain('latest');
     const spa = JSON.parse(readFileSync(join(root, 'apps', 'spa', 'package.json'), 'utf8')) as
-      { devDependencies: Record<string, string> };
+      { dependencies: Record<string, string>; devDependencies: Record<string, string> };
     expect(spa.devDependencies['@fougere/vite']).toBe(cli.version);
+    // An app that scans states the compiler: Nuxt at build only, a Vite host when its server boots.
+    const web = app as unknown as { devDependencies: Record<string, string> };
+    expect(web.devDependencies['@fougere/compiler']).toBe(cli.version);
+    expect(spa.dependencies['@fougere/compiler']).toBe(cli.version);
     rmSync(parent, { recursive: true, force: true });
   });
 });

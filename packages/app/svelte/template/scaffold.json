@@ -11,6 +11,7 @@
     "--no-install"
   ],
   "dependencies": {
+    "@fougere/compiler": "latest",
     "@fougere/core": "latest",
     "@fougere/schema": "latest",
     "@fougere/defaults": "latest",
