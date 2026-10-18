@@ -30,3 +30,14 @@ await Registry.reloading(() => boot(), (registry, name) => log.debug(`${registry
 
 Inside that call, an answer replaces the one it had. The packages the host does not re-run keep
 theirs, so a reload loses nothing.
+
+## A term
+
+```ts
+export const ulid = Generators.term('ulid', () => …);   // a name and its answer, as a value
+ulid.register();                                         // registered where it is used
+```
+
+A term is what a project's `vocabulary/` file exports: the statement lists it for the process
+(`export const vocabulary = [ulid]` in `fronds.ts`), and the boot registers it. Imported for a value,
+it is never dropped by a bundler the way a file imported only to register is.

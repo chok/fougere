@@ -161,6 +161,10 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
   builds with `adapter-auto`, which leaves no Node server to run, and `vite preview` loads the plugin,
   which imports the compiler. It reaches the boot through `@fougere/app` as `demos/react-router-blog`
   does, which was measured with the compiler removed. Stated 2026-10-18.
+- **`site/Dockerfile` does not build** — `nuxt build` stops in `site/modules/demo.ts`, which lists the
+  demos with `git ls-files`: the image holds no `git`, and `.dockerignore` leaves `.git` out. Measured
+  2026-10-18. What the runtime stage needs was measured apart: `.output`, `.data`, `posts/` and
+  `better-sqlite3`, alone in an empty directory, boot the site's three Fronds and answer a call.
 - **Nothing generates OpenAPI**, so `RouteDefinition.description` is read by nobody. The op's
   sentence has two readers, neither of them REST: `adapter/graphql/src/OperationsConfig.ts` and the
   CLI's `--help`.

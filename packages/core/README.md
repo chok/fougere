@@ -1,5 +1,5 @@
 # @fougere/core
-> The core — scan, call contract, façades
+> The core — `frond()`, the boot, the call contract, façades
 A frond call is a **value**: `(address, op, invocation)`. `createLocalRunner` executes it
 strictly locally; `createAppRunner` follows the topology (local façades, remote
 stand-ins). Transports move the value — they never reshape it.
