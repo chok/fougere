@@ -14,7 +14,7 @@
  * Refusing is the honest answer while a facade's name cannot say which frond it belongs
  * to. It is not the final one: the day a key is qualified, this boot can accept both.
  */
-import { scanProject } from '../src/index.js';
+import { writtenStatement } from '../src/index.js';
 import { describe, it, expect } from 'vitest';
 import { join } from 'node:path';
 import { createContainer } from '@fougere/container';
@@ -25,13 +25,13 @@ const oneFrond = join(import.meta.dirname, 'fixtures-name-clash-provider');
 
 describe('two fronds claiming one name', () => {
   it('refuses to boot instead of letting one shadow the other', async () => {
-    await expect(createApp({ scan: await scanProject(root), createContainer })).rejects.toThrow(/productHandler/);
+    await expect(createApp({ ...(await writtenStatement(root)), createContainer })).rejects.toThrow(/productHandler/);
   });
 
   it('names both fronds and what to do about it', async () => {
     let message = '';
     try {
-      await createApp({ scan: await scanProject(root), createContainer });
+      await createApp({ ...(await writtenStatement(root)), createContainer });
     } catch (error) {
       message = (error as Error).message;
     }
@@ -52,7 +52,7 @@ describe('two files of one frond claiming one name', () => {
   it('refuses to boot, and names both files', async () => {
     let message = '';
     try {
-      await createApp({ scan: await scanProject(oneFrond), createContainer });
+      await createApp({ ...(await writtenStatement(oneFrond)), createContainer });
     } catch (error) {
       message = (error as Error).message;
     }

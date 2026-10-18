@@ -127,19 +127,16 @@ async function readFronds(
   const brought = (options.extensions ?? [])
     .flatMap((extension) => extension?.fronds ?? [])
     .map((frond) => ({ ...frond, brought: true as const }));
-  const { fronds, diagnostics, vocabulary } = await hostedBy(
-    brought.length > 0 ? { ...options, fronds: [...(options.fronds ?? []), ...brought] } : options,
-  );
-  // An app that states nothing AND scans nothing is a mistake — unless an extension brings
-  // fronds of its own. Refused here and not in `hostedBy`, which is handed the frond sources
-  // and cannot see the rest of the app. The condition is the KEYS, not the count: a scan that
-  // found nothing is an ordinary answer.
-  if (!options.fronds && !options.scan && brought.length === 0) {
+  const fronds = hostedBy([...(options.fronds ?? []), ...brought]);
+  const diagnostics: Diagnostic[] = [];
+  // An app that states nothing is a mistake — unless an extension brings fronds of its own. The
+  // condition is the KEY, not the count: a statement that lists no frond is an ordinary answer.
+  if (!options.fronds && brought.length === 0) {
     throw new Error(
-      'createApp needs `fronds:` (what this app states) or `scan:` (what a scanner found). '
-      + 'Neither was given, and nothing else declares entities of its own.\n'
+      'createApp needs `fronds:` — what this app states, written by hand or by the scan. '
+      + 'None was given, and nothing else declares entities of its own.\n'
       + '    createApp({ fronds: [blog] })\n'
-      + '    createApp({ scan: await scanProject(root) })',
+      + '    createApp({ ...(await statementOf(root)) })',
     );
   }
 
@@ -153,7 +150,7 @@ async function readFronds(
   }
   const ordered = parentsFirst(fronds, under);
 
-  for (const term of [...(options.vocabulary ?? []), ...(vocabulary ?? []).map((entry) => entry.term)]) term.register();
+  for (const term of options.vocabulary ?? []) term.register();
   const termRefusal = refusalOf(termRefusals(ordered), 'term(s) nothing in this process answers');
   if (termRefusal) throw termRefusal;
 

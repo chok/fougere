@@ -6,7 +6,7 @@
  * either way, that only the isolation differs, and that the difference is announced
  * rather than discovered.
  */
-import { scanProject } from '@fougere/compiler';
+import { writtenStatement } from '@fougere/compiler';
 import { describe, it, expect, vi, afterEach, beforeAll } from 'vitest';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
@@ -21,8 +21,8 @@ const root = join(import.meta.dirname, 'fixtures-together');
 
 // Scanned once: the seventeen boots below read the same directory, and a cold scan on CI
 // costs more than the 5 s a single test is given.
-let scan: Awaited<ReturnType<typeof scanProject>>;
-beforeAll(async () => { scan = await scanProject(root); }, 60_000);
+let statement: Awaited<ReturnType<typeof writtenStatement>>;
+beforeAll(async () => { statement = await writtenStatement(root); }, 60_000);
 
 afterEach(() => { vi.restoreAllMocks(); });
 
@@ -44,7 +44,7 @@ async function boot(split: boolean) {
   const spies = (['debug', 'info', 'log', 'warn', 'error'] as const)
     .map((method) => vi.spyOn(console, method).mockImplementation(take));
   const app = await createApp({
-    scan,
+    ...statement,
     createContainer,
     storageFactory: storage.storageFactory,
     sourceOf: storage.sourceOf,
@@ -230,7 +230,7 @@ describe('what a frame refuses at boot', () => {
     const storage = storageFrom({ main: { source: createSqliteSource({ path: join(dir, 'app.db') }) } });
     try {
       await createApp({
-        scan: await scanProject(join(import.meta.dirname, fixture)),
+        ...(await writtenStatement(join(import.meta.dirname, fixture))),
         createContainer,
         storageFactory: storage.storageFactory,
         sourceOf: storage.sourceOf,

@@ -11,10 +11,10 @@ import {
   useLogger,
 } from '@nuxt/kit';
 import type { Nuxt } from '@nuxt/schema';
-import { Fronds, orderSeeds, serves, type FrondDescriptor, type ScanResult } from '@fougere/core';
+import { Fronds, orderSeeds, serves, type ScanResult } from '@fougere/core';
 import { prefixOf } from '@fougere/app';
 import { frondPackage, resolveConventions, statedFronds, statesModule, type Conventions } from '@fougere/core';
-import { emitFacade, emitNames, frondAliases, configFileIn, getModuleLoader, statementFileIn, setModuleLoader, loadCascadedConfig, projectRootOf, remotesOf } from '@fougere/core/node';
+import { emitFacade, emitNames, frondAliases, configFileIn, statementFileIn, statementIn, setModuleLoader, loadCascadedConfig, projectRootOf, remotesOf } from '@fougere/core/node';
 import { declaresStorage } from '@fougere/defaults';
 import type { SeedEntry, FougereConfig } from '@fougere/core';
 import { createJiti } from 'jiti';
@@ -381,9 +381,7 @@ function configFilesOf(rootDir: string, scanRoot: string): string[] {
  */
 /** The fronds a `fronds.ts` states, read the way the boot will read them — no scan, no compiler. */
 async function statedIn(frondsFile: string, only: string[] | undefined): Promise<ScanResult> {
-  const stated = (await getModuleLoader()(frondsFile)).default as FrondDescriptor[];
-
-  return { fronds: Fronds.hosting(only ? stated.filter((frond) => only.includes(frond.name)) : stated), diagnostics: [] };
+  return { fronds: Fronds.hosting((await statementIn(frondsFile, only)).fronds), diagnostics: [] };
 }
 
 /**

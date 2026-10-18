@@ -71,10 +71,10 @@ describe('createApp', () => {
     expect(app.container.has('Logger')).toBe(true);
   });
 
-  it('refuses an app that states nothing, scans nothing and declares nothing else', async () => {
-    // The condition is the KEYS, not the frond count: the case above scans and finds none,
+  it('refuses an app that states nothing and declares nothing else', async () => {
+    // The condition is the KEY, not the frond count: the case above states none,
     // and boots. An auth provider satisfies it too — it brings entities of its own.
-    await expect(createApp({ createContainer })).rejects.toThrow(/`fronds:`.*`scan:`/s);
+    await expect(createApp({ createContainer })).rejects.toThrow(/needs `fronds:`/);
   });
 
   it('resolve shortcut delegates to container', async () => {

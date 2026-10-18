@@ -62,7 +62,8 @@ function statedOperations(h: Ctor | DeclaredHandler): Map<string, OperationContr
 
 /** What a declaration states about one frond. Everything else is derived from the classes. */
 export interface FrondDeclaration extends Pick<FrondConfig, 'pipes' | 'surfaces' | 'protocols'> {
-  entities?: SchemaView[];
+  /** An entity, or one named otherwise than its class — a derivation's name is its file's. */
+  entities?: (SchemaView | { entity: SchemaView; name: string })[];
   handlers?: (Ctor | DeclaredHandler)[];
   /** A computed field IS a method; what TypeScript erases of it — its type, its parameters — is `fieldMeta`. */
   presenters?: (Ctor | DeclaredSubject & { fieldMeta?: PresenterFieldMeta[] })[];
@@ -92,12 +93,17 @@ export function frond(name: string, declared: FrondDeclaration = {}): FrondDescr
   const files = new Map<unknown, string>(declared.files ?? []);
   const fileOf = (value: unknown): string => files.get(value) ?? '';
 
-  const entities: EntityEntry[] = (declared.entities ?? []).map((entityClass) => ({
-    name: lowerFirst((entityClass as { name: string }).name),
-    entityClass,
-    filePath: fileOf(entityClass),
-    exposed: true,
-  }));
+  const entities: EntityEntry[] = (declared.entities ?? []).map((stated) => {
+    const named = typeof stated === 'object' && 'entity' in stated ? stated : undefined;
+    const entityClass = named ? named.entity : stated as SchemaView;
+
+    return {
+      name: named ? named.name : lowerFirst((entityClass as { name: string }).name),
+      entityClass,
+      filePath: fileOf(entityClass),
+      exposed: true,
+    };
+  });
 
   const handlers: HandlerEntry[] = (declared.handlers ?? []).map((h) => {
     const ctor = ctorOf(h);

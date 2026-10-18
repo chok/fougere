@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 import { join } from 'node:path';
 import { createContainer } from '@fougere/container';
 import { createApp } from '@fougere/core';
-import { scanProject } from '../src/index.js';
+import { scanProject, writtenStatement } from '../src/index.js';
 
 const root = join(import.meta.dirname, 'fixtures-input-contract');
 const explicitRoot = join(import.meta.dirname, 'fixtures-input-contract-explicit');
@@ -46,22 +46,16 @@ describe('handler input contract inference', () => {
     expect(reversed.message).toContain('destination: Ledger; source: Account');
   });
 
-  it('refuses the boot with the handler, parameters and candidate types', async () => {
-    const scan = await scanProject(root);
-
-    await expect(createApp({ scan, createContainer })).rejects.toThrow(
-      /TransferHandler\.transfer.*source: Account; destination: Ledger/s,
-    );
-    await expect(createApp({ scan, createContainer })).rejects.toThrow(
-      /TransferHandler\.transferReversed.*destination: Ledger; source: Account/s,
-    );
+  it('refuses to write the statement, naming the handler, parameters and candidate types', async () => {
+    await expect(writtenStatement(root)).rejects.toThrow(/TransferHandler\.transfer.*source: Account; destination: Ledger/s);
+    await expect(writtenStatement(root)).rejects.toThrow(/TransferHandler\.transferReversed.*destination: Ledger; source: Account/s);
   });
 
   it('preserves explicitly declared input and provenance when the signature has several candidates', async () => {
     const scan = await scanProject(explicitRoot);
 
     expect(scan.diagnostics.filter((d) => d.code === 'input-contract-ambiguous')).toEqual([]);
-    await using app = await createApp({ scan, createContainer });
+    await using app = await createApp({ ...(await writtenStatement(explicitRoot)), createContainer });
     const contract = app.operationsFor('settlement')?.get('settle');
 
     expect(contract?.input?.getFields()).toHaveProperty('label');

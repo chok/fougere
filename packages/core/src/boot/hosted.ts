@@ -1,64 +1,15 @@
-/** What this app hosts — what it STATED, or what a scan FOUND. */
+/** What this app hosts — what it STATED. */
 import type { FrondDescriptor } from '../descriptor/FrondDescriptor.js';
-import type { ScanResult } from '../scan.js';
 import { Fronds } from '../descriptor/Fronds.js';
-
-/** Where an app's fronds come from — either, or both. */
-export interface HostedSources {
-  /** What the app states. No disk was read, so no diagnostic can come from it. */
-  fronds?: readonly FrondDescriptor[];
-  /** What a scanner found, and what it could not do. */
-  scan?: ScanResult | (() => Promise<ScanResult> | ScanResult);
-}
-
-/** The members a frond takes from a scan when it named none of its own. */
-type Fillable = 'providers' | 'entities' | 'handlers' | 'presenters' | 'collectors' | 'seeds'
-  | 'middlewares';
-
-/** A frond the host passed, completed by what a scan found under the same name. */
-function completed(given: FrondDescriptor, found: FrondDescriptor | undefined): FrondDescriptor {
-  if (!found) return given;
-
-  // Written out rather than looped: a loop over the key union asks TypeScript to prove
-  // `found[k]` fits `given[k]` for every k at once, which it cannot — and the cast that
-  // silences it would also silence a member added to the descriptor and forgotten here.
-  const fill = <K extends Fillable>(member: K): FrondDescriptor[K] =>
-    (given[member].length === 0 ? found[member] : given[member]);
-
-  return {
-    ...found,
-    ...given,
-    providers: fill('providers'),
-    entities: fill('entities'),
-    handlers: fill('handlers'),
-    presenters: fill('presenters'),
-    collectors: fill('collectors'),
-    seeds: fill('seeds'),
-    middlewares: fill('middlewares'),
-  };
-}
 
 /**
  * A frond as this boot will write on it — the boot stamps `extends` and each handler's resolved
- * contracts, and a statement or a scan handed to a second boot must not arrive carrying the first
- * one's answers.
+ * contracts, and a statement handed to a second boot must not arrive carrying the first one's answers.
  */
 const ownCopy = (frond: FrondDescriptor): FrondDescriptor =>
   ({ ...frond, handlers: frond.handlers.map((handler) => ({ ...handler })) });
 
-/** What the app hosts, and what the scan — if it ran — could not do. */
-export async function hostedBy(sources: HostedSources): Promise<ScanResult> {
-  const scanned = sources.scan
-    ? await (typeof sources.scan === 'function' ? sources.scan() : sources.scan)
-    : undefined;
-
-  const stated = sources.fronds;
-  const found = scanned?.fronds ?? [];
-  const vocabulary = scanned?.vocabulary ?? [];
-  if (!stated) return { fronds: Fronds.hosting(found.map(ownCopy)), diagnostics: scanned?.diagnostics ?? [], vocabulary };
-
-  const configured = stated.map((f) => completed(f, found.find((s) => s.name === f.name)));
-  const discovered = found.filter((f) => !stated.some((s) => s.name === f.name));
-
-  return { fronds: Fronds.hosting([...configured, ...discovered].map(ownCopy)), diagnostics: scanned?.diagnostics ?? [], vocabulary };
+/** What the app hosts, each frond its own copy. */
+export function hostedBy(fronds: readonly FrondDescriptor[]): Fronds {
+  return Fronds.hosting(fronds.map(ownCopy));
 }

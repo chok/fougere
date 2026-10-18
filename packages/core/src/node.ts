@@ -11,3 +11,4 @@ export { generateKeyPair, issueGrant } from './identity-keys.js';
 export { frondAliases, frondNameOf } from './FrondAliases.js';
 export { codesOf, emitFacade, facadeModule, type Served } from './projection/FacadeModule.js';
 export { emitNames } from './projection/NamesModule.js';
+export { statementIn, type Statement } from './Statement.js';

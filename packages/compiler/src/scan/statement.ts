@@ -1,6 +1,7 @@
 /** The scan, written as the STATEMENT an author would have written. */
 import { type ScanResult } from '@fougere/core';
-import { nameOf, type FrondDescriptor, type PresenterEntry } from '@fougere/core/descriptor';
+import { lowerFirst } from '@fougere/schema';
+import { nameOf, refusalOf, type FrondDescriptor, type PresenterEntry } from '@fougere/core/descriptor';
 import { frondConfigFileIn } from '@fougere/core/node';
 import { dirname, relative } from 'node:path';
 
@@ -129,8 +130,12 @@ function frondOf(frond: FrondDescriptor, imports: Imports): string {
   // Entities first, and by VALUE: an operation names its input and output as schemas, and
   // the one a `Partial<X>` derives from is found here rather than imported a second time.
   if (frond.entities.length) {
-    members.push(`entities: ${list(frond.entities.map((e) =>
-      imports.default(e.filePath, frond, e.entityClass as Live)))}`);
+    members.push(`entities: ${list(frond.entities.map((e) => {
+      const alias = imports.default(e.filePath, frond, e.entityClass as Live);
+
+      // A derivation exported directly carries its factory's name; its own is its file's.
+      return e.name === lowerFirst(e.entityClass.name) ? alias : `{ entity: ${alias}, name: ${JSON.stringify(e.name)} }`;
+    }))}`);
   }
   if (frond.handlers.length) {
     members.push(`handlers: ${list(frond.handlers.map((h) => subject(
@@ -185,11 +190,18 @@ function frondOf(frond: FrondDescriptor, imports: Imports): string {
   return `  frond(${JSON.stringify(frond.name)}, {\n    ${members.join(',\n    ')},\n  })`;
 }
 
+/** What the scan reports when it could not decide a contract — the statement cannot be written then. */
+const UNDECIDED = new Set(['input-contract-ambiguous']);
+
 /**
  * The scan as a list of `frond()` calls — the file an author writes, written for them. With no
  * `outFile` its imports go through the frond aliases, which resolve the same from anywhere.
  */
 export function emitStatement(scan: ScanResult, options: { outFile?: string } = {}): string {
+  // A contract the scan could not decide is not written as an incomplete one: the boot reading the
+  // statement would serve an input nobody chose.
+  const undecided = refusalOf(scan.diagnostics.filter((one) => UNDECIDED.has(one.code)), 'operation contract(s) the scan could not decide');
+  if (undecided) throw undecided;
   const imports = new Imports(options.outFile);
   const terms = (scan.vocabulary ?? []).flatMap(({ filePath, name }) => {
     const frond = scan.fronds.find((one) => filePath.startsWith(`${one.source.path}/`));

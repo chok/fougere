@@ -5,7 +5,7 @@
  * behind /_fougere/call. The same user code — resolve('productHandler').op() —
  * must give the same results, errors included. Criteria 4 and 5 of the path.
  */
-import { scanProject } from '@fougere/compiler';
+import { writtenStatement } from '@fougere/compiler';
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { spawn, type ChildProcess } from 'node:child_process';
 import { join } from 'node:path';
@@ -54,10 +54,10 @@ let facade: Facade;
 
 beforeAll(async () => {
   ({ child, port } = await startHost());
-  control = await createApp({ scan: await scanProject(fixturesDir), createContainer, storageFactory: createStorageFactory() });
+  control = await createApp({ ...(await writtenStatement(fixturesDir)), createContainer, storageFactory: createStorageFactory() });
   local = control.resolve<Facade>('productHandler');
   consumer = await createApp({
-    scan: await scanProject(emptyRoot),
+    ...(await writtenStatement(emptyRoot)),
     createContainer,
     remotes: { catalog: `http://127.0.0.1:${port}` },
     remoteTransport: (url) => createHttpTransport(url, { timeoutMs: 5_000 }),
@@ -127,7 +127,7 @@ describe('gradient — the moved Frond goes down', () => {
     await new Promise<void>((resolve) => child.once('exit', () => resolve()));
 
     const lateConsumer = await createApp({
-      scan: await scanProject(emptyRoot),
+      ...(await writtenStatement(emptyRoot)),
       createContainer,
       remotes: { catalog: `http://127.0.0.1:${port}` },
       remoteTransport: (url) => createHttpTransport(url, { timeoutMs: 2_000, retries: 1 }),

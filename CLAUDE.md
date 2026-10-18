@@ -326,7 +326,7 @@ what is left. A call arriving after the door closed gets `SERVICE_UNAVAILABLE`. 
 `tests/dispose.test.ts` and `tests/drain.test.ts`.
 
 **An extension brings fronds** — `Extension.fronds`, read by `createApp` BEFORE the ascent
-and folded in beside `fronds:` and `scan:`. It is the only way an optional package can
+and folded in beside `fronds:`. It is the only way an optional package can
 accept a fact: a subscription is a signature, and `up` receives an app that already exists.
 The boot marks what it took as `FrondDescriptor.brought`, which is how a report says what
 the app SERVES rather than what instruments it — read by `calls`' panel, by `rpc.topology`,
@@ -516,7 +516,7 @@ resolve, loudly; a STALE one is the silent case, which `fougere check` reports a
 `facade-stale`. Pinned by `compiler/tests/facade.test.ts` and `app/react/tests/facade.test.ts`.
 
 **A scan has a THIRD projection, and it is types** — `compiler/src/scan/doors.ts`, `emitDoors`,
-beside `emitScan` and `emitStatement`. The runtime scan cannot serve as one: its operations
+beside `emitStatement`. The runtime scan cannot serve as one: its operations
 travel in a `Map`, and a `Map` literal widens its key to `string`, so the association between an
 op and its refusals is exactly what TypeScript drops there. An interface keeps it. The file holds
 no value, reaches no bundle, and is rewritten whenever the app starts — `fougere build` writes it
@@ -607,6 +607,22 @@ a reading core does not hold, and a second declaration of one name is REFUSED. A
 never installed `@fougere/observability` answers `Unknown rpc operation 'topology'. It
 serves discover.` The report shapes live in core (`TopologyReport`, `FrondPlacement`, `Edge`)
 because they cross a process boundary.
+
+**Every app boots from a statement, and the scan only writes it** — `fronds.ts` beside
+`fougere.config.ts`: imports and `frond()` calls, the fronds as default export and the process's
+terms as `vocabulary`. `statementIn` (`@fougere/core/node`) reads one, `writeStatement`
+(`@fougere/compiler`) writes `.fougere/fronds.generated.ts` from the sources, and `statementOf(root)`
+(`@fougere/defaults`) is the two end to end — the project's file when it wrote one, the scan's
+otherwise. `createApp` takes `fronds:` and nothing else: it took `scan:` too, and each host booted a
+different way, so `demos/nuxt-blog` in-process served no `publish` and ran no middleware while
+`fougere serve` did, with every test green. The statement is the PROJECT's, whole — `only:` filters
+what a process reads, and two processes read one file. A contract the scan could not decide is not
+written (`input-contract-ambiguous` refuses `emitStatement`), and the file each value comes from
+travels as `files:` so a refusal still names it. The compiler is an optional peer of
+`@fougere/defaults`, `@fougere/app` and `@fougere/nuxt`, imported only where a project wrote no
+statement: an app that writes its own builds and runs with TypeScript never installed
+(`demos/no-compiler`). Measured cost of a boot that scans, 2026-10-18: about 20 ms, the write and the
+import. Pinned by `defaults/tests/statement.test.ts`, `compiler/tests/statement.test.ts`.
 
 **The names the scan reads** — `core/src/Conventions.ts`, read by `@fougere/compiler`. Everything else a frond states, it
 states by its SHAPE; the twelve convention directories and the import scope are the one place

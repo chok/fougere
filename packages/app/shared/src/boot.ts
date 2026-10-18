@@ -21,8 +21,6 @@ export interface FougereServerConfig {
   extensions?: CreateAppOptions['extensions'];
   /** What the boot line names as the host — 'Nuxt/Nitro', 'Next'. */
   host?: string;
-  /** What this app is built from, when the host already knows. */
-  scan?: CreateAppOptions['scan'];
   /** What this app STATES it hosts — `frond('blog', { entities: [Post] })`. */
   fronds?: CreateAppOptions['fronds'];
   /** What the process answers by name, exported beside the fronds a statement states. */
@@ -83,7 +81,7 @@ export function useFougereConfig(): Promise<FougereConfig> {
 }
 
 async function readConfig(): Promise<FougereConfig> {
-  // The host's word wins, for the reason it wins on `scan`: it read the file already,
+  // The host's word wins, for the reason it wins on `fronds`: it read the file already,
   // and where there is no file a second read finds nothing and says nothing.
   if (_config.config) return _config.config as FougereConfig;
 
@@ -106,7 +104,7 @@ async function readConfig(): Promise<FougereConfig> {
  * opening.
  */
 function reads(): boolean {
-  return (_config.scan === undefined && _config.fronds === undefined) || _config.config === undefined;
+  return _config.fronds === undefined || _config.config === undefined;
 }
 
 /**
@@ -198,20 +196,14 @@ async function boot(): Promise<App> {
   }
 
   // Named nothing, the host boots from the project's statement — written by hand, or by the scan.
-  const declared: Partial<Statement> = _config.fronds || _config.scan
+  const declared: Partial<Statement> = _config.fronds
     ? { fronds: _config.fronds, vocabulary: _config.vocabulary }
     : await statementOf(root, { conventions: fileConfig.conventions });
 
   const app = await createApp({
-    // The host's word wins: it scanned at build, and a second scan here would either
-    // repeat that work or — where there is no disk — find nothing and say so quietly.
-    // A host that names its fronds never reaches `scanProject` — that is what keeps
-    // `typescript` out of a production boot. It may still hand over a scan of its own, and
-    // then `hostedBy` merges the two: under Nuxt that scan is a BUILD artifact, so leaning
-    // on it costs the runtime nothing. What is never done is scanning a disk BECAUSE a
-    // statement was incomplete — half a statement would buy nothing the whole one does.
+    // The host's word wins: it read the statement at build, and a host that names its fronds
+    // never reaches the compiler — that is what keeps `typescript` out of a production boot.
     ...(declared.fronds || stated.fronds.length > 0 ? { fronds: [...(declared.fronds ?? []), ...stated.fronds] } : {}),
-    ...(_config.scan ? { scan: _config.scan } : {}),
     ...(declared.vocabulary ? { vocabulary: declared.vocabulary } : {}),
     // The layer, spread whole. Naming a few of its members is how `transacted` and `close`
     // were left behind once, under Nuxt only.

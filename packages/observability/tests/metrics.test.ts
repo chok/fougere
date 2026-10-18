@@ -2,7 +2,7 @@
  * The four signals, and the one property that decides whether a metrics layer survives
  * production: series count must depend on the CODE, never on the traffic.
  */
-import { scanProject } from '@fougere/compiler';
+import { writtenStatement } from '@fougere/compiler';
 import { describe, it, expect, beforeAll, afterAll, afterEach } from 'vitest';
 import { join } from 'node:path';
 import { createApp, createLocalRunner } from '@fougere/core';
@@ -21,7 +21,7 @@ let measured: Metrics;
 const takers: SpanSink[] = [];
 
 beforeAll(async () => {
-  app = await createApp({ scan: await scanProject(fixturesDir), createContainer, storageFactory: createStorageFactory() });
+  app = await createApp({ ...(await writtenStatement(fixturesDir)), createContainer, storageFactory: createStorageFactory() });
   app.use(tracing(takers).middleware);
 }, 30_000);
 

@@ -14,7 +14,7 @@
  *     `param` binding explicitly. The effective model then treats it exactly like the
  *     plain number instead of silently handing it the whole input.
  */
-import { scanProject } from '../src/index.js';
+import { writtenStatement } from '../src/index.js';
 import { describe, expect, it } from 'vitest';
 import { join } from 'node:path';
 import { createContainer } from '@fougere/container';
@@ -23,7 +23,7 @@ import { createApp, createLocalRunner } from '@fougere/core';
 const root = join(import.meta.dirname, 'fixtures-narrow-signature');
 
 async function billing() {
-  const app = await createApp({ scan: await scanProject(root), createContainer });
+  const app = await createApp({ ...(await writtenStatement(root)), createContainer });
   const run = createLocalRunner(app);
   const call = (op: string, invocation: Record<string, unknown>) =>
     run({ address: 'invoice', op }, { params: {}, query: {}, input: undefined, state: {}, ...invocation } as never);

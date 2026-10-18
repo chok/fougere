@@ -37,3 +37,4 @@ export { ownedBy, repositoryKeyOf } from '../prefab/RepositoryConstructor.js';
 // The surfaces a handler answers on — a directory names one, and so does `frond.config.ts`.
 export { servedSurfaces } from './surface.js';
 export { basesOf } from './bases.js';
+export { refusalOf } from '../diagnostic.js';

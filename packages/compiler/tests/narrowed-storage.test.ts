@@ -15,7 +15,7 @@ import { join } from 'node:path';
 import { createContainer } from '@fougere/container';
 import { createApp, createLocalRunner, Invocation, type StorageFactory } from '@fougere/core';
 import { storageKeyOf } from '@fougere/core/descriptor';
-import { scanProject } from '../src/index.js';
+import { scanProject, writtenStatement } from '../src/index.js';
 
 function makeStorage() {
   const storage = {
@@ -42,7 +42,7 @@ function makeStorage() {
 const storageFactory: StorageFactory = (() => makeStorage()) as unknown as StorageFactory;
 const root = join(import.meta.dirname, 'fixtures-narrowed-storage');
 const boot = async () =>
-  createApp({ scan: await scanProject(root), createContainer, storageFactory });
+  createApp({ ...(await writtenStatement(root)), createContainer, storageFactory });
 
 describe('a realization narrowing the port', () => {
   it('asks for the storage of its generic, not for its own name', async () => {

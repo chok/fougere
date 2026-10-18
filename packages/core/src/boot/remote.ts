@@ -112,7 +112,7 @@ export function createRemoteRouter(
       throw new FougereError({
         code: ErrorCode.NOT_FOUND,
         message: `No declared remote serves '${address}'.\n`
-          + '  Nothing here serves it either — add its frond to `fronds:`/`scan:`, or give the frond that does an address in `fronds:`.',
+          + '  Nothing here serves it either — add its frond to `fronds:`, or give the frond that does an address in `fronds:`.',
         address,
       });
     },

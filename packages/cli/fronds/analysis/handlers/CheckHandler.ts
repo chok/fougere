@@ -12,7 +12,7 @@ import ProjectScan from '../services/ProjectScan.js';
 import { statSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { FACADE_OUT, DEFAULT_OUT } from './BuildHandler.js';
-import { getModuleLoader, remotesOf, statementFileIn } from '@fougere/core/node';
+import { remotesOf, statementFileIn, statementIn } from '@fougere/core/node';
 import type { FrondDescriptor } from '@fougere/core';
 
 export interface CheckResult {
@@ -197,7 +197,7 @@ export default class CheckHandler {
 async function statementFindings(root: string, fronds: readonly FrondDescriptor[]): Promise<Diagnostic[]> {
   const file = statementFileIn(root);
   if (!file) return [];
-  const stated = (await getModuleLoader()(file)).default as FrondDescriptor[];
+  const { fronds: stated } = await statementIn(file);
   const findings: Diagnostic[] = [];
 
   for (const frond of fronds) {

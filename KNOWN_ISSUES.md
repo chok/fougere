@@ -147,8 +147,7 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
   measured: nothing in the tree seeds across processes yet.
 - **A seed cycle is not satisfiable by ordering** — `core/src/boot/seed.ts`, `orderSeeds`.
   It returns them as `cycle` beside `ordered` and the boot NAMES them; they are still planted
-  in declaration order and the source answers. Not "scan order": `createApp` takes `fronds:`
-  as readily as `scan:`.
+  in declaration order and the source answers — the order the statement lists them.
 - **Nothing generates OpenAPI**, so `RouteDefinition.description` is read by nobody. The op's
   sentence has two readers, neither of them REST: `adapter/graphql/src/OperationsConfig.ts` and the
   CLI's `--help`.

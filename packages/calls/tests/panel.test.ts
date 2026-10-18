@@ -2,7 +2,7 @@ import { join } from 'node:path';
 import { createContainer } from '@fougere/container';
 import { describe, expect, it, vi } from 'vitest';
 import { Call, RouteAddress, createApp, type StorageFactory } from '@fougere/core';
-import { scanProject } from '@fougere/compiler';
+import { writtenStatement } from '@fougere/compiler';
 import { calls } from '../src/index.js';
 
 const fixtures = join(import.meta.dirname, 'fixtures');
@@ -16,7 +16,7 @@ describe('the panel', () => {
   it('serves the page, a snapshot, and pushes a call as it settles', async () => {
     let at = '';
     const app = await createApp({
-      scan: await scanProject(fixtures),
+      ...(await writtenStatement(fixtures)),
       createContainer,
       storageFactory,
       extensions: [calls({ panel: { port: 0, announce: (url) => { at = url; } } })],

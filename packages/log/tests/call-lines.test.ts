@@ -2,7 +2,7 @@
  * Two lines a call, written by the process that answers it — under the frond that answers, and
  * naming the process that signed it when it came from another one.
  */
-import { scanProject } from '@fougere/compiler';
+import { writtenStatement } from '@fougere/compiler';
 import { boot } from '@fougere/defaults';
 import { afterEach, describe, it, expect, vi } from 'vitest';
 import { join } from 'node:path';
@@ -28,7 +28,7 @@ describe('a call writes two lines', () => {
   it('says it began and what it cost, under the frond that answers', async () => {
     const lines = printed();
     await using app = await createApp({
-      scan: () => scanProject(join(here, 'fixtures-app')),
+      ...(await writtenStatement(join(here, 'fixtures-app'))),
       createContainer,
       extensions: [log()],
     });
@@ -44,7 +44,7 @@ describe('a call writes two lines', () => {
   it('names the process that signed a call from elsewhere', async () => {
     const lines = printed();
     await using app = await createApp({
-      scan: () => scanProject(join(here, 'fixtures-app')),
+      ...(await writtenStatement(join(here, 'fixtures-app'))),
       createContainer,
       extensions: [log()],
     });
@@ -80,7 +80,7 @@ describe('a call writes two lines', () => {
   it('writes none for the op that carries a line to its file', async () => {
     const lines = printed();
     await using app = await createApp({
-      scan: () => scanProject(join(here, 'fixtures-app')),
+      ...(await writtenStatement(join(here, 'fixtures-app'))),
       createContainer,
       extensions: [log(join(mkdtempSync(join(tmpdir(), 'fougere-log-')), 'lines.jsonl'))],
     });

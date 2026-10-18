@@ -3,7 +3,6 @@ import type { Container } from '@fougere/container';
 import type { ProtocolConfig } from '../Protocol.js';
 import type { FrondDescriptor } from '../descriptor/FrondDescriptor.js';
 import type { FrondsStated } from '../FrondsStated.js';
-import type { ScanResult } from '../scan.js';
 import type { StorageFactory } from '../storage/StorageFactory.js';
 import type { Constraint } from '../Constraint.js';
 import type { Transport } from '../wire/Transport.js';
@@ -38,8 +37,6 @@ export interface CreateAppOptions {
   enforces?: (source: string, constraint: Constraint) => boolean;
   /** Builds the cross-source reader a frond gets when it declares `reads:`. */
   sourcesFactory?: (reads: unknown[], frond: string) => Promise<unknown> | unknown;
-  /** What this app is built from — required, because producing it is what reads a disk. */
-  scan?: ScanResult | (() => Promise<ScanResult> | ScanResult);
   /**
    * What this process answers by name — `StringFormats.term('slug', …)`, `Verbs.term('total', 'query')`.
    * The process's, not a frond's: a registry answers every entity that names the word.

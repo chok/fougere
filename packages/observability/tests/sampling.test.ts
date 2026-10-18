@@ -7,7 +7,7 @@
  * wire cost, and neither measures it alone. Turn the rate down and that is exactly the trace a
  * naive sampler drops first.
  */
-import { scanProject } from '@fougere/compiler';
+import { writtenStatement } from '@fougere/compiler';
 import { describe, it, expect } from 'vitest';
 import { join } from 'node:path';
 import { createApp, createLocalRunner } from '@fougere/core';
@@ -25,7 +25,7 @@ const empty: InvocationContext = { params: {}, query: {}, input: undefined, stat
 async function traced(sample: number, split = true): Promise<FinishedSpan[]> {
   const kept: FinishedSpan[] = [];
   await using app = await createApp({
-    scan: await scanProject(fixturesDir),
+    ...(await writtenStatement(fixturesDir)),
     createContainer,
     ...(split ? { remotes: { catalog: 'http://127.0.0.1:4100' } } : {}),
     // The router asks the far side what it hosts before it routes anything, so the stand-in

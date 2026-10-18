@@ -94,20 +94,3 @@ export function operationsOf(
   return `new Map([\n${indent}  ${ops.join(`,\n${indent}  `)}\n${indent}])`;
 }
 
-/**
- * What `frond.config.ts` says per op, written down with the rest: a host booting from this module
- * never reads that file, so an op whose kind it states was refused there and booted in dev.
- */
-export function overridesOf(f: FrondDescriptor, imports: Aliases): string {
-  const declaredIn = `${f.source.path}/frond.config.ts`;
-  const entries = Object.entries(f.operationsOverrides ?? {}).map(([key, { input, output, ...rest }]) => {
-    const views = [
-      input ? `input: ${schemaRef(input, declaredIn, imports)}` : '',
-      output ? `output: ${schemaRef(output, declaredIn, imports)}` : '',
-    ].filter(Boolean);
-
-    return `${lit(key)}: { ${[...views, `...${lit(rest)}`].join(', ')} }`;
-  });
-
-  return `{ ${entries.join(', ')} }`;
-}

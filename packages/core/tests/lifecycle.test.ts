@@ -145,11 +145,10 @@ describe('Lifecycle', () => {
 
     const boot = createApp({
       createContainer: () => container,
-      scan: () => { throw new Error('the disk went away'); },
       onDispose: () => { released.push('handed in'); },
     });
 
-    await expect(boot).rejects.toThrow('the disk went away');
+    await expect(boot).rejects.toThrow(/needs `fronds:`/);
     expect(released).toEqual(['container', 'handed in']);
   });
 

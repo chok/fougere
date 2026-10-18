@@ -9,7 +9,7 @@
  * The console is NOT one of them: `Logger` writes there whoever else took the line, so a
  * destination is for sending a line somewhere else — here, a file.
  */
-import { scanProject } from '@fougere/compiler';
+import { writtenStatement } from '@fougere/compiler';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { join } from 'node:path';
 import { mkdtempSync, readFileSync, existsSync } from 'node:fs';
@@ -21,9 +21,10 @@ import { logFrond } from '../src/index.js';
 const here = import.meta.dirname;
 
 /** Stated, the way a consumer takes it on — beside an app that scans its own fronds. */
+const statement = await writtenStatement(join(here, 'fixtures-app'));
 const app = (path: string) => createApp({
-  fronds: [logFrond(path)],
-  scan: () => scanProject(join(here, 'fixtures-app')),
+  ...statement,
+  fronds: [logFrond(path), ...statement.fronds],
   createContainer,
 });
 

@@ -5,7 +5,8 @@ import { loadConfig, remotesOf } from '@fougere/core/node';
 import { resolveStorage, type ResolvedStorage } from './storage/ResolvedStorage.js';
 import { remoteTransport } from './transport/RemoteTransport.js';
 
-export { boot, statementOf, type Statement } from './boot.js';
+export { boot, statementOf } from './boot.js';
+export type { Statement } from '@fougere/core/node';
 export { remoteTransport } from './transport/RemoteTransport.js';
 export { declaresStorage } from './storage/DeclaredStorage.js';
 export { layerOf, resolveStorage, storageFrom } from './storage/ResolvedStorage.js';

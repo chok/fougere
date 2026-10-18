@@ -5,7 +5,7 @@
  * in flight through the async context the tracer already opened, which is the whole join. What
  * it buys is the one figure a duration cannot give — whether an op is slow or merely waiting.
  */
-import { scanProject } from '@fougere/compiler';
+import { writtenStatement } from '@fougere/compiler';
 import { describe, it, expect, beforeAll, afterAll, afterEach } from 'vitest';
 import { join } from 'node:path';
 import { createApp } from '@fougere/core';
@@ -29,7 +29,7 @@ const SLOW = 30;
 
 beforeAll(async () => {
   app = await createApp({
-    scan: await scanProject(fixturesDir),
+    ...(await writtenStatement(fixturesDir)),
     createContainer,
     storageFactory: createStorageFactory(),
   });

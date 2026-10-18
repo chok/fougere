@@ -2,7 +2,7 @@ import { join } from 'node:path';
 import { createContainer } from '@fougere/container';
 import { describe, expect, it, vi } from 'vitest';
 import { Call, RouteAddress, createApp, createAppRunner, createLocalRunner, type CallPage, type StorageFactory } from '@fougere/core';
-import { scanProject } from '@fougere/compiler';
+import { writtenStatement } from '@fougere/compiler';
 import { serve } from '@fougere/transport-http';
 import { createHttpTransport } from '@fougere/transport-http/client';
 import { calls } from '../src/index.js';
@@ -21,7 +21,7 @@ const storageFactory: StorageFactory = () => ({
 describe('over the wire', () => {
   it('hands one page to a reader that holds no privilege', async () => {
     await using app = await createApp({
-      scan: await scanProject(fixtures),
+      ...(await writtenStatement(fixtures)),
       createContainer,
       storageFactory,
       extensions: [calls()],
@@ -63,7 +63,7 @@ describe('over the wire', () => {
 describe('two apps against one hosted frond', () => {
   it('mixes both consumers in the hosted ring, and separates them only by what they signed', async () => {
     await using hosted = await createApp({
-      scan: await scanProject(fixtures),
+      ...(await writtenStatement(fixtures)),
       createContainer,
       storageFactory,
       extensions: [calls()],
@@ -74,7 +74,7 @@ describe('two apps against one hosted frond', () => {
     try {
       // Two consumers, each with its own ring, both reaching the same hosted frond.
       const consumers = await Promise.all([1, 2].map(async () => await createApp({
-        scan: await scanProject(fixtures),
+        ...(await writtenStatement(fixtures)),
         createContainer,
         storageFactory,
         remotes: { shop: at },

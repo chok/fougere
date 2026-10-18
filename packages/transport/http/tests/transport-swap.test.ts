@@ -13,7 +13,7 @@
  * framing from the HTTP client unchanged; what they replace is the ~40 lines
  * that move bytes.
  */
-import { scanProject } from '@fougere/compiler';
+import { writtenStatement } from '@fougere/compiler';
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { createServer, connect, type Server, type Socket } from 'node:net';
 import { join } from 'node:path';
@@ -109,7 +109,7 @@ let consumer: App;
 let facade: Facade;
 
 beforeAll(async () => {
-  app = await createApp({ scan: await scanProject(fixturesDir), createContainer, storageFactory: createStorageFactory() });
+  app = await createApp({ ...(await writtenStatement(fixturesDir)), createContainer, storageFactory: createStorageFactory() });
   localRun = createLocalRunner(app);
 
   httpReceiver = await serve(localRun, { port: 0 });
@@ -122,7 +122,7 @@ beforeAll(async () => {
   // The `remotes:` line is the only topology statement — and it says nothing
   // about HTTP. The address is a label the transport factory interprets.
   consumer = await createApp({
-    scan: await scanProject(emptyRoot),
+    ...(await writtenStatement(emptyRoot)),
     createContainer,
     remotes: { catalog: `tcp://127.0.0.1:${socket.port}` },
     remoteTransport: () => socketTransport,

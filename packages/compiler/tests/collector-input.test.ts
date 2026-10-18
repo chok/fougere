@@ -3,7 +3,7 @@
  * Provenance leaves Post as the only input candidate, so parameter order changes neither
  * the inferred validator nor the binding plan.
  */
-import { scanProject } from '../src/index.js';
+import { scanProject, writtenStatement } from '../src/index.js';
 import { describe, it, expect } from 'vitest';
 import { join } from 'node:path';
 import { createContainer } from '@fougere/container';
@@ -25,7 +25,7 @@ describe('an inferred input beside a collected entity', () => {
     expect(scan.diagnostics.filter((d) => d.code === 'input-contract-ambiguous')).toEqual([]);
     expect(operations.get('bodyFirst')?.input?.getFields()).toHaveProperty('title');
     expect(operations.get('collectorFirst')?.input?.getFields()).toHaveProperty('title');
-    await using app = await createApp({ scan, createContainer, extensions: [session] });
+    await using app = await createApp({ ...(await writtenStatement(root)), createContainer, extensions: [session] });
 
     const out = await createLocalRunner(app)(
       { address: 'post', op: 'bodyFirst' },
@@ -36,7 +36,7 @@ describe('an inferred input beside a collected entity', () => {
   });
 
   it('validates the same input the same way when the collected parameter is first', async () => {
-    await using app = await createApp({ scan: await scanProject(root), createContainer, extensions: [session] });
+    await using app = await createApp({ ...(await writtenStatement(root)), createContainer, extensions: [session] });
 
     const out = await createLocalRunner(app)(
       { address: 'post', op: 'collectorFirst' },

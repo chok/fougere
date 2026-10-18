@@ -9,7 +9,7 @@ import {
   createAppRunner,
   type StorageFactory,
 } from '@fougere/core';
-import { scanProject } from '@fougere/compiler';
+import { writtenStatement } from '@fougere/compiler';
 import { CallRing } from '../src/CallRing.js';
 import { calls } from '../src/index.js';
 import type { CallPage } from '@fougere/core';
@@ -107,7 +107,7 @@ describe('the ring', () => {
 describe('the extension', () => {
   it('names the frond of each address when the app holds several', async () => {
     await using app = await createApp({
-      scan: await scanProject(fixtures),
+      ...(await writtenStatement(fixtures)),
       createContainer,
       storageFactory,
       extensions: [calls()],
@@ -129,7 +129,7 @@ describe('the extension', () => {
     // before the old one is released — the shape that made observability's shared list a bug.
     const shared = calls();
     const boot = async () => await createApp({
-      scan: await scanProject(fixtures),
+      ...(await writtenStatement(fixtures)),
       createContainer,
       storageFactory,
       extensions: [shared],
@@ -158,7 +158,7 @@ describe('the extension', () => {
 
   it('records what the app dispatched, and serves it as an rpc operation', async () => {
     await using app = await createApp({
-      scan: await scanProject(fixtures),
+      ...(await writtenStatement(fixtures)),
       createContainer,
       storageFactory,
       extensions: [calls()],

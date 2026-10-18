@@ -10,10 +10,10 @@
  * So both worlds are covered here: inside the workspace the scan discovers the
  * ops, outside it discovers nothing — and the façade must validate either way.
  */
-import { scanProject } from '../src/index.js';
+import { writtenStatement } from '../src/index.js';
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import { join } from 'node:path';
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, rmSync, symlinkSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { createContainer } from '@fougere/container';
 import { createApp, createLocalRunner } from '@fougere/core';
@@ -47,7 +47,7 @@ function spyStorage() {
 async function boot(root: string) {
   const storage = spyStorage();
   const storageFactory: StorageFactory = vi.fn(() => storage) as unknown as StorageFactory;
-  const app = await createApp({ scan: await scanProject(root), createContainer, storageFactory });
+  const app = await createApp({ ...(await writtenStatement(root)), createContainer, storageFactory });
 
   return { app, storage, run: createLocalRunner(app) };
 }
@@ -79,6 +79,9 @@ import { Crud } from ${JSON.stringify(coreDist)};
 import Note from '../entities/Note.js';
 export default class NoteHandler extends Crud(Note) {}
 `);
+  // What an install puts there: the statement the scan writes imports `frond` from the package.
+  mkdirSync(join(root, 'node_modules', '@fougere'), { recursive: true });
+  symlinkSync(join(import.meta.dirname, '..', '..', 'core'), join(root, 'node_modules', '@fougere', 'core'));
 
   return root;
 }
