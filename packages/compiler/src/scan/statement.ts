@@ -43,9 +43,13 @@ class Imports implements Aliases {
     return alias;
   }
 
-  /** A file read for what it does when it loads — a `vocabulary/` word registers itself. */
-  effect(filePath: string, frond: FrondDescriptor): void {
-    this.lines.push(`import '${specifierOf(filePath, frond)}';`);
+  /** A term a `vocabulary/` file exports by name. */
+  term(filePath: string, frond: FrondDescriptor, name: string): string {
+    const alias = `_${this.byPath.size}_${name}`;
+    this.lines.push(`import { ${name} as ${alias} } from '${specifierOf(filePath, frond)}';`);
+    this.byPath.set(`${filePath}#${name}`, alias);
+
+    return alias;
   }
 
   /** A view a handler declares beside itself — `PostPublic` is exported by name. */
@@ -162,8 +166,11 @@ function frondOf(frond: FrondDescriptor, imports: Imports): string {
 // parameter — the alias resolves the same from anywhere.
 export function emitStatement(scan: ScanResult): string {
   const imports = new Imports();
-  // First, since an entity may write a word one of them registers.
-  for (const frond of scan.fronds) for (const file of frond.vocabulary ?? []) imports.effect(file, frond);
+  const terms = (scan.vocabulary ?? []).flatMap(({ filePath, name }) => {
+    const frond = scan.fronds.find((one) => filePath.startsWith(`${one.source.path}/`));
+
+    return frond ? [imports.term(filePath, frond, name)] : [];
+  });
   const fronds = scan.fronds.map((f) => frondOf(f as FrondDescriptor & { source: Live }, imports));
 
   return [
@@ -174,6 +181,7 @@ export function emitStatement(scan: ScanResult): string {
     "import { frond } from '@fougere/core';",
     imports.render(),
     '',
+    ...(terms.length ? [`export const vocabulary = [${terms.join(', ')}];`, ''] : []),
     'export default [',
     `${fronds.join(',\n')},`,
     '];',

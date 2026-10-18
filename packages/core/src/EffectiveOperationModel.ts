@@ -264,9 +264,9 @@ function kindStatedIn(frond: FrondDescriptor, route: RouteAddress, likely: Opera
 
 /** The line that teaches a verb once, for every op of the frond that leads with it. */
 function verbTaughtIn(frond: FrondDescriptor, verb: string): string {
-  const where = isScanned(frond) ? `in ${frond.source.path}/vocabulary/verbs.ts` : 'before the app boots';
+  const where = isScanned(frond) ? `in ${frond.source.path}/vocabulary/verbs.ts` : 'in a vocabulary/ file';
 
-  return `once, ${where}:\n    Verbs.register('${verb}', 'query');   // or 'command'`;
+  return `once, ${where}, listed in the statement's \`vocabulary\`:\n    export const ${verb} = Verbs.term('${verb}', 'query');   // or 'command'`;
 }
 
 function parametersOf(contract: BoundContract): EffectiveParameter[] {

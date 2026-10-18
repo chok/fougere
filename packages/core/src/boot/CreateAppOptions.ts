@@ -1,3 +1,4 @@
+import type { Term } from '@fougere/registry';
 import type { Container } from '@fougere/container';
 import type { ProtocolConfig } from '../Protocol.js';
 import type { FrondDescriptor } from '../descriptor/FrondDescriptor.js';
@@ -39,6 +40,11 @@ export interface CreateAppOptions {
   sourcesFactory?: (reads: unknown[], frond: string) => Promise<unknown> | unknown;
   /** What this app is built from — required, because producing it is what reads a disk. */
   scan?: ScanResult | (() => Promise<ScanResult> | ScanResult);
+  /**
+   * What this process answers by name — `StringFormats.term('slug', …)`, `Verbs.term('total', 'query')`.
+   * The process's, not a frond's: a registry answers every entity that names the word.
+   */
+  vocabulary?: readonly Term<unknown>[];
   /** What this app STATES it hosts — `frond('blog', { entities: [Post] })`. */
   fronds?: readonly FrondDescriptor[];
   /**

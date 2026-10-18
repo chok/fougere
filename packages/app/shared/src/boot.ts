@@ -26,6 +26,8 @@ export interface FougereServerConfig {
   scan?: CreateAppOptions['scan'];
   /** What this app STATES it hosts — `frond('blog', { entities: [Post] })`. */
   fronds?: CreateAppOptions['fronds'];
+  /** What the process answers by name, exported beside the fronds a statement states. */
+  vocabulary?: CreateAppOptions['vocabulary'];
   /** What `fougere.config.ts` says, when the host already read it. */
   config?: Partial<FougereConfig>;
   /** Who performs an outgoing call, when the default cannot. */
@@ -206,6 +208,7 @@ async function boot(): Promise<App> {
     // statement was incomplete — half a statement would buy nothing the whole one does.
     ...(_config.fronds ? { fronds: _config.fronds } : {}),
     ...(_config.scan ? { scan: _config.scan } : {}),
+    ...(_config.vocabulary ? { vocabulary: _config.vocabulary } : {}),
     ...(!_config.fronds && !_config.scan
       ? { scan: await scanProject(root, undefined, conventions) }
       : {}),

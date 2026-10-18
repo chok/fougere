@@ -83,7 +83,7 @@ describe('the refusal of an op whose kind nothing tells', () => {
     expect(message).toContain("'tally' leads with no known verb.");
     expect(message).toContain('Rename it to lead with a known verb:');
     expect(message).toContain(`in /app/fronds/blog/frond.config.ts:\n    operations: { 'post.tally': { kind: 'query' } },   // or 'command'`);
-    expect(message).toContain(`in /app/fronds/blog/vocabulary/verbs.ts:\n    Verbs.register('tally', 'query');`);
+    expect(message).toContain(`in /app/fronds/blog/vocabulary/verbs.ts, listed in the statement's \`vocabulary\`:\n    export const tally = Verbs.term('tally', 'query');`);
   });
 
   it('offers only the declaration when the name carries both kinds', () => {
@@ -94,7 +94,7 @@ describe('the refusal of an op whose kind nothing tells', () => {
     expect(code).toBe('operation-kind-ambiguous');
     expect(message).toContain(`operations: { 'mix.getOrCreate': { kind: 'command' } },   // or 'query'`);
     expect(message).not.toContain('Rename');
-    expect(message).not.toContain('Verbs.register');
+    expect(message).not.toContain('Verbs.term');
   });
 
   it('is not raised once the verb is taught', () => {

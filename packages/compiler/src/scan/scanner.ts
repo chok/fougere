@@ -1,5 +1,5 @@
 import { DEFAULT_CONVENTIONS, Middleware, RouteAddress, frondDirsOf, frondPackage, providerDirsOf, resolveConventions, togetherKeyOf, type Conventions, type ConventionsInput, type Diagnostic, type ScanResult } from '@fougere/core';
-import { Fronds, addressOf, awaitKeyOf, cardinalityOf, computeBindingPlan, opsOf, emitKeyOf, getPresenterFields, outputOf, ownedBy, repositoryKeyOf, storageKeyOf, targetOf, type CollectorEntry, type EntityEntry, type FrondDescriptor, type HandlerEntry, type MiddlewareEntry, type OperationContract, type OperationsMap, type PresenterEntry, type ProviderEntry, type SeedEntry, type TypeRef, viewsOf, isExtension, FrondConfigReading, type ExtensionEntry } from '@fougere/core/descriptor';
+import { Fronds, addressOf, awaitKeyOf, cardinalityOf, computeBindingPlan, opsOf, emitKeyOf, getPresenterFields, outputOf, ownedBy, repositoryKeyOf, storageKeyOf, targetOf, type CollectorEntry, type EntityEntry, type FrondDescriptor, type HandlerEntry, type MiddlewareEntry, type OperationContract, type OperationsMap, type PresenterEntry, type ProviderEntry, type SeedEntry, type TypeRef, viewsOf, isExtension, FrondConfigReading, Term, type ExtensionEntry, type VocabularyEntry } from '@fougere/core/descriptor';
 import { getModuleLoader, loadFrondConfig } from '@fougere/core/node';
 import type { FrondConfig, ErrorCode } from '@fougere/core';
 import type { Param, Signature } from '@fougere/core/descriptor';
@@ -25,6 +25,7 @@ import { lowerFirst } from '@fougere/schema';
 
 /** What this scan run could not do. */
 let diagnostics: Diagnostic[] = [];
+let vocabulary: VocabularyEntry[] = [];
 
 function record(d: Diagnostic): void {
   diagnostics.push(d);
@@ -722,11 +723,12 @@ async function scanFrond(frondPath: string, name: string, source: FrondDescripto
     return entries.filter((entry): entry is T => entry !== null);
   };
 
-  // vocabulary/ FIRST, and for its effect: a file here calls `Generators.register` or its
-  // neighbours at module level, and an entity below may write the name it just added. Nothing
-  // is kept — the registry holds what the module put in it.
-  const vocabulary = await files(join(frondPath, conventions.dirs.vocabulary));
-  for (const filePath of vocabulary) await loadModule(filePath);
+  // vocabulary/ FIRST: a file that still registers at module level does so before an entity
+  // below it is read. What it exports as a term is the process's, and travels in the scan.
+  for (const filePath of await files(join(frondPath, conventions.dirs.vocabulary))) {
+    const exported = Object.entries(await loadModule(filePath)).filter(([, value]) => Term.is(value));
+    vocabulary.push(...exported.map(([exportName, term]) => ({ term: term as Term<unknown>, name: exportName, filePath })));
+  }
 
   // services/ and repositories/ — two spellings, one provider list.
   const providers = (await Promise.all(providerDirsOf(conventions).map((dir) => collect(dir, toProvider)))).flat();
@@ -772,7 +774,6 @@ async function scanFrond(frondPath: string, name: string, source: FrondDescripto
     seeds,
     middlewares,
     ...(extensions.length > 0 ? { extensions } : {}),
-    ...(vocabulary.length > 0 ? { vocabulary } : {}),
     ...reading.members(),
   };
 }
@@ -828,6 +829,7 @@ export async function scanProject(
   // A run owns its findings: two scans in one process (a test suite, a watcher)
   // must not inherit each other's.
   diagnostics = [];
+  vocabulary = [];
 
   const frondsDir = join(root, conventions.fronds);
   const dirNames = await dirs(frondsDir);
@@ -859,5 +861,5 @@ export async function scanProject(
   );
   const fronds = Fronds.hosting(filter ? all.filter((f) => filter.includes(f.name)) : all);
 
-  return { fronds, diagnostics };
+  return { fronds, diagnostics, ...(vocabulary.length > 0 ? { vocabulary } : {}) };
 }

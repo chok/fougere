@@ -65,7 +65,7 @@ describe('an unregistered format is refused, never ignored', () => {
     class Broken extends entity({ n: text({ format: 'siren' }) }) {}
 
     expect(() => Broken.validate({ n: 'whatever' })).toThrow(
-      /Unknown format: 'siren'\. Register it with StringFormats.register\('siren', …\)/,
+      /Unknown format: 'siren'\. Export StringFormats.term\('siren', …\) from a vocabulary\/ file/,
     );
   });
 

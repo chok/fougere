@@ -5,10 +5,10 @@
  * five operations, `Presenter(Post)` keeps the entity it enriches, a computed field IS a
  * method. What is named here is only what TypeScript erases — a constructor's parameter
  * types (`deps`), a computed field's type — and what the scan read off a directory: the
- * surface a handler answers on, the word `vocabulary/` registers, the seeds.
+ * surface a handler answers on, the seeds — and, for the whole process, the terms of `vocabulary/`.
  */
-import '@fronds/blog/vocabulary/slug.js';
 import { frond } from '@fougere/core';
+import { slug } from '@fronds/blog/vocabulary/slug.js';
 import Author from '@fronds/blog/entities/Author.js';
 import Category from '@fronds/blog/entities/Category.js';
 import Post from '@fronds/blog/entities/Post.js';
@@ -24,6 +24,8 @@ import authors from '@fronds/blog/seeds/Author.seed.js';
 import categories from '@fronds/blog/seeds/Category.seed.js';
 import posts from '@fronds/blog/seeds/Post.seed.js';
 import User from '@fronds/user/entities/User.js';
+
+export const vocabulary = [slug];
 
 export default [
   frond('blog', {

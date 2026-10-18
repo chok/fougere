@@ -39,6 +39,7 @@ export type { SetDiffOptions } from './projection/card/SetDiffOptions.js';
 export * from './lib/index.js';
 export { StringFormats } from './axis/shape/StringFormats.js';
 export { Generators } from './axis/lifecycle/Generators.js';
+export { NamedTerm } from './validator/NamedTerm.js';
 export { Boundaries } from './axis/boundary/Decoder.js';
 export { type FougereEntityAdapters } from './entity/FougereEntityAdapters.js';
 export { type FougereFieldAxes } from './FougereFieldAxes.js';

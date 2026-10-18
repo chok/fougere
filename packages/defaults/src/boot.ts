@@ -71,13 +71,13 @@ export async function boot(options: BootOptions): Promise<App> {
   const stated = await statedModules(config.fronds, fromProject(root));
   const only = options.only ?? options.fronds;
   const statement = statementFileIn(root);
-  const written = statement ? await statementIn(statement) : [];
-  const hosted = [...written, ...stated.fronds].filter((frond) => !only || only.includes(frond.name));
+  const written = statement ? await statementIn(statement) : { fronds: [], vocabulary: [] };
+  const hosted = [...written.fronds, ...stated.fronds].filter((frond) => !only || only.includes(frond.name));
 
   log.debug('creating app (scan + container)');
   const app = await createApp({
     ...(hosted.length > 0 ? { fronds: hosted } : {}),
-    ...(statement ? {} : { scan: await scanned(root, only, config.conventions) }),
+    ...(statement ? { vocabulary: written.vocabulary } : { scan: await scanned(root, only, config.conventions) }),
     createContainer: options.createContainer,
     storageFactory: layer?.storageFactory,
     // The tree's string leaves say the same thing `remotes:` does, and this boot read
@@ -127,11 +127,11 @@ function fromProject(root: string): ModuleLoader {
     : project.import(id) as Promise<Record<string, unknown>>);
 }
 
-/** The fronds a project wrote by hand, as `frond()` calls — the default export of its statement file. */
-async function statementIn(path: string): Promise<FrondDescriptor[]> {
+/** What a project wrote by hand: its fronds as `frond()` calls, and the terms its process answers. */
+async function statementIn(path: string): Promise<Required<Pick<CreateAppOptions, 'fronds' | 'vocabulary'>>> {
   const mod = await getModuleLoader()(path);
 
-  return mod.default as FrondDescriptor[];
+  return { fronds: mod.default as FrondDescriptor[], vocabulary: (mod.vocabulary ?? []) as NonNullable<CreateAppOptions['vocabulary']> };
 }
 
 /**

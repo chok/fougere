@@ -20,7 +20,7 @@ import { declaresStorage } from '@fougere/defaults';
 import type { SeedEntry, FougereConfig } from '@fougere/core';
 import { createJiti } from 'jiti';
 import { resolve, relative, join } from 'node:path';
-import { inDirectories, inPackages } from './NamedPackage.js';
+import { inPackages } from './NamedPackage.js';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 
 export interface FougereModuleOptions {
@@ -130,11 +130,7 @@ const module = defineNuxtModule<FougereModuleOptions>({
     const moduleKeys = statedFronds(config.fronds)
       .map((entry) => entry.key)
       .filter((key) => statesModule(key) && !key.startsWith('.'));
-    const named = inPackages(new Set([...imported, ...moduleKeys]));
-    // A frond's own files too: `vocabulary/` is imported for what it registers, and the scan
-    // below says where the fronds sit.
-    const frondPaths: string[] = [];
-    const kept = (id: string) => named(id) || inDirectories(frondPaths)(id);
+    const kept = inPackages(new Set([...imported, ...moduleKeys]));
     (nuxt as any).hook('nitro:init', (nitro: any) => {
       nitro.hooks.hook('rollup:before', (_nitro: unknown, rollupConfig: any) => {
         const nitroSideEffects = rollupConfig.treeshake?.moduleSideEffects;
@@ -162,7 +158,6 @@ const module = defineNuxtModule<FougereModuleOptions>({
     const frondsFilter = process.env.FOUGERE_FRONDS?.split(',').map((s) => s.trim()).filter(Boolean);
     const scan = await scanProject(scanRoot, frondsFilter, conventions);
     const { fronds } = scan;
-    frondPaths.push(...fronds.map((frond) => frond.source.path));
 
     // ── 1b. Register @fronds/* aliases for all fronds, and watch them ──
     // The scanned fronds ARE the watch list — nothing to declare. Without this, a
@@ -453,7 +448,8 @@ export function generateBootPlugin(
   // applies the `@fronds/*` aliases the statement's own imports are written with. Left in
   // place, the path resolves natively, Node reads the frond's `.ts` and every call answers
   // 500. Measured both ways on demos/nuxt-blog, in-process.
-  if (statedPath) lines.push(`import fronds from '${statedPath.replace(/\.(m?)[jt]sx?$/, '')}';`);
+  // The namespace too: a statement exports `vocabulary` only when the project has terms.
+  if (statedPath) lines.push(`import fronds, * as statement from '${statedPath.replace(/\.(m?)[jt]sx?$/, '')}';`);
   configFiles.forEach((file, i) => lines.push(`import config_${i} from '${file.replace(/\.(m?)[jt]sx?$/, '')}';`));
   const stated = configFiles.length > 0 ? `(${configFiles.map((_, i) => `config_${i}.fronds`).join(' ?? ')})` : undefined;
   const configArg = stated ? `{ ...${JSON.stringify(carried(config))}, fronds: ${stated} }` : JSON.stringify(carried(config));
@@ -486,7 +482,7 @@ export function generateBootPlugin(
     lines.push(`export default defineNitroPlugin(() => {`);
     // Always configure, even with nothing to host: `hostedBy` is where the absence is
     // answered, by name and with both keys. Skipping the call boots a silent app instead.
-    const states = statedPath ? 'fronds, ' : '';
+    const states = statedPath ? 'fronds, vocabulary: statement.vocabulary, ' : '';
     lines.push(`  configureFougere({ ${states}config: ${configArg} });`);
     lines.push(`});`);
 
@@ -519,7 +515,7 @@ export function generateBootPlugin(
   // Nitro swallowed the plugin whole, and the app came up with zero fronds and not a word.
   // Two unrelated facts had been sharing one failure. `remotes` rides along for the same
   // reason: it is the whole of why a consumer that hosts nothing boots at all.
-  const states = statedPath ? 'fronds, ' : '';
+  const states = statedPath ? 'fronds, vocabulary: statement.vocabulary, ' : '';
   lines.push(`  configureFougere({ ${states}config: ${configArg} });`);
   lines.push(``);
   lines.push(`  try {`);
@@ -533,7 +529,7 @@ export function generateBootPlugin(
   lines.push(`    nitroApp.hooks.hook('close', () => storage.close?.());`);
   lines.push(``);
   lines.push(`    configureFougere({`);
-  if (statedPath) lines.push(`      fronds,`);
+  if (statedPath) lines.push(`      fronds,`, `      vocabulary: statement.vocabulary,`);
   lines.push(`      config: ${configArg},`);
   // The whole thing, not a hand-picked few of its members: the three this used to name
   // left `transacted` and `close` behind, so a `Together` always compensated and the

@@ -6,6 +6,7 @@ import { lowerFirst, type SchemaView } from '@fougere/schema';
 import type { HandlerEntry } from '../descriptor/HandlerEntry.js';
 import type { PresenterEntry } from '../descriptor/PresenterEntry.js';
 import { hostedBy } from './hosted.js';
+import { termRefusals } from './terms.js';
 import { nestingOf, parentsFirst } from './nesting.js';
 import type { Fronds } from '../descriptor/Fronds.js';
 import type { FrondDescriptor } from '../descriptor/FrondDescriptor.js';
@@ -126,7 +127,7 @@ async function readFronds(
   const brought = (options.extensions ?? [])
     .flatMap((extension) => extension?.fronds ?? [])
     .map((frond) => ({ ...frond, brought: true as const }));
-  const { fronds, diagnostics } = await hostedBy(
+  const { fronds, diagnostics, vocabulary } = await hostedBy(
     brought.length > 0 ? { ...options, fronds: [...(options.fronds ?? []), ...brought] } : options,
   );
   // An app that states nothing AND scans nothing is a mistake — unless an extension brings
@@ -151,6 +152,10 @@ async function readFronds(
     if (parent !== undefined) frond.extends = parent;
   }
   const ordered = parentsFirst(fronds, under);
+
+  for (const term of [...(options.vocabulary ?? []), ...(vocabulary ?? []).map((entry) => entry.term)]) term.register();
+  const termRefusal = refusalOf(termRefusals(ordered), 'term(s) nothing in this process answers');
+  if (termRefusal) throw termRefusal;
 
   const operationModel = resolveEffectiveOperations(ordered, {
     diagnostics,

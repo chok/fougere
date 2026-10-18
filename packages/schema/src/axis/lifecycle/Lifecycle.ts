@@ -52,6 +52,13 @@ export class Lifecycle {
     return { value: Generators.resolve(rule.generate)() };
   }
 
+  /** The generator a create names, when it names one — `primary()` names `cuid2`. */
+  generator(): string | undefined {
+    const rule = this.create;
+
+    return typeof rule === 'object' && 'generate' in rule ? rule.generate : undefined;
+  }
+
   requiredAtCreate(): boolean {
     return this.create === undefined;
   }

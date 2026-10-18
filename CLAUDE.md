@@ -611,12 +611,17 @@ because they cross a process boundary.
 **The names the scan reads** — `core/src/Conventions.ts`, read by `@fougere/compiler`. Everything else a frond states, it
 states by its SHAPE; the twelve convention directories and the import scope are the one place
 a NAME is the declaration, and the only ones a project may restate (`conventions:` in
-`fougere.config.ts`). Two of them extend the FRAMEWORK rather than declare a domain, and one
-of those two is the only directory with an ORDER: `vocabulary/` is read before `entities/`,
-because a file there registers a word at module level (`Generators.register('ulid', …)`) and
-an entity beside it may write that name — a registry refuses one it does not hold. A verb is such
-a word too: `Verbs.register('total', 'query')` tells the kind of every op whose name leads with it,
-and the refusal of an op whose kind nothing tells names that line with the two others. The other,
+`fougere.config.ts`). Two of them extend the FRAMEWORK rather than declare a domain. A
+`vocabulary/` file EXPORTS a term — `export const slug = StringFormats.term('slug', …)`,
+`Verbs.term('total', 'query')` — and the statement lists it for the whole PROCESS, beside the
+fronds (`export const vocabulary = [slug]` in `fronds.ts`, `CreateAppOptions.vocabulary`): a
+registry answers every entity, whichever frond the file sits in. An entity still names the word
+(`format: 'slug'`), which is what a card carries. It used to register at module level and be
+imported for that effect, and Nitro dropped such a module from `demos/nuxt-blog`'s server build:
+`Unknown format: 'slug'`, a 500 at the first write, measured 2026-10-18. A term an entity names and
+nothing answers now refuses the BOOT (`term-missing`, `boot/terms.ts`, over `NamedTerm`). A verb
+tells the kind of every op whose name leads with it, and the refusal of an op whose kind nothing
+tells names that line with the two others. The other,
 `extensions/`, is recognized by its FORM, a module stating `up` or `down`, and it travels with
 its frond: behind `fronds:` it mounts on the process serving it there, which is why no key
 widens it — what must be everywhere is a frond that is everywhere, which `Extension.fronds`

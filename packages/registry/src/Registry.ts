@@ -1,4 +1,5 @@
 import { RegistryError } from './RegistryError.js';
+import { Term } from './Term.js';
 
 /** What a reload replaced — told to whoever reloaded, since this package holds no logger. */
 export type Replaced = (registry: string, name: string) => void;
@@ -61,6 +62,11 @@ export class Registry<T> {
     this.held.set(name, value);
 
     return value;
+  }
+
+  /** The answer as a value — exported from `vocabulary/`, registered by the frond that states it. */
+  term(name: string, value: T): Term<T> {
+    return new Term(this, name, value);
   }
 
   replace(name: string, value: T): T {

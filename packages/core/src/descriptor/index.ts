@@ -13,6 +13,8 @@ export * from './SeedEntry.js';
 export * from './SeedFactory.js';
 export * from './FrondSource.js';
 export * from './ExtensionEntry.js';
+export * from './VocabularyEntry.js';
+export { Term } from '@fougere/registry';
 export * from './FrondDescriptor.js';
 export { Fronds } from './Fronds.js';
 export { FrondConfigReading } from './FrondConfigReading.js';

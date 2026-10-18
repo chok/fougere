@@ -9,7 +9,9 @@ import { scanProject } from '../src/index.js';
 
 describe('a verb taught in vocabulary/', () => {
   it('tells the kind of every op that leads with it', async () => {
-    const { fronds } = await scanProject(join(import.meta.dirname, 'fixtures-verbs'));
+    const { fronds, vocabulary } = await scanProject(join(import.meta.dirname, 'fixtures-verbs'));
+    // What `createApp` does with a scan's vocabulary, before it reads an op.
+    for (const entry of vocabulary ?? []) entry.term.register();
     const model = resolveEffectiveOperations(fronds);
     const price = fronds[0]!.handlers.find((one) => one.address === 'price')!;
 

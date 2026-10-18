@@ -191,16 +191,17 @@ describe('extensionsOf', () => {
       const out = generateBootPlugin(
         { sources: { main: {} } } as unknown as FougereConfig, [], '/app/boot', [], '/app/fronds.ts');
 
-      expect(out).toContain("import fronds from '/app/fronds';");
+      expect(out).toContain("import fronds, * as statement from '/app/fronds';");
       expect(out).toContain('configureFougere({');
       expect(out).toContain('fronds,');
+      expect(out).toContain('vocabulary: statement.vocabulary,');
     });
 
     it('drops the extension a bundler would refuse to resolve', () => {
       const out = generateBootPlugin(
         { sources: { main: {} } } as unknown as FougereConfig, [], '/app/boot', [], '/app/fronds.mts');
 
-      expect(out).toContain("import fronds from '/app/fronds';");
+      expect(out).toContain("import fronds, * as statement from '/app/fronds';");
     });
 
     it('configures even when the app states nothing, so the absence is answered', () => {

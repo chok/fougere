@@ -1,3 +1,3 @@
 import { Verbs } from '@fougere/core';
 
-Verbs.register('total', 'query');
+export const total = Verbs.term('total', 'query');

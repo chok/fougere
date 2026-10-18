@@ -255,9 +255,6 @@ One line each, kept because a past version of this file asserted the opposite.
   package `fougere.config.ts` imports (`packagesImportedBy`, `compiler/src/imports.ts`) or names as a
   module key of `fronds:` — whole, since a package may register from a file nothing reads a value of
   (`NamedPackage.ts`). It used to keep `@fougere/*` by NAME, which left a third party's adapter out.
-  A frond's own files are kept the same way (`inDirectories`): `vocabulary/slug.ts` is imported for what
-  it registers, and `demos/nuxt-blog` answered `Unknown format: 'slug'` with a 500 until it was
-  (2026-10-18).
   Pinned by `app/nuxt/tests/NamedPackage.test.ts`, measured 2026-09-25.
 - **Core does not depend on the compiler, not even for its tests** — a core test states its fronds
   with `frond()` (`tests/fixtures-*/fronds.ts`, contracts written through `tests/contract.ts`), and

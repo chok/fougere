@@ -22,11 +22,11 @@ const COMMAND = [
 
 /**
  * The verbs an operation's name may lead with, and the kind each one tells. A frond whose subject
- * has a verb of its own teaches it once, in its `vocabulary/` — `Verbs.register('total', 'query')`
- * — rather than stating the kind op by op. It holds for the process.
+ * has a verb of its own teaches it once, in a `vocabulary/` file — `Verbs.term('total', 'query')`,
+ * listed in the statement's `vocabulary` — rather than stating the kind op by op. It holds for the process.
  */
 export const Verbs = new Registry<OperationKind>(
   'verb',
-  "call Verbs.register('<verb>', 'query' | 'command') in the frond's vocabulary/",
+  "export Verbs.term('<verb>', 'query' | 'command') from a vocabulary/ file and list it in the statement's `vocabulary`",
   [...QUERY.map((verb) => [verb, 'query'] as const), ...COMMAND.map((verb) => [verb, 'command'] as const)],
 );

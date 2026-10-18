@@ -44,10 +44,12 @@ describe('a statement written from the scan', () => {
     expect(opsOf(written).get('archive')?.kind).toBe('command');
   }, 30_000);
 
-  it('imports a vocabulary word before any entity that may write it', async () => {
-    const statement = emitStatement(await scanProject(join(import.meta.dirname, 'fixtures-conventions')));
+  it('exports the terms of vocabulary/ for the whole process, beside the fronds', async () => {
+    const scan = await scanProject(join(import.meta.dirname, 'fixtures-conventions'));
+    const statement = emitStatement(scan);
 
-    expect(statement.indexOf("import '@fronds/shop/vocabulary/ulid.js';")).toBeGreaterThan(-1);
-    expect(statement.indexOf("import '@fronds/shop/vocabulary/ulid.js';")).toBeLessThan(statement.indexOf('/entities/Order.js'));
+    expect(scan.vocabulary?.map((entry) => entry.term.name)).toEqual(['ulid']);
+    expect(statement).toContain("import { ulid as _0_ulid } from '@fronds/shop/vocabulary/ulid.js';");
+    expect(statement).toContain('export const vocabulary = [_0_ulid];');
   }, 30_000);
 });
