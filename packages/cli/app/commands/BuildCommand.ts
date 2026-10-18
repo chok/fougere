@@ -34,10 +34,9 @@ export default class BuildCommand {
     this.ui.success(`${built.path} — ${built.fronds.length} frond(s), ${built.entities} entities, ${built.handlers} handlers`);
     this.ui.step(built.fronds.map((name) => pc.bold(name)).join(', '));
 
-    // A diagnostic travels INTO the module, so a boot from it says the same thing. Saying
-    // it here too is not a duplicate: this is the moment someone can still fix the source.
+    // Said here, where someone can still fix the source: the statement states fronds, not findings.
     for (const diagnostic of built.diagnostics) this.ui.warn(diagnostic);
 
-    this.ui.step(pc.dim('hand it to createApp as `scan:` — nothing reads a disk after this'));
+    this.ui.step(pc.dim('hand its fronds and its vocabulary to createApp — nothing reads a disk after this'));
   }
 }

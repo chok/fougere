@@ -1,6 +1,6 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname, join, relative, resolve } from 'node:path';
-import { emitFacade, emitNames, emitScan } from '@fougere/compiler';
+import { emitFacade, emitNames, emitStatement } from '@fougere/compiler';
 import ProjectScan from '../services/ProjectScan.js';
 import type Build from '../entities/Build.js';
 
@@ -11,7 +11,7 @@ import type Build from '../entities/Build.js';
  * failed: a recorded version is a past nobody can recompute, so it lives in the tree.
  * This is the same scan the next build performs again, so it is gitignored.
  */
-export const DEFAULT_OUT = '.fougere/scan.generated.ts';
+export const DEFAULT_OUT = '.fougere/fronds.generated.ts';
 /** Types only, beside the module — what lets a client narrow a refusal it might meet. */
 export const FACADE_OUT = 'facade.generated.ts';
 /** Types only — what a config may NAME, so a string cannot designate a class that is not there. */
@@ -29,19 +29,16 @@ export interface BuildReport {
   fronds: string[];
   entities: number;
   handlers: number;
-  /**
-   * What the scan could not settle, carried rather than swallowed: the module holds the
-   * same diagnostics, so a boot from it warns exactly as a boot from a disk would.
-   */
+  /** What the scan could not settle — said here, at build, since the statement states fronds and nothing else. */
   diagnostics: string[];
 }
 
 /**
- * Writing the scan down — the half of the gradient a runtime without a disk needs.
+ * Writing the scan down as the statement an author would write — what a runtime without a disk boots.
  *
- * Producing the description reads the project; consuming it does not. `createApp` takes
- * `scan:` and never looks for a filesystem, so this command is what stands between a
- * project and a Worker: it runs where `node:fs` exists, once, at build time.
+ * Producing it reads the project; consuming it does not. `createApp` takes `fronds:` and never looks
+ * for a filesystem, so this command is what stands between a project and a Worker: it runs where
+ * `node:fs` exists, once, at build time.
  */
 export default class BuildHandler {
   constructor(private projectScan: ProjectScan) {}
@@ -58,7 +55,7 @@ export default class BuildHandler {
     // The emitter writes every import relative to where the module will SIT, so the
     // directory has to be settled before the source is produced, not after.
     await mkdir(dirname(out), { recursive: true });
-    await writeFile(out, emitScan(scan, { outFile: out }));
+    await writeFile(out, emitStatement(scan, { outFile: out }));
 
     // The same scan, projected a third way. It holds no value and reaches no bundle: what a
     // client cannot otherwise know is which refusals one facade can answer, because TypeScript

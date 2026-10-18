@@ -4,7 +4,7 @@
  * Three things a Node process gets for free have to be stated here, and they are the
  * whole of what is Cloudflare-shaped in this demo:
  *
- *  1. THE SCAN arrives as a module `fougere build` wrote. Producing it read the project;
+ *  1. THE FRONDS arrive as the statement `fougere build` wrote. Producing it read the project;
  *     consuming it reads nothing, which is why `createApp` runs where `node:fs` does not.
  *  2. THE STORAGE is a BINDING, and `fougere.config.ts` names it — `type: 'd1'`. The app
  *     is built at MODULE scope: work done inside `fetch` counts against the request's CPU
@@ -25,7 +25,7 @@ import { receive } from '@fougere/transport-http/receive';
 import { createHonoRouter } from '@fougere/http';
 import { generateRoutes, registerRoutes } from '@fougere/adapter-rest';
 import config from '../fougere.config.js';
-import { scan } from '../.fougere/scan.generated.js';
+import fronds, * as statement from '../.fougere/fronds.generated.js';
 
 interface Env {
   DB: D1Database;
@@ -39,7 +39,8 @@ async function open() {
   // the moment it answers. Without one the extension still measures and still serves
   // `rpc.topology`; what it cannot do is push, and that wants `ctx.waitUntil`.
   const app: App = await createApp({
-    scan,
+    fronds,
+    vocabulary: statement.vocabulary,
     createContainer,
     storageFactory: storage.storageFactory,
     extensions: [observability({

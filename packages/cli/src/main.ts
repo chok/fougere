@@ -1,7 +1,7 @@
 /** fougere CLI — a Fougere app powered by citty. */
 import { createApp, setLogLevel, envLevel } from '@fougere/core';
 import { createContainer } from '@fougere/container';
-import { scan } from '../.fougere/scan.generated.js';
+import fronds, * as statement from '../.fougere/fronds.generated.js';
 import { ui } from './ui.js';
 import { run } from './runner.js';
 
@@ -15,7 +15,7 @@ container.registerValue('cwd', process.cwd());
 // operator's word over its own `logLevel:`.
 setLogLevel(envLevel() ?? 'warn');
 
-const app = await createApp({ scan, createContainer: () => container });
+const app = await createApp({ fronds, vocabulary: statement.vocabulary, createContainer: () => container });
 
 container.registerValue('app', app);
 

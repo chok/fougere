@@ -12,7 +12,7 @@ import { fileURLToPath } from 'node:url';
 
 const here = new URL('.', import.meta.url).pathname;
 
-// 1. The scan, written down. `.fougere/scan.generated.ts` is gitignored — it is
+// 1. The scan, written down as a statement. `.fougere/fronds.generated.ts` is gitignored — it is
 //    regenerable, which is the test that decides whether an artefact belongs in a tree.
 execFileSync('node', [fileURLToPath(import.meta.resolve('@fougere/cli/bin')), 'build'], { cwd: here, stdio: 'inherit' });
 
