@@ -297,6 +297,9 @@ importers:
       '@fougere/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@fougere/defaults':
+        specifier: workspace:*
+        version: link:../../packages/defaults
       '@fougere/schema':
         specifier: workspace:*
         version: link:../../packages/schema
@@ -387,6 +390,9 @@ importers:
       '@fougere/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@fougere/defaults':
+        specifier: workspace:*
+        version: link:../../packages/defaults
       '@fougere/http':
         specifier: workspace:*
         version: link:../../packages/http
@@ -493,6 +499,9 @@ importers:
       '@fougere/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@fougere/defaults':
+        specifier: workspace:*
+        version: link:../../packages/defaults
     devDependencies:
       tsx:
         specifier: ^4.21.0
@@ -509,6 +518,9 @@ importers:
       '@fougere/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@fougere/defaults':
+        specifier: workspace:*
+        version: link:../../packages/defaults
       '@fougere/log':
         specifier: workspace:*
         version: link:../../packages/log
@@ -589,6 +601,9 @@ importers:
       '@fougere/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@fougere/defaults':
+        specifier: workspace:*
+        version: link:../../packages/defaults
       '@fougere/schema':
         specifier: workspace:*
         version: link:../../packages/schema
@@ -611,6 +626,9 @@ importers:
       '@fougere/core':
         specifier: workspace:*
         version: link:../../../packages/core
+      '@fougere/defaults':
+        specifier: workspace:*
+        version: link:../../../packages/defaults
       '@fougere/schema':
         specifier: workspace:*
         version: link:../../../packages/schema
@@ -636,6 +654,9 @@ importers:
       '@fougere/core':
         specifier: workspace:*
         version: link:../../../packages/core
+      '@fougere/defaults':
+        specifier: workspace:*
+        version: link:../../../packages/defaults
       '@fougere/schema':
         specifier: workspace:*
         version: link:../../../packages/schema
@@ -661,6 +682,9 @@ importers:
       '@fougere/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@fougere/defaults':
+        specifier: workspace:*
+        version: link:../../packages/defaults
       '@fougere/schema':
         specifier: workspace:*
         version: link:../../packages/schema
@@ -738,6 +762,9 @@ importers:
       '@fougere/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@fougere/defaults':
+        specifier: workspace:*
+        version: link:../../packages/defaults
       '@fougere/log':
         specifier: workspace:*
         version: link:../../packages/log
@@ -852,6 +879,9 @@ importers:
       '@fougere/core':
         specifier: workspace:*
         version: link:../../../packages/core
+      '@fougere/defaults':
+        specifier: workspace:*
+        version: link:../../../packages/defaults
       '@fougere/http':
         specifier: workspace:*
         version: link:../../../packages/http
@@ -885,6 +915,9 @@ importers:
       '@fougere/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@fougere/defaults':
+        specifier: workspace:*
+        version: link:../../packages/defaults
       '@fougere/schema':
         specifier: workspace:*
         version: link:../../packages/schema
@@ -1074,6 +1107,9 @@ importers:
       '@fougere/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@fougere/defaults':
+        specifier: workspace:*
+        version: link:../../packages/defaults
       '@fougere/log':
         specifier: workspace:*
         version: link:../../packages/log
@@ -1192,6 +1228,9 @@ importers:
       '@fougere/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@fougere/defaults':
+        specifier: workspace:*
+        version: link:../../packages/defaults
       '@fougere/schema':
         specifier: workspace:*
         version: link:../../packages/schema
@@ -1398,6 +1437,9 @@ importers:
       '@fougere/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@fougere/defaults':
+        specifier: workspace:*
+        version: link:../../packages/defaults
       '@fougere/schema':
         specifier: workspace:*
         version: link:../../packages/schema
@@ -1634,6 +1676,9 @@ importers:
       '@fougere/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@fougere/defaults':
+        specifier: workspace:*
+        version: link:../../packages/defaults
       '@fougere/log':
         specifier: workspace:*
         version: link:../../packages/log

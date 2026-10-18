@@ -11,6 +11,7 @@
     "typecheck": "pnpm build && tsc --noEmit && tsc --noEmit -p tsconfig.node.json"
   },
   "dependencies": {
+    "@fougere/defaults": "workspace:*",
     "@fougere/adapter-sql": "workspace:*",
     "@fougere/container": "workspace:*",
     "@fougere/core": "workspace:*",

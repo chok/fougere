@@ -201,7 +201,7 @@ async function boot(): Promise<App> {
   // Named nothing, the host boots from the project's statement — written by hand, or by the scan.
   const declared: Partial<Statement> = _config.fronds || _config.scan
     ? { fronds: _config.fronds, vocabulary: _config.vocabulary }
-    : await statementOf(root, fileConfig.conventions);
+    : await statementOf(root, { conventions: fileConfig.conventions });
 
   const app = await createApp({
     // The host's word wins: it scanned at build, and a second scan here would either

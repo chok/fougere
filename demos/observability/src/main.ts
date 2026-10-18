@@ -13,7 +13,8 @@
  *   pnpm signoz           # a collector, if you want to see it
  */
 import { createApp, createLocalRunner, type Storage } from '@fougere/core';
-import { scanProject, frondAliases } from '@fougere/compiler';
+import { frondAliases } from '@fougere/compiler';
+import { statementOf } from '@fougere/defaults';
 import { setModuleLoader } from '@fougere/core/node';
 import { createContainer } from '@fougere/container';
 import { serve, createHttpTransport } from '@fougere/transport-http';
@@ -68,12 +69,12 @@ const deepest = () => { peak = Math.max(peak, activeCalls()); };
 // ── catalog — holds Product, answers about it ───
 // Observing is declared with the app, not wired onto it after the fact — so `dispose()`
 // flushes the telemetry and this file no longer owes a `stop()` it could forget.
-const catalog = await createApp({ scan: await scanProject(join(root, 'catalog')), createContainer, storageFactory: memoryStorage, extensions: [observed('catalog', deepest), log(), calls()] });
+const catalog = await createApp({ ...(await statementOf(join(root, 'catalog'))), createContainer, storageFactory: memoryStorage, extensions: [observed('catalog', deepest), log(), calls()] });
 const catalogReceiver = await serve(createLocalRunner(catalog), { port: CATALOG });
 stopping.push(async () => { await catalogReceiver.close(); await catalog.dispose(); });
 
 // ── shipping — a Frond with no entity at all ────
-const shipping = await createApp({ scan: await scanProject(join(root, 'shipping')), createContainer, extensions: [observed('shipping', deepest), log(), calls()] });
+const shipping = await createApp({ ...(await statementOf(join(root, 'shipping'))), createContainer, extensions: [observed('shipping', deepest), log(), calls()] });
 const shippingReceiver = await serve(createLocalRunner(shipping), { port: SHIPPING });
 stopping.push(async () => { await shippingReceiver.close(); await shipping.dispose(); });
 
@@ -81,7 +82,7 @@ stopping.push(async () => { await shippingReceiver.close(); await shipping.dispo
 // This is the entire topology statement. Comment it out and the same CartHandler runs
 // against local Fronds, with one span instead of three.
 const shop = await createApp({
-  scan: await scanProject(join(root, 'shop')),
+  ...(await statementOf(join(root, 'shop'))),
   createContainer,
   remotes: {
     catalog: `http://127.0.0.1:${CATALOG}`,

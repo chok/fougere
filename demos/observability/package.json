@@ -10,6 +10,7 @@
     "typecheck": "tsc -p . && tsc -p catalog/fronds && tsc -p shipping/fronds && tsc -p shop/fronds"
   },
   "dependencies": {
+    "@fougere/defaults": "workspace:*",
     "@fougere/calls": "workspace:*",
     "@fougere/container": "workspace:*",
     "@fougere/core": "workspace:*",

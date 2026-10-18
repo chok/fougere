@@ -9,6 +9,7 @@
     "typecheck": "tsc --noEmit -p ."
   },
   "dependencies": {
+    "@fougere/defaults": "workspace:*",
     "@fougere/core": "workspace:*",
     "@fougere/schema": "workspace:*",
     "jiti": "^2.0.0",

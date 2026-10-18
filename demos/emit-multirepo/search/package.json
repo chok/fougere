@@ -8,6 +8,7 @@
     "sync": "fougere sync --name blog --from http://127.0.0.1:4301"
   },
   "dependencies": {
+    "@fougere/defaults": "workspace:*",
     "@fougere/core": "workspace:*",
     "@fougere/schema": "workspace:*",
     "jiti": "^2.0.0",

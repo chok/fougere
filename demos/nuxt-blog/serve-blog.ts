@@ -8,7 +8,8 @@
  */
 import { createJiti } from 'jiti';
 import { applyConfig, createApp, createLocalRunner, Logger } from '@fougere/core';
-import { scanProject, frondAliases } from '@fougere/compiler';
+import { frondAliases } from '@fougere/compiler';
+import { statementOf } from '@fougere/defaults';
 import { setModuleLoader, loadConfig, remotesOf } from '@fougere/core/node';
 import { createContainer } from '@fougere/container';
 import { resolveStorage, layerOf } from '@fougere/defaults';
@@ -52,7 +53,7 @@ const storage = resolveStorage(config.sources, process.cwd());
 // Click through the Nuxt app on :3000 and they land here — including the ones that
 // arrived over the wire, which is the half a browser's devtools cannot show.
 const app = await createApp({
-  scan: await scanProject(process.cwd(), ['blog']),
+  ...(await statementOf(process.cwd(), { only: ['blog'] })),
   createContainer,
   ...layerOf(storage),
   extensions: [observability({ service: 'blog-host' }), calls({ panel: 4400 })],

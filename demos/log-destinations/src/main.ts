@@ -10,7 +10,8 @@
  *   pnpm dev
  */
 import { createApp, createLocalRunner, Invocation } from '@fougere/core';
-import { scanProject, frondAliases } from '@fougere/compiler';
+import { frondAliases } from '@fougere/compiler';
+import { statementOf } from '@fougere/defaults';
 import { setModuleLoader } from '@fougere/core/node';
 import { createContainer } from '@fougere/container';
 import { logFrond } from '@fougere/log';
@@ -44,9 +45,10 @@ const storageFactory = () => ({
 /** Where the file destination writes. A real app names a path it keeps. */
 const lines = join(mkdtempSync(join(tmpdir(), 'fougere-log-')), 'lines.jsonl');
 
+const statement = await statementOf(root);
 const app = await createApp({
-  fronds: [logFrond(lines)],
-  scan: await scanProject(root),
+  ...statement,
+  fronds: [logFrond(lines), ...statement.fronds],
   createContainer,
   storageFactory,
 });

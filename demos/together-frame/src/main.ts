@@ -5,7 +5,7 @@
  * frames are transactions. Uncomment the block in fougere.config.ts and run again — the
  * same handlers, the same results, and one line of boot output that is not the same.
  */
-import { scanProject } from '@fougere/compiler';
+import { statementOf } from '@fougere/defaults';
 import { log } from '@fougere/log';
 import { createApp, createLocalRunner, migrating, type App, type FougereConfig, Invocation } from '@fougere/core';
 import { createContainer } from '@fougere/container';
@@ -32,7 +32,7 @@ console.log(split
 console.log('─'.repeat(72));
 
 const app: App = await createApp({
-  scan: await scanProject(root),
+  ...(await statementOf(root)),
   createContainer,
   // `layerOf`, not three members by hand: `enforces` is how the boot learns the engine
   // keeps a foreign key, and picking members is how it would have been left behind.

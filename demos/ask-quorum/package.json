@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit -p ."
   },
   "dependencies": {
+    "@fougere/defaults": "workspace:*",
     "@fougere/compiler": "workspace:*",
     "@fougere/container": "workspace:*",
     "@fougere/core": "workspace:*",

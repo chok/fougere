@@ -5,7 +5,8 @@
  * hosting `booking` too would make three processes claim to serve it.
  */
 import { createApp, createLocalRunner } from '@fougere/core';
-import { scanProject, frondAliases } from '@fougere/compiler';
+import { frondAliases } from '@fougere/compiler';
+import { statementOf } from '@fougere/defaults';
 import { setModuleLoader } from '@fougere/core/node';
 import { createContainer } from '@fougere/container';
 import { serve } from '@fougere/transport-http';
@@ -18,7 +19,7 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const jiti = createJiti(import.meta.url, { interopDefault: true, alias: await frondAliases(root) });
 setModuleLoader((filePath) => jiti.import(filePath) as Promise<Record<string, unknown>>);
 
-const app = await createApp({ scan: await scanProject(root, [name!]), createContainer });
+const app = await createApp({ ...(await statementOf(root, { only: [name!] })), createContainer });
 const receiver = await serve(createLocalRunner(app), { port: Number(port) });
 
 console.log(`  ${name} on :${port} — it answers, and knows nobody who asks`);

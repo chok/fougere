@@ -5,7 +5,7 @@
  * nothing is read first. Uncomment `archive` in fougere.config.ts and run again — the same
  * entities, the same rows left behind, and one line of boot output that is not the same.
  */
-import { scanProject } from '@fougere/compiler';
+import { statementOf } from '@fougere/defaults';
 import { log } from '@fougere/log';
 import { createApp, createLocalRunner, Invocation, migrating, type App, type FougereConfig } from '@fougere/core';
 import { createContainer } from '@fougere/container';
@@ -31,7 +31,7 @@ console.log(split
 console.log('─'.repeat(74));
 
 const app: App = await createApp({
-  scan: await scanProject(root),
+  ...(await statementOf(root)),
   createContainer,
   ...layerOf(storage),
   extensions: [migrating(storage.migrate), workflow({ sweepMs: 0 }), log()],

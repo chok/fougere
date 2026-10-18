@@ -17,7 +17,8 @@
  *   pnpm rooms & pnpm billing & pnpm calendar # then: SPLIT=1 pnpm dev
  */
 import { createApp, createLocalRunner, Invocation } from '@fougere/core';
-import { scanProject, frondAliases } from '@fougere/compiler';
+import { frondAliases } from '@fougere/compiler';
+import { statementOf } from '@fougere/defaults';
 import { setModuleLoader } from '@fougere/core/node';
 import { createContainer } from '@fougere/container';
 import { createHttpTransport } from '@fougere/transport-http';
@@ -35,7 +36,7 @@ const remotes = process.env.SPLIT
   : undefined;
 
 const app = await createApp({
-  scan: await scanProject(root),
+  ...(await statementOf(root)),
   createContainer,
   ...(remotes ? { remotes, remoteTransport: (url: string) => createHttpTransport(url) } : {}),
 });

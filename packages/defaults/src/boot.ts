@@ -72,7 +72,7 @@ export async function boot(options: BootOptions): Promise<App> {
   const stated = await statedModules(config.fronds, fromProject(root));
   const only = options.only ?? options.fronds;
   // Every boot starts from a statement: the one the project wrote, or the one the scan writes for it.
-  const statement = await statementOf(root, config.conventions);
+  const statement = await statementOf(root, { conventions: config.conventions });
   const hosted = [...statement.fronds, ...stated.fronds].filter((frond) => !only || only.includes(frond.name));
 
   log.debug('creating app');
@@ -135,10 +135,17 @@ export type Statement = Required<Pick<CreateAppOptions, 'fronds' | 'vocabulary'>
  * The statement a project boots from — the `fronds.ts` it wrote, or the one the scan writes for it
  * when it wrote none. Every host starts from one, so what booted in dev is what boots in a build.
  */
-export async function statementOf(root: string, conventions?: FougereConfig['conventions']): Promise<Statement> {
-  const mod = await getModuleLoader()(statementFileIn(root) ?? await written(root, conventions));
+export async function statementOf(
+  root: string,
+  scope: { only?: readonly string[]; conventions?: FougereConfig['conventions'] } = {},
+): Promise<Statement> {
+  const mod = await getModuleLoader()(statementFileIn(root) ?? await written(root, scope.conventions));
+  const fronds = mod.default as FrondDescriptor[];
 
-  return { fronds: mod.default as FrondDescriptor[], vocabulary: (mod.vocabulary ?? []) as NonNullable<CreateAppOptions['vocabulary']> };
+  return {
+    fronds: scope.only ? fronds.filter((frond) => scope.only!.includes(frond.name)) : fronds,
+    vocabulary: (mod.vocabulary ?? []) as NonNullable<CreateAppOptions['vocabulary']>,
+  };
 }
 
 /**

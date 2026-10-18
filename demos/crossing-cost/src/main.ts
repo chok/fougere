@@ -9,7 +9,7 @@
  *
  * Then uncomment a line in `fougere.config.ts` and run it again. No handler changes.
  */
-import { scanProject } from '@fougere/compiler';
+import { statementOf, type Statement } from '@fougere/defaults';
 import { log } from '@fougere/log';
 import { createApp, createLocalRunner, declaredTopologyOf, resolveEffectiveOperations, type Storage } from '@fougere/core';
 import { loadConfig, remotesOf } from '@fougere/core/node';
@@ -21,7 +21,7 @@ import { join, relative } from 'node:path';
 
 const root = join(import.meta.dirname, '..');
 const config = await loadConfig(root);
-const scan = await scanProject(root);
+const statement = await statementOf(root);
 
 const SHELF = [
   { id: 'p1', title: 'Fern', cents: 1200 },
@@ -39,8 +39,8 @@ const remotes = remotesOf(config);
 /** `ledger` is placed and served by nobody, on purpose — every other placed frond answers. */
 const LEDGER = 'ledger';
 
-const boot = (fronds: typeof scan, elsewhere: Record<string, string>) => createApp({
-  scan: fronds,
+const boot = (stated: Statement, elsewhere: Record<string, string>) => createApp({
+  ...stated,
   createContainer,
   storageFactory: shelf,
   remotes: elsewhere,
@@ -52,10 +52,10 @@ const boot = (fronds: typeof scan, elsewhere: Record<string, string>) => createA
 const answering = await Promise.all(Object.entries(remotes)
   .filter(([frond]) => frond !== LEDGER)
   .map(async ([frond, url]) => {
-    // Scanned alone, the way `fougere serve <frond>` carries one: two hosts holding `cart` both
+    // Carried alone, the way `fougere serve <frond>` carries one: two hosts holding `cart` both
     // would answer for it, and a caller could not choose.
     const host = await boot(
-      await scanProject(root, [frond]),
+      await statementOf(root, { only: [frond] }),
       Object.fromEntries(Object.entries(remotes).filter(([other]) => other !== frond)),
     );
     const receiver = await serve(createLocalRunner(host), { port: Number(new URL(url).port) });
@@ -63,7 +63,7 @@ const answering = await Promise.all(Object.entries(remotes)
     return { host, receiver };
   }));
 
-await using app = await boot(scan, remotes);
+await using app = await boot(statement, remotes);
 
 const declared = declaredTopologyOf(app);
 const { operations } = resolveEffectiveOperations(app.fronds, { remotes: remotesOf(config) });

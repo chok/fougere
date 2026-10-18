@@ -9,7 +9,8 @@
  */
 import { createServer, type Socket } from 'node:net';
 import { createApp, createLocalRunner } from '@fougere/core';
-import { scanProject, frondAliases } from '@fougere/compiler';
+import { frondAliases } from '@fougere/compiler';
+import { statementOf } from '@fougere/defaults';
 import { setModuleLoader } from '@fougere/core/node';
 import { createContainer } from '@fougere/container';
 
@@ -39,7 +40,7 @@ async function main() {
   setModuleLoader((path) => jiti.import(path) as Promise<Record<string, unknown>>);
 
   const app = await createApp({
-    scan: await scanProject(import.meta.dirname, ['fleet', 'hub']),
+    ...(await statementOf(import.meta.dirname, { only: ['fleet', 'hub'] })),
     createContainer,
     onEmit: (fact, payload) => {
       let reached = 0;

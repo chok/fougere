@@ -9,6 +9,7 @@
     "link:privacy": "tsx src/link.ts privacy 4601"
   },
   "dependencies": {
+    "@fougere/defaults": "workspace:*",
     "@fougere/compiler": "workspace:*",
     "@fougere/container": "workspace:*",
     "@fougere/core": "workspace:*",

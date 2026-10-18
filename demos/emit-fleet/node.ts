@@ -9,7 +9,8 @@
  */
 import { connect, type Socket } from 'node:net';
 import { createApp, createLocalRunner } from '@fougere/core';
-import { scanProject, frondAliases } from '@fougere/compiler';
+import { frondAliases } from '@fougere/compiler';
+import { statementOf } from '@fougere/defaults';
 import { setModuleLoader } from '@fougere/core/node';
 import type { App } from '@fougere/core';
 import { createContainer } from '@fougere/container';
@@ -29,7 +30,7 @@ async function main() {
   let live: Socket | undefined;
 
   const app: App = await createApp({
-    scan: await scanProject(import.meta.dirname, ['fleet', 'node']),
+    ...(await statementOf(import.meta.dirname, { only: ['fleet', 'node'] })),
     createContainer,
     // Upward, on the very socket the device opened. A NAT lets nothing in; it lets this out.
     onEmit: (fact, payload) => { live?.write(`${JSON.stringify({ fact, payload })}\n`); },

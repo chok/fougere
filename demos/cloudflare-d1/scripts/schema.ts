@@ -13,7 +13,8 @@
  */
 import { writeFile, mkdir } from 'node:fs/promises';
 import { createApp, sourceViewOf, type Storage } from '@fougere/core';
-import { scanProject, frondAliases } from '@fougere/compiler';
+import { frondAliases } from '@fougere/compiler';
+import { statementOf } from '@fougere/defaults';
 import { setModuleLoader } from '@fougere/core/node';
 import { createContainer } from '@fougere/container';
 import { generateSQL } from '@fougere/adapter-sql';
@@ -26,7 +27,7 @@ setModuleLoader((filePath) => jiti.import(filePath));
 // No storage: generating DDL reads the entities and nothing else, so the app never
 // needs a connection. `storageFactory` is required, and a handler is never called here.
 const app = await createApp({
-  scan: await scanProject(root),
+  ...(await statementOf(root)),
   createContainer,
   storageFactory: () => ({}) as unknown as Storage,
 });

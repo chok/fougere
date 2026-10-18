@@ -8,7 +8,8 @@
  *   terminal 2   pnpm dev
  */
 import { createApp, createLocalRunner } from '@fougere/core';
-import { scanProject, frondAliases } from '@fougere/compiler';
+import { frondAliases } from '@fougere/compiler';
+import { statementOf } from '@fougere/defaults';
 import { setModuleLoader } from '@fougere/core/node';
 import type { App, InvocationContext } from '@fougere/core';
 import { createContainer } from '@fougere/container';
@@ -41,7 +42,7 @@ async function main() {
 
   title('1.', 'Both fronds in THIS process — nothing is declared, nothing is registered');
 
-  const together = await createApp({ scan: await scanProject(import.meta.dirname), createContainer });
+  const together = await createApp({ ...(await statementOf(import.meta.dirname)), createContainer });
   console.log(await publish(together, 'p1', 'Ferns are not plants that give up'));
   await settle();
 
@@ -49,7 +50,7 @@ async function main() {
   console.log('   the SAME PostHandler, unchanged. Watch the other terminal.\n');
 
   const split = await createApp({
-    scan: await scanProject(import.meta.dirname),
+    ...(await statementOf(import.meta.dirname)),
     createContainer,
     // The whole topology statement. `search/` still sits on disk — it is scanned, so the
     // emitter knows its signature; it is simply not hosted here.

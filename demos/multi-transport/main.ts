@@ -7,7 +7,8 @@
  * and the same typed failure down all three paths.
  */
 import { createApp, createLocalRunner, FougereError } from '@fougere/core';
-import { scanProject, frondAliases } from '@fougere/compiler';
+import { frondAliases } from '@fougere/compiler';
+import { statementOf } from '@fougere/defaults';
 import { setModuleLoader } from '@fougere/core/node';
 import type { App, InvocationContext, Transport } from '@fougere/core';
 import { createContainer } from '@fougere/container';
@@ -48,7 +49,7 @@ async function main() {
   });
   setModuleLoader((path) => jiti.import(path) as Promise<Record<string, unknown>>);
 
-  const app = await createApp({ scan: await scanProject(import.meta.dirname), createContainer, storageFactory: createMemoryStorage });
+  const app = await createApp({ ...(await statementOf(import.meta.dirname)), createContainer, storageFactory: createMemoryStorage });
 
   // Seed through the façade, so the validator sees the same rows a client would send.
   const local = createLocalRunner(app);
@@ -91,7 +92,7 @@ async function main() {
   // `remoteTransport` picks the transport off the address, so a second frond on
   // `http://` would simply come back through the other factory.
   const consumer = await createApp({
-    scan: await scanProject(`${import.meta.dirname}/empty`),
+    ...(await statementOf(`${import.meta.dirname}/empty`)),
     createContainer,
     remotes: { sensors: `tcp://127.0.0.1:${socket.port}` },
     remoteTransport: (url) =>

@@ -7,6 +7,7 @@
     "typecheck": "tsc --noEmit -p ."
   },
   "dependencies": {
+    "@fougere/defaults": "workspace:*",
     "@fougere/core": "workspace:*",
     "@fougere/schema": "workspace:*",
     "@fougere/transport-http": "workspace:*",

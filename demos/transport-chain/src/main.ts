@@ -8,7 +8,7 @@
  * `CartHandler` is never touched. What changes is the chain built below — the same shape
  * `ports: { Payment: ['Retrying', 'Stripe'] }` already has, read from the outside in.
  */
-import { scanProject } from '@fougere/compiler';
+import { statementOf } from '@fougere/defaults';
 import { log } from '@fougere/log';
 import { createApp, createLocalRunner, type Storage, type Transport } from '@fougere/core';
 import { loadConfig, remotesOf } from '@fougere/core/node';
@@ -21,7 +21,7 @@ import { cutting } from './transport/cutting.js';
 
 const root = join(import.meta.dirname, '..');
 const config = await loadConfig(root);
-const scan = await scanProject(root);
+const statement = await statementOf(root);
 
 const SHELF = [
   { id: 'p1', title: 'Fern', cents: 1200 },
@@ -33,14 +33,14 @@ const shelf = () => ({
   output() { return this; },
 }) as unknown as Storage;
 
-const far = await createApp({ scan, createContainer, storageFactory: shelf, extensions: [log()] });
+const far = await createApp({ ...statement, createContainer, storageFactory: shelf, extensions: [log()] });
 const link = memory(far);
 
 /** Boot the near side with one chain, ask it for a checkout, and say what crossed. */
 async function run(name: string, chain: Transport) {
   link.reached.length = 0;
   await using near = await createApp({
-    scan,
+    ...statement,
     createContainer,
     storageFactory: shelf,
     remotes: remotesOf(config),
