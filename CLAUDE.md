@@ -1003,6 +1003,12 @@ nothing else. A prefab DECLARES (`Crud.__ops`, runtime), the scan DERIVES from s
 `frond.config.ts` STATES and wins over both. Config also creates an op neither producer
 found — the answer for a method inherited from an installed base class. `description` is the
 method's own doc sentence, read from the AST (`compiler/src/scan/handler-parser.ts`, `docSentenceOf`).
+A `fronds.ts` written by hand states a method's contract as a `StatedOperation`
+(`core/src/StatedOperation.ts`) — `{ params: { id: [Post, 'id'] }, output: Post }`, read by `frond()`
+into the signature the boot binds from. Nothing is guessed: what the file does not list is not served,
+because the boot cannot tell a method left out from one TypeScript kept `private`. `fougere check` reads
+the sources and names it (`operation-unstated`, `handler-unstated`). Pinned by
+`core/tests/stated-operation.test.ts` and `cli/tests/check.test.ts`.
 
 **Call contract** (`core/src/wire/call.ts`) — a Frond call is a value `(address, op,
 invocation)`. `createLocalRunner` (`boot/runner.ts`) executes locally, `createAppRunner`

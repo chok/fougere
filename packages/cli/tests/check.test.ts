@@ -114,3 +114,20 @@ describe('check', () => {
     expect(found[0].message).toMatch(/source: Account|destination: Ledger/);
   });
 });
+
+describe('check, on a project that states its fronds by hand', () => {
+  const stated = join(import.meta.dirname, 'fixtures-check-statement');
+
+  it('names a public method fronds.ts does not list, and never a private one', async () => {
+    const result = await check().execute({ root: stated });
+    const unstated = result.findings.filter((f) => f.code === 'operation-unstated').map((f) => f.subject);
+
+    expect(unstated).toEqual(['ArticleHandler.archive']);
+  });
+
+  it('names a handler fronds.ts never states', async () => {
+    const result = await check().execute({ root: stated });
+
+    expect(result.findings.filter((f) => f.code === 'handler-unstated').map((f) => f.subject)).toEqual(['WireHandler']);
+  });
+});

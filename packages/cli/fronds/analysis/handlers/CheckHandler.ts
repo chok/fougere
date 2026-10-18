@@ -12,7 +12,8 @@ import ProjectScan from '../services/ProjectScan.js';
 import { statSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { FACADE_OUT, DEFAULT_OUT } from './BuildHandler.js';
-import { remotesOf } from '@fougere/core/node';
+import { getModuleLoader, remotesOf, statementFileIn } from '@fougere/core/node';
+import type { FrondDescriptor } from '@fougere/core';
 
 export interface CheckResult {
   fronds: number;
@@ -179,9 +180,56 @@ export default class CheckHandler {
     }
 
     findings.push(...facadeFindings(root, fronds));
+    findings.push(...await statementFindings(root, fronds));
 
     return { fronds: fronds.length, handlers, findings };
   }
+}
+
+/**
+ * What a `fronds.ts` written by hand leaves out of what the sources serve.
+ *
+ * The boot serves what the statement lists, and cannot tell an operation left out from a method
+ * kept private: TypeScript erases `private` and `protected`, so both are a method on the prototype.
+ * The scan read the keywords, so this is the one place the gap can be named — a handler the file
+ * never states, an operation a stated handler does not list.
+ */
+async function statementFindings(root: string, fronds: readonly FrondDescriptor[]): Promise<Diagnostic[]> {
+  const file = statementFileIn(root);
+  if (!file) return [];
+  const stated = (await getModuleLoader()(file)).default as FrondDescriptor[];
+  const findings: Diagnostic[] = [];
+
+  for (const frond of fronds) {
+    const declared = stated.find((one) => one.name === frond.name);
+    for (const handler of frond.handlers) {
+      const listed = declared?.handlers.find((one) => one.ctor.name === handler.ctor.name);
+      if (!listed) {
+        findings.push({
+          severity: 'warning',
+          code: 'handler-unstated',
+          filePath: file,
+          subject: handler.ctor.name,
+          message: `${handler.ctor.name} serves in ${frond.name}'s sources, and fronds.ts does not state it — `
+            + 'the app boots without it.',
+        });
+        continue;
+      }
+      for (const op of handler.operations.keys()) {
+        if (listed.operations.has(op)) continue;
+        findings.push({
+          severity: 'warning',
+          code: 'operation-unstated',
+          filePath: file,
+          subject: `${handler.ctor.name}.${op}`,
+          message: `${handler.ctor.name}.${op} is public, and fronds.ts does not list it — the app boots without it. `
+            + `State it: operations: { ${op}: { params: { … }, output: … } }, or make the method private.`,
+        });
+      }
+    }
+  }
+
+  return findings;
 }
 
 /**

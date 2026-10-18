@@ -18,6 +18,7 @@ export type { FougerePorts } from './FougerePorts.js';
 export type { NameOf } from './NameOf.js';
 export type { PortChoice } from './PortChoice.js';
 export type { FrondConfig } from './FrondConfig.js';
+export type { StatedOperation, StatedParam, StatedType } from './StatedOperation.js';
 export type { OperationOverride } from './OperationOverride.js';
 export { buildGraph, clusterEntities, suggestSplit, type DomainCluster } from './DomainCluster.js';
 export { type EntityNode } from './EntityNode.js';
