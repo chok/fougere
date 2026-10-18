@@ -19,6 +19,8 @@ export interface FrondConfig {
    * ran first, and scan order is not an answer.
    */
   pipes?: Record<NameOf<'entity'>, NameOf<'handler'>[]>;
+  /** The order this frond's middlewares stand in, outside in — required once there are two. */
+  middlewares?: string[];
   /** What the frond says to each protocol about itself — `rest: { path: '/journal' }`. */
   protocols?: FougereFrondProtocols;
   /** Per-operation overrides, keyed the way an op is named: `post.list`. */

@@ -660,6 +660,11 @@ and the only one whose members apply to code they do not name. A member EXTENDS 
 there that does not extend it runs around nothing and the scan WARNS `middleware-not-extended`,
 since a forgotten `extends` reads exactly like a helper. One that extends it with no `around` is
 refused. Pinned by `compiler/tests/middleware-form.test.ts` and `core/tests/middleware-base.test.ts`.
+Two of one frond stand one inside the other, and a directory is no order: `middlewares: ['Timing',
+'Audit']` in `frond.config.ts` states it outside in, two with no order are refused
+(`middlewares-unordered`), one the order leaves out too (`middlewares-unlisted`) — read by the scan,
+the one place that read the order off a directory. `frond()` states it by its array. Pinned by
+`compiler/tests/middleware-order.test.ts`.
 It answers for its own frond — every ADDRESS its handlers answer to, wider than its
 entities since a handler without one runs behind it too — AND for the fronds under it in
 `FougereConfig.fronds`. How far it reaches is written nowhere else: `MiddlewareEntry.scope`

@@ -625,6 +625,43 @@ async function toCollectorEntry(filePath: string): Promise<CollectorEntry | null
 }
 
 /**
+ * Two middlewares of one frond stand one inside the other, and the directory they were read from is
+ * no order — the same reason a port refuses two realizations: whichever won would depend on the
+ * order files were listed. `middlewares:` in `frond.config.ts` states it, outside in.
+ */
+function inStatedOrder(middlewares: MiddlewareEntry[], stated: readonly string[] | undefined): MiddlewareEntry[] {
+  const named = middlewares.map((one) => one.name);
+  if (!stated) {
+    if (middlewares.length > 1) {
+      record({
+        severity: 'blocking',
+        code: 'middlewares-unordered',
+        filePath: middlewares[0]!.filePath,
+        subject: named.join(', '),
+        message: `${named.join(' and ')} both stand around this frond's operations, and nothing says which `
+          + `is outside. State it, outside in, in frond.config.ts: middlewares: [${named.map((one) => `'${one}'`).join(', ')}].`,
+      });
+    }
+
+    return middlewares;
+  }
+
+  const unlisted = middlewares.filter((one) => !stated.includes(one.name));
+  for (const one of unlisted) {
+    record({
+      severity: 'blocking',
+      code: 'middlewares-unlisted',
+      filePath: one.filePath,
+      subject: one.name,
+      message: `${one.name} sits in middlewares/, and \`middlewares:\` orders ${stated.join(', ')} — so where it `
+        + 'stands is not said. Add it to `middlewares:` in frond.config.ts.',
+    });
+  }
+
+  return [...middlewares].sort((one, other) => stated.indexOf(one.name) - stated.indexOf(other.name));
+}
+
+/**
  * A class in `middlewares/` that extends `Middleware`. Anything else there runs around nothing,
  * which is said rather than left silent — a forgotten `extends` reads exactly like a helper.
  */
@@ -753,7 +790,7 @@ async function scanFrond(frondPath: string, name: string, source: FrondDescripto
 
   const presenters = await collect(presentersDir, toPresenterEntry);
   const seeds = await collect(seedsDir, toSeedEntry);
-  const middlewares = await collect(middlewaresDir, (f) => toMiddlewareEntry(f));
+  const middlewares = inStatedOrder(await collect(middlewaresDir, (f) => toMiddlewareEntry(f)), frondConfig?.middlewares);
 
   markExposed(entities, handlers, frondConfig?.expose);
   const operationsOverrides = overridesOf(frondConfig?.operations);
