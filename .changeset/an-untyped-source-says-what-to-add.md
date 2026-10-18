@@ -2,5 +2,5 @@
 '@fougere/core': patch
 ---
 
-A source with no `type` and no SQL adapter loaded is refused in plain words: it is a SQLite file,
-`@fougere/adapter-sql` is not loaded, and the line to add is named.
+A source with no `type` and no SQL adapter loaded is refused with the import to add:
+`sources.main needs @fougere/adapter-sql. Add import '@fougere/adapter-sql' to fougere.config.ts.`

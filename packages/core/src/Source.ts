@@ -63,11 +63,7 @@ class SourceRegistry extends Registry<SourceType> {
   open(entry: { type?: string }, path: string): Source {
     const name = entry.type ?? this.conventional;
     if (name === undefined) {
-      throw new SchemaError(
-        `Cannot open ${path}: it has no \`type\`, so it is a SQLite file, and @fougere/adapter-sql is not loaded. `
-        + `Add \`import '@fougere/adapter-sql'\` to fougere.config.ts, or give ${path} a \`type\`. `
-        + `Loaded types: ${this.names.join(', ') || 'none'}.`,
-      );
+      throw new SchemaError(`${path} needs @fougere/adapter-sql. Add \`import '@fougere/adapter-sql'\` to fougere.config.ts.`);
     }
     const type = this.resolve(name, `${path}.type`);
     const refusal = JsonSchemaValidator.of(type.format.schema as JsonSchema).refusalOf(entry, [path]);
