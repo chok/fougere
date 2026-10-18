@@ -8,7 +8,7 @@ import { defineFougere } from '@fougere/core';
  * and does not decide what they serve.
  */
 export default defineFougere({
-  sources: { main: { path: ':memory:' } },
+  sources: { main: { type: 'sqlite', path: ':memory:' } },
   protocols: { rest: {}, graphql: {} },
   fronds: { '@fougere/log': {} },
 });

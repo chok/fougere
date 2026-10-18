@@ -9,7 +9,7 @@ export default defineFougere({
   // Lives under .data/ — the writable-state dir (Nuxt Content uses it too),
   // which is also the single volume to mount when deploying.
   sources: {
-    main: { path: '.data/site.db' },
+    main: { type: 'sqlite', path: '.data/site.db' },
     // Posts are files in git: written locally, committed, and read by the static build.
     posts: { type: 'file', path: 'posts', entities: ['Post'] },
   },

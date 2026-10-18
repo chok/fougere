@@ -58,7 +58,7 @@ private.
 ```ts
 import '@fougere/adapter-sql';
 
-sources: { main: { path: '.fougere/catalog.db' } }
+sources: { main: { type: 'sqlite', path: '.fougere/catalog.db' } }
 ```
 
 A command is a process that starts and stops, so an in-memory row would die between

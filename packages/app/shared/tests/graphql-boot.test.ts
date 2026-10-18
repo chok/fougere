@@ -9,7 +9,7 @@ class Note extends entity({ id: primary(), title: text() }) {}
 
 const declaring = () => configureFougere({
   fronds: [frond('notes', { entities: [Note] })],
-  config: { sources: { main: { path: ':memory:' } }, protocols: { graphql: {} } } as never,
+  config: { sources: { main: { type: 'sqlite', path: ':memory:' } }, protocols: { graphql: {} } } as never,
   migrates: true,
 });
 

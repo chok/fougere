@@ -26,7 +26,7 @@ export async function testApp(options: TestAppOptions = {}): Promise<TestApp> {
   // One entry per announcement, in order. `Emissions.announce` calls the carrier for
   // every fact, so this sees them all — including those nobody in this process listens to.
   const heard: { fact: string; payload: unknown }[] = [];
-  const storage = resolveStorage({ main: { path: options.db ?? ':memory:' } });
+  const storage = resolveStorage({ main: { type: 'sqlite', path: options.db ?? ':memory:' } });
 
   const app = await boot({
     onEmit: (fact, payload) => { heard.push({ fact, payload }); },

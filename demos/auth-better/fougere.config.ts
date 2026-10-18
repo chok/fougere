@@ -4,7 +4,7 @@ import { betterAuth } from '@fougere/auth-better';
 import { User } from './src/entities.js';
 
 export default defineFougere({
-  sources: { main: {} },
+  sources: { main: { type: 'sqlite', path: 'fougere.db' } },
   fronds: {
     // A frond like any other: `only:` or an address decides which process starts its engine.
     auth: betterAuth({

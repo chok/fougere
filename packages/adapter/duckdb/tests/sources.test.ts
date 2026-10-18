@@ -43,8 +43,8 @@ beforeAll(async () => {
 
   sources = await connectSources({
     sources: {
-      main: { path: join(dir, 'main.db') },
-      archive: { path: join(dir, 'archive.db'), entities: ['Book'] },
+      main: { type: 'sqlite', path: join(dir, 'main.db') },
+      archive: { type: 'sqlite', path: join(dir, 'archive.db'), entities: ['Book'] },
     },
     reads: [Loan, Book],
   });
@@ -130,7 +130,7 @@ describe('a source DuckDB cannot attach', () => {
   it('is refused by name, and says what to do instead', async () => {
     await expect(connectSources({
       sources: {
-        main: { path: ':memory:' },
+        main: { type: 'sqlite', path: ':memory:' },
         legacy: { type: 'mssql', url: 'Server=x;', entities: ['Book'] },
       },
       reads: [Book],

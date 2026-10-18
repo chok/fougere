@@ -21,8 +21,8 @@ import { defineFougere } from '@fougere/core';
  */
 export default defineFougere({
   sources: {
-    main: { path: '.data/app.db' },
-    // accounting: { path: '.data/accounting.db', entities: ['Ledger'] },
+    main: { type: 'sqlite', path: '.data/app.db' },
+    // accounting: { type: 'sqlite', path: '.data/accounting.db', entities: ['Ledger'] },
     // rates: { type: 'file', path: '.data/rates', entities: ['RateCard'] },
   },
 });

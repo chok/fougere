@@ -861,8 +861,7 @@ frame. Pinned by `defaults/tests/sources.test.ts`.
 a `Format` declared ONCE: the editor reads it as a type (`Accepted<typeof …>`) and
 `Sources.open` judges the entry by it, so `pathh` is refused in both. `db:` is gone — the entry
 listing no `entities` is the default, two refuse naming both, none falls back to memory with a
-warning (`defaults/src/storage/ResolvedStorage.ts`, `defaultOf`). A type per engine (`sqlite`,
-the conventional one, `pg`, `mysql`, `mssql`, `d1`, `file`, `memory`), so a server's `url` is
+warning (`defaults/src/storage/ResolvedStorage.ts`, `defaultOf`). A type per engine, written on every entry (`sqlite`, `pg`, `mysql`, `mssql`, `d1`, `file`, `memory`), so a server's `url` is
 required by the format itself. NOTHING is imported for the app: a config imports
 `@fougere/adapter-sql`, and with no import no entry is a word the editor admits nor a type the
 boot answers. That entry loads on any runtime — an engine reads `node:fs`/`node:module` through

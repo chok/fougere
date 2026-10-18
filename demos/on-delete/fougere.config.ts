@@ -17,7 +17,7 @@ import { defineFougere } from '@fougere/core';
  */
 export default defineFougere({
   sources: {
-    main: { path: '.data/app.db' },
-    // archive: { path: '.data/archive.db', entities: ['Comment'] },
+    main: { type: 'sqlite', path: '.data/app.db' },
+    // archive: { type: 'sqlite', path: '.data/archive.db', entities: ['Comment'] },
   },
 });

@@ -14,6 +14,7 @@ import { dialectFor } from './driver/Driver.js';
 const SQLITE = Format.of('source/sqlite')
   .key('type', Format.tokens(['sqlite']))
   .key('path', Format.text)
+  .needs('type', 'path')
   .closed();
 
 /** An engine reached over the network: a url, and nothing else to say. */
@@ -49,5 +50,3 @@ for (const [name, format] of [['pg', PG], ['mysql', MYSQL], ['mssql', MSSQL]] as
 }
 Sources.register('d1', { format: D1, open: (entry) => createD1Source(entry.binding) });
 
-// An entry naming no type is a SQLite file — the one engine that needs no server to start.
-Sources.byConvention('sqlite');

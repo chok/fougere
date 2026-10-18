@@ -9,7 +9,7 @@ import '@fougere/adapter-file';
 
 export default defineFougere({
   sources: {
-    main: { path: '.data/app.db' },
+    main: { type: 'sqlite', path: '.data/app.db' },
     archive: { type: 'file', path: './rows', entities: ['Snapshot'] },
   },
 });

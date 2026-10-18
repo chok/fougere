@@ -16,7 +16,7 @@ import { refusedRpc } from '../src/Outcome.js';
 class Note extends entity({ id: primary(), title: text() }) {}
 
 const fronds = [frond('notes', { entities: [Note] })];
-const config = { sources: { main: { path: ':memory:' } } } as never;
+const config = { sources: { main: { type: 'sqlite', path: ':memory:' } } } as never;
 
 describe('the schema on a web host', () => {
   it('refuses a database behind the entities, naming the table', async () => {
@@ -43,10 +43,10 @@ describe('the schema on a web host', () => {
 
   it('boots at the next call once the database caught up — a refusal is not kept', async () => {
     const path = join(mkdtempSync(join(tmpdir(), 'schema-')), 'app.db');
-    configureFougere({ fronds, config: { sources: { main: { path } } } as never });
+    configureFougere({ fronds, config: { sources: { main: { type: 'sqlite', path } } } as never });
     await expect(useFougereApp()).rejects.toThrow(/behind the entities/);
 
-    const storage = resolveStorage({ main: { path } });
+    const storage = resolveStorage({ main: { type: 'sqlite', path } });
     await storage.migrate?.({ fronds } as never);
     await storage.close?.();
 
@@ -57,8 +57,8 @@ describe('the schema on a web host', () => {
 
   it('keeps a storage the host handed in open across a refusal — the host closes what it opened', async () => {
     const path = join(mkdtempSync(join(tmpdir(), 'schema-')), 'app.db');
-    const storage = resolveStorage({ main: { path } });
-    configureFougere({ fronds, config: { sources: { main: { path } } } as never, storage });
+    const storage = resolveStorage({ main: { type: 'sqlite', path } });
+    configureFougere({ fronds, config: { sources: { main: { type: 'sqlite', path } } } as never, storage });
     await expect(useFougereApp()).rejects.toThrow(/behind the entities/);
 
     await storage.migrate?.({ fronds } as never);

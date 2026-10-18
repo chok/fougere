@@ -47,25 +47,17 @@ export interface SourceType<Entry = any> {
 
 /** Which adapter answers a source type — one per process, no subject to hold. */
 class SourceRegistry extends Registry<SourceType> {
-  private conventional?: string;
-
   /** `open` is handed what `format` admitted, so the entry is typed by the format alone. */
   override register<Entry>(name: string, type: SourceType<Entry>): SourceType<Entry> {
     return super.register(name, type) as SourceType<Entry>;
   }
 
-  /** The type an entry naming none is — claimed by the adapter whose format leaves `type` optional. */
-  byConvention(name: string): void {
-    this.conventional = name;
-  }
-
   /** The place an entry stands for, once its type's format has judged it. */
   open(entry: { type?: string }, path: string): Source {
-    const name = entry.type ?? this.conventional;
-    if (name === undefined) {
-      throw new SchemaError(`${path} needs @fougere/adapter-sql. Add \`import '@fougere/adapter-sql'\` to fougere.config.ts.`);
+    if (entry.type === undefined) {
+      throw new SchemaError(`${path} has no \`type\`. This process answers ${this.names.join(', ') || 'none — import an adapter'}.`);
     }
-    const type = this.resolve(name, `${path}.type`);
+    const type = this.resolve(entry.type, `${path}.type`);
     const refusal = JsonSchemaValidator.of(type.format.schema as JsonSchema).refusalOf(entry, [path]);
     if (refusal) throw new SchemaError(`${dotted(refusal.path)}: ${refusal.message}`);
 

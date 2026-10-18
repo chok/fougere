@@ -69,8 +69,8 @@ describe('resolveStorage with a second source', () => {
     const dir = mkdtempSync(join(tmpdir(), 'fougere-sources-'));
     try {
       const storage = resolveStorage({
-        main: { path: join(dir, 'main.db') },
-        archive: { path: join(dir, 'archive.db'), entities: ['Book'] },
+        main: { type: 'sqlite', path: join(dir, 'main.db') },
+        archive: { type: 'sqlite', path: join(dir, 'archive.db'), entities: ['Book'] },
       });
       await storage.migrate!(app as never);
 
@@ -97,29 +97,29 @@ describe('resolveStorage with a second source', () => {
 
   it('refuses an entity two sources claim, naming both', () => {
     expect(() => resolveStorage({
-      main: { path: ':memory:' },
-      archive: { path: ':memory:', entities: ['Book'] },
-      cold: { path: ':memory:', entities: ['Book'] },
+      main: { type: 'sqlite', path: ':memory:' },
+      archive: { type: 'sqlite', path: ':memory:', entities: ['Book'] },
+      cold: { type: 'sqlite', path: ':memory:', entities: ['Book'] },
     })).toThrow(/claimed by both 'archive' and 'cold'/);
   });
 
   it('lets the format of the type refuse what its entry does not hold', () => {
     // The format lives in `adapter/sql`, the only one that knows what a pg entry needs.
     expect(() => resolveStorage({
-      main: { path: ':memory:' },
+      main: { type: 'sqlite', path: ':memory:' },
       legacy: { type: 'pg', entities: ['Book'] } as never,
     })).toThrow(/sources\.legacy.*url/);
   });
 
   it('refuses a type nothing answers, listing what does', () => {
     expect(() => resolveStorage({
-      main: { path: ':memory:' },
+      main: { type: 'sqlite', path: ':memory:' },
       archive: { type: 'redis', entities: ['Book'] } as never,
     })).toThrow(/sources\.archive\.type: Unknown source type 'redis'.*sqlite/s);
   });
 
   it('opens one file when one source is declared', () => {
-    const storage = resolveStorage({ main: { path: ':memory:' } });
+    const storage = resolveStorage({ main: { type: 'sqlite', path: ':memory:' } });
     expect(storage.storageFactory).toBeDefined();
     expect(storage.transacted).toBeDefined();
   });

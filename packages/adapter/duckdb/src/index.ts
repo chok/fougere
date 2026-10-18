@@ -6,7 +6,7 @@ import { toTable, toTableName, toSnakeCase, codecsOf } from '@fougere/adapter-sq
 
 /** An entry of `sources:` as this reader sees it — what its own adapter declared, nothing added. */
 export interface SourceEntry {
-  type?: string;
+  type: string;
   path?: string;
   url?: string;
   entities?: string[];
@@ -74,11 +74,10 @@ export async function connectSources(options: ConnectOptions): Promise<Reads> {
     const entry = options.sources[alias];
     if (!entry) throw new Error(`source '${alias}' is read but never declared.`);
 
-    const type = entry.type ?? 'sqlite';
-    const attachable = ATTACHABLE[type];
+    const attachable = ATTACHABLE[entry.type];
     if (!attachable) {
       throw new Error(
-        `source '${alias}' is a ${type} source, which DuckDB cannot attach — there is no ` +
+        `source '${alias}' is a ${entry.type} source, which DuckDB cannot attach — there is no ` +
         `such extension. Read it by key through its own storage, or mirror it into one of ` +
         `${Object.keys(ATTACHABLE).join(', ')}.`,
       );

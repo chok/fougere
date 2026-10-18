@@ -6,7 +6,7 @@ import { betterAuth } from '@fougere/auth-better';
 import User from './fronds/user/entities/User';
 
 export default defineFougere({
-  sources: { main: {} },
+  sources: { main: { type: 'sqlite', path: 'fougere.db' } },
   // Ce que cette app publie. Absent = non servi : le module monte la porte, la
   // config décide si elle sert quelque chose.
   protocols: { rest: {}, graphql: {} },

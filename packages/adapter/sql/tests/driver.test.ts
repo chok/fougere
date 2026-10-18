@@ -67,12 +67,10 @@ describe('an engine named in the config', () => {
   it('refuses a type it does not answer, a server with no url, and a key its format does not hold', () => {
     expect(() => Sources.open({ type: 'oracle' }, 'sources.main')).toThrow(/Unknown source type 'oracle'.*sqlite, pg, mysql, mssql, d1/);
     expect(() => Sources.open({ type: 'pg' }, 'sources.main')).toThrow(/sources\.main.*url/);
-    expect(() => Sources.open({ pathh: 'app.db' } as never, 'sources.main')).toThrow(/pathh/);
+    expect(() => Sources.open({ type: 'sqlite', pathh: 'app.db' } as never, 'sources.main')).toThrow(/pathh/);
   });
 
-  it('opens an entry naming no type as the conventional one, a SQLite file', () => {
-    const source = Sources.open({ path: ':memory:' } as never, 'sources.main');
-
-    expect(source.name).toBe(':memory:');
+  it('refuses an entry naming no type, and lists the types it could name', () => {
+    expect(() => Sources.open({ path: ':memory:' } as never, 'sources.main')).toThrow(/sources\.main has no `type`.*sqlite, pg/);
   });
 });

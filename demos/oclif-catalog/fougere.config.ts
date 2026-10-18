@@ -7,6 +7,6 @@ import { defineFougere } from '@fougere/core';
  * a CLI host changes about a frond, and it is stated here rather than in the code.
  */
 export default defineFougere({
-  sources: { main: { path: '.fougere/catalog.db' } },
+  sources: { main: { type: 'sqlite', path: '.fougere/catalog.db' } },
   fronds: { '@fougere/log': {} },
 });

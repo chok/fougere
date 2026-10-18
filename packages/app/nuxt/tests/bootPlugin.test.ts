@@ -16,12 +16,12 @@ describe('generateBootPlugin — sources pass through', () => {
 
   it('carries each entry through unchanged — no path override', () => {
     const out = generateBootPlugin(
-      { sources: { main: { path: '.data/site.db' } } } as unknown as FougereConfig,
+      { sources: { main: { type: 'sqlite', path: '.data/site.db' } } } as unknown as FougereConfig,
       [],
       '@fougere/nuxt/fougereApp',
     );
 
-    expect(out).toContain('resolveStorage({"main":{"path":".data/site.db"}})');
+    expect(out).toContain('resolveStorage({"main":{"type":"sqlite","path":".data/site.db"}})');
     expect(out).not.toContain(':memory:');
   });
 
@@ -29,7 +29,7 @@ describe('generateBootPlugin — sources pass through', () => {
     // Sans elle, `apps/nuxt` a fabriqué une SECONDE base vide à côté de lui pendant que
     // le workspace tenait la vraie, et l'app a servi un domaine vide avec un boot vert.
     const out = generateBootPlugin(
-      { sources: { main: { path: '.data/site.db' } } } as unknown as FougereConfig,
+      { sources: { main: { type: 'sqlite', path: '.data/site.db' } } } as unknown as FougereConfig,
       [],
       '@fougere/nuxt/fougereApp',
       [],
@@ -37,19 +37,19 @@ describe('generateBootPlugin — sources pass through', () => {
       '/w',
     );
 
-    expect(out).toContain('resolveStorage({"main":{"path":".data/site.db"}}, "/w")');
+    expect(out).toContain('resolveStorage({"main":{"type":"sqlite","path":".data/site.db"}}, "/w")');
   });
 
   it('carries a second source through — where a row lives is not the host\u2019s business either', () => {
     const out = generateBootPlugin(
       {
-        sources: { main: {}, archive: { path: '.data/archive.db', entities: ['Book'] } },
+        sources: { main: {}, archive: { type: 'sqlite', path: '.data/archive.db', entities: ['Book'] } },
       } as unknown as FougereConfig,
       [],
       '@fougere/nuxt/fougereApp',
     );
 
-    expect(out).toContain('resolveStorage({"main":{},"archive":{"path":".data/archive.db","entities":["Book"]}})');
+    expect(out).toContain('resolveStorage({"main":{},"archive":{"type":"sqlite","path":".data/archive.db","entities":["Book"]}})');
   });
 
   /**

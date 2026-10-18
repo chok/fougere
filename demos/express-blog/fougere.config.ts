@@ -13,7 +13,7 @@ import { defineFougere } from '@fougere/core';
  * the reason this demo exists: the topology is a property of the app, not of the host.
  */
 export default defineFougere({
-  sources: { main: {} },
+  sources: { main: { type: 'sqlite', path: 'fougere.db' } },
   // What this app publishes. Absent means not served — the route file existing is
   // not the decision, this is.
   protocols: { rest: {}, graphql: {} },

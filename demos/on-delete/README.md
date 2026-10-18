@@ -26,7 +26,7 @@ authorId: ref(User),                          // unstated: its author may not go
 One line of `fougere.config.ts` moves between the first two:
 
 ```ts
-// sources: { archive: { path: '.data/archive.db', entities: ['Comment'] } },
+// sources: { archive: { type: 'sqlite', path: '.data/archive.db', entities: ['Comment'] } },
 ```
 
 Run it as it stands, then uncomment and run again. The entities do not change, and neither
