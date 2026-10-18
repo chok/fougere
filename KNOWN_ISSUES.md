@@ -249,13 +249,14 @@ One line each, kept because a past version of this file asserted the opposite.
   with the fronds after it still installed and judged (`installing`, `boot/bootstrap.ts`). Measured 2026-10-17 over 861
   tests: the only replacements were the port chains (`install.ts`, `registerProviders`) and
   `installStubs`. Pinned by `container/tests/container.test.ts` and `core/tests/key-owner.test.ts`.
-- **A Nuxt server build keeps what a package the config NAMES runs at load** — Nitro reads every
-  module as free of side effects but its own, so `import '@fougere/adapter-sql/sqlite'` was dropped
-  and a built site answered `Unknown source 'sql' … answers memory`. `@fougere/nuxt` keeps every
-  package `fougere.config.ts` imports (`packagesImportedBy`, `compiler/src/imports.ts`) or names as a
-  module key of `fronds:` — whole, since a package may register from a file nothing reads a value of
-  (`NamedPackage.ts`). It used to keep `@fougere/*` by NAME, which left a third party's adapter out.
-  Pinned by `app/nuxt/tests/NamedPackage.test.ts`, measured 2026-09-25.
+- **A package that registers at load says so in its `package.json`** — Nitro reads every module as
+  free of side effects unless its package states otherwise, so `import '@fougere/adapter-sql'` was
+  dropped and a built site answered `Unknown source 'sql' … answers memory`. Each adapter lists, in
+  `sideEffects`, the entry an app imports for its effect and the file that registers: listed alone,
+  the registering file was dropped with the pure entry that reached it (`Unknown protocol 'graphql'`).
+  `@fougere/nuxt` used to read the config with TypeScript and keep what it imported, which tied Nuxt
+  to the compiler. A third party's adapter states its own `sideEffects`, as npm expects. Measured on
+  a `nuxt build` of `demos/nuxt-blog`, 2026-10-18.
 - **Core does not depend on the compiler, not even for its tests** — a core test states its fronds
   with `frond()` (`tests/fixtures-*/fronds.ts`, contracts written through `tests/contract.ts`), and
   what the scan DEDUCES is tested in `packages/compiler/tests/`. Core's devDependency on the

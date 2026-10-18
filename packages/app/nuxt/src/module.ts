@@ -13,14 +13,13 @@ import {
 import type { Nuxt } from '@nuxt/schema';
 import { orderSeeds, serves } from '@fougere/core';
 import { prefixOf } from '@fougere/app';
-import { scanProject, emitStatement, emitFacade, emitNames, frondAliases, packagesImportedBy } from '@fougere/compiler';
+import { scanProject, emitStatement, emitFacade, emitNames, frondAliases } from '@fougere/compiler';
 import { frondPackage, resolveConventions, statedFronds, statesModule, type Conventions } from '@fougere/core';
 import { configFileIn, statementFileIn, setModuleLoader, loadCascadedConfig, projectRootOf, remotesOf } from '@fougere/core/node';
 import { declaresStorage } from '@fougere/defaults';
 import type { SeedEntry, FougereConfig } from '@fougere/core';
 import { createJiti } from 'jiti';
 import { resolve, relative, join } from 'node:path';
-import { inPackages } from './NamedPackage.js';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 
 export interface FougereModuleOptions {
@@ -121,25 +120,6 @@ const module = defineNuxtModule<FougereModuleOptions>({
       Object.entries(options).filter(([, v]) => v !== undefined),
     ) as Partial<FougereConfig>;
     const config: FougereConfig = { ...fileConfig, ...optionsOverride };
-
-    // Nitro reads every module as free of side effects but its own, so an import that names
-    // nothing is dropped from the server build — and `import '@fougere/adapter-sql'`
-    // is how `sql` registers: measured on `site/.output`, `Unknown source 'sql' … answers
-    // memory`. What a package the config names runs at load is kept, whoever published it.
-    const imported = (await Promise.all(configFilesOf(rootDir, scanRoot).map(packagesImportedBy))).flat();
-    const moduleKeys = statedFronds(config.fronds)
-      .map((entry) => entry.key)
-      .filter((key) => statesModule(key) && !key.startsWith('.'));
-    const kept = inPackages(new Set([...imported, ...moduleKeys]));
-    (nuxt as any).hook('nitro:init', (nitro: any) => {
-      nitro.hooks.hook('rollup:before', (_nitro: unknown, rollupConfig: any) => {
-        const nitroSideEffects = rollupConfig.treeshake?.moduleSideEffects;
-        if (typeof nitroSideEffects !== 'function') return;
-
-        rollupConfig.treeshake.moduleSideEffects = (id: string, external: boolean) =>
-          nitroSideEffects(id, external) || kept(id);
-      });
-    });
 
     // Nitro replaces `console` with consola, whose own threshold sits at `info` — and a
     // Logger line at `debug` goes out through `console.debug`, which consola then drops.
