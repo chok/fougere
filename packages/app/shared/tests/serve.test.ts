@@ -172,6 +172,6 @@ describe('the call envelope a page knocks on', () => {
       state: {},
     }) as { error: { data: { code: string; message: string } } };
 
-    expect(answer.error.data).toMatchObject({ code: 'BAD_REQUEST', message: expect.stringMatching(/`args` are what one frond hands another/) });
+    expect(answer.error.data).toMatchObject({ code: 'BAD_REQUEST', message: expect.stringMatching(/not `args` \(only fronds send `args`\)/) });
   });
 });

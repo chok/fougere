@@ -27,7 +27,7 @@ export default class LoadCommand {
     if (machineWanted(raw)) return printMachine(result);
 
     if (result.operations.length === 0) {
-      this.ui.warn('No operation answers the default facade — nothing to put under load.');
+      this.ui.warn('No operation to put under load.');
 
       return;
     }

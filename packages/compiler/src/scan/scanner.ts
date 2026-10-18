@@ -46,8 +46,7 @@ async function readEntries(path: string): Promise<Dirent[]> {
       filePath: path,
       // The path is NOT repeated here: `filePath` carries it, and a renderer that
       // prints both wraps an absolute path twice into an unreadable box.
-      message: 'Could not read this directory — anything it declares is missing from '
-        + 'the app, and nothing downstream can tell that from an empty directory.',
+      message: 'This directory could not be read, so what it declares is missing from the app.',
       cause,
     });
 
@@ -93,10 +92,8 @@ async function loadClass(filePath: string): Promise<ProviderEntry['ctor']> {
   // and forth. `rules/` is read into the type program and registers nothing.
   if (typeof ctor !== 'function' || !ctor.prototype) {
     throw new Error(
-      `${filePath}: default export is not a class. This directory is scanned for providers, `
-      + 'which are registered under a class name — a contract or a pure function has no key '
-      + `to answer under. Move it to the frond's \`${DEFAULT_CONVENTIONS.dirs.rules}/\`, which `
-      + 'the scan reads without interpreting and an import still reaches.',
+      `${filePath}: the default export is not a class. Export a class, or move plain functions `
+      + `to the frond's \`${DEFAULT_CONVENTIONS.dirs.rules}/\`.`,
     );
   }
 
@@ -190,9 +187,8 @@ async function depsOf(filePath: string): Promise<string[]> {
     const named = [param.type, ...(param.type.generics ?? [])].find((type) => UNRESOLVED.has(type.name));
     if (named) {
       throw new Error(
-        `${filePath}: constructor parameter '${param.name}: ${param.type.raw}' resolves to \`${named.name}\` `
-        + '— an import the type checker cannot follow. `@fronds/<name>/…` resolves for the checker '
-        + 'once fronds/tsconfig.json states `"extends": "@fougere/core/tsconfig"`.',
+        `${filePath}: TypeScript cannot follow the import of '${param.name}: ${param.type.raw}'. `
+        + 'Add `"extends": "@fougere/core/tsconfig"` to fronds/tsconfig.json.',
       );
     }
 
@@ -227,10 +223,7 @@ async function toProvider(filePath: string): Promise<ProviderEntry> {
       code: 'port-implemented-not-extended',
       filePath,
       subject: name,
-      message: `${name} implements the class ${base}. A port is answered by EXTENDING it — `
-        + `\`implements\` leaves nothing at runtime, so the boot binds no port and the first `
-        + `dependency on ${base} answers '${base}' is not registered. Write `
-        + `\`class ${name} extends ${base}\`, or ${base} states an interface if its shape is all you wanted.`,
+      message: `${name} implements ${base}, so it is not used for ${base}. Write \`class ${name} extends ${base}\`.`,
     });
   }
 
@@ -358,8 +351,8 @@ function inputOf(
     code: 'input-contract-ambiguous',
     filePath,
     subject,
-    message: `Cannot infer the input contract for ${subject}: ${candidates.length} entity `
-      + `candidates — ${candidates.map(({ param }) => `${param.name}: ${param.type.raw}`).join('; ')}. `
+    message: `Fougere cannot tell which parameter of ${subject} is its input: `
+      + `${candidates.map(({ param }) => `${param.name}: ${param.type.raw}`).join('; ')}. `
       + `Declare it in frond.config.ts: operations: { '${new RouteAddress({ address: addressOf(handlerName), operation: method.name })}': { input } }.`,
   });
 
@@ -443,8 +436,7 @@ async function inferOperations(
       severity: 'blocking',
       code: 'handler-parse-failed',
       filePath,
-      message: 'Could not parse this handler — its operations carry no contract, so the '
-        + 'façade serves them unbound. Not the same as a handler with no operation.',
+      message: 'This handler could not be parsed, so its operations are served without checking their input.',
       cause,
     });
 
@@ -470,9 +462,8 @@ async function inferOperations(
       severity: 'warning',
       code: 'heritage-unresolved',
       filePath,
-      message: `Could not resolve 'extends ${base}' — any operation it declares is absent `
-        + `from this façade, and the scan cannot tell that from a base class with none. `
-        + `State the contract in frond.config.ts to put it back.`,
+      message: `Cannot read the class ${base} this handler extends, so its operations are missing. `
+        + 'List them in frond.config.ts under operations:.',
     });
   }
 
@@ -602,7 +593,7 @@ async function toPresenterEntry(filePath: string): Promise<PresenterEntry | null
         filePath,
         subject: `${(ctor as { name?: string }).name ?? 'Presenter'}.${method.name}`,
         message: `${method.name}(${rows ? `${rows.name}: ${rows.type.raw}` : ''}) is a computed `
-          + `field, so it receives the PAGE and must answer one value per row. Declare `
+          + `field: it receives all the rows of a page and returns one value per row. Declare `
           + `${method.name}(${rows?.name ?? 'rows'}: ${(target as { name?: string }).name ?? 'Entity'}[]) `
           + `and return an array of the same length.`,
       });
@@ -640,8 +631,8 @@ function inStatedOrder(middlewares: MiddlewareEntry[], stated: readonly string[]
         code: 'middlewares-unordered',
         filePath: middlewares[0]!.filePath,
         subject: named.join(', '),
-        message: `${named.join(' and ')} both stand around this frond's operations, and nothing says which `
-          + `is outside. State it, outside in, in frond.config.ts: middlewares: [${named.map((one) => `'${one}'`).join(', ')}].`,
+        message: `${named.join(' and ')} are both middlewares of this frond, in no set order. `
+          + `Give the order in frond.config.ts, outermost first: middlewares: [${named.map((one) => `'${one}'`).join(', ')}].`,
       });
     }
 
@@ -655,8 +646,8 @@ function inStatedOrder(middlewares: MiddlewareEntry[], stated: readonly string[]
       code: 'middlewares-unlisted',
       filePath: one.filePath,
       subject: one.name,
-      message: `${one.name} sits in middlewares/, and \`middlewares:\` orders ${stated.join(', ')} — so where it `
-        + 'stands is not said. Add it to `middlewares:` in frond.config.ts.',
+      message: `${one.name} is in middlewares/ but not in \`middlewares:\` (${stated.join(', ')}). `
+        + 'Add it to `middlewares:` in frond.config.ts.',
     });
   }
 
@@ -675,8 +666,8 @@ async function toMiddlewareEntry(filePath: string): Promise<MiddlewareEntry | nu
       code: 'middleware-not-extended',
       filePath,
       subject: ctor.name,
-      message: `${ctor.name} sits in middlewares/ and does not extend Middleware, so it runs around `
-        + `nothing. Write \`class ${ctor.name} extends Middleware\`, or move it out of middlewares/.`,
+      message: `${ctor.name} is in middlewares/ but does not extend Middleware, so it never runs. `
+        + `Write \`class ${ctor.name} extends Middleware\`, or move it out of middlewares/.`,
     });
 
     return null;
@@ -689,8 +680,7 @@ async function toMiddlewareEntry(filePath: string): Promise<MiddlewareEntry | nu
       code: 'middleware-without-around',
       filePath,
       subject: ctor.name,
-      message: `${ctor.name} extends Middleware and declares no \`around(context, next)\`, so every `
-        + `operation it stands around would fail. Name the method \`around\`.`,
+      message: `${ctor.name} extends Middleware but has no \`around(context, next)\` method.`,
     });
 
     return null;

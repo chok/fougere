@@ -33,7 +33,7 @@ function storageOf(storageMap: StorageMap, model: string): Storage {
     throw new Error(
       `[fougereAdapter] Unknown model '${model}'. ` +
       `Known models: ${[...storageMap.keys()].join(', ')}. ` +
-      `Plugins that ship their own schema need entities registered explicitly.`,
+      `A better-auth plugin with its own tables needs an entity for each of them.`,
     );
   }
 

@@ -93,8 +93,8 @@ function defaultOf(sources: Record<string, SourceEntities>): [string, Source] {
   const unlisted = Object.entries(sources).filter(([, placement]) => placement.entities === undefined);
   if (unlisted.length > 1) {
     throw new Error(
-      `sources: ${unlisted.map(([name]) => `'${name}'`).join(' and ')} list no entities, and nothing says which `
-      + 'one holds the rest. Give all but one of them their entities.',
+      `sources: ${unlisted.map(([name]) => `'${name}'`).join(' and ')} list no entities, so Fougere cannot tell which one `
+      + 'holds the rest. Give all but one of them an entities: list.',
     );
   }
   if (unlisted.length === 1) return [unlisted[0]![0], unlisted[0]![1].source];
@@ -125,7 +125,7 @@ export function storageFrom(sources: Record<string, SourceEntities>): ResolvedSt
       const claimed = home.get(key);
       if (claimed) {
         throw new Error(
-          `sources: '${entity}' is claimed by both '${claimed}' and '${name}' — an entity lives in one place.`,
+          `sources: '${entity}' is listed in both '${claimed}' and '${name}'. Keep it in one.`,
         );
       }
       home.set(key, name);
@@ -157,8 +157,8 @@ export function storageFrom(sources: Record<string, SourceEntities>): ResolvedSt
     enforces: (source, constraint) => engineOf(source)?.enforces?.includes(constraint) ?? false,
     transacted: async (source, fn) => {
       const engine = engineOf(source);
-      if (!engine) throw new Error(`No source named '${source}' — declared sources are ${[DEFAULT, ...engines.keys()].join(', ')}.`);
-      if (!engine.transacted) throw new Error(`Source '${source}' hands out no transaction.`);
+      if (!engine) throw new Error(`No source named '${source}'. Sources: ${[DEFAULT, ...engines.keys()].join(', ')}.`);
+      if (!engine.transacted) throw new Error(`Source '${source}' has no transactions.`);
 
       return engine.transacted(fn);
     },

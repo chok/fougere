@@ -352,8 +352,8 @@ export class SqlStorage {
   async upsert(input: Record<string, unknown>, options?: SelectOption): Promise<Record<string, unknown>> {
     if (this.upsertClause === false) {
       throw new Error(
-        `${this.table.name}.upsert(): this engine has no upsert clause — read with findById ` +
-        `and call create or update, and know that the pair is not atomic.`,
+        `${this.table.name}.upsert() is not supported on this database. Use findById, then create or update `
+        + '(the two steps are not atomic).',
       );
     }
     // `applyUpdate` FIRST: `updated()` declares both `create: 'now'` and
@@ -375,8 +375,8 @@ export class SqlStorage {
   async upsertAll(inputs: readonly Record<string, unknown>[], _options?: SelectOption): Promise<number> {
     if (this.upsertClause === false) {
       throw new Error(
-        `${this.table.name}.upsertAll(): this engine has no upsert clause — write the rows ` +
-        `one by one with create or update, and know that the pair is not atomic.`,
+        `${this.table.name}.upsertAll() is not supported on this database. Write the rows one by one `
+        + 'with create or update (not atomic).',
       );
     }
     if (inputs.length === 0) return 0;
@@ -464,9 +464,8 @@ export class SqlStorage {
     for (const [key, value] of Object.entries(criteria)) {
       if (!Array.isArray(value) || new Set(value).size <= this.maxBindings) continue;
       throw new Error(
-        `${this.table.name}.${op}(): \`${key}\` holds ${new Set(value).size} values and this engine ` +
-        `binds ${this.maxBindings} — a page and an order cannot be split across statements. ` +
-        `Use \`findAllByKeys('${key}', keys)\`, which reads them in slices and groups the answer.`,
+        `${this.table.name}.${op}(): \`${key}\` has ${new Set(value).size} values, more than the ${this.maxBindings} `
+        + `this database accepts in one query. Use \`findAllByKeys('${key}', keys)\`, which splits them.`,
       );
     }
   }
@@ -477,8 +476,8 @@ export class SqlStorage {
     if (oversized.length === 0) return [criteria];
     if (oversized.length > 1) {
       throw new Error(
-        `${this.table.name}: ${oversized.map(([key]) => `\`${key}\``).join(' and ')} each hold more than ` +
-        `${this.maxBindings} values — split one of them at the call site, they cannot both be sliced.`,
+        `${this.table.name}: ${oversized.map(([key]) => `\`${key}\``).join(' and ')} each have more than `
+        + `${this.maxBindings} values. Split one of them yourself before the call.`,
       );
     }
     const [key, values] = oversized[0]!;

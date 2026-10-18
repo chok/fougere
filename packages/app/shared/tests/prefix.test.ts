@@ -27,6 +27,6 @@ describe('the prefix the config states', () => {
     const response = await rest(new Request('http://localhost/api/blog/posts'));
 
     expect(response.status).toBe(404);
-    expect((await response.json() as { message: string }).message).toContain('protocols.rest.prefix mounts at /v1');
+    expect((await response.json() as { message: string }).message).toContain('is not under the REST prefix /v1');
   });
 });

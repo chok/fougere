@@ -42,8 +42,8 @@ export function modulesOf(engine: Engine, from = process.cwd()): any[] {
   const missing = packages.filter((name) => !resolves(require, name));
   if (missing.length) {
     throw new Error(
-      `The ${engine} engine opens through ${quoted(packages)}, and ${quoted(missing)} is not installed beside the app (${from}).\n`
-      + `Install it there: pnpm add ${missing.join(' ')}`,
+      `The ${engine} database needs ${quoted(missing)}, which is not installed in ${from}.\n`
+      + `Install it: pnpm add ${missing.join(' ')}`,
     );
   }
 
@@ -52,7 +52,7 @@ export function modulesOf(engine: Engine, from = process.cwd()): any[] {
       return require(name);
     } catch (error) {
       throw new Error(
-        `The ${engine} engine opens through '${name}', which is installed beside the app (${from}) but does not load: ${messageOf(error)}`,
+        `The ${engine} database needs '${name}', which is installed in ${from} but fails to load: ${messageOf(error)}`,
         { cause: error },
       );
     }

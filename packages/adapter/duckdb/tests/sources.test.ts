@@ -94,13 +94,13 @@ describe('what the query may name', () => {
     class Elsewhere extends entity({ id: primary() }) {}
     class Item extends entity({ id: primary() }) {}
     await expect(sources.read(Item)`select id from ${Elsewhere}`)
-      .rejects.toThrow(/Elsewhere is named in a query but not in `reads`/);
+      .rejects.toThrow(/Elsewhere is used in a query but is not in `reads`/);
   });
 
   it('refuses a plain value — this tag substitutes entities, not parameters', async () => {
     class Item extends entity({ id: primary() }) {}
     await expect(sources.read(Item)`select id from ${Loan} where reader = ${'r1'}`)
-      .rejects.toThrow(/only an entity may be interpolated/);
+      .rejects.toThrow(/Only an entity can go inside/);
   });
 });
 
@@ -116,7 +116,7 @@ describe('the declared shape is the fence', () => {
   it('refuses when the query and the shape disagree, showing both', async () => {
     class Mismatched extends entity({ id: primary(), titre: text() }) {}
     await expect(sources.read(Mismatched)`select l.id, l.reader from ${Loan} l limit 1`)
-      .rejects.toThrow(/declares `titre`, and the query answers `id`, `reader`/);
+      .rejects.toThrow(/expects `titre`, and the query returns `id`, `reader`/);
   });
 
   it('maps a snake_case column onto the field that declares it', async () => {
@@ -134,6 +134,6 @@ describe('a source DuckDB cannot attach', () => {
         legacy: { type: 'mssql', url: 'Server=x;', entities: ['Book'] },
       },
       reads: [Book],
-    })).rejects.toThrow(/DuckDB cannot attach — there is no such extension/);
+    })).rejects.toThrow(/which DuckDB cannot read/);
   });
 });

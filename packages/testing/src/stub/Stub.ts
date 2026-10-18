@@ -40,8 +40,7 @@ export function installStubs(app: App, ports: Port[]): Map<Port, Stub<unknown>> 
     const answering = scopes.filter((scope) => scope.has(port.name));
     if (answering.length === 0) {
       throw new Error(
-        `[stub] ${port.name} — nothing answers under that name in any frond. `
-        + 'A port is a class a provider extends; a class nobody extends is an ordinary service.',
+        `[stub] No class extends ${port.name}, so there is nothing to replace. Stub a class that another one extends.`,
       );
     }
     const double = stubOf(port);

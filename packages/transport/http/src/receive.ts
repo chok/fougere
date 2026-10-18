@@ -69,10 +69,8 @@ export function receive(
   // that starts and then rejects everything is found in production.
   if (!options.verify && !options.allowUnsigned) {
     throw new Error(
-      'A Fougere receiver takes the `state` it is handed, so this facade needs to know who is calling.\n'
-      + '  Wire `verify` (see `verifyEnvelope`, and `fougere keys` / `fougere grant`),\n'
-      + '  or say `allowUnsigned: true` — which is right for local development and for a\n'
-      + '  mesh whose sidecar already established the peer.',
+      'This receiver would trust any caller. Pass `verify` (see `verifyEnvelope`, `fougere keys`, `fougere grant`),\n'
+      + '  or `allowUnsigned: true` for local development or behind a proxy that already checks callers.',
     );
   }
 

@@ -51,7 +51,7 @@ export async function serveRpc(app: App, request: Pick<DoorRequest, 'path' | 'bo
 function writtenByPage(call: FrondCall): FougereError {
   return new FougereError({
     code: ErrorCode.BAD_REQUEST,
-    message: `${call.address}.${call.op}: a page sends params, query and input — \`args\` are what one frond hands another.`,
+    message: `${call.address}.${call.op}: a page sends params, query and input, not \`args\` (only fronds send \`args\`).`,
     address: call.address,
     operation: call.op,
   });

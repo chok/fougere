@@ -25,7 +25,7 @@ describe('a class implemented where it should be extended', () => {
     expect(found).toHaveLength(1);
     expect(found[0].severity).toBe('warning');
     expect(found[0].subject).toBe('StripePayment');
-    expect(found[0].message).toContain('implements the class Payment');
+    expect(found[0].message).toContain('StripePayment implements Payment, so it is not used for Payment');
     expect(found[0].filePath).toContain('StripePayment');
   });
 

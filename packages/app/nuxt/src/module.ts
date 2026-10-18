@@ -198,9 +198,8 @@ const module = defineNuxtModule<FougereModuleOptions>({
     const entityNames = [...new Set(designated)];
     if (Object.keys(remotesOf(config)).length > 0 && entityNames.length === 0) {
       useLogger('fougere').warn(
-        'fougere: this app places a frond elsewhere and no entity name could be reserved against the minifier.\n'
-        + '  A class name IS the JSON-RPC method, so a mangled one leaves as `f.list` and the remote refuses it.\n'
-        + '  Run `fougere sync` so the remote entities land in .fougere/, or keep a frond of your own.',
+        'fougere: a frond runs elsewhere, and its entity names are unknown here, so the production build may rename them '
+        + 'and calls to it would fail. Run `fougere sync` to bring its entities into .fougere/.',
       );
     }
     if (entityNames.length > 0) {
@@ -402,7 +401,7 @@ async function statedIn(frondsFile: string, only: string[] | undefined): Promise
 async function scanned(root: string, only: string[] | undefined, conventions: Conventions): Promise<{ scan: ScanResult; statement: string }> {
   const compiler = await import('@fougere/compiler').catch((error: NodeJS.ErrnoException) => {
     if (error.code !== 'ERR_MODULE_NOT_FOUND') throw error;
-    throw new Error(`${root} states no fronds.ts and @fougere/compiler is not installed — write the statement, or install the compiler to read it off the sources.`);
+    throw new Error(`${root} has no fronds.ts and @fougere/compiler is not installed. Run \`fougere build\`, or install @fougere/compiler.`);
   });
   const scan = await compiler.scanProject(root, only, conventions);
 

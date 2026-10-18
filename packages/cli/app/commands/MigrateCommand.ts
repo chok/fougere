@@ -27,7 +27,7 @@ export default class MigrateCommand {
 
     if (result.refusals.length > 0) {
       const chain = result.chain.length > 0 ? ` (${result.chain.join(' → ')})` : '';
-      this.ui.error(`This migration cannot be realised as it stands${chain}:`);
+      this.ui.error(`This migration cannot run as it is${chain}:`);
       for (const one of result.refusals) this.ui.step(`${pc.bold(`${one.entity}.${one.field}`)} — ${one.reason}`);
 
       return;

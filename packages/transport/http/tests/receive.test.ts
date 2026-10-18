@@ -20,7 +20,7 @@ const post = (body: unknown, path = '/_fougere/call') =>
 
 describe('the envelope facade', () => {
   it('refuses to be built when nobody said who may call', () => {
-    expect(() => receive(runner)).toThrow(/who is calling/);
+    expect(() => receive(runner)).toThrow(/would trust any caller/);
   });
 
   it('names both ways out, because only one of them is a decision', () => {

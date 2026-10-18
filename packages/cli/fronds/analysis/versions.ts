@@ -34,8 +34,8 @@ export async function chainOf(frondPath: string): Promise<Version[]> {
 
   const roots = names.filter((name) => steps.get(name)?.previous === undefined);
   if (roots.length !== 1) {
-    const said = roots.length === 0 ? 'none starts it' : `${roots.join(', ')} each start one`;
-    throw new Error(`${directory}: a frond's versions are ONE line and ${said}.`);
+    const said = roots.length === 0 ? 'none is the first' : `${roots.join(', ')} are each a first one`;
+    throw new Error(`${directory}: versions must follow one another in a single line, and ${said}.`);
   }
 
   const next = new Map<string, string>();
@@ -52,7 +52,7 @@ export async function chainOf(frondPath: string): Promise<Version[]> {
   // the same `previous`), a cycle, or a step naming a version that is not there.
   const adrift = names.filter((name) => !seen.has(name));
   if (adrift.length > 0) {
-    throw new Error(`${directory}: ${adrift.join(', ')} follow no version in the chain that starts at ${roots[0]}.`);
+    throw new Error(`${directory}: ${adrift.join(', ')} do not follow any version of the line that starts at ${roots[0]}.`);
   }
 
   return chain;

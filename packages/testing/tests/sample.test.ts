@@ -82,7 +82,7 @@ describe('a body built from the declaration', () => {
 
 describe('a reference', () => {
   it('is refused by name rather than generated', () => {
-    expect(() => sampleInput(Post)).toThrow(/authorId is a reference/);
+    expect(() => sampleInput(Post)).toThrow(/authorId points to other rows/);
   });
 
   it('is accepted once the caller names the row', () => {

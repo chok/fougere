@@ -73,8 +73,8 @@ function referenceFor(
     if (hosted.elsewhere.has(key)) return undefined;
     if (!hosted.here.has(key)) {
       throw new Error(
-        `ref(${target.name ?? '?'}): no source hosts it — it is in neither this batch nor another one. ` +
-        `Check the entity is scanned, and that \`sources\` spells its name the same way.`,
+        `ref(${target.name ?? '?'}): no source holds ${target.name ?? 'this entity'}. `
+        + 'Check that the entity exists and that `sources:` spells its name the same way.',
       );
     }
   }

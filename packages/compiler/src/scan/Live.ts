@@ -29,8 +29,8 @@ export function schemaRef(
   if (from) return `${imports.aliasOf(from)}.partial()`;
 
   throw new Error(
-    `A scan cannot be written down: an anonymous schema in ${declaredIn} names no source. `
-    + 'Only `Partial<X>` is derivable here, and it says which X it came from.',
+    `fronds.ts cannot be written: ${declaredIn} uses an unnamed schema. Give it a class name, `
+    + 'or use Partial<X>.',
   );
 }
 

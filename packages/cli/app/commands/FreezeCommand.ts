@@ -107,7 +107,7 @@ export default class FreezeCommand {
     }
     for (const [entity, answer] of moved) {
       for (const change of answer.changes) {
-        if (change.kind === 'removed') this.ui.warn(`${entity}.${change.field} is dropped at the next migrate, and what it holds with it — a rename is declared on the entity with previous:.`);
+        if (change.kind === 'removed') this.ui.warn(`${entity}.${change.field} and its data are deleted at the next migrate. If it was renamed, say so on the field with previous:.`);
       }
     }
     if (step.entitiesAdded.length > 0) this.ui.step(`new: ${step.entitiesAdded.join(', ')}`);

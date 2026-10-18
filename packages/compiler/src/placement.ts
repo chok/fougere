@@ -59,11 +59,8 @@ export async function outsideConventions(
           frond: frond.name,
           filePath,
           kind: 'directory',
-          message: `'${entry.name}/' is a directory no convention names, so nothing in it is read `
-            + `as anything — it is a subject somebody filed under its own word. A frond's `
-            + `directories are ${addresses}. If what it holds computes with nothing injected it `
-            + `is \`${conventions.dirs.rules}/\`; if it holds a dependency it is `
-            + `\`${conventions.dirs.services}/\`.`,
+          message: `Fougere reads nothing in '${entry.name}/'. A frond's directories are ${addresses}. `
+            + `Plain functions go in \`${conventions.dirs.rules}/\`, classes with dependencies in \`${conventions.dirs.services}/\`.`,
         });
         continue;
       }
@@ -74,10 +71,8 @@ export async function outsideConventions(
         frond: frond.name,
         filePath,
         kind: 'file',
-        message: `'${entry.name}' sits at the root of '${frond.name}', where the frond states `
-          + `itself and nothing else. A frond's directories are ${addresses} — this one belongs `
-          + `in \`${conventions.dirs.rules}/\` if it computes with nothing injected, in `
-          + `\`${conventions.dirs.services}/\` if it holds a dependency.`,
+        message: `Fougere reads nothing in '${entry.name}' at the root of ${frond.name}. `
+          + `Plain functions go in \`${conventions.dirs.rules}/\`, classes with dependencies in \`${conventions.dirs.services}/\`.`,
       });
     }
   }

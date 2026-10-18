@@ -53,7 +53,7 @@ describe('the DDL of one source', () => {
     expect(() => toTables(
       { ...sourceViewOf(app.fronds.filter((f) => f.name !== 'catalog')), elsewhere: [] },
       (name) => `${name}s`,
-    )).toThrow(/ref\(Book\): no source hosts it/);
+    )).toThrow(/ref\(Book\): no source holds Book/);
   });
 
   it('keeps every constraint when nothing is declared elsewhere', () => {
@@ -100,7 +100,7 @@ describe('resolveStorage with a second source', () => {
       main: { type: 'sqlite', path: ':memory:' },
       archive: { type: 'sqlite', path: ':memory:', entities: ['Book'] },
       cold: { type: 'sqlite', path: ':memory:', entities: ['Book'] },
-    })).toThrow(/claimed by both 'archive' and 'cold'/);
+    })).toThrow(/is listed in both 'archive' and 'cold'/);
   });
 
   it('lets the format of the type refuse what its entry does not hold', () => {
@@ -193,7 +193,7 @@ describe('storageFrom — an engine the caller built', () => {
       archive: { source: createSqliteSource({ path: ':memory:' }), entities: ['Book'] },
       cold: { source: createSqliteSource({ path: ':memory:' }), entities: ['Book'] },
     });
-    expect(twice).toThrow(/claimed by both 'archive' and 'cold'/);
+    expect(twice).toThrow(/is listed in both 'archive' and 'cold'/);
   });
 });
 

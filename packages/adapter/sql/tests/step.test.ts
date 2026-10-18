@@ -125,7 +125,7 @@ describe('what it will not decide alone', () => {
     const step = between(V1, current, { renamed: { post: { body: 'content' } } });
     const plan = planStep(step, desiredTables(appOf(current)));
 
-    await expect(applyStep(plan, db)).rejects.toThrow(/cannot be realised/);
+    await expect(applyStep(plan, db)).rejects.toThrow(/cannot run as it is/);
 
     // …and the column it would have renamed is untouched.
     const row = (await db.selectFrom('posts').selectAll().executeTakeFirst()) as Record<string, unknown>;

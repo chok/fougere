@@ -11,7 +11,7 @@ import {
 /** A key becomes a filename, so it may not leave the directory it addresses. */
 function fileOf(dir: string, key: string): string {
   if (key.includes('/') || key.includes('\\') || key === '.' || key === '..') {
-    throw new Error(`source 'file': '${key}' cannot be a filename — a key becomes one here.`);
+    throw new Error(`source 'file': the key '${key}' cannot be used as a file name.`);
   }
 
   return join(dir, `${encodeURIComponent(key)}.json`);

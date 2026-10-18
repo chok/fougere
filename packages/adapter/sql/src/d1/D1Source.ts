@@ -20,10 +20,10 @@ class BoundDriver implements Driver {
   async init(): Promise<void> {
     const workers = 'cloudflare:workers';
     const { env } = (await import(workers).catch(() => {
-      throw new Error(`The d1 engine reads '${this.binding}' from cloudflare:workers, which this runtime has not.`);
+      throw new Error(`d1 needs cloudflare:workers to read '${this.binding}', and this is not a Cloudflare Worker.`);
     })) as { env: Bindings };
     const database = env[this.binding];
-    if (!database) throw new Error(`The d1 engine found no binding '${this.binding}' on this Worker's env.`);
+    if (!database) throw new Error(`This Worker has no D1 binding named '${this.binding}'. Add it to wrangler.toml.`);
 
     this.inner = new D1Dialect({ database: database as never }).createDriver();
     await this.inner.init();

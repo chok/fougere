@@ -41,7 +41,7 @@ const numeric: ValueCodec = {
 function fits(value: bigint): number {
   if (value >= MIN_SAFE && value <= MAX_SAFE) return Number(value);
   throw new Error(
-    `${value} does not fit a JavaScript number — declare the field as \`text()\` to keep it whole.`,
+    `${value} is too large for a JavaScript number. Declare the field as \`text()\` to keep it exact.`,
   );
 }
 

@@ -181,7 +181,7 @@ describe('loopback or signed — there is no third way', () => {
   it('refuses to START when reachable from outside and establishing nothing', async () => {
     // At boot, not per call: a receiver that starts and then rejects everything is
     // found in production; one that will not start is found at deployment.
-    await expect(serve(runner, { hosts, host: '0.0.0.0' })).rejects.toThrow(/reachable from outside/);
+    await expect(serve(runner, { hosts, host: '0.0.0.0' })).rejects.toThrow(/can be reached from other machines/);
   });
 
   it('starts when it can establish its caller', async () => {

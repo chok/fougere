@@ -44,8 +44,8 @@ export function sampleInput(
   const missing = referencesIn(fields).filter((name) => !(name in given));
   if (missing.length > 0) {
     throw new Error(
-      `[sampleInput] ${missing.join(', ')} ${missing.length > 1 ? 'are references' : 'is a reference'} — `
-      + 'a generated id points at no row. Pass the ids: '
+      `[sampleInput] ${missing.join(', ')} ${missing.length > 1 ? 'point' : 'points'} to other rows, which a generated id cannot do. `
+      + 'Pass the ids: '
       + `sampleInput(Entity, { ${missing.map((n) => `${n}: '…'`).join(', ')} }).`,
     );
   }

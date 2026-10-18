@@ -61,7 +61,7 @@ export async function connectSources(options: ConnectOptions): Promise<Reads> {
   for (const shape of options.reads) {
     const name = lowerFirst((shape as { name?: string }).name ?? '');
     const alias = home.get(name) ?? fallback;
-    if (!alias) throw new Error(`${name} lives in no declared source — no source lists it, and none holds the rest.`);
+    if (!alias) throw new Error(`${name} is in no source: none lists it, and none takes the rest. Add it to one in sources:.`);
     wanted.add(alias);
     placed.set(shape, { alias, table: resolve(name) });
   }
@@ -72,19 +72,18 @@ export async function connectSources(options: ConnectOptions): Promise<Reads> {
 
   for (const alias of wanted) {
     const entry = options.sources[alias];
-    if (!entry) throw new Error(`source '${alias}' is read but never declared.`);
+    if (!entry) throw new Error(`source '${alias}' is read here but missing from sources:.`);
 
     const attachable = ATTACHABLE[entry.type];
     if (!attachable) {
       throw new Error(
-        `source '${alias}' is a ${entry.type} source, which DuckDB cannot attach — there is no ` +
-        `such extension. Read it by key through its own storage, or mirror it into one of ` +
-        `${Object.keys(ATTACHABLE).join(', ')}.`,
+        `source '${alias}' is ${entry.type}, which DuckDB cannot read. It reads `
+        + `${Object.keys(ATTACHABLE).join(', ')}: copy the rows into one of those, or read them through their own repository.`,
       );
     }
     const target = attachable.target(entry);
     if (!target) {
-      throw new Error(`source '${alias}': nothing says where it is — DuckDB is told what to open.`);
+      throw new Error(`source '${alias}' has no path or url, so DuckDB cannot open it.`);
     }
     await db.run(`INSTALL ${attachable.extension}; LOAD ${attachable.extension};`);
     await db.run(`ATTACH '${target}' AS ${quote(attachedAs(alias))} (TYPE ${attachable.extension}, READ_ONLY);`);
@@ -118,15 +117,13 @@ function qualify(ref: unknown, placed: Map<Entity, { alias: string; table: strin
   const name = (ref as { name?: string } | undefined)?.name;
   if (name) {
     throw new Error(
-      `${name} is named in a query but not in \`reads\` — its source is not attached, so its ` +
-      `table does not exist in this connection. Add it to \`reads\`, or stop naming it.`,
+      `${name} is used in a query but is not in \`reads\`. Add it to \`reads\` in frond.config.ts.`,
     );
   }
   // A plain value interpolated into SQL is refused: this tag substitutes ENTITIES, and
   // accepting a value would be a string-built query with no binding in sight.
   throw new Error(
-    `only an entity may be interpolated into a source query — pass a value through the ` +
-    `query text you write, or filter the result.`,
+    'Only an entity can go inside ${…} in a source query. Write values in the query text, or filter the result.',
   );
 }
 
@@ -137,9 +134,9 @@ function refuseMismatch(shape: Entity, names: string[], row: Record<string, unkn
   const missing = names.filter((name) => !(toSnakeCase(name) in row) && !(name in row));
   if (missing.length === 0) return;
   throw new Error(
-    `${(shape as { name?: string }).name ?? 'the shape'} declares ${missing.map((m) => `\`${m}\``).join(', ')}, ` +
-    `and the query answers ${Object.keys(row).map((c) => `\`${c}\``).join(', ')} — name the column with ` +
-    `\`as\`, or drop the field.\n${sql.trim()}`,
+    `${(shape as { name?: string }).name ?? 'the shape'} expects ${missing.map((m) => `\`${m}\``).join(', ')}, `
+    + `and the query returns ${Object.keys(row).map((c) => `\`${c}\``).join(', ')}. Rename the column with \`as\`, `
+    + `or remove the field.\n${sql.trim()}`,
   );
 }
 

@@ -81,14 +81,10 @@ export async function crossFrondImports(
           specifier,
           ...(target ? { target: target.name } : {}),
           message: target
-            ? `'${specifier}' resolves into frond '${target.name}'. A relative path states that `
-              + `these two fronds share a directory tree — a constraint nothing declares, and one `
-              + `that nothing here can see. Write '${target.package}/…' instead: it says the `
-              + `same dependency in terms the model reads, and it is the form \`fougere sync\` writes, `
-              + `so it survives '${target.name}' moving out.`
-            : `'${specifier}' resolves outside frond '${root.name}', into no frond at all. `
-              + `Whatever it reaches is not part of any frond's contract, so nothing carries it `
-              + `when this one is deployed on its own.`,
+            ? `'${specifier}' reaches into the frond ${target.name} by a relative path, which breaks the day `
+              + `${target.name} moves. Import it as '${target.package}/…' instead.`
+            : `'${specifier}' reaches outside ${root.name}, into no frond. `
+              + `It will be missing when ${root.name} is deployed on its own.`,
         });
       }
     }

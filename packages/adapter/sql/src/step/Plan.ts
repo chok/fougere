@@ -226,7 +226,7 @@ export function stepSQL(change: StepChange, dialectName: DialectName = 'sqlite')
 export async function applyStep(plan: Plan, db: Kysely<any>, dialectName: DialectName = 'sqlite'): Promise<string[]> {
   if (plan.refusals.length > 0) {
     const named = plan.refusals.map((one) => `  ${one.entity}.${one.field} — ${one.reason}`).join('\n');
-    throw new Error(`This step cannot be realised as it stands:\n${named}`);
+    throw new Error(`This migration step cannot run as it is:\n${named}`);
   }
   const run: string[] = [];
   for (const change of plan.changes) {

@@ -99,7 +99,7 @@ describe('rows as files', () => {
     const rows = source.storageFactory(Snapshot as never, 'snapshot');
 
     await expect(rows.create({ id: '../escaped', label: 'x', size: 1 }))
-      .rejects.toThrow(/cannot be a filename/);
+      .rejects.toThrow(/cannot be used as a file name/);
   });
 
   it('reads an entity nothing has written yet as empty, not as a failure', async () => {

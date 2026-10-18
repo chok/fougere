@@ -82,7 +82,7 @@ class Imports implements Aliases {
     const frond = this.frondOfFile.get(filePath);
     if (!frond) {
       throw new Error(
-        `A statement cannot be written: ${name} lives in ${filePath}, which no frond imported first.`,
+        `fronds.ts cannot be written: ${name} in ${filePath} is not imported by any frond.`,
       );
     }
     const alias = `_${this.byPath.size}_${name}`;

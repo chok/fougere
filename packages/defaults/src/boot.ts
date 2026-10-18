@@ -155,7 +155,7 @@ async function written(root: string, conventions: FougereConfig['conventions']):
   });
   if (!compiler) {
     if (existsSync(built)) return built;
-    throw new Error(`${root} states no fronds.ts, no build wrote one, and @fougere/compiler is not installed — write the statement, or install the compiler to read it off the sources.`);
+    throw new Error(`${root} has no fronds.ts and @fougere/compiler is not installed. Run \`fougere build\`, or install @fougere/compiler.`);
   }
   const { file, diagnostics } = await compiler.writeStatement(root, conventions);
   for (const d of diagnostics.filter((one) => one.severity === 'blocking')) log.error(`[${d.code}] ${d.message}`, d.cause);

@@ -24,7 +24,7 @@ export default class KeysCommand {
   async run() {
     const path = join(process.cwd(), ROOT_KEY);
     if (await exists(path)) {
-      this.ui.error(`${ROOT_KEY} already exists — a second root would split the system in two.`);
+      this.ui.error(`${ROOT_KEY} already exists. Another one would not recognize the grants issued so far.`);
       this.ui.info('Delete it deliberately to start over; every grant issued so far stops being recognized.');
 
       return;

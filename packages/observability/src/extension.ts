@@ -115,10 +115,8 @@ export function observability(options: ObservabilityOptions = {}): Extension {
       // warning that only names the loss reads as "tracing is broken", and it is not.
       if (!traceContext.ambient) {
         app.container.resolve<Logger>('Logger').child(service).warn(
-          'no async context: a call that crosses no wire starts its own trace '
-          + '(an emission subscriber, a handler reaching another frond in this process). '
-          + 'An arriving call and a call to a frond placed elsewhere in `fronds:` are unaffected — both carry '
-          + 'traceparent on the invocation. Add "nodejs_als" to compatibility_flags to restore the rest.',
+          'This runtime has no async context, so calls inside this process start their own trace instead of joining '
+          + "the caller's. Add \"nodejs_als\" to compatibility_flags to fix it.",
         );
       }
 

@@ -76,7 +76,7 @@ function storagesOf(app: App, models: Record<string, SchemaView>): StorageMap {
   return new Map(Object.entries(models).map(([model, schema]) => {
     const entity = lowerFirst(schema.name);
     const storage: Storage | undefined = app.storageFor(entity);
-    if (!storage) throw new Error(`[auth] no frond in this process holds '${entity}', the ${model} better-auth writes.`);
+    if (!storage) throw new Error(`[auth] better-auth writes ${model} into ${entity}, and no frond in this process has that entity.`);
 
     return [model, storage];
   }));

@@ -77,7 +77,7 @@ describe('check', () => {
       expect.stringContaining('adapters: { sqll }'),
       expect.stringContaining('adapters: { mongo }'),
     ]);
-    expect(found[0]?.message).toContain('It depends on sql.');
+    expect(found[0]?.message).toContain('(installed: sql)');
     expect(found[0]?.severity).toBe('warning');
     expect(found[0]?.subject).toBe('article');
   });

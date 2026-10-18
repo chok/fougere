@@ -291,7 +291,7 @@ describe('a number the driver hands back as a BigInt', () => {
   it('refuses one too large rather than rounding it', () => {
     // Number(9007199254740993n) is 9007199254740992 — a wrong answer, silently.
     expect(() => codecFor('integer').read(9007199254740993n))
-      .toThrow(/does not fit a JavaScript number/);
+      .toThrow(/is too large for a JavaScript number/);
   });
 
   it('leaves a plain number and a null alone', () => {
@@ -340,13 +340,13 @@ describe('a key set larger than one statement can bind', () => {
     // split — and truncating in silence would be the failure this whole test exists for.
     const keys = Array.from({ length: MANY }, (_, i) => `k${i}`);
     await expect(storage.list({ where: { id: keys } }))
-      .rejects.toThrow(/binds 30000 — a page and an order cannot be split.*findAllByKeys/s);
+      .rejects.toThrow(/more than the 30000 this database accepts in one query.*findAllByKeys/s);
   });
 
   it('refuses two oversized criteria rather than guessing their cross product', async () => {
     const keys = Array.from({ length: MANY }, (_, i) => `k${i}`);
     await expect(storage.findAllBy({ id: keys, title: keys }))
-      .rejects.toThrow(/each hold more than 30000 values/);
+      .rejects.toThrow(/each have more than 30000 values/);
   });
 });
 

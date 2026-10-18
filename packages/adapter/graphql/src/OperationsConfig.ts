@@ -553,9 +553,9 @@ function claimRootField(builder: object, fieldName: string, origin: string): voi
       : `Rename one of the methods, or name the field in the frond.config.ts of whichever `
         + `should yield:\n  operations: { ${opName}: { graphql: '…' } }`;
     throw new Error(
-      `two operations claim the GraphQL root field \`${fieldName}\`:\n`
+      `Two operations have the same GraphQL field \`${fieldName}\`:\n`
       + `  ${first}\n  ${origin}\n`
-      + `A root field is global, so one of them has to give. ${remedy}`,
+      + `${remedy}`,
     );
   }
   perField.set(fieldName, origin);

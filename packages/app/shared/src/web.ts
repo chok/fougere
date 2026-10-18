@@ -41,8 +41,8 @@ export async function rest(request: Request): Promise<Response> {
   const prefix = prefixOf((await useFougereConfig()).protocols);
   if (!url.pathname.startsWith(`${prefix}/`)) {
     return Response.json({
-      message: `${url.pathname} reached the REST door, which protocols.rest.prefix mounts at ${prefix} — `
-        + `move the route file that calls rest() under ${prefix}, or change the prefix.`,
+      message: `${url.pathname} is not under the REST prefix ${prefix}. Move the route file that calls rest() `
+        + `under ${prefix}, or change protocols.rest.prefix.`,
     }, { status: 404 });
   }
 

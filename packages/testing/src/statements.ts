@@ -34,8 +34,7 @@ async function sql(): Promise<typeof import('@fougere/adapter-sql')> {
     return await import('@fougere/adapter-sql');
   } catch {
     throw new Error(
-      '[statementsOf] counting statements needs @fougere/adapter-sql — install it, '
-      + 'or the count is zero whatever the handler ran.',
+      '[statementsOf] needs @fougere/adapter-sql. Install it.',
     );
   }
 }

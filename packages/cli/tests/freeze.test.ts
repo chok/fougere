@@ -49,7 +49,7 @@ describe('freeze', () => {
     await mkdir(join(root, 'fronds/blog/versions/v9'), { recursive: true });
 
     // Two versions with no step: two starts, so nothing says which line to replay.
-    await expect(freeze().execute({ version: 'v2', root })).rejects.toThrow(/ONE line/);
+    await expect(freeze().execute({ version: 'v2', root })).rejects.toThrow(/must follow one another in a single line/);
   });
 
   it('the answer is recorded, so a later run needs no one present', async () => {

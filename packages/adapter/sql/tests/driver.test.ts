@@ -46,8 +46,8 @@ describe('an engine named in the config', () => {
     const halfway = appWith({ tedious: 'module.exports = {};' });
     const broken = appWith({ pg: 'throw new Error("no libpq");' });
 
-    expect(() => dialectFor('mssql', 'mssql://localhost/app', halfway)).toThrow(/'tarn' is not installed[\s\S]*pnpm add tarn$/);
-    expect(() => dialectFor('pg', 'postgres://localhost/app', broken)).toThrow(/'pg', which is installed .* but does not load: no libpq/);
+    expect(() => dialectFor('mssql', 'mssql://localhost/app', halfway)).toThrow(/needs 'tarn', which is not installed[\s\S]*pnpm add tarn$/);
+    expect(() => dialectFor('pg', 'postgres://localhost/app', broken)).toThrow(/'pg', which is installed .* but fails to load: no libpq/);
   });
 
   it('says which file SQLite could not open', () => {

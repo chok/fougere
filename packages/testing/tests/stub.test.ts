@@ -58,6 +58,6 @@ describe('a stubbed port', () => {
   it('refuses a class nobody answers under, rather than standing in front of no one', async () => {
     class Nowhere { send(): void {} }
 
-    await expect(testApp({ root, stub: [Nowhere] })).rejects.toThrow(/nothing answers under that name/);
+    await expect(testApp({ root, stub: [Nowhere] })).rejects.toThrow(/No class extends Nowhere/);
   });
 });

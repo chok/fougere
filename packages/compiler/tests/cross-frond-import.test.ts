@@ -85,7 +85,7 @@ describe('a relative import that leaves its frond', () => {
       expect(found.map((f) => f.specifier)).toEqual(['../../shared/Thing.js']);
       // It lands in no frond at all, and the message says that rather than inventing one.
       expect(found[0].target).toBeUndefined();
-      expect(found[0].message).toContain('into no frond at all');
+      expect(found[0].message).toContain('into no frond');
     } finally {
       rmSync(root, { recursive: true, force: true });
     }

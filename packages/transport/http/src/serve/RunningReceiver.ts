@@ -29,20 +29,19 @@ export function serve(runner: Transport, options: ServeOptions = {}): Promise<Ru
 function whyNotHere(host: string | undefined, options: ServeOptions): Error | undefined {
   const allowed = options.hosts ?? LOOPBACK_HOSTS;
   if (allowed.length === 0) {
-    return new Error('A Fougere receiver needs at least one host to bind, `hosts` is empty');
+    return new Error('`hosts` is empty: give the receiver at least one host to listen on.');
   }
 
   if (host === undefined || !allowed.includes(host)) {
     return new Error(
-      `A Fougere receiver binds one of [${allowed.join(', ')}], got '${host}' — add it to \`hosts\` to allow it`,
+      `The receiver cannot listen on '${host}', which is not in \`hosts\` (${allowed.join(', ')}). Add it there.`,
     );
   }
 
   if (LOOPBACK_HOSTS.includes(host) || options.verify || options.allowUnsigned) return undefined;
 
   return new Error(
-    `A Fougere receiver on '${host}' is reachable from outside this machine and would believe whatever `
-    + 'state it is handed.\n'
+    `A receiver on '${host}' can be reached from other machines and would trust any caller.\n`
     + '  - `fougere keys` once, then inject FOUGERE_ROOT_KEY here (and `fougere grant <frond>` for each caller), or\n'
     + '  - keep it on loopback, or\n'
     + '  - pass `allowUnsigned: true` if a mesh or an ingress already authenticated the caller.',

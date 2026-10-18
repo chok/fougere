@@ -37,7 +37,7 @@ export default class DevtoolsCommand {
         // Said once per address, and only when it grows: a ring that dropped is not a
         // quiet period, and repeating it every half second would bury the calls.
         if (source.dropped > (told[source.url] ?? 0)) {
-          this.ui.warn(`${source.url} dropped ${source.dropped - (told[source.url] ?? 0)} call(s) — its ring is smaller than this traffic`);
+          this.ui.warn(`${source.url} missed ${source.dropped - (told[source.url] ?? 0)} call(s): its buffer is too small for this traffic`);
           told[source.url] = source.dropped;
         }
       }

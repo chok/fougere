@@ -134,7 +134,7 @@ describe('sender ↔ receiver over real HTTP', () => {
   });
 
   it('binds loopback when nobody says otherwise', async () => {
-    await expect(serve(runner, { host: '0.0.0.0' })).rejects.toThrow(/add it to `hosts`/);
+    await expect(serve(runner, { host: '0.0.0.0' })).rejects.toThrow(/is not in `hosts`/);
   });
 
   it('binds wider when `hosts` says so, and the message names what is allowed', async () => {
@@ -149,7 +149,7 @@ describe('sender ↔ receiver over real HTTP', () => {
     }
     // …and `host` still has to be one of them: a widened list is not a blank cheque.
     await expect(serve(runner, { hosts: ['0.0.0.0'], host: '10.0.0.1', allowUnsigned: true }))
-      .rejects.toThrow(/binds one of \[0\.0\.0\.0\], got '10\.0\.0\.1'/);
+      .rejects.toThrow(/cannot listen on '10\.0\.0\.1', which is not in `hosts` \(0\.0\.0\.0\)/);
     await expect(serve(runner, { hosts: [] })).rejects.toThrow(/`hosts` is empty/);
   });
 

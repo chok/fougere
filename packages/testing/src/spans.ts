@@ -59,8 +59,7 @@ async function observability(): Promise<typeof import('@fougere/observability')>
     return await import('@fougere/observability');
   } catch {
     throw new Error(
-      '[spansOf] reading what a call cost needs @fougere/observability — install it, '
-      + 'or there is no span to read.',
+      '[spansOf] needs @fougere/observability. Install it.',
     );
   }
 }

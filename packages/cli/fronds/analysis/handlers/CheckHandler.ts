@@ -71,9 +71,8 @@ export default class CheckHandler {
           severity: 'warning',
           code: 'frond-holds-several-domains',
           filePath: fronds[0].source.path,
-          message: `'${fronds[0].name}': ${clusters.length} entity groups with no relation between `
-            + `them (${clusters.map((c) => c.name).join(', ')}). Either a relation is missing, or `
-            + `they are separate fronds — see \`fougere graph\`.`,
+          message: `${fronds[0].name} has ${clusters.length} groups of entities with no relation between them `
+            + `(${clusters.map((c) => c.name).join(', ')}). A ref() is missing, or they are separate fronds — see \`fougere graph\`.`,
         });
       }
     }
@@ -98,9 +97,8 @@ export default class CheckHandler {
               code: 'unknown-adapter',
               filePath: entity.filePath,
               subject: entity.name,
-              message: `states \`adapters: { ${name} }\`, and this project depends on no adapter `
-                + `that answers to it. It depends on ${known.join(', ')}. Nothing reads the entry, `
-                + 'so it is inert — a typo, or a dependency that was never added.',
+              message: `has \`adapters: { ${name} }\`, but no installed adapter is named ${name} `
+                + `(installed: ${known.join(', ') || 'none'}). Check the spelling, or add the dependency.`,
             });
           }
         }
@@ -126,9 +124,8 @@ export default class CheckHandler {
               code: 'super-linear-pattern',
               filePath: entity.filePath,
               subject: `${entity.name}.${key}`,
-              message: `states \`pattern: ${JSON.stringify(pattern)}\`, whose nested repetition `
-                + 'backtracks super-linearly. A value a caller chooses can hold the event loop '
-                + 'for seconds — rewrite the repeated group, or bound the field with `max`.',
+              message: `has \`pattern: ${JSON.stringify(pattern)}\`, a nested repetition that can take seconds `
+                + 'to check on some inputs and block the server. Rewrite the repeated group, or limit the field with `max`.',
             });
           }
         }
@@ -210,8 +207,7 @@ async function statementFindings(root: string, fronds: readonly FrondDescriptor[
           code: 'handler-unstated',
           filePath: file,
           subject: handler.ctor.name,
-          message: `${handler.ctor.name} serves in ${frond.name}'s sources, and fronds.ts does not state it — `
-            + 'the app boots without it.',
+          message: `${handler.ctor.name} is in ${frond.name}'s code but not in fronds.ts, so the app starts without it.`,
         });
         continue;
       }
@@ -222,8 +218,8 @@ async function statementFindings(root: string, fronds: readonly FrondDescriptor[
           code: 'operation-unstated',
           filePath: file,
           subject: `${handler.ctor.name}.${op}`,
-          message: `${handler.ctor.name}.${op} is public, and fronds.ts does not list it — the app boots without it. `
-            + `State it: operations: { ${op}: { params: { … }, output: … } }, or make the method private.`,
+          message: `${handler.ctor.name}.${op} is public but not in fronds.ts, so the app starts without it. `
+            + `Add it: operations: { ${op}: { params: { … }, output: … } }, or make the method private.`,
         });
       }
     }
@@ -258,8 +254,7 @@ function facadeFindings(root: string, fronds: readonly { handlers: readonly { fi
     code: 'facade-stale',
     filePath: facade,
     subject: `${newer.length} handler${newer.length > 1 ? 's' : ''}`,
-    message: 'The facade module is older than the handlers it was read off, so a page checks its '
-      + 'calls against operations that may no longer exist. Run `fougere build`.',
+    message: '@fronds/facade is older than the handlers, so pages are checked against old operations. Run `fougere build`.',
   }];
 }
 
