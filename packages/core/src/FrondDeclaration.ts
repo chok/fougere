@@ -18,6 +18,8 @@ import type { Declared } from './Declared.js';
 import { opsOf } from './prefab/opsOf.js';
 import type { Ctor } from './Ctor.js';
 import type { FrondConfig } from './FrondConfig.js';
+import type { PresenterFieldMeta } from './descriptor/PresenterFieldMeta.js';
+import { FrondConfigReading } from './descriptor/FrondConfigReading.js';
 
 
 const ctorOf = (d: Declared): Ctor => (typeof d === 'function' ? d : d.ctor) as Ctor;
@@ -61,7 +63,8 @@ function statedOperations(h: Ctor | DeclaredHandler): Map<string, OperationContr
 export interface FrondDeclaration extends Pick<FrondConfig, 'pipes' | 'surfaces' | 'protocols'> {
   entities?: SchemaView[];
   handlers?: (Ctor | DeclaredHandler)[];
-  presenters?: (Ctor | DeclaredSubject)[];
+  /** A computed field IS a method; what TypeScript erases of it — its type, its parameters — is `fieldMeta`. */
+  presenters?: (Ctor | DeclaredSubject & { fieldMeta?: PresenterFieldMeta[] })[];
   collectors?: (Ctor | DeclaredSubject)[];
   providers?: Declared[];
   seeds?: { entityName: string; data: SeedEntry['data'] }[];
@@ -71,6 +74,8 @@ export interface FrondDeclaration extends Pick<FrondConfig, 'pipes' | 'surfaces'
   scope?: string;
   /** What `frond.config.ts` states — the third producer of an operation contract. */
   operationsOverrides?: FrondDescriptor['operationsOverrides'];
+  /** The frond's `frond.config.ts`, imported — read the way the scan reads the file. */
+  config?: FrondConfig;
   /** What rises with the process serving this frond — the same thing its `extensions/` states. */
   extensions?: (ExtensionEntry['extension'] & { name: string })[];
 }
@@ -113,12 +118,13 @@ export function frond(name: string, declared: FrondDeclaration = {}): FrondDescr
   const presenters: PresenterEntry[] = (declared.presenters ?? []).map((p) => {
     const ctor = ctorOf(p);
     const fields = getPresenterFields(ctor);
+    const written = typeof p === 'function' ? [] : p.fieldMeta ?? [];
 
     return {
       entityName: lowerFirst(subjectOf(ctor, 'presenter').name),
       ctor,
       fields,
-      fieldMeta: fields.map((field) => ({ name: field })),
+      fieldMeta: fields.map((field) => written.find((meta) => meta.name === field) ?? { name: field }),
       deps: depsOf(p),
       filePath: '',
     };
@@ -164,9 +170,13 @@ export function frond(name: string, declared: FrondDeclaration = {}): FrondDescr
     filePath: '',
   }));
 
+  const config = new FrondConfigReading(declared.config);
+  if (declared.config) config.markExposed(entities, handlers);
+
   return {
     name,
     source: { path: '', package: `${scope}/${name}` },
+    ...config.members(),
     ...(declared.operationsOverrides ? { operationsOverrides: declared.operationsOverrides } : {}),
     ...(declared.protocols ? { protocols: declared.protocols } : {}),
     providers,
@@ -175,7 +185,7 @@ export function frond(name: string, declared: FrondDeclaration = {}): FrondDescr
     presenters,
     collectors,
     seeds,
-    middlewares,
+    middlewares: config.inOrder(middlewares),
     ...(declared.pipes ? { pipes: declared.pipes } : {}),
     ...(declared.surfaces ? { surfaces: declared.surfaces } : {}),
     ...(declared.extensions

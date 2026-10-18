@@ -1,5 +1,5 @@
 import { DEFAULT_CONVENTIONS, Middleware, RouteAddress, frondDirsOf, frondPackage, providerDirsOf, resolveConventions, togetherKeyOf, type Conventions, type ConventionsInput, type Diagnostic, type ScanResult } from '@fougere/core';
-import { Fronds, addressOf, awaitKeyOf, cardinalityOf, computeBindingPlan, opsOf, emitKeyOf, getPresenterFields, outputOf, ownedBy, repositoryKeyOf, storageKeyOf, targetOf, type CollectorEntry, type EntityEntry, type FrondDescriptor, type HandlerEntry, type MiddlewareEntry, type OperationContract, type OperationsMap, type PresenterEntry, type ProviderEntry, type SeedEntry, type TypeRef, viewsOf, isExtension, type ExtensionEntry } from '@fougere/core/descriptor';
+import { Fronds, addressOf, awaitKeyOf, cardinalityOf, computeBindingPlan, opsOf, emitKeyOf, getPresenterFields, outputOf, ownedBy, repositoryKeyOf, storageKeyOf, targetOf, type CollectorEntry, type EntityEntry, type FrondDescriptor, type HandlerEntry, type MiddlewareEntry, type OperationContract, type OperationsMap, type PresenterEntry, type ProviderEntry, type SeedEntry, type TypeRef, viewsOf, isExtension, FrondConfigReading, type ExtensionEntry } from '@fougere/core/descriptor';
 import { getModuleLoader, loadFrondConfig } from '@fougere/core/node';
 import type { FrondConfig, ErrorCode } from '@fougere/core';
 import type { Param, Signature } from '@fougere/core/descriptor';
@@ -629,6 +629,7 @@ async function toCollectorEntry(filePath: string): Promise<CollectorEntry | null
  * no order — the same reason a port refuses two realizations: whichever won would depend on the
  * order files were listed. `middlewares:` in `frond.config.ts` states it, outside in.
  */
+/** Says what the order leaves unsaid; the order itself is `FrondConfigReading.inOrder`'s. */
 function inStatedOrder(middlewares: MiddlewareEntry[], stated: readonly string[] | undefined): MiddlewareEntry[] {
   const named = middlewares.map((one) => one.name);
   if (!stated) {
@@ -658,7 +659,7 @@ function inStatedOrder(middlewares: MiddlewareEntry[], stated: readonly string[]
     });
   }
 
-  return [...middlewares].sort((one, other) => stated.indexOf(one.name) - stated.indexOf(other.name));
+  return middlewares;
 }
 
 /**
@@ -703,42 +704,7 @@ async function toMiddlewareEntry(filePath: string): Promise<MiddlewareEntry | nu
   };
 }
 
-/** `frond.config.ts` takes precedence; failing that, `@expose`, which defaults to exposed. */
-function markExposed(
-  entities: EntityEntry[],
-  handlers: HandlerEntry[],
-  exposed: readonly string[] | undefined,
-): void {
-  if (exposed) {
-    const stated = new Set(exposed);
-    for (const entity of entities) entity.exposed = stated.has((entity.entityClass as { name: string }).name);
-    for (const handler of handlers) handler.exposed = stated.has(handler.ctor.name);
 
-    return;
-  }
-
-  for (const entity of entities) entity.exposed = (entity.entityClass as { __exposed?: boolean }).__exposed !== false;
-  for (const handler of handlers) handler.exposed = (handler.ctor as { __exposed?: boolean }).__exposed !== false;
-}
-
-/**
- * The only thing that needs flattening is the handler CLASS, which becomes its name — that is the
- * DI key. Everything else travels verbatim, so a slot added to `OperationOverride` reaches its
- * reader without a stop here; enumerating keys by hand is what used to drop whatever was added
- * last, the same invariant `cloneField` holds one layer down.
- */
-function overridesOf(
-  operations: FrondConfig['operations'],
-): FrondDescriptor['operationsOverrides'] {
-  if (!operations) return undefined;
-
-  return Object.fromEntries(
-    Object.entries(operations).map(([key, { handler, ...rest }]) => [
-      key,
-      { ...rest, handlerName: handler?.name },
-    ]),
-  );
-}
 
 async function scanFrond(frondPath: string, name: string, source: FrondDescriptor['source'], conventions: Conventions, projectRoot?: string): Promise<FrondDescriptor> {
   const {
@@ -759,7 +725,8 @@ async function scanFrond(frondPath: string, name: string, source: FrondDescripto
   // vocabulary/ FIRST, and for its effect: a file here calls `Generators.register` or its
   // neighbours at module level, and an entity below may write the name it just added. Nothing
   // is kept — the registry holds what the module put in it.
-  for (const filePath of await files(join(frondPath, conventions.dirs.vocabulary))) await loadModule(filePath);
+  const vocabulary = await files(join(frondPath, conventions.dirs.vocabulary));
+  for (const filePath of vocabulary) await loadModule(filePath);
 
   // services/ and repositories/ — two spellings, one provider list.
   const providers = (await Promise.all(providerDirsOf(conventions).map((dir) => collect(dir, toProvider)))).flat();
@@ -790,10 +757,9 @@ async function scanFrond(frondPath: string, name: string, source: FrondDescripto
 
   const presenters = await collect(presentersDir, toPresenterEntry);
   const seeds = await collect(seedsDir, toSeedEntry);
-  const middlewares = inStatedOrder(await collect(middlewaresDir, (f) => toMiddlewareEntry(f)), frondConfig?.middlewares);
-
-  markExposed(entities, handlers, frondConfig?.expose);
-  const operationsOverrides = overridesOf(frondConfig?.operations);
+  const reading = new FrondConfigReading(frondConfig);
+  const middlewares = reading.inOrder(inStatedOrder(await collect(middlewaresDir, (f) => toMiddlewareEntry(f)), frondConfig?.middlewares));
+  reading.markExposed(entities, handlers);
 
   return {
     name,
@@ -806,11 +772,8 @@ async function scanFrond(frondPath: string, name: string, source: FrondDescripto
     seeds,
     middlewares,
     ...(extensions.length > 0 ? { extensions } : {}),
-    ...(frondConfig?.pipes ? { pipes: frondConfig.pipes } : {}),
-    surfaces: frondConfig?.surfaces,
-    reads: frondConfig?.reads,
-    ...(frondConfig?.protocols ? { protocols: frondConfig.protocols } : {}),
-    operationsOverrides,
+    ...(vocabulary.length > 0 ? { vocabulary } : {}),
+    ...reading.members(),
   };
 }
 

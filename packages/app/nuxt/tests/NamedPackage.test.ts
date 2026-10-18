@@ -3,7 +3,7 @@ import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { packagesImportedBy } from '@fougere/compiler';
-import { inPackages } from '../src/NamedPackage.js';
+import { inDirectories, inPackages } from '../src/NamedPackage.js';
 
 const tree = mkdtempSync(join(tmpdir(), 'named-package-'));
 const packageAt = (path: string, manifest: object): string => {
@@ -65,5 +65,15 @@ describe('the packages a config names by import', () => {
     expect((await packagesImportedBy(config)).sort()).toEqual(
       ['@fougere/adapter-sql', '@fougere/auth-better', '@fougere/core', 'acme-fougere-redis'],
     );
+  });
+});
+
+describe('the files of a frond', () => {
+  it('keeps every module under a frond directory, and none beside it', () => {
+    const kept = inDirectories([join(tree, 'fronds/blog')]);
+
+    expect(kept(join(tree, 'fronds/blog/vocabulary/slug.ts'))).toBe(true);
+    expect(kept(join(tree, 'fronds/blogroll/entities/Link.ts'))).toBe(false);
+    expect(kept(join(tree, 'server/api/hello.ts'))).toBe(false);
   });
 });

@@ -43,14 +43,14 @@ const FROND_CONFIG_FILES = ['frond.config.ts', 'frond.config.js', 'frond.config.
  * Returns `undefined` if no config file is found.
  */
 export async function loadFrondConfig(frondPath: string): Promise<FrondConfig | undefined> {
-  for (const file of FROND_CONFIG_FILES) {
-    const path = resolve(frondPath, file);
-    if (existsSync(path)) {
-      const mod = await import(path);
+  const path = frondConfigFileIn(frondPath);
+  if (!path) return undefined;
+  const mod = await import(path);
 
-      return mod.default ?? mod;
-    }
-  }
+  return mod.default ?? mod;
+}
 
-  return undefined;
+/** The `frond.config.ts` a frond directory holds, if it holds one. */
+export function frondConfigFileIn(frondPath: string): string | undefined {
+  return FROND_CONFIG_FILES.map((file) => resolve(frondPath, file)).find((path) => existsSync(path));
 }

@@ -8,7 +8,7 @@ import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { pathToFileURL } from 'node:url';
 import { resolveEffectiveOperations, type ScanResult } from '@fougere/core';
-import { scanProject, emitScan, emitStatement } from '../src/index.js';
+import { scanProject, emitScan } from '../src/index.js';
 
 async function roundTrip(fixture: string): Promise<{ live: ScanResult; written: ScanResult }> {
   const live = await scanProject(join(import.meta.dirname, fixture));
@@ -31,12 +31,5 @@ describe('a scan written down, with its frond.config.ts', () => {
 
     expect(Object.keys(opsOf(written).get('retitle')!.input!.getFields())).toEqual(Object.keys(opsOf(live).get('retitle')!.input!.getFields()));
     expect(opsOf(written).get('archive')?.kind).toBe('command');
-  }, 30_000);
-
-  it('writes the same view in the statement a Nuxt build reads, never as JSON', async () => {
-    const statement = emitStatement(await scanProject(join(import.meta.dirname, 'fixtures-config-contract')));
-
-    expect(statement).toMatch(/"note\.retitle": \{ input: \w+\.pick\("title"\)/);
-    expect(statement).toContain('"note.archive": { ...{"kind":"command"');
   }, 30_000);
 });

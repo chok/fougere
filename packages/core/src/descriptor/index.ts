@@ -15,6 +15,7 @@ export * from './FrondSource.js';
 export * from './ExtensionEntry.js';
 export * from './FrondDescriptor.js';
 export { Fronds } from './Fronds.js';
+export { FrondConfigReading } from './FrondConfigReading.js';
 
 export { cardinalityOf, type OperationContract } from '../wire/OperationContract.js';
 export { type OperationsMap } from '../wire/OperationsMap.js';

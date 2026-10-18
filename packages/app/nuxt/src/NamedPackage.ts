@@ -1,4 +1,4 @@
-import { dirname, isAbsolute, join } from 'node:path';
+import { dirname, isAbsolute, join, sep } from 'node:path';
 import { existsSync, readFileSync } from 'node:fs';
 
 const packageNames = new Map<string, string | undefined>();
@@ -29,3 +29,7 @@ export const inPackages = (named: ReadonlySet<string>) => (id: string): boolean 
 
   return [...named].some((name) => id === name || id.startsWith(`${name}/`));
 };
+
+/** A module under one of these directories — a frond's own files, `vocabulary/` imported for what it registers. */
+export const inDirectories = (directories: readonly string[]) => (id: string): boolean =>
+  directories.some((directory) => id.startsWith(directory + sep));

@@ -30,6 +30,8 @@ export interface FrondDescriptor extends Pick<FrondConfig, 'pipes' | 'surfaces' 
   middlewares: MiddlewareEntry[];
   /** What this frond mounts on the process that serves it. Absent when it declares none. */
   extensions?: ExtensionEntry[];
+  /** The files read for their effect before the entities — a scanned frond's `vocabulary/`. */
+  vocabulary?: string[];
   /**
    * Brought by an EXTENSION rather than by the app — `@fougere/calls` keeping its lines,
    * `@fougere/observability` sending them on. It is installed like any other, and it is not

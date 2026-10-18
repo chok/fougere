@@ -20,7 +20,7 @@ import { declaresStorage } from '@fougere/defaults';
 import type { SeedEntry, FougereConfig } from '@fougere/core';
 import { createJiti } from 'jiti';
 import { resolve, relative, join } from 'node:path';
-import { inPackages } from './NamedPackage.js';
+import { inDirectories, inPackages } from './NamedPackage.js';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 
 export interface FougereModuleOptions {
@@ -130,7 +130,11 @@ const module = defineNuxtModule<FougereModuleOptions>({
     const moduleKeys = statedFronds(config.fronds)
       .map((entry) => entry.key)
       .filter((key) => statesModule(key) && !key.startsWith('.'));
-    const kept = inPackages(new Set([...imported, ...moduleKeys]));
+    const named = inPackages(new Set([...imported, ...moduleKeys]));
+    // A frond's own files too: `vocabulary/` is imported for what it registers, and the scan
+    // below says where the fronds sit.
+    const frondPaths: string[] = [];
+    const kept = (id: string) => named(id) || inDirectories(frondPaths)(id);
     (nuxt as any).hook('nitro:init', (nitro: any) => {
       nitro.hooks.hook('rollup:before', (_nitro: unknown, rollupConfig: any) => {
         const nitroSideEffects = rollupConfig.treeshake?.moduleSideEffects;
@@ -158,6 +162,7 @@ const module = defineNuxtModule<FougereModuleOptions>({
     const frondsFilter = process.env.FOUGERE_FRONDS?.split(',').map((s) => s.trim()).filter(Boolean);
     const scan = await scanProject(scanRoot, frondsFilter, conventions);
     const { fronds } = scan;
+    frondPaths.push(...fronds.map((frond) => frond.source.path));
 
     // ── 1b. Register @fronds/* aliases for all fronds, and watch them ──
     // The scanned fronds ARE the watch list — nothing to declare. Without this, a

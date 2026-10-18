@@ -1,10 +1,11 @@
 /** The scan, written as the STATEMENT an author would have written. */
 import { type ScanResult } from '@fougere/core';
-import { nameOf, type FrondDescriptor } from '@fougere/core/descriptor';
+import { nameOf, type FrondDescriptor, type PresenterEntry } from '@fougere/core/descriptor';
+import { frondConfigFileIn } from '@fougere/core/node';
 import { relative } from 'node:path';
 
 import { type Aliases } from './Aliases.js';
-import { operationsOf, overridesOf, type Live } from './Live.js';
+import { operationsOf, type Live } from './Live.js';
 
 /**
  * A file becomes the specifier the PROJECT already uses for it: `@fronds/blog/…`, the import scope
@@ -40,6 +41,11 @@ class Imports implements Aliases {
     if (value) this.remember(value, alias);
 
     return alias;
+  }
+
+  /** A file read for what it does when it loads — a `vocabulary/` word registers itself. */
+  effect(filePath: string, frond: FrondDescriptor): void {
+    this.lines.push(`import '${specifierOf(filePath, frond)}';`);
   }
 
   /** A view a handler declares beside itself — `PostPublic` is exported by name. */
@@ -83,6 +89,13 @@ function subject(alias: string, deps: string[], ...extra: string[]): string {
   return parts.length ? `{ ctor: ${alias}, ${parts.join(', ')} }` : alias;
 }
 
+/** What TypeScript erases of a computed field — its type and parameters — and only where it said any. */
+function fieldMetaOf(presenter: PresenterEntry): string {
+  const typed = presenter.fieldMeta.filter((meta) => Object.keys(meta).length > 1);
+
+  return typed.length ? `fieldMeta: ${JSON.stringify(typed)}` : '';
+}
+
 function frondOf(frond: FrondDescriptor, imports: Imports): string {
   const list = (items: string[]): string => `[${items.join(', ')}]`;
   const members: string[] = [];
@@ -104,7 +117,7 @@ function frondOf(frond: FrondDescriptor, imports: Imports): string {
     )))}`);
   }
   if (frond.presenters.length) {
-    members.push(`presenters: ${list(frond.presenters.map((p) => subject(imports.default(p.filePath, frond), p.deps)))}`);
+    members.push(`presenters: ${list(frond.presenters.map((p) => subject(imports.default(p.filePath, frond), p.deps, fieldMetaOf(p))))}`);
   }
   if (frond.collectors.length) {
     members.push(`collectors: ${list(frond.collectors.map((c) => subject(imports.default(c.filePath, frond), c.deps)))}`);
@@ -119,20 +132,24 @@ function frondOf(frond: FrondDescriptor, imports: Imports): string {
       p.abstract ? 'abstract: true' : '',
     )))}`);
   }
-  // A seed is DATA, not a class — the one member a statement cannot derive from an import.
+  if (frond.middlewares.length) {
+    members.push(`middlewares: ${list(frond.middlewares.map((m) => subject(imports.default(m.filePath, frond), m.deps)))}`);
+  }
+  if (frond.extensions?.length) {
+    members.push(`extensions: ${list(frond.extensions.map((e) => {
+      const alias = imports.default(e.filePath, frond);
+
+      return typeof e.extension.name === 'string' ? alias : `{ ...${alias}, name: ${JSON.stringify(e.name)} }`;
+    }))}`);
+  }
   if (frond.seeds.length) {
-    members.push(`seeds: ${JSON.stringify(frond.seeds.map((s) => ({ entityName: s.entityName, data: s.data })))}`);
+    members.push(`seeds: ${list(frond.seeds.map((s) =>
+      `{ entityName: ${JSON.stringify(s.entityName)}, data: ${imports.default(s.filePath, frond)} }`))}`);
   }
-  if (frond.surfaces) members.push(`surfaces: ${JSON.stringify(frond.surfaces)}`);
-  if (frond.protocols) members.push(`protocols: ${JSON.stringify(frond.protocols)}`);
-  if (frond.pipes) members.push(`pipes: ${JSON.stringify(frond.pipes)}`);
-  // What `frond.config.ts` states — read BY the scan, so a host that boots from a written
-  // statement never sees the file. It is the only answer for the kind of an op whose name
-  // leads with no known verb, and the only one for a method inherited from a base class
-  // the workspace scan cannot see.
-  if (frond.operationsOverrides && Object.keys(frond.operationsOverrides).length) {
-    members.push(`operationsOverrides: ${overridesOf(frond, imports)}`);
-  }
+  // The file itself, which `frond()` reads the way the scan does: the order of the middlewares,
+  // what is exposed, the overrides of an op.
+  const config = frondConfigFileIn(frond.source.path);
+  if (config) members.push(`config: ${imports.default(config, frond)}`);
 
   const scope = (frond.source.package as string | undefined)?.split('/')[0];
   if (scope) members.push(`scope: ${JSON.stringify(scope)}`);
@@ -145,6 +162,8 @@ function frondOf(frond: FrondDescriptor, imports: Imports): string {
 // parameter — the alias resolves the same from anywhere.
 export function emitStatement(scan: ScanResult): string {
   const imports = new Imports();
+  // First, since an entity may write a word one of them registers.
+  for (const frond of scan.fronds) for (const file of frond.vocabulary ?? []) imports.effect(file, frond);
   const fronds = scan.fronds.map((f) => frondOf(f as FrondDescriptor & { source: Live }, imports));
 
   return [
