@@ -19,7 +19,7 @@ describe('no source declared', () => {
     const created = await notes.create({ title: 'kept' });
 
     expect(await notes.findById(created.id)).toMatchObject({ title: 'kept' });
-    expect(said.join('\n')).toContain('no `sources:` declared — rows live in memory');
+    expect(said.join('\n')).toContain('No sources: rows are kept in memory and lost on exit.');
   });
 });
 

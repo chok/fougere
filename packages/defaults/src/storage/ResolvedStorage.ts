@@ -101,8 +101,8 @@ function defaultOf(sources: Record<string, SourceEntities>): [string, Source] {
 
   new Logger('storage').warn(
     Object.keys(sources).length === 0
-      ? 'no `sources:` declared — rows live in memory and are gone when the process exits'
-      : 'no source lists no entities — the rows of every entity no source names live in memory and are gone when the process exits',
+      ? 'No sources: rows are kept in memory and lost on exit.'
+      : 'Some entities have no source: their rows are kept in memory and lost on exit.',
   );
 
   return ['memory', createMemorySource()];
