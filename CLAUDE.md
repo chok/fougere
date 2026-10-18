@@ -348,8 +348,8 @@ crossed as raw JSON, so `state.user.since` was a `Date` in process and a string 
 by the site-only audit, 2026-09-23. Core holds no user: `betterAuth()` declares `user` and
 `session`, the session without its `token`, since a process trusts the one that called it
 (`CallIdentity`) and never the cookie behind it. What made it possible is `Boundary.forShape`
-reading a date INSIDE `json(Entity)` and `list()`. An extension is recognized by `up`, `down` or
-`state` (`isExtension`, `descriptor/ExtensionEntry.ts`), the one predicate the scan and the module
+reading a date INSIDE `json(Entity)` and `list()`. An extension is recognized by `up`, `down`,
+`install`, `steps` or `state` (`isExtension`, `descriptor/ExtensionEntry.ts`), the one predicate the scan and the module
 keys share. Pinned by `core/tests/state.test.ts` and `defaults/tests/gradient.test.ts`.
 
 **The auth is a frond, written in place** — `fronds: { auth: betterAuth({ … }) }`. The config
@@ -373,8 +373,20 @@ Measured four ways on 2026-09-10 — the process hung, the call ring filled with
 writes, `activeCalls()` counted log deliveries, and a hard-coded list missed a third
 party's destination. A reentrancy flag cannot see it: the carry is asynchronous.
 
+**An extension has two doors into a frond, beside `up` and `down`** — `install(frond, { scope,
+container, ownLogger, log })`, called as each frond is installed and before any facade is built, and
+`steps(handler, frond, scope)`, the answer steps it runs over that handler's answers before the view
+projects them (`boot/Extension.ts`, read in `boot/install.ts`). They are what a module needs to live
+outside core: `presenters()` (`module/presenter/presenters.ts`) is itself an extension through them,
+which is why `install.ts` names no presenter — measured 2026-10-18 by moving it into a package of its
+own in a throwaway worktree, where the same app answered with and without it. `app.extensionPoints()`
+reads what answers each point — every `Registry` by name, then per frond the chain of each port and
+seam, the middlewares in order, the extensions stepping over each address — and `fougere points`
+prints it, booting the app with the schema check and the seeds left out. Pinned by
+`core/tests/extension-doors.test.ts`, `core/tests/extension-points.test.ts`, `cli/tests/points.test.ts`.
+
 **The ascent is ORDERED BY CORE, and a host hands over a gesture** — `createApp` puts
-`checking(options.pending)` and `seeding()` before whatever `extensions:` carries. Four
+`checking(options.pending)`, `seeding()` and `presenters()` before whatever `extensions:` carries. Four
 hosts assembled those two members themselves (`compiler/src/boot.ts`,
 `app/shared/src/boot.ts`, the Nuxt codegen as a STRING, and a demo), and eight demos wrote
 nothing. Rows before a checked schema is not a host's preference to hold. `Source.pending` is

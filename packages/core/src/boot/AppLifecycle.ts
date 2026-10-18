@@ -22,6 +22,11 @@ export class AppLifecycle {
     return this.members.map((extension) => extension.name);
   }
 
+  /** Every member, in the order they rise — what installs into a frond and steps over an answer. */
+  all(): readonly Extension[] {
+    return [...this.members];
+  }
+
   /** Read off the members that stay, so an extension replaced by name declares nothing. */
   state(): StateShape {
     return StateShape.of(this.members);

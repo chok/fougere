@@ -45,6 +45,9 @@ import { addressOf, facadeKeyOf, isFacadeKey } from '../wire/Facade.js';
 import { identityCardOf } from './card.js';
 import { AppLifecycle, checking, closeAll } from './AppLifecycle.js';
 import { seeding } from './seed.js';
+import { presenters } from '../module/presenter/presenters.js';
+import { Registry } from '@fougere/registry';
+import type { Plugged } from '../wire/Plugged.js';
 
 import { storageKeyOf, type Storage } from '../storage/Storage.js';
 
@@ -558,7 +561,7 @@ function announceLines(emissions: Emissions, container: Container, carry: Carry)
 export async function createApp(options: CreateAppOptions): Promise<App> {
   const container = (options.createContainer ?? createContainer)();
   // The schema checked, then rows, then whatever the host took on — the order is not a host's to choose.
-  const appLifecycle = new AppLifecycle().add(checking(options.pending), seeding(), ...(options.extensions ?? []));
+  const appLifecycle = new AppLifecycle().add(checking(options.pending), seeding(), presenters(), ...(options.extensions ?? []));
   const carry = new Carry();
   let built: App | undefined;
   let stopAnnouncing: (() => void) | undefined;
@@ -599,12 +602,15 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     });
 
     const relations: RelationCheck[] = [];
+    const plugged: Plugged[] = [];
     const boundPorts = new Set<string>();
     const assembly: Assembly = {
       container, routeRegistry, emissions, dispatcher, localDispatcher, effectiveByKey,
       boundPorts, refused, relations, hosting, operationModel, entityByName, frondOf, contractsOf,
       getMiddlewares, use, middlewaresOf: new Map(), seamsOf: new Map(), log, options,
       state: appLifecycle.state(),
+      extensions: appLifecycle.all(),
+      plugged,
     };
     for (const frond of fronds) await installing(frond, assembly);
 
@@ -640,6 +646,11 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
       deliver: (fact, payload) => emissions.deliver(fact, payload),
       storageFor,
       presenterFor,
+      extensionPoints: () => [
+        ...Registry.every().map(({ label, names }): Plugged => ({ point: label, by: 'name', answers: names })),
+        ...plugged,
+        { point: 'extension', by: 'name', answers: appLifecycle.names() },
+      ],
       dispose: release,
       drain: (timeoutMs?: number) => inflight.drain(timeoutMs),
       inFlight: () => inflight.count,

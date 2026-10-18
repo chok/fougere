@@ -1,3 +1,4 @@
+import type { Plugged } from '../wire/Plugged.js';
 import type { Container } from '@fougere/container';
 import type { Fronds } from '../descriptor/Fronds.js';
 import type { SchemaView } from '@fougere/schema';
@@ -46,6 +47,8 @@ export interface App extends DispatchPort {
   storageFor<T = Record<string, unknown>>(entity: string): Storage<T> | undefined;
   /** The presenter of an entity, resolved through its owning frond's scope. */
   presenterFor(entity: string): unknown | undefined;
+  /** What answers each extension point in this app — registries by name, ports, seams, middlewares and steps by type. */
+  extensionPoints(): readonly Plugged[];
   /** Dispose the root container. */
   dispose(): Promise<void>;
   /** Stop taking calls, and resolve once the running ones are done. */

@@ -63,3 +63,11 @@ describe('Registry', () => {
       .toThrow("sources.cache.type: Unknown source type 'redis' — import the adapter that answers it. This process answers sqlite.");
   });
 });
+
+describe('Registry.every', () => {
+  it('lists every registry the process made, by its label and the names it answers', () => {
+    new Registry<number>('probe kind', undefined, [['first', 1]]);
+
+    expect(Registry.every()).toContainEqual({ label: 'probe kind', names: ['first'] });
+  });
+});

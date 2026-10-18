@@ -15,14 +15,23 @@ export type Replaced = (registry: string, name: string) => void;
 export class Registry<T> {
   private static replaced: Replaced | undefined;
 
+  /** Every registry this process made — what a report of the extension points reads. */
+  private static readonly made = new Set<Registry<unknown>>();
+
   private readonly held: Map<string, T>;
 
   constructor(
-    private readonly label: string,
+    readonly label: string,
     private readonly hint?: string,
     entries?: Iterable<readonly [string, T]>,
   ) {
     this.held = new Map(entries);
+    Registry.made.add(this as Registry<unknown>);
+  }
+
+  /** Every registry this process made, each by its label and the names it answers. */
+  static every(): { label: string; names: string[] }[] {
+    return [...Registry.made].map((one) => ({ label: one.label, names: one.names }));
   }
 
   /** Runs `reload`, during which a second answer under a name replaces the first. */

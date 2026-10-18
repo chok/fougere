@@ -168,3 +168,4 @@ export { verify, type Misplaced } from './verify.js';
 export { signEnvelope, verifyEnvelope, identityFromEnv } from './CallIdentity.js';
 export type { FrondIdentity } from './FrondIdentity.js';
 export type { SignedCall } from './wire/SignedCall.js';
+export type { Plugged } from './wire/Plugged.js';

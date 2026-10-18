@@ -1,8 +1,10 @@
 /** Putting one frond into the app being built: its scope, what it serves, what it takes. */
 import type { Container } from '@fougere/container';
+import type { Extension } from './Extension.js';
+import type { Plugged } from '../wire/Plugged.js';
+import type { AnswerStep } from '../dispatch/AnswerStep.js';
 import type { StateShape } from '../wire/StateShape.js';
 import type { ProviderEntry } from '../descriptor/ProviderEntry.js';
-import type { PresenterEntry } from '../descriptor/PresenterEntry.js';
 import { lowerFirst, type Fields, type SchemaView } from '@fougere/schema';
 import type { Logger } from '../builtin/Logger.js';
 import { ownLoggers, type OwnLogger } from '../builtin/OwnLoggers.js';
@@ -38,8 +40,6 @@ import { heldBy, refuseUnwritableNull, releasing } from '../module/relation/rela
 import type { Hosting } from '../module/relation/Hosting.js';
 import type { RelationCheck } from '../module/relation/RelationCheck.js';
 import { RelationGuard } from '../module/relation/RelationGuard.js';
-import { exposePresenters, registerPresenters } from '../module/presenter/install.js';
-import { presented } from '../module/presenter/presented.js';
 import { registerCollectors } from '../module/collector/install.js';
 import { RouteAddress } from '../wire/RouteAddress.js';
 import { servedSurfaces } from '../descriptor/surface.js';
@@ -54,6 +54,10 @@ import { decoded } from '../dispatch/decoded.js';
  */
 export interface Assembly {
   container: Container;
+  /** Every extension of the app, in the order they rise — what installs into a frond and steps over an answer. */
+  extensions: readonly Extension[];
+  /** What answers each extension point here, written as it is installed — read by `app.extensionPoints()`. */
+  plugged: Plugged[];
   routeRegistry: RouteRegistry;
   emissions: Emissions;
   dispatcher: Dispatcher;
@@ -172,6 +176,9 @@ function registerMiddlewares(
     for (const address of addresses) use(around, address);
   }
   middlewaresOf.set(frond.name, [...inherited, ...mine]);
+  if (frond.middlewares.length > 0) {
+    assembly.plugged.push({ point: 'middleware', by: 'type', frond: frond.name, answers: frond.middlewares.map((one) => one.name) });
+  }
 
   if (frond.middlewares.length > 0) {
     frondLog.debug(`${frond.middlewares.length} middleware(s): ${frond.middlewares.map((m) => m.name).join(', ')}`);
@@ -285,6 +292,7 @@ function registerProviders(
   refused: Diagnostic[],
   ownLogger: OwnLogger,
   frondLog: Logger,
+  plugged: Plugged[],
 ): Map<string, ProviderEntry[]> {
   // What this frond puts in front of one of the framework's own ports. Its own, like every
   // provider — a link goes where its frond goes, which is what a frond behind `remotes:`
@@ -299,6 +307,7 @@ function registerProviders(
   for (const [seam, links] of seams) {
     boundPorts.add(seam);
     frondLog.debug(`seam ${seam} → ${links.map((one) => one.ctor.name).join(' → ')} → the realization`);
+    plugged.push({ point: seam, by: 'type', frond: frond.name, answers: [...links.map(nameOf), 'the realization'] });
   }
   // …and again under the port each one extends, so `private payment: Payment`
   // reaches the realization instead of the base class it is declared against.
@@ -334,6 +343,7 @@ function registerProviders(
     else scope.register(port, outermost.ctor, outermostOptions);
     boundPorts.add(port);
     frondLog.debug(`port ${port} → ${chain.map((one) => one.ctor.name).join(' → ')}`);
+    plugged.push({ point: port, by: 'type', frond: frond.name, answers: chain.map(nameOf) });
   }
   if (frond.providers.length > 0) {
     frondLog.debug(`${frond.providers.length} provider(s): ${frond.providers.map(nameOf).join(', ')}`);
@@ -380,15 +390,28 @@ interface Building {
   assembly: Assembly;
   /** The frond's own, which a presenter is resolved through whatever audience the facade serves. */
   scope: Container;
-  collectorTypeNames: Set<string>;
-  presenterMap: Map<string, PresenterEntry>;
   ownLogger: OwnLogger;
   frondLog: Logger;
 }
 
+/** The extensions that step over this facade's answers, in the order they rise — and who they are, said. */
+function stepsOver(assembly: Assembly, handler: HandlerEntry, frond: FrondDescriptor, scope: Container): AnswerStep[] {
+  const answering = assembly.extensions.flatMap((extension) => {
+    const steps = extension.steps?.(handler, frond, scope) ?? [];
+
+    return steps.length > 0 ? [{ name: extension.name, steps }] : [];
+  });
+  if (answering.length > 0) {
+    const subject = handler.surface ? `${handler.address}/${handler.surface}` : handler.address;
+    assembly.plugged.push({ point: 'answer step', by: 'name', frond: frond.name, subject, answers: answering.map((one) => one.name) });
+  }
+
+  return answering.flatMap((one) => one.steps);
+}
+
 /** Build the facade of a handler, and register it under the audience it serves. */
 function buildFacadeInto(
-  { frond, assembly, scope, collectorTypeNames, presenterMap, ownLogger, frondLog }: Building,
+  { frond, assembly, scope, ownLogger, frondLog }: Building,
   entity: EntityEntry | undefined,
   handler: HandlerEntry,
   targetScope: Container,
@@ -412,7 +435,7 @@ function buildFacadeInto(
     handlers: frond.handlers,
     operations: operationModel.forHandler(handler),
     entities: (name) => assembly.entityByName.get(lowerFirst(name)),
-    steps: presented(presenterMap.get(handler.address), scope, collectorTypeNames, handler.address),
+    steps: stepsOver(assembly, handler, frond, scope),
     middlewares: () => getMiddlewares(handler.address),
     state: assembly.state,
     enterOperation: ambient.enterOperation,
@@ -573,19 +596,18 @@ export async function installFrond(frond: FrondDescriptor, assembly: Assembly): 
   const owners = ownershipOf(frond, assembly);
 
   const ownLogger = ownLoggers(scope, basesOf(frond.providers, (base) => base === 'Logger').has('Logger'));
-  const declared = registerProviders(frond, scope, options.ports, assembly.boundPorts, assembly.refused, ownLogger, frondLog);
+  const declared = registerProviders(frond, scope, options.ports, assembly.boundPorts, assembly.refused, ownLogger, frondLog, assembly.plugged);
   // An ancestor's links stand OUTSIDE this frond's own; a seam has no container key to inherit through.
   const seams = inheritedSeams(frond, assembly.seamsOf, declared);
   assembly.seamsOf.set(frond.name, seams);
   registerStorages(frond, assembly, scope, seams, owners, frondLog);
   registerFramesOf(frond, assembly, scope, frondLog);
 
-  const presenterMap = registerPresenters(frond, scope, ownLogger, frondLog);
-  const collectorTypeNames = registerCollectors(frond, scope, ownLogger, frondLog);
+  for (const extension of assembly.extensions) extension.install?.(frond, { scope, container, ownLogger, log: frondLog });
+  registerCollectors(frond, scope, ownLogger, frondLog);
   registerMiddlewares(frond, scope, assembly, ownLogger, frondLog);
-  exposePresenters(frond, presenterMap, container, scope);
 
-  const building: Building = { frond, assembly, scope, collectorTypeNames, presenterMap, ownLogger, frondLog };
+  const building: Building = { frond, assembly, scope, ownLogger, frondLog };
   const defaultHandlers = frond.handlers.filter((h) => !h.surface);
   const surfaceHandlers = frond.handlers.filter((h) => h.surface);
   buildDefaultFacades(building, defaultHandlers);
