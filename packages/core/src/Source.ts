@@ -64,9 +64,9 @@ class SourceRegistry extends Registry<SourceType> {
     const name = entry.type ?? this.conventional;
     if (name === undefined) {
       throw new SchemaError(
-        `${path} names no \`type\`, and no adapter loaded in this process says what that means. `
-        + `Import one in fougere.config.ts — \`import '@fougere/adapter-sql'\` makes it a SQLite file. `
-        + `If the import is there, the bundler dropped it. This process answers ${this.names.join(', ') || 'no source type'}.`,
+        `Cannot open ${path}: it has no \`type\`, so it is a SQLite file, and @fougere/adapter-sql is not loaded. `
+        + `Add \`import '@fougere/adapter-sql'\` to fougere.config.ts, or give ${path} a \`type\`. `
+        + `Loaded types: ${this.names.join(', ') || 'none'}.`,
       );
     }
     const type = this.resolve(name, `${path}.type`);
