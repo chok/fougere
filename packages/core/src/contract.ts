@@ -86,3 +86,4 @@ export function callValueOf(
 
   return { call, invocation: Invocation.from(given) };
 }
+export { answerAt, type Door, type DoorCycle, type DoorOutcome } from './entry/door.js';

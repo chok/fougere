@@ -10,6 +10,7 @@
 import '@fougere/adapter-graphql';
 import { describe, it, expect } from 'vitest';
 import { entity, primary, text } from '@fougere/schema';
+import { answerAt } from '@fougere/core';
 import { serveRest, serveRpc, surfaceOf } from '../src/Outcome.js';
 
 class Post extends entity({ id: primary(), title: text() }) {}
@@ -36,6 +37,7 @@ function appOf(protocols: Record<string, object> = { rest: {} }) {
       presenters: [],
     }],
     resolve: () => undefined as never,
+    answer: answerAt,
     facadeFor: (name: string) => (name === 'post' ? facade : undefined),
     operationsFor: (name: string) => (name === 'post'
       ? new Map(Object.keys(facade).map((op) => [

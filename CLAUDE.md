@@ -1000,7 +1000,13 @@ the request makes carries it on its `DispatchEvent` — a request is not a call,
 document makes several. It announces `DoorEvent`s (`received`, `decoded`, `encoded`, `failed`) to
 the same observer as the calls, and makes a refusal public by `toPublicError` before the door says
 it. The door's `name` is the package's word and core never switches on it, the way `Protocols`
-knows no protocol. Pinned by `core/tests/door.test.ts`, with a door of no real kind.
+knows no protocol. Pinned by `core/tests/door.test.ts`, with a door of no real kind. The call
+envelope is two doors over one wire (`transport/http/src/server.ts`): `peerDoor` marks a call
+`crossed`, since the sending process judged it, and takes the state `verify` establishes;
+`pageDoor` takes the state the host resolved and refuses `args`. A page's call used to come out of
+`handleRpc` marked `crossed` too, so the receiver skipped judging the state of a caller outside the
+topology. Measured 2026-10-19: the cycle adds 83 ns to a request nobody watches, 217 ns watched.
+Pinned by `transport/http/tests/doors.test.ts`.
 
 **A process serves the REST door of the fronds it hosts** — `routesOf`
 (`adapter/rest/src/routes/RouteDefinition.ts`) leaves out an op whose `placement` is `remote`, and

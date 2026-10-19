@@ -1,4 +1,5 @@
 import {
+  answerAt,
   createAppRunner,
   callValueOf,
   ErrorCode,
@@ -9,7 +10,7 @@ import {
   type FrondCall,
   type InvocationContext,
 } from '@fougere/core';
-import { handleRpc, PARSE_ERROR } from '@fougere/transport-http';
+import { pageDoor, PARSE_ERROR } from '@fougere/transport-http';
 import { answer } from '@fougere/adapter-rest';
 import { matchRoute, tableOf } from './RouteMatch.js';
 import type { DoorRequest } from './DoorRequest.js';
@@ -30,31 +31,9 @@ export function surfaceOf(path: string): string | undefined {
   return named?.[1];
 }
 
-/**
- * Receiving end for the browser — same wire as process-to-process (JSON-RPC), different trust
- * boundary: the browser sits outside the topology, so `state` is whatever the host resolved
- * server-side, never what the payload claims.
- *
- * For the same reason a page writes no `args`: they are taken as written, which is a peer's
- * right, and `[id, draft, { id: 'admin' }]` would hand the handler a user no collector read.
- */
-export async function serveRpc(app: App, request: Pick<DoorRequest, 'path' | 'body' | 'state'>): Promise<unknown> {
-  const runner = createAppRunner(app, surfaceOf(request.path));
-
-  return handleRpc((call, invocation) => {
-    if (invocation.args !== undefined) throw writtenByPage(call);
-
-    return runner(call, { ...invocation, state: request.state });
-  }, request.body);
-}
-
-function writtenByPage(call: FrondCall): FougereError {
-  return new FougereError({
-    code: ErrorCode.BAD_REQUEST,
-    message: `${call.address}.${call.op}: a page sends params, query and input, not \`args\` (only fronds send \`args\`).`,
-    address: call.address,
-    operation: call.op,
-  });
+/** Receiving end for the browser — the page's door, with the state the host resolved server-side. */
+export function serveRpc(app: App, request: Pick<DoorRequest, 'path' | 'body' | 'state'>): Promise<unknown> {
+  return app.answer(pageDoor(createAppRunner(app, surfaceOf(request.path)), request.state), request.body);
 }
 
 /**
@@ -64,7 +43,7 @@ function writtenByPage(call: FrondCall): FougereError {
 export function refusedRpc(refusal: BootRefusal, body: unknown, disclosed: boolean): Promise<unknown> {
   const message = disclosed ? refusal.message : 'The app refused to start.';
 
-  return handleRpc(async () => { throw new FougereError({ code: ErrorCode.SERVICE_UNAVAILABLE, message }); }, body);
+  return answerAt(pageDoor(async () => { throw new FougereError({ code: ErrorCode.SERVICE_UNAVAILABLE, message }); }, {}), body);
 }
 
 /** The answer a host returns when it could not even parse the payload. */

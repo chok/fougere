@@ -53,7 +53,7 @@ export { JOURNAL, type Journal } from './module/relation/Journal.js';
 export { DispatchEvent } from './dispatch/DispatchEvent.js';
 export { DoorEvent, type DoorStage } from './dispatch/DoorEvent.js';
 export { DoorRequest } from './wire/DoorRequest.js';
-export { type Door, type DoorOutcome } from './entry/door.js';
+export { answerAt, type Door, type DoorCycle, type DoorOutcome } from './entry/door.js';
 export type { CallPage, CallRecord } from './contract.js';
 export { Page, asPage } from './contract.js';
 export { driftOf, agrees, explain, type CardDrift } from './contract.js';

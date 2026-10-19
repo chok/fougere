@@ -5,7 +5,7 @@ import { loadConfig, remotesOf } from '@fougere/core/node';
 import { installLoader } from '../../src/loader.js';
 
 import { Registry } from '@fougere/registry';
-import { serve } from '@fougere/transport-http';
+import { serve, type ReceiveOptions } from '@fougere/transport-http';
 import { watch } from 'node:fs';
 import type { App, Transport } from '@fougere/core';
 import type { ui as createUi } from '../../src/ui.js';
@@ -73,7 +73,8 @@ export default class ServeCommand {
     // The REST door of the frond this process hosts, beside the call envelope: a frond moved
     // here takes its door with it, and the process it left no longer answers for it.
     const beside = (request: Request) => restAnswer(hosted, request);
-    const { port: bound } = await serve((call, inv) => current(call, inv), { port, verify, requireIdentity, beside });
+    const answer: ReceiveOptions['answer'] = (door, received) => hosted.answer(door, received);
+    const { port: bound } = await serve((call, inv) => current(call, inv), { port, verify, requireIdentity, beside, answer });
     this.ui.step(`frond ${frond} served — POST http://127.0.0.1:${bound}/_fougere/call`);
     if (serves(hosted.protocols, 'rest')) this.ui.info(`REST under http://127.0.0.1:${bound}${prefixOf(hosted.protocols)}`);
     this.ui.info(requireIdentity ? 'signed calls only (FOUGERE_ROOT_KEY is set)' : 'unsigned calls accepted — no FOUGERE_ROOT_KEY');

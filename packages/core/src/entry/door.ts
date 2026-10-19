@@ -21,8 +21,8 @@ export interface Door<Received, Decoded, Answer> {
   decode(received: Received): Promise<Decoded>;
   /** The calls a request makes — one, or several for a document that asks for several things. */
   run(decoded: Decoded): Promise<unknown>;
-  /** The outcome in the door's own shape: a status, an `errors` list, a frame. */
-  encode(outcome: DoorOutcome): Answer;
+  /** The outcome in the door's own shape — a status, an `errors` list, a frame — beside what arrived. */
+  encode(outcome: DoorOutcome, received: Received): Answer;
 }
 
 /** What the cycle needs of the app: where a request is entered, and who watches it. */
@@ -31,14 +31,18 @@ export interface DoorCycle {
   lifecycle: Pick<DispatchLifecycle, 'publish'>;
 }
 
+/** A cycle nobody watches — a host holding a runner and no app, or a boot that refused. */
+const UNWATCHED: DoorCycle = { enterRequest: (_request, fn) => fn(), lifecycle: { publish: () => {} } };
+
 /**
  * The one cycle every door runs: the request entered so each call it makes says which, its
  * steps announced beside the calls, and a refusal made public by one rule before the door says it.
+ * `app.answer` runs it watched; a host with no app runs it as it is.
  */
 export function answerAt<Received, Decoded, Answer>(
   door: Door<Received, Decoded, Answer>,
   received: Received,
-  { enterRequest, lifecycle }: DoorCycle,
+  { enterRequest, lifecycle }: DoorCycle = UNWATCHED,
 ): Promise<Answer> {
   const request = DoorRequest.open(door.name);
 
@@ -55,7 +59,7 @@ export function answerAt<Received, Decoded, Answer>(
       outcome = { refused: publicOf(failure) };
     }
 
-    const answer = door.encode(outcome);
+    const answer = door.encode(outcome, received);
     lifecycle.publish(DoorEvent.encoded(request));
 
     return answer;
