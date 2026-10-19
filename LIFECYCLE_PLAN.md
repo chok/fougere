@@ -310,9 +310,9 @@ The native context at each step, for REST:
   in ascent order (`stepsOver` in `boot/install.ts`). A registry would add a name with nothing to
   look it up. Keep the list; give it the same type and loop as an input source.
 
-`DispatchLifecycle` stays an observer around the whole middle (m1, m11). It must not become a
-hook point: its contract is "never participates in decisions" (`DispatchLifecycle.publish` swallows
-observer errors). One reader today.
+`DispatchLifecycle` stays an observer — it never participates in decisions
+(`DispatchLifecycle.publish` swallows observer errors) — and it widens to the edges: the door
+lifecycle publishes its steps to it (decision 8).
 
 ### 2.4 How many hooks to open
 
@@ -526,25 +526,36 @@ Decided by the owner on 2026-10-19. Each line names what was decided and the mea
 2. **Declared responses stay off the card for now.** The card publishes no REST path or method
    today; a 301 tied to a path it does not name would be half a fact. They live in
    `EffectiveOperation.protocols.rest`, and a future OpenAPI document is REST's card.
-3. **A door middleware whose frond answers in another process refuses the boot**, with a message
-   saying why. A door middleware is the frond's code (`middlewares/`), like its handlers. Running it
-   in the process that receives the request would make that process's boot fail as soon as the
-   middleware asks for one of the frond's dependencies (`OldSlugRepository`) — the day the frond
-   moves behind `fronds:`, with no line of code changed. That breaks the gradient. The refusal is
-   lifted only when a real case asks for it, and lifting it breaks nobody.
+3. **A process serves the REST door of the fronds it hosts.** `blog` embedded in A: A serves its
+   REST. `blog` split into B: B serves its REST, with its door middlewares, and the host routes
+   `/api/blog` to B. A door middleware is the frond's code (`middlewares/`), like its handlers, so it
+   runs where the frond runs and finds its dependencies (`OldSlugRepository`) there: moving the frond
+   moves its door, with no line of code changed. Today A projects the REST of a frond it does not
+   host and relays each call over JSON-RPC (`adapter/rest/src/routes/RouteDefinition.ts` `routesOf`,
+   "remote proxy facades"): a side effect, removed. Two consequences: `fougere serve <frond>` serves
+   REST, and a process no longer projects REST for a frond it does not host — a change of behaviour,
+   said in the PR that makes it.
 4. **A body already parsed by the host is accepted, with no refusal.** Case 3.3 reads the headers,
    and they are still there; what is lost is only avoiding the read, which the host then owns. One
    sentence in the docs.
 5. **A header a frond-wide middleware writes stays off the card.** The frond-wide form decorates and
    refuses, nothing more. A header that must be published is declared by `Response<…>` on a handler.
-6. **No door middleware for GraphQL and JSON-RPC for now.** JSON-RPC links trusted peers and has no
-   measured native need. GraphQL answers one response for many ops, so replacing one op's response
-   has no meaning there. Wait for a real case.
+6. **No door middleware for GraphQL and JSON-RPC for now — REST is the first realization of a door
+   concept, not a REST feature.** The door middleware is written as a concept every door may have
+   (a static naming its door, read from `Protocols`), and REST is its first realization. JSON-RPC
+   links trusted peers and has no measured native need; GraphQL answers one response for many ops.
+   Each gets its own the day a real case asks.
 7. **A door middleware's refusals stay out of the op's `errors`.** A GraphQL or JSON-RPC caller never
    meets them, and adding them would put codes that cannot happen into a facade's `switch`. They are
    published on REST's side, with the responses.
-8. **`DispatchLifecycle` stays on the middle.** Time spent at the edges is observability's, which
-   already wraps calls with a middleware.
+8. **The door lifecycle publishes its steps to the same observer as the middle.** `decoded`,
+   `encoded`… join `received`, `completed`, `settled` on `DispatchLifecycle`, observe-only as today.
+   Observability subscribes once and sees the edges of every door, where each adapter would
+   otherwise instrument itself, and where its middleware sees the middle only — a slow serialization
+   or a slow upload is invisible today. The steps come from the shared edge mechanism (phase 3 on),
+   never from events written in each adapter. A request is not a call: one GraphQL request calls
+   several ops, so the observer relates a request to its calls the way a trace relates a parent to
+   its children.
 9. **A body that is not JSON is refused with 415.** The silent `{}` is what the tree refuses
    elsewhere: JSON-RPC used to drop `body` in silence and now refuses it by name (`SENT`,
    `transport/http/src/server.ts`). Fastify already answers 415. GET and HEAD carry no body. Accepting
@@ -654,6 +665,12 @@ Nine readers become two (1.8).
   binding plan (does a parameter designate a row), the output schema and the cardinality. Nothing
   reads `operationName` any more. `protocols.rest.status` wins, on every host.
 - The two 404 body shapes (`{error}` and `{message}`) become the `toHttpError` shape, `{ code, message }`.
+- **The edge answers for the fronds this process hosts** (decision 3). `routesOf` stops projecting
+  a frond that answers elsewhere; `fougere serve <frond>` mounts the edge, so the served process
+  answers its own REST. Said in the PR as a change of behaviour: a client calling `/api/blog` on A
+  goes to B.
+- **The edge publishes its steps** (decision 8): `decoded` after `body()`, `encoded` before the
+  host sends, to `DispatchLifecycle`, carrying the request so an observer relates it to its calls.
 - Tests to rewrite: `app/shared/tests/serve.test.ts` (`shapeRest` answers 200 today),
   `restRoutes.test.ts` and `app/shared/tests/express.test.ts`. `adapter/rest/tests/fastify.test.ts`
   (201/204/404) keeps its expectations and gains a renamed op (`remove`) answering the same. Phase
@@ -690,8 +707,11 @@ Cases 3.2 (header) and 3.3 (upload refused on its headers).
   `next()`.
 - The scan (`compiler/src/scan/scanner.ts`, the `middlewares/` reading) accepts the subclass. The
   `middlewares:` order and its two refusals cover it unchanged.
-- The boot refuses a door middleware whose frond is placed in another process (decision 3), naming
-  the frond, its address and the reason. A body the host parsed before us is accepted (decision 4).
+- A door middleware runs in the process that hosts its frond, which is the one serving that
+  frond's REST (decision 3) — no refusal needed. A body the host parsed before us is accepted
+  (decision 4).
+- `RestMiddleware()` is the REST realization of a door middleware (decision 6): the static `door`
+  and the core skip are written for any door, not for `'rest'`.
 - The refusal walk (`compiler/src/scan/refusals.ts`) does not follow a door middleware's throws
   (decision 7).
 - Tests: `core/tests/middleware-frond.test.ts` (a door middleware does not run behind JSON-RPC or
@@ -719,13 +739,16 @@ Case 3.1 (301). Case 3.4 (CSV) is out of scope: the media-type project.
 
 - A site page for the door middleware, and links from `site/content/docs/4.business/10.ports.md`
   (which today points to `router.use` for HTTP needs).
-- A CLAUDE.md paragraph. KNOWN_ISSUES gains two entries, stated and left as is: REST is the only
-  door with door middlewares (decision 6), and a door middleware refuses the boot when its frond
-  answers elsewhere (decision 3).
+- The page says that a header a frond-wide middleware writes is not in the contract, and that a
+  header to publish is declared by `Response<…>` on a handler (decision 5); and that a body the host
+  parsed first is accepted (decision 4).
+- A CLAUDE.md paragraph. KNOWN_ISSUES gains one entry, stated and left as is: REST is the only door
+  with a door middleware so far (decision 6).
 - `demos/door-lifecycle`: cases 3.1 to 3.3, like the other one-concept demos, with its line in
   CLAUDE.md's `## Commands`.
 
 ### Order of work
 
-Phases 0 and 1 first: the GraphQL leak of an internal message is the priority. Then 2 and 4, in
-either order. Then 3, 5, 6 and 7, each on the one before it.
+Phases 0 and 1 are done and merged (#18, #17): the GraphQL leak of an internal message is closed.
+Then 2 and 4, in either order. Then 3, 5, 6 and 7, each on the one before it. No phase starts
+without the owner's go.
