@@ -59,7 +59,7 @@ export function readExpressBody(req: any, maxBodyBytes = MAX_BODY_BYTES): Promis
 
   const verb = String(req.method ?? 'GET').toUpperCase();
   req.__fougereBody = (async () => {
-    if (verb === 'GET' || verb === 'HEAD') return {};
+    if (verb === 'GET' || verb === 'HEAD') return undefined;
     // `null` is parsed JSON, not evidence that no parser ran. Falling through here
     // turned an explicit domain value into `{}` (or tried to drain an already consumed
     // stream), while every other facade kept it.
@@ -68,10 +68,10 @@ export function readExpressBody(req: any, maxBodyBytes = MAX_BODY_BYTES): Promis
     if (!contentType.toLowerCase().includes('json')) {
       if (sendsBody(req.headers ?? {})) throw HttpError.unsupportedMediaType(contentType);
 
-      return {};
+      return undefined;
     }
     const raw = await readRawBody(req, maxBodyBytes);
-    if (!raw) return {};
+    if (!raw) return undefined;
     try {
       return JSON.parse(raw);
     } catch (cause) {

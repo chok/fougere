@@ -6,8 +6,6 @@ import { jsonBodyOf } from './jsonBody.js';
 import { sessionViewOf } from './session.js';
 import { stateFor } from './state.js';
 
-const WITH_BODY = new Set(['POST', 'PUT', 'PATCH']);
-
 /** The call envelope. */
 export async function call(request: Request): Promise<Response> {
   let body: unknown;
@@ -58,18 +56,11 @@ export async function restAnswer(app: App, request: Request): Promise<Response |
   const url = new URL(request.url);
   const method = request.method.toUpperCase();
 
-  let body: unknown;
-  try {
-    body = WITH_BODY.has(method) ? await jsonBodyOf(request) : undefined;
-  } catch (refused) {
-    return refusal(refused);
-  }
-
   const outcome = await serveRest(app, {
     method,
     path: url.pathname,
     query: Object.fromEntries(url.searchParams),
-    body,
+    body: () => jsonBodyOf(request),
     state: await stateFor(request.headers, app),
   });
 

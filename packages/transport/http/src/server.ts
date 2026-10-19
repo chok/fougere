@@ -1,6 +1,6 @@
 /** Receiving half — unframe the call, run it, frame what comes out: a door, in JSON-RPC terms. */
 import {
-  answerAt, FougereError, ErrorCode, type Door, type InvocationContext, type SignedCall, type Transport,
+  answerAt, FougereError, ErrorCode, type Answering, type Door, type InvocationContext, type SignedCall, type Transport,
 } from '@fougere/core/contract';
 import { APP_ERROR, INVALID_REQUEST } from './jsonrpc/RpcErrorShape.js';
 import { type RpcRequest } from './jsonrpc/RpcRequest.js';
@@ -15,7 +15,7 @@ export interface ReceiveOptions {
    */
   requireIdentity?: boolean;
   /** The app's cycle, which watches the request; a receiver holding only a runner runs it unwatched. */
-  answer?: <Received, Decoded, Answer>(door: Door<Received, Decoded, Answer>, received: Received) => Promise<Answer>;
+  answer?: Answering;
 }
 
 /** One call, unframed. */

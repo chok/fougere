@@ -110,7 +110,7 @@ export function rest(): ExpressMiddleware {
           method: req.method,
           path,
           query: queryOf(req),
-          body: await readExpressBody(req, maxBodyBytes()),
+          body: () => readExpressBody(req, maxBodyBytes()),
           state: stateOf(req),
         });
 

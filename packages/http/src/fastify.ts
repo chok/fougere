@@ -52,7 +52,7 @@ function buildContext(req: any): RequestContext {
     query: req.query ?? {},
     // Absence alone gets the empty protocol object. `null` is valid parsed JSON and must
     // reach the core unchanged when the contract admits it.
-    body: async () => req.body === undefined ? {} : req.body,
+    body: async () => req.body,
     state: {},
   };
 }

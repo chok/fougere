@@ -42,16 +42,16 @@ function buildContext(c: any): RequestContext {
     query: c.req.query() ?? {},
     body: async () => {
       const method = c.req.method.toUpperCase();
-      if (method === 'GET' || method === 'HEAD') return {};
+      if (method === 'GET' || method === 'HEAD') return undefined;
       const request: Request = c.req.raw;
       const contentType = request.headers.get('content-type') ?? '';
       if (!contentType.toLowerCase().includes('json')) {
         if (request.body && request.headers.get('content-length') !== '0') throw HttpError.unsupportedMediaType(contentType);
 
-        return {};
+        return undefined;
       }
       const raw = await readWebBody(request);
-      if (!raw) return {};
+      if (!raw) return undefined;
       try {
         return JSON.parse(raw);
       } catch (cause) {

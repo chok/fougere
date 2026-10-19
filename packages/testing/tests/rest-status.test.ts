@@ -48,7 +48,7 @@ async function viaRouter(op: string, call: Call = {}): Promise<Answered> {
 }
 
 async function viaWeb(op: string, call: Call = {}): Promise<Answered> {
-  const answer = await serveRest(app, { method: routeOf(op).method, path: pathOf(op, call), query: {}, body: call.input, state: {} });
+  const answer = await serveRest(app, { method: routeOf(op).method, path: pathOf(op, call), query: {}, body: async () => call.input, state: {} });
   if (answer.kind === 'pass') throw new Error(`serveRest passed on ${op}`);
 
   return { status: answer.status, body: answer.body };

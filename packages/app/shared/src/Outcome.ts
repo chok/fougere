@@ -11,7 +11,7 @@ import {
   type InvocationContext,
 } from '@fougere/core';
 import { pageDoor, PARSE_ERROR } from '@fougere/transport-http';
-import { answer } from '@fougere/adapter-rest';
+import { restDoor } from '@fougere/adapter-rest';
 import { matchRoute, tableOf } from './RouteMatch.js';
 import type { DoorRequest } from './DoorRequest.js';
 
@@ -32,7 +32,7 @@ export function surfaceOf(path: string): string | undefined {
 }
 
 /** Receiving end for the browser — the page's door, with the state the host resolved server-side. */
-export function serveRpc(app: App, request: Pick<DoorRequest, 'path' | 'body' | 'state'>): Promise<unknown> {
+export function serveRpc(app: App, request: { path: string; body: unknown; state: Record<string, unknown> }): Promise<unknown> {
   return app.answer(pageDoor(createAppRunner(app, surfaceOf(request.path)), request.state), request.body);
 }
 
@@ -82,7 +82,12 @@ export async function serveRest(app: App, request: DoorRequest): Promise<Outcome
   }
 
   const { route, params } = match;
-  const { status, data } = await answer(route, { params, query: request.query, input: request.body, state: request.state });
+  const { status, data } = await app.answer(restDoor(route), {
+    params,
+    query: request.query,
+    body: request.body ?? (async () => undefined),
+    state: request.state,
+  });
   if (status >= 400) return { kind: 'error', status, body: data as { message: string } & Record<string, unknown> };
 
   return { kind: 'ok', status, body: data };

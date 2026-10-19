@@ -4,7 +4,8 @@ export interface DoorRequest {
   /** Path with no query string. The REST facade strips its own `/api` prefix. */
   path: string;
   query: Record<string, string>;
-  body?: unknown;
+  /** Read by the door, inside the cycle — what a door middleware may refuse before it happens. */
+  body?: () => Promise<unknown>;
   /** The server-resolved session. */
   state: Record<string, unknown>;
 }

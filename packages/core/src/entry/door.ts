@@ -25,6 +25,9 @@ export interface Door<Received, Decoded, Answer> {
   encode(outcome: DoorOutcome, received: Received): Answer;
 }
 
+/** Running one request through a door — `app.answer`, or `answerAt` for a host holding no app. */
+export type Answering = <Received, Decoded, Answer>(door: Door<Received, Decoded, Answer>, received: Received) => Promise<Answer>;
+
 /** What the cycle needs of the app: where a request is entered, and who watches it. */
 export interface DoorCycle {
   enterRequest<R>(request: DoorRequest, fn: () => Promise<R>): Promise<R>;

@@ -4,7 +4,7 @@
  */
 import { afterEach, describe, it, expect } from 'vitest';
 import { setMaxBodyBytes } from '@fougere/core';
-import { graphql, rest } from '../src/web.js';
+import { graphql } from '../src/web.js';
 import { configureFougere } from '../src/boot.js';
 import { jsonBodyOf } from '../src/jsonBody.js';
 
@@ -18,12 +18,7 @@ afterEach(() => {
 
 describe('a web door reading a body', () => {
   it('refuses a body that is not JSON with 415', async () => {
-    configureFougere({ config: {}, fronds: [], storage: { storageFactory: () => ({}) as never } });
-
-    const response = await rest(post('hello', 'text/plain'));
-
-    expect(response.status).toBe(415);
-    expect(await response.json()).toMatchObject({ code: 'UNSUPPORTED_MEDIA_TYPE' });
+    await expect(jsonBodyOf(post('hello', 'text/plain'))).rejects.toMatchObject({ code: 'UNSUPPORTED_MEDIA_TYPE' });
   });
 
   it('refuses a body over maxBodyBytes with 413, on GraphQL too', async () => {

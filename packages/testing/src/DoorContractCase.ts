@@ -188,7 +188,7 @@ function facadesOf(app: App, entity: SchemaView, name: string, surface?: string)
       if (!row) throw new Error(`[checkDoors] REST serves no ${name}.${op}`);
       const path = row.segments.map((segment) => (segment.startsWith(':') ? call?.id ?? '' : segment)).join('/');
 
-      const answer = await serveRest(app, { method: row.route.method, path, query: {}, body: call?.input, state });
+      const answer = await serveRest(app, { method: row.route.method, path, query: {}, body: async () => call?.input, state });
       if (answer.kind !== 'ok') throw new Error(`[checkDoors] REST answered ${answer.kind} on ${name}.${op}`);
 
       return answer.body;

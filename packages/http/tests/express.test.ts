@@ -137,7 +137,7 @@ describe('Express adapter — the body nobody parsed', () => {
     expect(sent.json).toMatchObject({ code: 'UNSUPPORTED_MEDIA_TYPE' });
   });
 
-  it('reads a POST with no body as {}, whatever its type', async () => {
+  it('reads a POST with no body as nothing, whatever its type — the same on every host', async () => {
     const { app, handlerFor } = fakeApp();
     const router = createExpressRouter(app);
     let seen: unknown;
@@ -150,7 +150,7 @@ describe('Express adapter — the body nobody parsed', () => {
     const { res } = fakeRes();
     await handlerFor('POST /items')(streamingReq('', { headers: { host: 'localhost' } }), res, vi.fn());
 
-    expect(seen).toEqual({});
+    expect(seen).toBeUndefined();
   });
 
   it('answers 400 on malformed JSON rather than handing Express an exception', async () => {
@@ -183,7 +183,7 @@ describe('Express adapter — the body nobody parsed', () => {
 
     const req = { ...streamingReq(''), method: 'GET', on: () => { throw new Error('must not drain'); } };
     await handlerFor('GET /items')(req, fakeRes().res, vi.fn());
-    expect(seen).toEqual({});
+    expect(seen).toBeUndefined();
   });
 });
 

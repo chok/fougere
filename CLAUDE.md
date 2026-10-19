@@ -1013,10 +1013,11 @@ Pinned by `transport/http/tests/doors.test.ts`.
 `fougere serve` answers REST beside the call envelope (`ServeOptions.beside`, over `restAnswer` in
 `app/shared/src/web.ts`). The calling process used to project a remote frond's routes and relay each
 call over JSON-RPC, so a door middleware would have run where the frond's code and dependencies were
-not. Every host answers through ONE `answer` (`adapter/rest/src/answer.ts`): the status read off the
-contract — `201` for a `POST` on the collection answering one row, `204` for nothing or a `DELETE`
+not. Every host answers through ONE door, `restDoor` (`adapter/rest/src/door.ts`), which reads the
+body INSIDE the cycle from the reader the host hands it — a request with no body reads as `undefined`
+on every host, where three read `{}` — and writes the status read off the contract — `201` for a `POST` on the collection answering one row, `204` for nothing or a `DELETE`
 answering `true`, `404` for a missing row — and a page as `{ items, total, hasMore, endCursor }`.
-Pinned by `adapter/rest/tests/answer.test.ts`, `testing/tests/rest-status.test.ts` and
+Pinned by `adapter/rest/tests/door.test.ts`, `testing/tests/rest-status.test.ts` and
 `transport/http/tests/beside.test.ts`.
 
 **A REST path is read off the signature, never off the op's name** — `derivePath`
