@@ -1,6 +1,6 @@
 import { ambient as realized } from '#ambient';
-import type { Ambient } from './ambient-port.js';
-import type { DoorRequest } from '../wire/DoorRequest.js';
+import type { Ambient } from './boot/ambient-port.js';
+import type { DoorRequest } from './wire/DoorRequest.js';
 
 /** The context this runtime realizes — published under its port, since `#ambient` resolves only inside core. */
 export const ambient: Ambient = realized;
