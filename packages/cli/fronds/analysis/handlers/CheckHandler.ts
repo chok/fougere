@@ -9,7 +9,7 @@ import {
 import { adaptersOf, crossFrondImports, handlerDeclarations, outsideConventions } from '@fougere/compiler';
 import { resolveConventions } from '@fougere/core';
 import ProjectScan from '../services/ProjectScan.js';
-import { statSync } from 'node:fs';
+import { readFileSync, statSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { FACADE_OUT, DEFAULT_OUT } from './BuildHandler.js';
 import { remotesOf, statementFileIn, statementIn } from '@fougere/core/node';
@@ -177,6 +177,7 @@ export default class CheckHandler {
     }
 
     findings.push(...facadeFindings(root, fronds));
+    findings.push(...workerFindings(root, config.state));
     findings.push(...await statementFindings(root, fronds));
 
     return { fronds: fronds.length, handlers, findings };
@@ -227,6 +228,28 @@ async function statementFindings(root: string, fronds: readonly FrondDescriptor[
 
   return findings;
 }
+
+/**
+ * A Worker refuses `state.set` without `nodejs_compat`: the async context a door keeps the written
+ * state in is handed over by that flag alone (measured in workerd, 2026-10-19). The boot says so
+ * too, but on the first request of a deployed Worker — this says it before the deploy.
+ */
+function workerFindings(root: string, state: Record<string, unknown> | undefined): Diagnostic[] {
+  if (!state || Object.keys(state).length === 0) return [];
+  const file = WRANGLER_FILES.map((name) => join(root, name)).find((path) => statSync(path, { throwIfNoEntry: false }));
+  if (!file || /["']nodejs_compat["']/.test(readFileSync(file, 'utf8'))) return [];
+
+  return [{
+    severity: 'warning',
+    code: 'state-without-async-context',
+    filePath: file,
+    subject: Object.keys(state).join(', '),
+    message: '`state:` keeps what callers write, and this Worker has no `nodejs_compat`, so every `state.set` is refused. '
+      + 'Add "nodejs_compat" to compatibility_flags.',
+  }];
+}
+
+const WRANGLER_FILES = ['wrangler.jsonc', 'wrangler.json', 'wrangler.toml'];
 
 /**
  * A facade module older than the handlers it was read off.

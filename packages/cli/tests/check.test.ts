@@ -57,6 +57,20 @@ describe('check', () => {
       .toContain('older than the handlers');
   });
 
+  it('names a Worker that keeps state without nodejs_compat, and says nothing once it has it', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'fougere-check-'));
+    await cp(fixture, root, { recursive: true });
+    writeFileSync(join(root, 'fougere.config.ts'), "export default { state: { cart: { cookie: {} } } };\n");
+    writeFileSync(join(root, 'wrangler.jsonc'), '{ "main": "dist/worker.mjs", "compatibility_flags": [] }\n');
+
+    const without = await check().execute({ root });
+    writeFileSync(join(root, 'wrangler.jsonc'), '{ "main": "dist/worker.mjs", "compatibility_flags": ["nodejs_compat"] }\n');
+    const withFlag = await check().execute({ root });
+
+    expect(without.findings.find((f) => f.code === 'state-without-async-context')?.subject).toBe('cart');
+    expect(withFlag.findings.find((f) => f.code === 'state-without-async-context')).toBeUndefined();
+  });
+
   it('suit un extends vers une classe exportée par son nom, et compte ce qu\'il a vu', async () => {
     const result = await check().execute({ root: fixture });
 
