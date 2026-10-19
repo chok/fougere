@@ -2174,6 +2174,9 @@ importers:
       '@fougere/container':
         specifier: workspace:*
         version: link:../container
+      '@fougere/graph':
+        specifier: workspace:*
+        version: link:../graph
       '@fougere/registry':
         specifier: workspace:*
         version: link:../registry

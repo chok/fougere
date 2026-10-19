@@ -1,5 +1,6 @@
 import { Page } from '../wire/Page.js';
-import { Role } from '@fougere/schema';
+import { Graph } from '@fougere/graph';
+import { relationGraph } from '../module/relation/relationGraph.js';
 import type { FrondDescriptor } from '../descriptor/FrondDescriptor.js';
 import type { SeedEntry } from '../descriptor/SeedEntry.js';
 import type { SeedFactory } from '../descriptor/SeedFactory.js';
@@ -13,55 +14,30 @@ export interface SeedOrder {
   cycle: SeedEntry[];
 }
 
-/** Seeds in dependency order — a `ref()` target is planted before its referrer. */
+/**
+ * Seeds in dependency order — a `ref()` target is planted before its referrer. Only what is SEEDED
+ * can be waited for: a relation to an entity with no seed is already satisfied by whatever put its
+ * rows there, and an entity naming itself waits for nobody.
+ */
 export function orderSeeds(fronds: FrondDescriptor[]): SeedOrder {
-  const seeds = fronds.flatMap((frond) => frond.seeds);
-  const waiting = whatEachWaitsFor(fronds, seeds);
-
-  const ordered: SeedEntry[] = [];
-  const planted = new Set<string>();
-
-  while (waiting.size > 0) {
-    const ready = [...waiting.keys()].find((seed) => [...waiting.get(seed)!].every((dep) => planted.has(dep)));
-    if (!ready) break;
-
-    ordered.push(ready);
-    planted.add(ready.entityName.toLowerCase());
-    waiting.delete(ready);
+  const seeded = new Map<string, SeedEntry[]>();
+  for (const seed of fronds.flatMap((frond) => frond.seeds)) {
+    seeded.set(seed.entityName, [...seeded.get(seed.entityName) ?? [], seed]);
   }
 
-  return { ordered, cycle: [...waiting.keys()] };
-}
-
-/**
- * Only what is actually SEEDED can be waited for: a relation to an entity with no seed is
- * already satisfied by whatever put its rows there, and an entity naming itself waits for
- * nobody.
- */
-function whatEachWaitsFor(
-  fronds: FrondDescriptor[],
-  seeds: SeedEntry[],
-): Map<SeedEntry, Set<string>> {
-  const refs = new Map<string, Set<string>>();
-  for (const frond of fronds) {
-    for (const entity of frond.entities) {
-      const targets = new Set<string>();
-      for (const field of Object.values(entity.entityClass.getFields())) {
-        if (!Role.of(field).isReference()) continue;
-        const target = (Role.of(field).target as { name?: string }).name?.toLowerCase();
-        if (target && target !== entity.name.toLowerCase()) targets.add(target);
-      }
-      refs.set(entity.name.toLowerCase(), targets);
+  const relations = relationGraph(fronds);
+  const waiting = new Graph();
+  for (const entity of seeded.keys()) waiting.add(entity);
+  for (const entity of seeded.keys()) {
+    for (const { to, label } of relations.outgoing(entity)) {
+      if (seeded.has(to)) waiting.connect(entity, to, label);
     }
   }
 
-  const seeded = new Set(seeds.map((seed) => seed.entityName.toLowerCase()));
+  const { ordered, cycle } = waiting.order();
+  const seedsOf = (entities: string[]) => entities.flatMap((entity) => seeded.get(entity)!);
 
-  return new Map(seeds.map((seed) => {
-    const own = seed.entityName.toLowerCase();
-
-    return [seed, new Set([...(refs.get(own) ?? [])].filter((target) => seeded.has(target) && target !== own))] as const;
-  }));
+  return { ordered: seedsOf(ordered), cycle: seedsOf(cycle) };
 }
 
 /**

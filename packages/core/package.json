@@ -69,6 +69,7 @@
   },
   "dependencies": {
     "@fougere/container": "workspace:*",
+    "@fougere/graph": "workspace:*",
     "@fougere/registry": "workspace:*",
     "@fougere/schema": "workspace:*",
     "dequal": "^2.0.3"

@@ -1,6 +1,7 @@
-import { Role } from '@fougere/schema';
+import { Graph } from '@fougere/graph';
 import type { FrondDescriptor } from './descriptor/FrondDescriptor.js';
 import type { EntityNode } from './EntityNode.js';
+import { relationGraph } from './module/relation/relationGraph.js';
 
 export interface DomainCluster {
   name: string;
@@ -8,82 +9,36 @@ export interface DomainCluster {
   crossRefs: { from: string; to: string; targetCluster: string }[];
 }
 
-/** Build the full entity dependency graph from scanned fronds. */
+/** Each entity of the fronds, with what it names and what names it. */
 export function buildGraph(fronds: FrondDescriptor[]): Map<string, EntityNode> {
-  const nodes = new Map<string, EntityNode>();
+  const relations = relationGraph(fronds);
 
-  // First pass: create nodes and collect refs
-  for (const frond of fronds) {
-    for (const entity of frond.entities) {
-      const refs: string[] = [];
-      for (const [, field] of Object.entries(entity.entityClass.getFields())) {
-        if (Role.of(field).isReference()) {
-          const resolved = Role.of(field).target;
-          const targetName = typeof resolved === 'function' && 'name' in resolved
-            ? (resolved.name as string).toLowerCase()
-            : undefined;
-          if (targetName) refs.push(targetName);
-        }
-      }
-      nodes.set(entity.name, { name: entity.name, frond: frond.name, refs, referencedBy: [] });
-    }
-  }
-
-  // Second pass: populate referencedBy
-  for (const [, node] of nodes) {
-    for (const ref of node.refs) {
-      const target = nodes.get(ref);
-      if (target) target.referencedBy.push(node.name);
-    }
-  }
-
-  return nodes;
+  return new Map(fronds.flatMap((frond) => frond.entities.map((entity) => [entity.name, {
+    name: entity.name,
+    frond: frond.name,
+    refs: relations.outgoing(entity.name).map((edge) => edge.to),
+    referencedBy: relations.incoming(entity.name).map((edge) => edge.from),
+  }] as const)));
 }
 
-/**
- * Cluster entities into domains using connected component analysis.
- * Entities linked by refs (in either direction) belong to the same cluster.
- */
+/** The entities a `ref()` joins, whichever way it points, each group named by its most referenced. */
 export function clusterEntities(nodes: Map<string, EntityNode>): DomainCluster[] {
-  const visited = new Set<string>();
-  const clusters: string[][] = [];
-
-  // BFS to find connected components
-  for (const [name] of nodes) {
-    if (visited.has(name)) continue;
-
-    const cluster: string[] = [];
-    const queue = [name];
-
-    while (queue.length > 0) {
-      const current = queue.shift()!;
-      if (visited.has(current)) continue;
-      visited.add(current);
-      cluster.push(current);
-
-      const node = nodes.get(current)!;
-      for (const ref of [...node.refs, ...node.referencedBy]) {
-        if (!visited.has(ref) && nodes.has(ref)) {
-          queue.push(ref);
-        }
-      }
-    }
-
-    if (cluster.length > 0) clusters.push(cluster);
+  const joined = new Graph();
+  for (const node of nodes.values()) joined.add(node.name);
+  for (const node of nodes.values()) {
+    for (const ref of node.refs) joined.connect(node.name, ref, ref);
   }
 
-  // Name each cluster by its hub (most referenced entity)
-  return clusters.map((entities) => {
-    const hub = entities
-      .map((name) => ({ name, score: nodes.get(name)!.referencedBy.length }))
-      .sort((a, b) => b.score - a.score)[0];
+  return joined.components()
+    .map((component) => component.filter((name) => nodes.has(name)))
+    .filter((entities) => entities.length > 0)
+    .map((entities) => ({ name: hubOf(entities, nodes), entities, crossRefs: [] }));
+}
 
-    return {
-      name: hub.name,
-      entities,
-      crossRefs: [],
-    };
-  });
+function hubOf(entities: string[], nodes: Map<string, EntityNode>): string {
+  return entities
+    .map((name) => ({ name, score: nodes.get(name)!.referencedBy.length }))
+    .sort((a, b) => b.score - a.score)[0].name;
 }
 
 /**
@@ -136,13 +91,7 @@ export function suggestSplit(
   if (remaining.length > 0) subClusters.push(remaining);
 
   // Convert to domain clusters
-  const result = subClusters.map((entities) => {
-    const hub = entities
-      .map((name) => ({ name, score: nodes.get(name)!.referencedBy.length }))
-      .sort((a, b) => b.score - a.score)[0];
-
-    return { name: hub.name, entities, crossRefs: [] as DomainCluster['crossRefs'] };
-  });
+  const result = subClusters.map((entities) => ({ name: hubOf(entities, nodes), entities, crossRefs: [] as DomainCluster['crossRefs'] }));
 
   return annotateCrossRefs(result, nodes);
 }
