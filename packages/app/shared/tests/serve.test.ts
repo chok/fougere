@@ -4,16 +4,13 @@
  * These used to be spread across two h3 handlers; a second adapter would have made
  * them a third copy, and the copies in this repo have a history of drifting apart.
  * What is tested here is what Nuxt and Next both do WITHOUT restating it: the
- * audience a path selects, what "not ours" looks like, which verbs a path accepts,
- * and what an operation's return becomes on the wire.
- *
- * Dispatch itself is not here on purpose — `shapeRest` is separate from `serveRest`
- * precisely so the shaping can be validated without standing up a runner.
+ * audience a path selects, what "not ours" looks like, and which verbs a path accepts.
+ * What an op's return becomes on the wire is `answer`'s, in `adapter-rest`.
  */
 import '@fougere/adapter-graphql';
 import { describe, it, expect } from 'vitest';
 import { entity, primary, text } from '@fougere/schema';
-import { serveRest, serveRpc, shapeRest, surfaceOf } from '../src/Outcome.js';
+import { serveRest, serveRpc, surfaceOf } from '../src/Outcome.js';
 
 class Post extends entity({ id: primary(), title: text() }) {}
 
@@ -113,33 +110,6 @@ describe('serveRest — what it declines', () => {
       body: { allow: ['GET', 'POST'] },
       headers: { allow: 'GET, POST' },
     });
-  });
-});
-
-describe('shapeRest', () => {
-  it('shapes a list as an envelope, so the page facts survive JSON', () => {
-    const page = [{ id: 'a' }, { id: 'b' }] as unknown as { total?: number; hasMore?: boolean; endCursor?: string } & { id: string }[];
-    page.total = 7;
-    page.hasMore = true;
-    page.endCursor = 'b';
-
-    expect(shapeRest('list', page)).toEqual({
-      kind: 'ok',
-      status: 200,
-      body: { items: [{ id: 'a' }, { id: 'b' }], total: 7, hasMore: true, endCursor: 'b' },
-    });
-  });
-
-  it('leaves a non-list result alone', () => {
-    expect(shapeRest('findById', { id: 'a' })).toEqual({ kind: 'ok', status: 200, body: { id: 'a' } });
-  });
-
-  it('does not envelope an array that is not a list result', () => {
-    expect(shapeRest('drafts', [{ id: 'a' }])).toEqual({ kind: 'ok', status: 200, body: [{ id: 'a' }] });
-  });
-
-  it('turns a missing row into 404 rather than a null body', () => {
-    expect(shapeRest('findById', null)).toEqual({ kind: 'error', status: 404, body: { message: 'Not found' } });
   });
 });
 

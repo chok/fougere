@@ -184,11 +184,11 @@ function facadesOf(app: App, entity: SchemaView, name: string, surface?: string)
     rest: async (op, call) => {
       // The route the REST facade itself would match, read from its own table — rebuilding
       // the path here would be a second opinion on where an address lives.
-      const route = tableOf(app).find((one) => one.address === name && one.operationName === op);
-      if (!route) throw new Error(`[checkDoors] REST serves no ${name}.${op}`);
-      const path = route.segments.map((segment) => (segment.startsWith(':') ? call?.id ?? '' : segment)).join('/');
+      const row = tableOf(app).find((one) => one.route.address === name && one.route.operationName === op);
+      if (!row) throw new Error(`[checkDoors] REST serves no ${name}.${op}`);
+      const path = row.segments.map((segment) => (segment.startsWith(':') ? call?.id ?? '' : segment)).join('/');
 
-      const answer = await serveRest(app, { method: route.method, path, query: {}, body: call?.input, state });
+      const answer = await serveRest(app, { method: row.route.method, path, query: {}, body: call?.input, state });
       if (answer.kind !== 'ok') throw new Error(`[checkDoors] REST answered ${answer.kind} on ${name}.${op}`);
 
       return answer.body;

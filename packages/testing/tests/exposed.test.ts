@@ -23,7 +23,7 @@ describe('an entity withdrawn from the public contract', () => {
   it('is served by no REST route', async () => {
     await using app = await testApp({ root });
 
-    expect(tableOf(app).filter((route) => route.address === 'secret')).toEqual([]);
+    expect(tableOf(app).filter((row) => row.route.address === 'secret')).toEqual([]);
   });
 
   it('is absent from the GraphQL schema', async () => {

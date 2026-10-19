@@ -131,8 +131,8 @@ describe('frond.config.ts still decides an op kind', () => {
   });
 
   it('leaves an unstated custom op on the safe side of the convention', () => {
-    const t: Matchable[] = table.filter((r) => r.operationName === 'bySlug');
-    expect(t.map((r) => r.method)).toEqual(['POST']);
+    const t: Matchable[] = table.filter((r) => r.route.operationName === 'bySlug');
+    expect(t.map((r) => r.route.method)).toEqual(['POST']);
   });
 });
 

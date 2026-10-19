@@ -3,6 +3,7 @@ export { generateRoutes, type RouteDefinition } from './routes/RouteDefinition.j
 export type { HttpMethod } from '@fougere/http';
 export { PREFIX, prefixOf, type RestRoute } from './RestProtocol.js';
 export { registerRoutes } from './register.js';
+export { answer, type RestInvocation } from './answer.js';
 
 // No schema endpoint here. Discovery is `rpc.discover` on the envelope — one
 // surface, which answers with what the host SERVES. A second GET published

@@ -1,7 +1,7 @@
 import type { Fields } from '@fougere/schema';
 import { Card, Visibility } from '@fougere/schema';
 import type { HttpMethod } from '@fougere/http';
-import { RouteAddress, wordsOf, type FougereFrondProtocols, type HandlerEntry as CoreHandlerEntry, type ProtocolConfig } from '@fougere/core';
+import { RouteAddress, wordsOf, type Cardinality, type FougereFrondProtocols, type HandlerEntry as CoreHandlerEntry, type ProtocolConfig } from '@fougere/core';
 import type { BindingPlan } from '@fougere/core/descriptor';
 import type { OperationMeta } from './OperationMeta.js';
 import type { GenerateRoutesOptions } from './GenerateRoutesOptions.js';
@@ -19,8 +19,12 @@ export interface RouteDefinition {
   inputFields?: Fields;
   /** Output schema (for JSON schema generation). */
   outputFields?: Fields;
-  /** Explicit success status. Defaults to 201 only for the canonical `create` op. */
+  /** Explicit success status, from `protocols.rest.status` — it wins over what the contract reads as. */
   successStatus?: number;
+  /** How much the op answers — a page goes out as `{ items, total, hasMore, endCursor }`, a missing row as 404. */
+  cardinality?: Cardinality;
+  /** A POST on the collection answering one row: what it answers did not exist before, so 201. */
+  creates?: boolean;
   /** The operation in words — the method's own doc sentence, carried by the contract. */
   description?: string;
   // No presenter here. A route used to carry the instance and its field names so the
@@ -145,6 +149,10 @@ function derivePath(address: string, opName: string, binding: BindingPlan = [], 
   return ['', pluralize(address), ...designating.map(segmentOf), ...named, ...following.map(segmentOf)].join('/');
 }
 
+function designates(binding: BindingPlan = []): boolean {
+  return binding.some(({ source }) => source.kind === 'param' && Boolean(source.identifies));
+}
+
 function segmentOf({ name }: { name: string }): string {
   return `:${name}`;
 }
@@ -229,14 +237,18 @@ function routeFor({ address, base, facade, opName, meta, thirdParty }: Projectin
     throw new Error(`REST EffectiveOperation table exposes '${opName}' but its facade does not.`);
   }
 
+  const method = override.method ?? deriveMethod(opName, meta);
+
   return {
-    method: override.method ?? deriveMethod(opName, meta),
+    method,
     path: base + (override.path ?? derivePath(address, opName, meta.binding, changeOf(meta)?.fields)),
     operationName: opName,
     address,
     handler: (invocation) => op(invocation),
     ...inputAndOutput(meta),
     successStatus: override.status,
+    cardinality: meta.cardinality,
+    creates: method === 'POST' && meta.cardinality === 'one' && !designates(meta.binding),
     ...(meta.description && { description: meta.description }),
   };
 }

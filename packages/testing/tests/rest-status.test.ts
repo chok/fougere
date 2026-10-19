@@ -1,7 +1,7 @@
 /**
  * REST is served by two edges: `registerRoutes` on an `HttpRouter` (Express, Fastify, Hono) and
- * `serveRest` behind the web hosts (Nuxt, Next, Vite). `checkDoors` reaches the second only and
- * compares bodies, so what they answer apart — the status — was never read.
+ * `serveRest` behind the web hosts (Nuxt, Next, Vite). They used to decide a status apart — 201
+ * against 200, 204 against 200, two 404 bodies — and now both answer through `answer`.
  */
 import { afterAll, describe, expect, it } from 'vitest';
 import { join } from 'node:path';
@@ -88,27 +88,35 @@ describe('the two REST edges agree', () => {
   });
 });
 
-describe('the two REST edges answer two status sets', () => {
-  it('on findById of a missing row: one 404, in two body shapes', async () => {
+describe('the two REST edges answer one status set, read off the contract', () => {
+  it('on findById of a missing row: 404, in one body shape', async () => {
     const { router, web } = await bothEdges('findById', { id: 'missing' });
     expect([router.status, web.status]).toEqual([404, 404]);
-    expect([router.body, web.body]).toEqual([{ error: 'Not found' }, { message: 'Not found' }]);
+    expect(web.body).toEqual(router.body);
+    expect(router.body).toMatchObject({ code: 'NOT_FOUND' });
   });
 
-  it('on create: 201 on a router, 200 behind a web host', async () => {
+  it('on create: 201 on both', async () => {
     const router = await viaRouter('create', { input: article });
     const web = await viaWeb('create', { input: article });
-    expect([router.status, web.status]).toEqual([201, 200]);
+    expect([router.status, web.status]).toEqual([201, 201]);
   });
 
-  it('on delete: 204 on a router, 200 and `true` behind a web host', async () => {
+  it('on delete: 204 and no body on both', async () => {
     const router = await viaRouter('delete', { id: (await created()).id });
     const web = await viaWeb('delete', { id: (await created()).id });
-    expect([router.status, web.status, web.body]).toEqual([204, 200, true]);
+    expect([router.status, web.status, router.body, web.body]).toEqual([204, 204, null, null]);
   });
 
-  it('on delete of a missing row: 404 on a router, 200 and `false` behind a web host', async () => {
+  it('on delete of a missing row: 404 on both', async () => {
     const { router, web } = await bothEdges('delete', { id: 'missing' });
-    expect([router.status, web.status, web.body]).toEqual([404, 200, false]);
+    expect([router.status, web.status]).toEqual([404, 404]);
+  });
+
+  it('on list: the same envelope on both, so the page facts survive JSON', async () => {
+    await created();
+    const { router, web } = await bothEdges('list');
+    expect(web.body).toEqual(router.body);
+    expect(router.body).toMatchObject({ items: expect.any(Array) });
   });
 });

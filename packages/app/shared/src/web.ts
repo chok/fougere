@@ -69,6 +69,9 @@ export async function rest(request: Request): Promise<Response> {
     return Response.json(outcome.body, { status: outcome.status, headers: outcome.headers });
   }
 
+  // A 204 carries no body, and a Response refuses one it was handed.
+  if (outcome.status === 204) return new Response(null, { status: 204 });
+
   return Response.json(outcome.body, { status: outcome.status });
 }
 

@@ -75,10 +75,10 @@ describe('registerRoutes', () => {
     expect(result.data).toEqual({ id: 'abc', title: 'Updated' });
   });
 
-  it('returns 201 for POST', async () => {
+  it('returns 201 for a POST that creates', async () => {
     const { router, getHandler } = fakeRouter();
     const routes: RouteDefinition[] = [
-      { method: 'POST', path: '/posts', operationName: 'create', address: 'post', handler: async () => ({ id: '1' }) },
+      { method: 'POST', path: '/posts', operationName: 'create', address: 'post', creates: true, handler: async () => ({ id: '1' }) },
     ];
 
     registerRoutes(router, routes);
@@ -121,10 +121,10 @@ describe('registerRoutes', () => {
     expect(result.status).toBe(204);
   });
 
-  it('returns 404 when handler returns undefined', async () => {
+  it('returns 404 when an op promising a row answers none', async () => {
     const { router, getHandler } = fakeRouter();
     const routes: RouteDefinition[] = [
-      { method: 'GET', path: '/posts/:id', operationName: 'findById', address: 'post', handler: async () => undefined },
+      { method: 'GET', path: '/posts/:id', operationName: 'findById', address: 'post', cardinality: 'maybe', handler: async () => undefined },
     ];
 
     registerRoutes(router, routes);

@@ -4,13 +4,13 @@ import {
   ErrorCode,
   FougereError,
   serves,
-  toHttpError,
   type App,
   type BootRefusal,
   type FrondCall,
   type InvocationContext,
 } from '@fougere/core';
 import { handleRpc, PARSE_ERROR } from '@fougere/transport-http';
+import { answer } from '@fougere/adapter-rest';
 import { matchRoute, tableOf } from './RouteMatch.js';
 import type { DoorRequest } from './DoorRequest.js';
 
@@ -103,44 +103,10 @@ export async function serveRest(app: App, request: DoorRequest): Promise<Outcome
   }
 
   const { route, params } = match;
-  let result: unknown;
-  try {
-    result = await invokeOn(
-      app,
-      { address: route.address, op: route.operationName },
-      { params, query: request.query, input: request.body },
-      undefined,
-      request.state,
-    );
-  } catch (err) {
-    const { status, body } = toHttpError(err);
+  const { status, data } = await answer(route, { params, query: request.query, input: request.body, state: request.state });
+  if (status >= 400) return { kind: 'error', status, body: data as { message: string } & Record<string, unknown> };
 
-    return { kind: 'error', status, body: body as { message: string } & Record<string, unknown> };
-  }
-
-  return shapeRest(route.operationName, result);
-}
-
-/** What an operation's return becomes on the wire. */
-export function shapeRest(operationName: string, result: unknown): Outcome {
-  if (result === null) return { kind: 'error', status: 404, body: { message: 'Not found' } };
-
-  // A list reads as { items, total, hasMore, endCursor } on the wire — the page-level
-  // facts ride beside the rows instead of on the array, where JSON drops them.
-  if (operationName === 'list' && Array.isArray(result)) {
-    const page = result as unknown as { total?: number; hasMore?: boolean; endCursor?: string };
-
-    return {
-      kind: 'ok',
-      status: 200,
-      body: { items: [...result], total: page.total, hasMore: page.hasMore, endCursor: page.endCursor },
-    };
-  }
-
-  // 200 on every verb, including POST — what the Nuxt facade has always answered. A 201
-  // would be better REST and is a change of behaviour, so it belongs to `schema-rest`
-  // (which owns what a verb means) and not to a refactor that moved this code.
-  return { kind: 'ok', status: 200, body: result };
+  return { kind: 'ok', status, body: data };
 }
 
 // ── The server-side dual of the couple ───────────
