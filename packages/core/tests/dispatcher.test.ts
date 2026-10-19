@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { Call } from '../src/wire/Call.js';
 import { RouteAddress } from '../src/wire/RouteAddress.js';
-import type { DispatchEvent } from '../src/dispatch/DispatchEvent.js';
+import { DispatchEvent } from '../src/dispatch/DispatchEvent.js';
 import { DispatchLifecycle } from '../src/dispatch/DispatchLifecycle.js';
 import { Dispatcher } from '../src/dispatch/Dispatcher.js';
 import type { Route } from '../src/dispatch/Route.js';
@@ -22,7 +22,7 @@ function setup(execute: Route['execute']) {
     dispatcher: new Dispatcher(
       routes,
       inFlight,
-      new DispatchLifecycle([(event) => events.push(event)]),
+      new DispatchLifecycle([(event) => { if (event instanceof DispatchEvent) events.push(event); }]),
     ),
     events,
     inFlight,
@@ -47,7 +47,7 @@ describe('Dispatcher', () => {
     const dispatcher = new Dispatcher(
       new RouteRegistry(),
       new InFlight(),
-      new DispatchLifecycle([(event) => events.push(event)]),
+      new DispatchLifecycle([(event) => { if (event instanceof DispatchEvent) events.push(event); }]),
     );
     const call = new Call(new RouteAddress({ address: 'missing', operation: 'list' }));
 
@@ -89,7 +89,7 @@ describe('Dispatcher', () => {
     const dispatcher = new Dispatcher(
       new RouteRegistry(),
       inFlight,
-      new DispatchLifecycle([(event) => events.push(event)]),
+      new DispatchLifecycle([(event) => { if (event instanceof DispatchEvent) events.push(event); }]),
     );
 
     await expect(dispatcher.dispatch(new Call(

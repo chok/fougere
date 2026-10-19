@@ -1,3 +1,5 @@
+import type { DoorRequest } from '../wire/DoorRequest.js';
+
 /** What a call needs to know about the call it is inside, and the two ways to answer it. */
 export interface Ambient {
   /** True when this runtime has no async context, and the boot says so. */
@@ -23,4 +25,10 @@ export interface Ambient {
 
   /** Run `fn` as the operation `label`. */
   enterOperation<R>(label: string, fn: () => Promise<R>): Promise<R>;
+
+  /** The request at a door this code answers within — absent outside any, and where there is no async context. */
+  currentRequest(): DoorRequest | undefined;
+
+  /** Run `fn` as the request `request`, so every call it makes says which request it answers. */
+  enterRequest<R>(request: DoorRequest, fn: () => Promise<R>): Promise<R>;
 }

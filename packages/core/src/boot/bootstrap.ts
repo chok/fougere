@@ -2,6 +2,8 @@ import { createContainer, type Container } from '@fougere/container';
 import { resolveConventions } from '../Conventions.js';
 import { servedProtocols } from './protocols.js';
 import { unregistered } from './unregistered.js';
+import { answerAt } from '../entry/door.js';
+import { DoorEvent } from '../dispatch/DoorEvent.js';
 import { dependencyCycles } from './dependencyCycles.js';
 import { lowerFirst, type SchemaView } from '@fougere/schema';
 
@@ -229,9 +231,10 @@ function dispatching(
   const dispatchLifecycle = new DispatchLifecycle(
     [],
     (error, event) => log.error(
-      `[dispatch-observer] ${event.stage} ${event.call.address.toString()}`,
+      `[dispatch-observer] ${event.stage} ${event instanceof DoorEvent ? event.request.door : event.call.address.toString()}`,
       error,
     ),
+    ambient.currentRequest,
   );
 
   return {
@@ -659,6 +662,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
       serveRpc: serveRpcOn(routeRegistry),
       extensions: () => appLifecycle.names(),
       observe: (observer) => dispatchLifecycle.add(observer),
+      answer: (door, received) => answerAt(door, received, { enterRequest: ambient.enterRequest, lifecycle: dispatchLifecycle }),
       use(...args: [AppMiddleware] | [string, AppMiddleware]): void {
         return typeof args[0] === 'string'
           ? use(args[1] as AppMiddleware, args[0])

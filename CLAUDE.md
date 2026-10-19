@@ -993,6 +993,15 @@ entities, so a handler with no entity (`checkout.pay`) is served and the fields 
 own contract. A GraphQL TYPE is built from a schema an op returns, once per entity. Pinned by
 `adapter/rest/tests/stated.test.ts`, `routes.test.ts` and `core/tests/operation-overrides.test.ts`.
 
+**Every way in runs ONE cycle, and core names no door** — `Door` (`core/src/entry/door.ts`): a
+package brings `decode`, `run` and `encode` in its own terms, and `app.answer(door, received)` runs
+them. The cycle opens a `DoorRequest` in the async context (`Ambient.enterRequest`), so every call
+the request makes carries it on its `DispatchEvent` — a request is not a call, and a GraphQL
+document makes several. It announces `DoorEvent`s (`received`, `decoded`, `encoded`, `failed`) to
+the same observer as the calls, and makes a refusal public by `toPublicError` before the door says
+it. The door's `name` is the package's word and core never switches on it, the way `Protocols`
+knows no protocol. Pinned by `core/tests/door.test.ts`, with a door of no real kind.
+
 **A process serves the REST door of the fronds it hosts** — `routesOf`
 (`adapter/rest/src/routes/RouteDefinition.ts`) leaves out an op whose `placement` is `remote`, and
 `fougere serve` answers REST beside the call envelope (`ServeOptions.beside`, over `restAnswer` in

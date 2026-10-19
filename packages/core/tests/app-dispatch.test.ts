@@ -6,7 +6,7 @@ import {
   createApp,
   createAppRunner,
   createLocalRunner,
-  type DispatchEvent,
+  DispatchEvent,
   type StorageFactory,
 } from '../src/index.js';
 import fronds from './fixtures/fronds.js';
@@ -29,7 +29,7 @@ describe('App.dispatch', () => {
       createContainer,
       storageFactory,
     });
-    app.observe((event) => events.push(event));
+    app.observe((event) => { if (event instanceof DispatchEvent) events.push(event); });
     const call = new Call(new RouteAddress({ address: 'product', operation: 'list' }));
 
     await expect(app.dispatch(call)).resolves.toMatchObject([{ id: '1', name: 'Fern' }]);
@@ -63,7 +63,7 @@ describe('App.dispatch', () => {
       createContainer,
       storageFactory,
     });
-    app.observe((event) => events.push(event));
+    app.observe((event) => { if (event instanceof DispatchEvent) events.push(event); });
 
     await createAppRunner(app)({ address: 'product', op: 'list' }, Invocation.empty);
 
@@ -78,7 +78,7 @@ describe('App.dispatch', () => {
       createContainer,
       storageFactory,
     });
-    app.observe((event) => events.push(event));
+    app.observe((event) => { if (event instanceof DispatchEvent) events.push(event); });
 
     await createAppRunner(app, 'admin')(
       { address: 'rpc', op: 'discover' },

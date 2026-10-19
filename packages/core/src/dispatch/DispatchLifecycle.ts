@@ -1,5 +1,7 @@
 import type { DispatchEvent } from './DispatchEvent.js';
 import type { DispatchObserver } from './DispatchObserver.js';
+import type { DoorEvent } from './DoorEvent.js';
+import type { DoorRequest } from '../wire/DoorRequest.js';
 
 /** Publishes dispatch transitions without participating in dispatch decisions. */
 export class DispatchLifecycle {
@@ -7,7 +9,9 @@ export class DispatchLifecycle {
 
   constructor(
     observers: readonly DispatchObserver[] = [],
-    private readonly diagnose: (error: unknown, event: DispatchEvent) => void = () => {},
+    private readonly diagnose: (error: unknown, event: DispatchEvent | DoorEvent) => void = () => {},
+    /** The request at a door the code runs within, read off the async context. */
+    readonly request: () => DoorRequest | undefined = () => undefined,
   ) {
     this.observers = [...observers];
   }
@@ -22,7 +26,7 @@ export class DispatchLifecycle {
     };
   }
 
-  publish(event: DispatchEvent): void {
+  publish(event: DispatchEvent | DoorEvent): void {
     for (const observer of this.observers) {
       try {
         observer(event);

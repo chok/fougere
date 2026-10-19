@@ -1,10 +1,12 @@
 /** The realization that can tell whose frame is open: an async context. */
 import { AsyncLocalStorage } from 'node:async_hooks';
 import type { Ambient } from './ambient-port.js';
+import type { DoorRequest } from '../wire/DoorRequest.js';
 
 const frame = new AsyncLocalStorage<string>();
 const chain = new AsyncLocalStorage<readonly string[]>();
 const operation = new AsyncLocalStorage<string>();
+const request = new AsyncLocalStorage<DoorRequest>();
 
 export const ambient: Ambient = {
   degraded: false,
@@ -41,5 +43,11 @@ export const ambient: Ambient = {
 
   enterOperation<R>(label: string, fn: () => Promise<R>): Promise<R> {
     return operation.run(label, fn);
+  },
+
+  currentRequest: () => request.getStore(),
+
+  enterRequest<R>(entered: DoorRequest, fn: () => Promise<R>): Promise<R> {
+    return request.run(entered, fn);
   },
 };

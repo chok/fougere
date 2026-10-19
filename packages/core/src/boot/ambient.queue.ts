@@ -3,6 +3,7 @@
  * never guesses — it waits its turn.
  */
 import type { Ambient } from './ambient-port.js';
+import type { DoorRequest } from '../wire/DoorRequest.js';
 
 /** What a nested frame waits before it is told what it did — the hang, measured, plus a name. */
 const NESTED_TIMEOUT_MS = 5_000;
@@ -71,6 +72,12 @@ export const ambient: Ambient = {
   currentOperation: () => undefined,
 
   enterOperation<R>(_label: string, fn: () => Promise<R>): Promise<R> {
+    return fn();
+  },
+
+  currentRequest: () => undefined,
+
+  enterRequest<R>(_request: DoorRequest, fn: () => Promise<R>): Promise<R> {
     return fn();
   },
 };

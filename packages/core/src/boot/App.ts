@@ -5,6 +5,7 @@ import type { SchemaView } from '@fougere/schema';
 import type { AppMiddleware } from '../wire/AppMiddleware.js';
 import type { RpcAnswer } from '../wire/RpcAnswer.js';
 import type { EffectiveOperationsMap } from '../EffectiveOperationsMap.js';
+import type { Door } from '../entry/door.js';
 import type { DispatchObserver } from '../dispatch/DispatchObserver.js';
 import type { DispatchPort } from '../dispatch/DispatchPort.js';
 import type { Storage } from '../storage/Storage.js';
@@ -64,8 +65,10 @@ export interface App extends DispatchPort {
   extensions(): string[];
   /** Declare one `rpc` op — what the app says about ITSELF, beside the card. */
   serveRpc(operationName: string, answer: RpcAnswer): void;
-  /** Watch every dispatch transition; the returned function unsubscribes. */
+  /** Watch every dispatch transition, and every request at a door; the returned function unsubscribes. */
   observe(observer: DispatchObserver): () => void;
+  /** Run one request through a door — the cycle every way in shares, whichever package brought it. */
+  answer<Received, Decoded, Answer>(door: Door<Received, Decoded, Answer>, received: Received): Promise<Answer>;
   /** Register a global app middleware (runs on every operation). */
   use(middleware: AppMiddleware): void;
   /** Register an app middleware scoped to one address. */

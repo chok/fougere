@@ -51,6 +51,9 @@ export { JOURNAL, type Journal } from './module/relation/Journal.js';
 // The class and not only its type: an observer RECEIVES these, so a package that folds
 // them — or a test of one — has to be able to make one through the facade.
 export { DispatchEvent } from './dispatch/DispatchEvent.js';
+export { DoorEvent, type DoorStage } from './dispatch/DoorEvent.js';
+export { DoorRequest } from './wire/DoorRequest.js';
+export { type Door, type DoorOutcome } from './entry/door.js';
 export type { CallPage, CallRecord } from './contract.js';
 export { Page, asPage } from './contract.js';
 export { driftOf, agrees, explain, type CardDrift } from './contract.js';

@@ -1,3 +1,5 @@
 import type { DispatchEvent } from './DispatchEvent.js';
+import type { DoorEvent } from './DoorEvent.js';
 
-export type DispatchObserver = (event: DispatchEvent) => void;
+/** Sees every call, and every request at a door that the calls were made within. */
+export type DispatchObserver = (event: DispatchEvent | DoorEvent) => void;

@@ -1,4 +1,4 @@
-import { CARRIES_LINE, declaredTopologyOf, frond, LogLine, type App, type Extension, type InvocationContext } from '@fougere/core';
+import { CARRIES_LINE, declaredTopologyOf, DispatchEvent, frond, LogLine, type App, type Extension, type InvocationContext } from '@fougere/core';
 import KeepHandler from './KeepHandler.js';
 import { CallRing } from './CallRing.js';
 import { ErrorRing } from './ErrorRing.js';
@@ -132,6 +132,8 @@ export function calls(options: CallsOptions = {}): Extension {
 
       const undo = [
         app.observe((event) => {
+          // The ring holds calls; a request at a door is the calls' context, not one of them.
+          if (!(event instanceof DispatchEvent)) return;
           // Not its own: keeping a line is a DISPATCH, so the ring would fill with the
           // writes that fill it — the same shape as a logger that logs its own carrying.
           if (CARRIES_LINE.has(event.call.address.address)) return;
