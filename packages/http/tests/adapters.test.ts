@@ -2,6 +2,44 @@ import { describe, expect, it, vi } from 'vitest';
 import { createFastifyRouter, createHonoRouter, type Middleware } from '../src/index.js';
 
 describe('Hono adapter', () => {
+  const honoAnswer = async (raw: Request) => {
+    let registered: Function | undefined;
+    const app = {
+      use: vi.fn(), get: vi.fn(), put: vi.fn(), patch: vi.fn(), delete: vi.fn(),
+      post: vi.fn((_path: string, handler: Function) => { registered = handler; }),
+    };
+    createHonoRouter(app).on('POST', '/items', async (ctx) => ({ status: 200, data: await ctx.body() }));
+    const state = new Map<string, unknown>();
+
+    return registered!({
+      req: { raw, method: 'POST', path: '/items', param: () => ({}), query: () => ({}) },
+      get: (key: string) => state.get(key),
+      set: (key: string, value: unknown) => state.set(key, value),
+      header: vi.fn(), body: vi.fn(),
+      json: vi.fn((data: unknown, status: number) => ({ data, status })),
+    });
+  };
+
+  it('answers 415 on a body that is not JSON', async () => {
+    const raw = new Request('http://localhost/items', { method: 'POST', body: 'hello', headers: { 'content-type': 'text/plain' } });
+
+    await expect(honoAnswer(raw)).resolves.toMatchObject({ status: 415, data: { code: 'UNSUPPORTED_MEDIA_TYPE' } });
+  });
+
+  it('answers 413 on a body over the limit, counted while reading', async () => {
+    const raw = new Request('http://localhost/items', {
+      method: 'POST', body: JSON.stringify({ x: 'y'.repeat(3 * 1024 * 1024) }), headers: { 'content-type': 'application/json' },
+    });
+
+    await expect(honoAnswer(raw)).resolves.toMatchObject({ status: 413, data: { code: 'PAYLOAD_TOO_LARGE' } });
+  });
+
+  it('reads a JSON body', async () => {
+    const raw = new Request('http://localhost/items', { method: 'POST', body: '{"a":1}', headers: { 'content-type': 'application/json' } });
+
+    await expect(honoAnswer(raw)).resolves.toMatchObject({ status: 200, data: { a: 1 } });
+  });
+
   it('turns malformed JSON into a 400 response', async () => {
     let registered: Function | undefined;
     const app = {
@@ -18,11 +56,12 @@ describe('Hono adapter', () => {
     const state = new Map<string, unknown>();
     const context = {
       req: {
-        raw: new Request('http://localhost/items', { method: 'POST' }),
+        raw: new Request('http://localhost/items', {
+          method: 'POST', body: '{ not json', headers: { 'content-type': 'application/json' },
+        }),
         method: 'POST', path: '/items',
         param: () => ({}), query: () => ({}),
         header: () => 'application/json',
-        json: async () => { throw new SyntaxError('bad json'); },
       },
       get: (key: string) => state.get(key),
       set: (key: string, value: unknown) => state.set(key, value),
@@ -52,11 +91,12 @@ describe('Hono adapter', () => {
     const state = new Map<string, unknown>();
     const context = {
       req: {
-        raw: new Request('http://localhost/items', { method: 'POST' }),
+        raw: new Request('http://localhost/items', {
+          method: 'POST', body: '{ not json', headers: { 'content-type': 'application/json' },
+        }),
         method: 'POST', path: '/items',
         param: () => ({}), query: () => ({}),
         header: () => 'application/json',
-        json: async () => { throw new SyntaxError('bad json'); },
       },
       res: { status: 200 },
       get: (key: string) => state.get(key),

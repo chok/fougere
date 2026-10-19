@@ -1,110 +1,22 @@
 /** Receiving end for the browser — the h3 half. */
-import { defineEventHandler } from 'h3';
+import { defineEventHandler, getRequestHeader, getRequestWebStream, type H3Event } from 'h3';
 import { refusedRpc, serveRpc, rpcParseError, useFougereApp } from '@fougere/app';
-import { BootRefusal, maxBodyBytes } from '@fougere/core';
+import { BootRefusal, FougereError, maxBodyBytes, readWithin } from '@fougere/core';
 import { stateOf } from '../stateOf.js';
 
-type NodeReq = {
-  body?: unknown;
-  on?: (event: 'data' | 'end' | 'error', cb: (arg: never) => void) => void;
-};
-
-type WebReq = {
-  body?: { getReader?: () => { read: () => Promise<{ done: boolean; value?: Uint8Array }>; cancel?: () => Promise<void> } } | null;
-  headers?: { get?: (name: string) => string | null };
-  text?: () => Promise<string>;
-  json?: () => Promise<unknown>;
-};
-
-
-function payloadTooLarge(): Error & { statusCode: number; statusMessage: string } {
-  return Object.assign(new Error('Payload too large'), { statusCode: 413, statusMessage: 'Payload too large' });
-}
-
-function parseRawJson(raw: string): unknown {
-  if (Buffer.byteLength(raw) > maxBodyBytes()) throw payloadTooLarge();
+/** The JSON-RPC payload, read within `maxBodyBytes` whatever runtime h3 sits on. */
+async function readJsonBody(event: H3Event): Promise<unknown> {
+  let raw: string;
+  try {
+    raw = await readWithin(getRequestWebStream(event), maxBodyBytes(), getRequestHeader(event, 'content-length'));
+  } catch (failure) {
+    if (failure instanceof FougereError) {
+      throw Object.assign(new Error('Payload too large'), { statusCode: 413, statusMessage: 'Payload too large' });
+    }
+    throw failure;
+  }
 
   return raw ? JSON.parse(raw) : {};
-}
-
-async function readWebBody(req: WebReq): Promise<unknown> {
-  const declaredLength = Number(req.headers?.get?.('content-length'));
-  if (Number.isFinite(declaredLength) && declaredLength > maxBodyBytes()) throw payloadTooLarge();
-
-  const reader = req.body?.getReader?.();
-  if (reader) {
-    const chunks: Buffer[] = [];
-    let size = 0;
-    for (;;) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      const chunk = Buffer.from(value ?? []);
-      size += chunk.length;
-      if (size > maxBodyBytes()) {
-        await reader.cancel?.();
-        throw payloadTooLarge();
-      }
-      chunks.push(chunk);
-    }
-
-    return parseRawJson(Buffer.concat(chunks).toString('utf8'));
-  }
-
-  if (typeof req.text === 'function') return parseRawJson(await req.text());
-  // Legacy request-like implementations may expose only json(). The content-length
-  // check above still rejects declared oversized payloads; standard Request objects
-  // take the streamed branch and enforce the limit while reading.
-  if (typeof req.json === 'function') return req.json();
-
-  return {};
-}
-
-/** Read the JSON-RPC payload from the h3 event, agnostic to h3 version AND trust boundary. */
-async function readJsonBody(event: { req?: unknown; node?: { req?: unknown } }): Promise<unknown> {
-  const rawNodeReq = event.node?.req;
-  const nodeReq = rawNodeReq && typeof rawNodeReq === 'object' ? rawNodeReq as NodeReq : undefined;
-  const preset = nodeReq?.body;
-  if (typeof preset === 'string') {
-    if (Buffer.byteLength(preset) > maxBodyBytes()) throw payloadTooLarge();
-
-    return parseRawJson(preset);
-  }
-  if (preset instanceof Uint8Array) {
-    if (preset.byteLength > maxBodyBytes()) throw payloadTooLarge();
-    const raw = Buffer.from(preset).toString('utf8');
-
-    return parseRawJson(raw);
-  }
-  const webReq = event.req && typeof event.req === 'object' ? event.req as WebReq : undefined;
-  if (
-    webReq
-    && (webReq.body?.getReader || typeof webReq.text === 'function' || typeof webReq.json === 'function')
-  ) return readWebBody(webReq);
-  if (nodeReq && typeof nodeReq.on === 'function') {
-    const raw = await new Promise<string>((resolve, reject) => {
-      const chunks: Buffer[] = [];
-      let size = 0;
-      let exceeded = false;
-      nodeReq.on!('data', (chunk) => {
-        if (exceeded) return;
-        const buffer = Buffer.from(chunk);
-        size += buffer.length;
-        if (size > maxBodyBytes()) {
-          exceeded = true;
-          reject(payloadTooLarge());
-
-          return;
-        }
-        chunks.push(buffer);
-      });
-      nodeReq.on!('end', () => { if (!exceeded) resolve(Buffer.concat(chunks).toString('utf8')); });
-      nodeReq.on!('error', reject);
-    });
-
-    return parseRawJson(raw);
-  }
-
-  return {};
 }
 
 export default defineEventHandler(async (event) => {

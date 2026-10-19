@@ -1,5 +1,5 @@
 /** The facades as Express middlewares — the form an Express app expects. */
-import { readExpressBody } from '@fougere/http';
+import { HttpError, readExpressBody } from '@fougere/http';
 import { maxBodyBytes } from '@fougere/core';
 import { rpcParseError, serveRest, serveRpc } from './Outcome.js';
 import { serveGraphQL } from './graphql.js';
@@ -52,9 +52,9 @@ function queryOf(req: ExpressRequest): Record<string, string> {
 
 /** Turn a thrown failure into Express's own error pipeline, unless it is a refusal we own. */
 function fail(res: ExpressResponse, next: Next, err: unknown): void {
-  const code = (err as { name?: string })?.name === 'MalformedJsonError' ? 400 : 0;
-  if (code === 400) {
-    res.status(400).json({ code: 'BAD_REQUEST', message: 'Malformed JSON body' });
+  if (err instanceof HttpError) {
+    const { status, data } = err.result();
+    res.status(status).json(data);
 
     return;
   }
@@ -73,7 +73,8 @@ export function call(mountPath = '/_fougere/call'): ExpressMiddleware {
         let body: unknown;
         try {
           body = await readExpressBody(req, maxBodyBytes());
-        } catch {
+        } catch (refused) {
+          if (refused instanceof HttpError && refused.status === 413) throw refused;
           res.status(200).json(rpcParseError());
 
           return;

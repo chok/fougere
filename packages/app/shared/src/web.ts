@@ -1,7 +1,8 @@
 /** The three facades as Web-standard handlers: `Request` in, `Response` out. */
 import { serveRest, serveRpc, rpcParseError, useFougereApp, useFougereConfig, serveGraphQL } from './index.js';
 import { prefixOf } from '@fougere/adapter-rest';
-import { maxBodyBytes } from '@fougere/core';
+import { FougereError, maxBodyBytes, readWithin, toHttpError } from '@fougere/core';
+import { jsonBodyOf } from './jsonBody.js';
 import { sessionViewOf } from './session.js';
 import { stateFor } from './state.js';
 
@@ -9,18 +10,16 @@ const WITH_BODY = new Set(['POST', 'PUT', 'PATCH']);
 
 /** The call envelope. */
 export async function call(request: Request): Promise<Response> {
-  const declared = Number(request.headers.get('content-length'));
-  if (Number.isFinite(declared) && declared > maxBodyBytes()) {
-    return Response.json({ message: 'Payload too large' }, { status: 413 });
+  let body: unknown;
+  try {
+    body = JSON.parse(await readWithin(request.body, maxBodyBytes(), request.headers.get('content-length')));
+  } catch (failure) {
+    if (failure instanceof FougereError) return Response.json({ message: 'Payload too large' }, { status: 413 });
+
+    return Response.json(rpcParseError());
   }
 
   const app = await useFougereApp();
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return Response.json(rpcParseError());
-  }
 
   return Response.json(
     await serveRpc(app, {
@@ -46,13 +45,20 @@ export async function rest(request: Request): Promise<Response> {
     }, { status: 404 });
   }
 
+  let body: unknown;
+  try {
+    body = WITH_BODY.has(method) ? await jsonBodyOf(request) : undefined;
+  } catch (refused) {
+    return refusal(refused);
+  }
+
   const app = await useFougereApp();
 
   const outcome = await serveRest(app, {
     method,
     path: url.pathname,
     query: Object.fromEntries(url.searchParams),
-    body: WITH_BODY.has(method) ? await request.json().catch(() => undefined) : undefined,
+    body,
     state: await stateFor(request.headers),
   });
 
@@ -73,12 +79,14 @@ export async function session(request: Request): Promise<Response> {
 
 /** GraphQL, at whatever path the host mounted it — `/graphql` by convention. */
 export async function graphql(request: Request): Promise<Response> {
+  let body: { query?: string; variables?: Record<string, unknown>; operationName?: string };
+  try {
+    body = (await jsonBodyOf(request) ?? {}) as typeof body;
+  } catch (refused) {
+    return refusal(refused);
+  }
+
   const app = await useFougereApp();
-  const body = (await request.json().catch(() => ({}))) as {
-    query?: string;
-    variables?: Record<string, unknown>;
-    operationName?: string;
-  };
 
   const outcome = await serveGraphQL(app, {
     ...body,
@@ -91,4 +99,10 @@ export async function graphql(request: Request): Promise<Response> {
   }
 
   return Response.json(outcome.body, { status: outcome.status });
+}
+
+function refusal(refused: unknown): Response {
+  const { status, body } = toHttpError(refused);
+
+  return Response.json(body, { status });
 }

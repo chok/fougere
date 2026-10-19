@@ -7,7 +7,7 @@
  */
 import { handleRpc, type ReceiveOptions } from './server.js';
 import { maxFrameBytes, CALL_PATH, parseError, tooLarge } from './policy.js';
-import type { Transport } from '@fougere/core/contract';
+import { ErrorCode, FougereError, readWithin, type Transport } from '@fougere/core/contract';
 
 export interface ReceiveHttpOptions extends ReceiveOptions {
   /** The path this facade answers. Default: `/_fougere/call`. */
@@ -18,48 +18,6 @@ export interface ReceiveHttpOptions extends ReceiveOptions {
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
-
-/** Distinguishes "the body was too large" from any body a caller could actually send. */
-const TOO_LARGE = Symbol('too large');
-
-/**
- * The declared length is a cheap refusal; the count is the real one. A `content-length` may
- * be absent, and it may lie — the copy that trusted it alone had no cap at all in that case.
- */
-async function bodyWithin(request: Request, max: number): Promise<string | typeof TOO_LARGE> {
-  const declared = Number(request.headers.get('content-length'));
-  if (Number.isFinite(declared) && declared > max) return TOO_LARGE;
-
-  const reader = request.body?.getReader();
-  if (!reader) return '';
-
-  const chunks: Uint8Array[] = [];
-  let size = 0;
-  for (;;) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    size += value.byteLength;
-    if (size > max) {
-      await reader.cancel();
-
-      return TOO_LARGE;
-    }
-    chunks.push(value);
-  }
-
-  return new TextDecoder().decode(concat(chunks, size));
-}
-
-function concat(chunks: readonly Uint8Array[], size: number): Uint8Array {
-  const all = new Uint8Array(size);
-  let at = 0;
-  for (const chunk of chunks) {
-    all.set(chunk, at);
-    at += chunk.byteLength;
-  }
-
-  return all;
-}
 
 export function receive(
   runner: Transport,
@@ -81,8 +39,14 @@ export function receive(
       return new Response(null, { status: 404 });
     }
 
-    const raw = await bodyWithin(request, maxFrameBytes());
-    if (raw === TOO_LARGE) return json(tooLarge(), 413);
+    let raw: string;
+    try {
+      raw = await readWithin(request.body, maxFrameBytes(), request.headers.get('content-length'));
+    } catch (refused) {
+      if (!(refused instanceof FougereError && refused.code === ErrorCode.PAYLOAD_TOO_LARGE)) throw refused;
+
+      return json(tooLarge(), 413);
+    }
 
     let parsed: unknown;
     try {

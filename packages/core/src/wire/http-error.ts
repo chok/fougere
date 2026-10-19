@@ -20,6 +20,7 @@ const HTTP_STATUS: Record<ErrorCode, number> = {
   [ErrorCode.METHOD_NOT_ALLOWED]: 405,
   [ErrorCode.PRECONDITION_FAILED]: 412,
   [ErrorCode.PAYLOAD_TOO_LARGE]: 413,
+  [ErrorCode.UNSUPPORTED_MEDIA_TYPE]: 415,
   [ErrorCode.UNPROCESSABLE_ENTITY]: 422,
   [ErrorCode.TOO_MANY_REQUESTS]: 429,
   [ErrorCode.REQUEST_TIMEOUT]: 408,

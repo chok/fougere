@@ -4,7 +4,8 @@
 import { type Handler } from './router/Handler.js';
 import { type HttpMethod } from './router/HttpMethod.js';
 import { type HttpRouter } from './router/HttpRouter.js';
-import { MalformedJsonError } from './router/MalformedJsonError.js';
+import { readWebBody } from './router/BodyLimit.js';
+import { HttpError } from './router/HttpError.js';
 import { type Middleware } from './router/Middleware.js';
 import { PASSTHROUGH } from './router/Next.js';
 import { type RequestContext } from './router/RequestContext.js';
@@ -41,12 +42,20 @@ function buildContext(c: any): RequestContext {
     query: c.req.query() ?? {},
     body: async () => {
       const method = c.req.method.toUpperCase();
-      const contentType = c.req.header?.('content-type') ?? c.req.raw?.headers?.get?.('content-type') ?? '';
-      if (method === 'GET' || method === 'HEAD' || !contentType.toLowerCase().includes('json')) return {};
+      if (method === 'GET' || method === 'HEAD') return {};
+      const request: Request = c.req.raw;
+      const contentType = request.headers.get('content-type') ?? '';
+      if (!contentType.toLowerCase().includes('json')) {
+        if (request.body && request.headers.get('content-length') !== '0') throw HttpError.unsupportedMediaType(contentType);
+
+        return {};
+      }
+      const raw = await readWebBody(request);
+      if (!raw) return {};
       try {
-        return await c.req.json();
+        return JSON.parse(raw);
       } catch (cause) {
-        throw new MalformedJsonError({ cause });
+        throw HttpError.malformedJson(cause);
       }
     },
     state,
@@ -73,10 +82,6 @@ function sendResponse(c: any, result: ResponseResult): Response {
   return c.json(result.data, result.status);
 }
 
-function malformedJsonResponse(c: any): Response {
-  return sendResponse(c, { status: 400, data: { code: 'BAD_REQUEST', message: 'Malformed JSON body' } });
-}
-
 /** Create an HttpRouter backed by a Hono app. */
 export function createHonoRouter(app: HonoLike): HttpRouter {
   return {
@@ -100,7 +105,7 @@ export function createHonoRouter(app: HonoLike): HttpRouter {
             return sendResponse(c, result);
           }
         } catch (err) {
-          if (err instanceof MalformedJsonError) return malformedJsonResponse(c);
+          if (err instanceof HttpError) return sendResponse(c, err.result());
           throw err;
         }
       };
@@ -123,7 +128,7 @@ export function createHonoRouter(app: HonoLike): HttpRouter {
 
           return sendResponse(c, result);
         } catch (err) {
-          if (err instanceof MalformedJsonError) return malformedJsonResponse(c);
+          if (err instanceof HttpError) return sendResponse(c, err.result());
           throw err;
         }
       });

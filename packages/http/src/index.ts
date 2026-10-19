@@ -4,7 +4,7 @@ export type { ResponseResult } from './router/ResponseResult.js';
 export type { Handler } from './router/Handler.js';
 export type { Middleware } from './router/Middleware.js';
 export type { HttpRouter } from './router/HttpRouter.js';
-export { MalformedJsonError } from './router/MalformedJsonError.js';
+export { HttpError } from './router/HttpError.js';
 export { type Next, PASSTHROUGH } from './router/Next.js';
 
 export { createHonoRouter } from './hono.js';

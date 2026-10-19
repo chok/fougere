@@ -66,7 +66,7 @@ export { FougereError, ErrorCode, validationErrorsOf } from './contract.js';
 export type { AppMiddleware } from './wire/AppMiddleware.js';
 export type { AppNext } from './wire/AppNext.js';
 export type { OperationContext } from './wire/OperationContext.js';
-export { assertIdentityCard, RPC_ADDRESS, ENVELOPE_BYTES, maxBodyBytes, maxFrameBytes, setMaxBodyBytes } from './contract.js';
+export { assertIdentityCard, RPC_ADDRESS, ENVELOPE_BYTES, maxBodyBytes, maxFrameBytes, readWithin, setMaxBodyBytes } from './contract.js';
 export { OPERATION_KINDS, CARDINALITIES, PLACEMENTS, type OperationKind, type Cardinality, type Placement } from './contract.js';
 export { createLocalRunner, createAppRunner } from './boot/runner.js';
 

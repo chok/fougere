@@ -2,7 +2,8 @@
 import { type Handler } from './router/Handler.js';
 import { type HttpMethod } from './router/HttpMethod.js';
 import { chain, type HttpRouter } from './router/HttpRouter.js';
-import { MalformedJsonError } from './router/MalformedJsonError.js';
+import { MAX_BODY_BYTES } from './router/BodyLimit.js';
+import { HttpError } from './router/HttpError.js';
 import { type Middleware } from './router/Middleware.js';
 import { type RequestContext } from './router/RequestContext.js';
 import { type ResponseResult } from './router/ResponseResult.js';
@@ -24,10 +25,6 @@ const METHOD_MAP: Record<HttpMethod, 'get' | 'post' | 'put' | 'patch' | 'delete'
   DELETE: 'delete',
 };
 
-// Core's default (`maxBodyBytes`, `wire/BodyLimit.ts`) — this package declares NO Fougere
-// dependency, a leaf port does not take one on the kernel for a number, so a host that reads
-// the config hands its own value to `readExpressBody`.
-const MAX_BODY_BYTES = 2 * 1024 * 1024;
 
 /** Drain the Node stream. Only reached when no body parser ran before us. */
 export function readRawBody(req: any, maxBodyBytes = MAX_BODY_BYTES): Promise<string> {
@@ -40,7 +37,7 @@ export function readRawBody(req: any, maxBodyBytes = MAX_BODY_BYTES): Promise<st
       size += chunk.length;
       if (size > maxBodyBytes) {
         exceeded = true;
-        reject(Object.assign(new Error('Payload too large'), { statusCode: 413 }));
+        reject(HttpError.tooLarge(maxBodyBytes));
 
         return;
       }
@@ -49,6 +46,11 @@ export function readRawBody(req: any, maxBodyBytes = MAX_BODY_BYTES): Promise<st
     req.on('end', () => { if (!exceeded) resolve(Buffer.concat(chunks).toString('utf8')); });
     req.on('error', reject);
   });
+}
+
+/** Whether a request carries a body at all: a length above zero, or one sent in chunks. */
+function sendsBody(headers: Record<string, unknown>): boolean {
+  return Number(headers['content-length']) > 0 || headers['transfer-encoding'] !== undefined;
 }
 
 /** The JSON body of an Express request, whoever parsed it. */
@@ -63,13 +65,17 @@ export function readExpressBody(req: any, maxBodyBytes = MAX_BODY_BYTES): Promis
     // stream), while every other facade kept it.
     if (req.body !== undefined) return req.body;
     const contentType = String(req.headers?.['content-type'] ?? '');
-    if (!contentType.toLowerCase().includes('json')) return {};
+    if (!contentType.toLowerCase().includes('json')) {
+      if (sendsBody(req.headers ?? {})) throw HttpError.unsupportedMediaType(contentType);
+
+      return {};
+    }
     const raw = await readRawBody(req, maxBodyBytes);
     if (!raw) return {};
     try {
       return JSON.parse(raw);
     } catch (cause) {
-      throw new MalformedJsonError({ cause });
+      throw HttpError.malformedJson(cause);
     }
   })();
 
@@ -149,16 +155,11 @@ export function createExpressRouter(app: ExpressLike): HttpRouter {
         try {
           sendResponse(res, await chain(globalMiddlewares, scopedMiddlewares, buildContext(req), handler));
         } catch (err) {
-          // This adapter is the one that parses JSON, so it is the one that answers
-          // for it — same 400 the Hono adapter gives, which is the other self-parsing
-          // one. Fastify's own parser answers before we ever see the request.
-          if (err instanceof MalformedJsonError) {
-            sendResponse(res, { status: 400, data: { code: 'BAD_REQUEST', message: 'Malformed JSON body' } });
-
-            return;
-          }
-          if ((err as { statusCode?: number })?.statusCode === 413) {
-            sendResponse(res, { status: 413, data: { code: 'PAYLOAD_TOO_LARGE', message: 'Payload too large' } });
+          // This adapter reads the body, so it answers what it refuses to read — the same
+          // 400, 413 and 415 as Hono, the other one that reads. Fastify's own parser
+          // answers before we ever see the request.
+          if (err instanceof HttpError) {
+            sendResponse(res, err.result());
 
             return;
           }

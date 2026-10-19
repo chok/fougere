@@ -1,5 +1,5 @@
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
-import type { Transport } from '@fougere/core';
+import { ErrorCode, FougereError, readWithin, type Transport } from '@fougere/core';
 import type { RpcResponse } from '../jsonrpc/RpcResponse.js';
 import { handleRpc } from '../server.js';
 import { maxFrameBytes, CALL_PATH, parseError, tooLarge } from '../policy.js';
@@ -57,23 +57,19 @@ function answering(runner: Transport, options: ServeOptions) {
       return;
     }
 
-    const maxBodyBytes = maxFrameBytes();
-    const chunks: Buffer[] = [];
-    let size = 0;
-    for await (const value of req) {
-      const chunk = Buffer.from(value as Uint8Array);
-      size += chunk.length;
-      if (size > maxBodyBytes) {
-        res.writeHead(413, { 'content-type': 'application/json' }).end(JSON.stringify(tooLarge()));
+    let raw: string;
+    try {
+      raw = await readWithin(req, maxFrameBytes(), req.headers['content-length']);
+    } catch (refused) {
+      if (!(refused instanceof FougereError && refused.code === ErrorCode.PAYLOAD_TOO_LARGE)) throw refused;
+      res.writeHead(413, { 'content-type': 'application/json' }).end(JSON.stringify(tooLarge()));
 
-        return;
-      }
-      chunks.push(chunk);
+      return;
     }
 
     let response: RpcResponse;
     try {
-      response = await handleRpc(runner, JSON.parse(Buffer.concat(chunks).toString('utf8')), options);
+      response = await handleRpc(runner, JSON.parse(raw), options);
     } catch {
       response = parseError();
     }

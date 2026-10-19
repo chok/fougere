@@ -682,8 +682,14 @@ consulted keys, and every other difference is reported as `pending`. `maxBodyByt
 `ENVELOPE_BYTES`, the room for what a forwarding process adds; measured against the caller's
 limit alone, a body just under 1 MiB passed in process and was refused a hop away (site-only
 audit, 2026-09-23). The receivers' own `maxBodyBytes` option is gone with it: a client that
-could not see it refused at 1 MiB whatever the receiver took. `@fougere/http` keeps a default of
-its own, since it takes no dependency on core, and the Express host hands it the configured one. `Logger` holds NO level:
+could not see it refused at 1 MiB whatever the receiver took. Every door reads through ONE reader,
+`readWithin` (`wire/BodyLimit.ts`), which refuses on the declared length before a byte is read and
+then while counting; four doors read without a limit before it (Hono, Nuxt's REST and GraphQL
+routes, `rest` and `graphql` in `app/shared/src/web.ts`). A body that is not JSON is refused with
+415 (`UNSUPPORTED_MEDIA_TYPE`), never read as `{}`, which left the op to refuse a missing field.
+`@fougere/http` keeps a reader and a default of its own, since it takes no dependency on core, and
+answers the same 400/413/415 through `HttpError`; the Express host hands it the configured limit.
+Pinned by `core/tests/body-limit.test.ts`, `http/tests/*.test.ts`, `app/shared/tests/web-body.test.ts`. `Logger` holds NO level:
 `setLogLevel` sets one threshold for the process. `FOUGERE_LOG_LEVEL` wins over the file. A
 re-read needs `loadConfig(root, { fresh: true })` — a module is cached by its specifier.
 Core catches no signal: a process belongs to its host. Pinned by `tests/log-level.test.ts`.

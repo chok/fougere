@@ -120,6 +120,39 @@ describe('Express adapter — the body nobody parsed', () => {
     expect(reads).toEqual([{ n: 1 }, { n: 1 }]);
   });
 
+  it('answers 415 on a body that is not JSON, rather than reading it as {}', async () => {
+    const { app, handlerFor } = fakeApp();
+    const router = createExpressRouter(app);
+    router.on('POST', '/items', async (ctx) => {
+      await ctx.body();
+
+      return { status: 200, data: {} };
+    });
+
+    const { res, sent } = fakeRes();
+    const req = streamingReq('hello', { headers: { host: 'localhost', 'content-type': 'text/plain', 'content-length': '5' } });
+    await handlerFor('POST /items')(req, res, vi.fn());
+
+    expect(sent.status).toBe(415);
+    expect(sent.json).toMatchObject({ code: 'UNSUPPORTED_MEDIA_TYPE' });
+  });
+
+  it('reads a POST with no body as {}, whatever its type', async () => {
+    const { app, handlerFor } = fakeApp();
+    const router = createExpressRouter(app);
+    let seen: unknown;
+    router.on('POST', '/items', async (ctx) => {
+      seen = await ctx.body();
+
+      return { status: 200, data: {} };
+    });
+
+    const { res } = fakeRes();
+    await handlerFor('POST /items')(streamingReq('', { headers: { host: 'localhost' } }), res, vi.fn());
+
+    expect(seen).toEqual({});
+  });
+
   it('answers 400 on malformed JSON rather than handing Express an exception', async () => {
     const { app, handlerFor } = fakeApp();
     const router = createExpressRouter(app);
