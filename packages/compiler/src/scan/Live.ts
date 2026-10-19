@@ -77,7 +77,8 @@ export function contractOf(
   if (contract.signature !== undefined) parts.push(`signature: ${lit(contract.signature)}`);
   // Written down like every other member: a scan on disk is what an edge deployment reads, and
   // a contract that loses a field there answers differently depending on how it was booted.
-  if (contract.errors !== undefined) parts.push(`errors: ${lit(contract.errors)}`);
+  // As the enum's members, the way the facade writes them: a string is no `ErrorCode` to a checker.
+  if (contract.errors !== undefined) parts.push(`errors: [${contract.errors.map((code) => `ErrorCode.${code}`).join(', ')}]`);
 
   return `[${lit(op)}, { ${parts.join(', ')} }]`;
 }

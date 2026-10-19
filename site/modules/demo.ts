@@ -1,4 +1,4 @@
-import { execFileSync } from 'node:child_process';
+import { globby } from 'globby';
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { extname, join } from 'node:path';
 import { defineNuxtModule } from 'nuxt/kit';
@@ -47,10 +47,13 @@ type Demo = {
 /** Tool output, not declaration — one Cargo.lock is 754 of rust-frond's 800 lines. */
 const LOCKED = /(\.lock|-lock\.(yaml|json))$/;
 
-const trackedFiles = (repository: string) =>
-  execFileSync('git', ['ls-files', 'demos'], { cwd: repository, encoding: 'utf8' })
-    .split('\n')
-    .filter((path) => path && !LOCKED.test(path));
+/**
+ * What the repository keeps under `demos/`, read through its `.gitignore` files rather than through
+ * git: an image builds from a checkout that holds no `.git`, and `git ls-files` stopped it there.
+ */
+const trackedFiles = async (repository: string) =>
+  (await globby('demos/**', { cwd: repository, gitignore: true, dot: true }))
+    .filter((path) => !LOCKED.test(path));
 
 /**
  * A sandbox installs from the registry, so `workspace:*` resolves to nothing there. The
@@ -120,7 +123,7 @@ const documentOf = ({ name, files, entry, runnable }: Demo) => {
 const readDemos = async (repository: string, version: string): Promise<Demo[]> => {
   const byName = new Map<string, string[]>();
 
-  for (const tracked of trackedFiles(repository)) {
+  for (const tracked of await trackedFiles(repository)) {
     const [, name, ...rest] = tracked.split('/');
     if (!name || !rest.length) continue;
 

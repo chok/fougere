@@ -1,6 +1,5 @@
 /** The scan: reading a project's source to produce the descriptors core boots from. */
 export { scanProject } from './scan/scanner.js';
-export { RUNTIME_PACKAGES } from './scan/bundling.js';
 export { emitStatement } from './scan/statement.js';
 // The third projection of one scan: the facades as TYPES, so a client can narrow a refusal.
 export { adaptersOf } from './scan/adapters.js';

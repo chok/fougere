@@ -4,14 +4,12 @@ import { dirname, join, resolve } from 'node:path';
 import TerserPlugin from 'terser-webpack-plugin';
 import type { NextConfig } from 'next';
 
-import { RUNTIME_PACKAGES } from '@fougere/compiler';
 import { resolveConventions } from '@fougere/core';
-import { projectRootOf } from '@fougere/core/node';
+import { projectRootOf, RUNTIME_PACKAGES } from '@fougere/core/node';
 
 /** Where the facades land, and what a page imports them by. */
 const FACADE = '.fougere/facade.generated.ts';
 const SPECIFIER = '@fronds/facade';
-
 /**
  * The facades this app serves, written when the config is read.
  *
@@ -52,11 +50,17 @@ async function writeFacades(root: string, app: string): Promise<void> {
  * where its tsconfig looks for it, and the boot learns the root through `FOUGERE_ROOT`.
  */
 export function withFougere(config: NextConfig = {}, options: { root?: string } = {}): NextConfig {
-  const userWebpack = config.webpack;
   const app = process.cwd();
   const root = options.root ? resolve(app, options.root) : projectRootOf(app);
   process.env.FOUGERE_ROOT = root;
-  const written = writeFacades(root, app);
+  void writeFacades(root, app);
+
+  return nextConfigOf(config, { root, app });
+}
+
+/** The Next config Fougere adds to the app's own — what `withFougere` hands Next once it has written. */
+export function nextConfigOf(config: NextConfig, { root, app }: { root: string; app: string }): NextConfig {
+  const userWebpack = config.webpack;
 
   return {
     ...config,
@@ -79,12 +83,15 @@ export function withFougere(config: NextConfig = {}, options: { root?: string } 
       // and this never silently discards what it did.
       const base = userWebpack ? userWebpack(webpackConfig, context) : webpackConfig;
 
-      void written;
       base.resolve ??= {};
       // `@fronds/*` as the tsconfig maps it, but as an alias: Next applies `paths` through a plugin
       // `extensionAlias` never reaches, so `@fronds/blog/entities/Post.js` found no `.ts` there.
       // The facade first — it is the one specifier under `@fronds` that names no directory.
-      base.resolve.alias = { [SPECIFIER]: join(app, FACADE), ...base.resolve.alias, '@fronds': join(root, resolveConventions().fronds) };
+      base.resolve.alias = {
+        [SPECIFIER]: join(app, FACADE),
+        ...base.resolve.alias,
+        '@fronds': join(root, resolveConventions().fronds),
+      };
       // A frond is ESM TypeScript, so one entity imports another as `./Author.js` and the file is `.ts`.
       // `.js` is tried first: a frond package's `exports` may map `./entities/*.js` itself, and a
       // request rewritten to `.ts` before reaching them matches none of its keys.

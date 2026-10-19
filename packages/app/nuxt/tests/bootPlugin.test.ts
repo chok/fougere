@@ -40,6 +40,23 @@ describe('generateBootPlugin — sources pass through', () => {
     expect(out).toContain('resolveStorage({"main":{"type":"sqlite","path":".data/site.db"}}, "/w")');
   });
 
+  it('counts from the directory the server starts in, for a build', () => {
+    // A build runs elsewhere: in an image `/repo/site` does not exist, and the boot refused on
+    // `EACCES: mkdir '/repo/site/.data'` while the volume sat at `/app/.data`.
+    const out = generateBootPlugin(
+      { sources: { main: { type: 'sqlite', path: '.data/site.db' } } } as unknown as FougereConfig,
+      [],
+      '@fougere/nuxt/fougereApp',
+      [],
+      undefined,
+      '/w',
+      [],
+      null,
+    );
+
+    expect(out).toContain('resolveStorage({"main":{"type":"sqlite","path":".data/site.db"}});');
+  });
+
   it('carries a second source through — where a row lives is not the host\u2019s business either', () => {
     const out = generateBootPlugin(
       {

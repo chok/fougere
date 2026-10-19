@@ -12,7 +12,9 @@
  * touched.
  */
 import { describe, it, expect, vi } from 'vitest';
-import { withFougere } from '../src/config.js';
+import { nextConfigOf } from '../src/config.js';
+
+const withFougere = (config = {}) => nextConfigOf(config, { root: process.cwd(), app: process.cwd() });
 
 /** Stand-ins shaped like Next's real minimizers: functions naming their plugin. */
 const nextJsMinifier = () => require('./webpack/plugins/minify-webpack-plugin/src');

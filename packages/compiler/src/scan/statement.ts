@@ -215,7 +215,7 @@ export function emitStatement(scan: ScanResult, options: { outFile?: string } = 
     '//',
     '// Classes are IMPORTED, never restated: `frond()` derives every name from them. Write',
     '// your own `fronds.ts` beside `fougere.config.ts` to state this by hand instead.',
-    "import { frond } from '@fougere/core';",
+    "import { ErrorCode, frond } from '@fougere/core';",
     imports.render(),
     '',
     // Always stated, empty or not, so a host reading `statement.vocabulary` compiles either way.

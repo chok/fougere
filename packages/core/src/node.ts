@@ -12,3 +12,4 @@ export { frondAliases, frondNameOf } from './FrondAliases.js';
 export { codesOf, emitFacade, facadeModule, type Served } from './projection/FacadeModule.js';
 export { emitNames } from './projection/NamesModule.js';
 export { statementIn, type Statement } from './Statement.js';
+export { RUNTIME_PACKAGES } from './RuntimePackages.js';

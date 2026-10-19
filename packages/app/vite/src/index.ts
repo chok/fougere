@@ -3,7 +3,7 @@ import { readdirSync, existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { join, dirname, resolve } from 'node:path';
 import type { Plugin } from 'vite';
-import { RUNTIME_PACKAGES } from '@fougere/compiler';
+import { RUNTIME_PACKAGES } from '@fougere/core/node';
 import { type Conventions, DEFAULT_CONVENTIONS } from '@fougere/core';
 import { projectRootOf } from '@fougere/core/node';
 
@@ -26,7 +26,7 @@ export function entityNamesIn(root: string, conventions: Conventions = DEFAULT_C
   return [...names];
 }
 
-export { RUNTIME_PACKAGES } from '@fougere/compiler';
+export { RUNTIME_PACKAGES } from '@fougere/core/node';
 
 export interface FougereViteOptions {
   /** Extra packages the boot loads at runtime, added to the defaults. */
