@@ -17,6 +17,11 @@ export type DoorOutcome = { answered: unknown } | { refused: FougereError };
 export interface Door<Received, Decoded, Answer> {
   /** The package's word for it — `rest`, `graphql` — which core never reads but to say where. */
   readonly name: string;
+  /**
+   * Its caller is the operator — a terminal on the machine — so a refusal reaches it whole, an
+   * accident's own message included, where every other door reads `Internal error`.
+   */
+  readonly trusted?: boolean;
   /** What arrived, made into what the calls need — within `maxBodyBytes`, whatever the door. */
   decode(received: Received): Promise<Decoded>;
   /** The calls a request makes — one, or several for a document that asks for several things. */
@@ -59,7 +64,7 @@ export function answerAt<Received, Decoded, Answer>(
       outcome = { answered: await door.run(decoded) };
     } catch (failure) {
       lifecycle.publish(DoorEvent.failed(request, failure));
-      outcome = { refused: publicOf(failure) };
+      outcome = { refused: door.trusted ? framedOf(failure) : publicOf(failure) };
     }
 
     const answer = door.encode(outcome, received);
@@ -69,11 +74,16 @@ export function answerAt<Received, Decoded, Answer>(
   });
 }
 
-/** A refusal as its caller may read it: its own words, or `Internal error` for an accident. */
-function publicOf(failure: unknown): FougereError {
-  const framed = failure instanceof FougereError
+/** A failure in the vocabulary every door speaks — an accident framed as `INTERNAL_ERROR`. */
+function framedOf(failure: unknown): FougereError {
+  return failure instanceof FougereError
     ? failure
     : new FougereError({ code: ErrorCode.INTERNAL_ERROR, message: (failure as Error)?.message ?? String(failure), cause: failure });
+}
+
+/** A refusal as its caller may read it: its own words, or `Internal error` for an accident. */
+function publicOf(failure: unknown): FougereError {
+  const framed = framedOf(failure);
 
   return framed.code === ErrorCode.INTERNAL_ERROR ? new FougereError(toPublicError(framed)) : framed;
 }

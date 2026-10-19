@@ -1012,6 +1012,10 @@ engine, whose resolvers make one call per root field and per relation — all ca
 request, pinned by `testing/tests/graphql-request.test.ts`. A refusal before the engine (no query, a
 body refused, a mutation over GET) answers a status and an `errors` list; the protocol registers the
 door beside `executeOn`, and the hosts resolve it without naming the package.
+The terminal (`@fougere/oclif`) is a door too, and the one `trusted`: its caller is the operator on
+the machine, so a refusal reaches it whole where every other door reads `Internal error` — a
+property a door states, not a case core knows. oclif parses the flags before the cycle; the door
+turns what it parsed into an invocation.
 
 **A process serves the REST door of the fronds it hosts** — `routesOf`
 (`adapter/rest/src/routes/RouteDefinition.ts`) leaves out an op whose `placement` is `remote`, and

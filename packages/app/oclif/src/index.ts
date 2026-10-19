@@ -12,7 +12,7 @@
  * the topics that make this worth its weight.
  */
 import { Command, Config, handle, run as runOclif } from '@oclif/core';
-import type { App, FrondDescriptor } from '@fougere/core';
+import type { App, Door, DoorOutcome, FrondDescriptor } from '@fougere/core';
 import { inputOf, inputToShape, paramsOf, paramsToShape, type Shape } from './bridge.js';
 
 /**
@@ -43,8 +43,8 @@ function named<T extends Record<string, object>>(entries: T): T {
   ) as T;
 }
 
-/** One operation, as the class oclif runs. */
-function commandFor(id: string, call: (input: Record<string, unknown>) => Promise<unknown>, shape: Shape, describe?: string) {
+/** One operation, as the class oclif runs — its parsed flags answered through the terminal's door. */
+function commandFor(id: string, answer: (parsed: Record<string, unknown>) => Promise<DoorOutcome>, shape: Shape, describe?: string) {
   const Built = class extends Command {
     static override args = shape.args;
     static override flags = shape.flags;
@@ -56,7 +56,10 @@ function commandFor(id: string, call: (input: Record<string, unknown>) => Promis
       // `--json` is oclif's own flag (`enableJsonFlag`), not a field: it reached the judge as one.
       const own = Object.fromEntries(Object.entries(flags).filter(([at]) => at in shape.flags));
 
-      return this.logJson(await call({ ...args, ...own }));
+      const outcome = await answer({ ...args, ...own });
+      if ('refused' in outcome) throw outcome.refused;
+
+      return this.logJson(outcome.answered);
     }
   };
   Built.id = id;
@@ -84,14 +87,16 @@ export function commandsOf(app: App): Loadable[] {
         const fields = contract.input?.getFields?.();
         const params = contract.signature?.params ?? [];
         const shape = fields ? inputToShape(fields) : paramsToShape(params);
-        const Built = commandFor(
-          `${handler.address}:${kebab(name)}`,
-          (parsed) => facade[name]!(
-            fields ? { input: inputOf(fields, parsed) } : { params: paramsOf(params, parsed) },
-          ),
-          shape,
-          contract.description,
-        );
+        // oclif parsed the flags before the cycle, and refused what its parser refuses; the door
+        // turns what it parsed into an invocation.
+        const door: Door<Record<string, unknown>, unknown, DoorOutcome> = {
+          name: 'terminal',
+          trusted: true,
+          decode: async (parsed) => (fields ? { input: inputOf(fields, parsed) } : { params: paramsOf(params, parsed) }),
+          run: (invocation) => facade[name]!(invocation),
+          encode: (outcome) => outcome,
+        };
+        const Built = commandFor(`${handler.address}:${kebab(name)}`, (parsed) => app.answer(door, parsed), shape, contract.description);
 
         loadables.push({
           id: Built.id,

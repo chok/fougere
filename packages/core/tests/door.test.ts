@@ -84,6 +84,14 @@ describe('a door', () => {
     expect([boom.refused.code, boom.refused.message]).toEqual([ErrorCode.INTERNAL_ERROR, 'Internal error']);
   });
 
+  it('hands a trusted door the accident whole — its caller is the operator', async () => {
+    await using app = await createApp({ fronds: [shop], createContainer });
+
+    const boom = await app.answer({ ...lineDoor(app), trusted: true }, 'boom') as { refused: FougereError };
+
+    expect([boom.refused.code, boom.refused.message]).toEqual([ErrorCode.INTERNAL_ERROR, 'secret at /etc/db.sqlite']);
+  });
+
   it('refuses a request it cannot decode before any call, and still answers it', async () => {
     await using app = await createApp({ fronds: [shop], createContainer });
     const seen: string[] = [];
