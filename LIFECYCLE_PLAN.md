@@ -526,3 +526,176 @@ reader and the error mapping.
    `compiler/src/scan/refusals.ts`) — or are door refusals kept apart from the op's contract?
 8. **Should `DispatchLifecycle` see the edges** (time spent in `decode`/`encode`), or stay on the
    middle only?
+9. **What does REST do with a body that is not JSON?** `readExpressBody` and `http/src/hono.ts`
+   `body` turn it into `{}` in silence; Fastify answers 415. The shared reader (phase 2) has to pick
+   one: refuse with 415, or keep `{}`.
+
+---
+
+## 6. Implementation plan
+
+Base: `main` at `572b018` (fetched 2026-10-19, same commit as section 1). Seven phases. Each one is
+its own PR and leaves `main` green. A phase that waits on a question in section 5 says which one;
+the phases with no open question can start now.
+
+```
+0 pin today ──┬── 1 GraphQL fixes
+              ├── 2 one body reader ──┐
+              ├── 4 output as one list │
+              └───────────────────────┴── 3 one REST edge (Q1, Q9) ── 5 frond-wide door middleware (Q3, Q4, Q7)
+                                                                        └── 6 per-handler + Response<…> (Q2, Q5) ── 7 docs + demo
+```
+
+Every phase runs the same checks before its push: the changed packages' `test`, `pnpm -r typecheck`,
+`pnpm arch`, `pnpm arch:cycles`, and `pnpm import:check` whenever an export moves (phases 2, 3, 5, 6).
+
+### Phase 0 — pin what the doors answer today
+
+No behaviour change. Tests only.
+
+- `testing/src/DoorContractCase.ts` `checkDoors` compares bodies across `local`, `rpc`, `rest` and
+  `graphql`, and reaches REST through `serveRest` alone. It never compares a status, and never calls
+  `registerRoutes`. That is why the gaps in 1.9 passed.
+- Add `registerRoutes` as a fifth facade there (through a fake `HttpRouter`, as in the 1.9 probe),
+  and compare the **status** as well as the body.
+- Add a GraphQL test where an op throws a plain `Error`. It fails today. Phase 1 makes it pass.
+- Status assertions that split the two REST edges stay out until phase 3. A test may not be
+  skipped to stay green, so phase 0 only adds what holds today.
+- Size: ~120 lines of tests. Gated on: nothing.
+
+### Phase 1 — GraphQL: mask errors, carry state
+
+Three defects that exist today and need no decision.
+
+- In `adapter/graphql/src/OperationsConfig.ts` `registerOperations`, the resolver catches the
+  failure and rethrows it as a `GraphQLError` whose message and `extensions` come from
+  `toPublicError` (`core/src/wire/http-error.ts`). An `INTERNAL_ERROR` then reads `Internal error`,
+  as it does on REST and JSON-RPC.
+- `adapter/graphql/src/serve.ts` `registerGraphQL` passes `contextValue: { state: ctx.state }`.
+- `adapter/graphql/src/auto-register.ts` `registerAll`: the relation resolvers pass the caller's
+  `ctx.state` instead of `state: {}`.
+- Tests: the phase 0 masking test, plus one per state fix in `adapter/graphql/tests/serve.test.ts`
+  and `relation-batch.test.ts`.
+- Size: ~20 lines of code. Gated on: nothing.
+
+### Phase 2 — one body reader
+
+Nine readers become two (1.8).
+
+- CLAUDE.md says every door reads `maxBodyBytes`. Measured, four do not: Hono, Nuxt's REST route,
+  and `rest`/`graphql` in `app/shared/src/web.ts`. This phase makes the sentence true.
+- **Where it lives.** `transport/http` depends on `@fougere/core` and not on `@fougere/http`
+  (checked in each `package.json`), so the shared reader goes in core, beside the limit:
+  `core/src/wire/BodyLimit.ts` gets `readWithin(chunks: AsyncIterable<Uint8Array>, declared?: number)`.
+  It refuses on the declared length first, then while counting. Both a Web `ReadableStream` and a
+  Node `IncomingMessage` iterate as `AsyncIterable`, so one function serves both runtimes.
+- `@fougere/http` takes no dependency on core, by its own rule (`MAX_BODY_BYTES` in
+  `http/src/express.ts`), so it keeps one reader of its own. Hono's `body` moves onto it.
+- Moves onto `readWithin`: `transport/http/src/receive.ts` `bodyWithin`,
+  `transport/http/src/serve/RunningReceiver.ts` `answering`,
+  `app/nuxt/src/runtime/server/routes/call.post.ts` (its three branches),
+  `app/nuxt/src/runtime/server/api/crud.ts`, and `call`/`rest`/`graphql` in `app/shared/src/web.ts`.
+- What changes for users: a body over `maxBodyBytes` on those four doors now gets 413 instead of
+  being read whole.
+- Tests: `transport/http/tests/limit.test.ts` and `receive.test.ts` stay green. New: one 413 test
+  for each door that had no limit. Nothing pins Nuxt's limit today.
+- Size: −150 lines net. Gated on: Q9 only for the non-JSON case. Phase 2 can ship without it and
+  keep `{}`.
+
+### Phase 3 — one REST edge
+
+`registerRoutes` and `serveRest` become one function, and the hosts become shells.
+
+- In `adapter-rest`: `restEdge(app)` returns `answer(request)`. The request is
+  `{ method, path, query, headers, body: () => Promise<unknown>, state }`, and the answer is a
+  `ResponseResult` or `pass`. It holds:
+  - match: `app/shared/src/RouteMatch.ts` `matchRoute` moves in, keeps the 405 with `allow`, and
+    carries `successStatus` (`Matchable` gains it);
+  - decode: `body()` is called inside the edge, not by the host;
+  - call: through `App.facadeFor`, so `decoded` applies on every host (today it applies only behind
+    `registerRoutes`);
+  - encode: one status rule (Q1), `toHttpError`, headers written on success too.
+- `adapter/rest/src/register.ts` `registerRoutes` becomes `router.on(method, path, ctx => answer(…))`.
+- `app/shared/src/Outcome.ts` `serveRest` and `shapeRest` delegate to `restEdge`. Callers keep
+  their names: `testing`, `app/shared/src/express.ts`, `web.ts`, Nuxt `crud.ts`.
+- **The status rule is Q1, and the PR cannot be written without it.** Either answer stops reading
+  the op name. Candidates: read the REST method that `deriveMethod` already chose (POST → 201,
+  DELETE with no body → 204), or 200 everywhere. `protocols.rest.status` wins over both, on every
+  host.
+- The two 404 body shapes (`{error}` and `{message}`) become the `toHttpError` shape, `{ code, message }`.
+- Tests to rewrite: `adapter/rest/tests/fastify.test.ts` (201/204/404) or
+  `app/shared/tests/serve.test.ts` (`shapeRest`), depending on Q1. Also `restRoutes.test.ts` and
+  `app/shared/tests/express.test.ts`. Phase 0's status assertions go in here, across both entries.
+- Size: ~200 lines moved, ~120 removed. Gated on: Q1, and Q9 if phase 2 left it open.
+
+### Phase 4 — the middle's output as one list
+
+A refactor. No behaviour change.
+
+- In `core/src/dispatch/HandlerFacade.ts` `answer`, `stepped` followed by `view.project` becomes a
+  single loop over `[...this.facade.steps, project]`. `project` is built by `viewOf`, is always
+  last, and cannot be removed. The three skips (`written`, `view.closed`, no step) stay as
+  conditions on the list.
+- `AnswerStep` (`dispatch/AnswerStep.ts`) keeps its type. `OutputView.project` is wrapped to that
+  type.
+- Tests: `core/tests/egress-objects.test.ts`, `extension-doors.test.ts`, the presenter tests in
+  `adapter/rest` and `adapter/graphql`. All unchanged and green.
+- Size: ~20 lines. Gated on: nothing. Can ship in parallel with phases 1 to 3.
+
+### Phase 5 — the frond-wide REST door middleware
+
+Cases 3.2 (header) and 3.3 (upload refused on its headers).
+
+- `adapter-rest` exports `RestMiddleware()` and `RestContext`. `RestMiddleware()` returns a class
+  extending core `Middleware` with a static `door = 'rest'`. `RestContext` extends
+  `OperationContext` with `request.headers`, `params`, and a `response.headers` bag that encode
+  merges in.
+- Core's `registerMiddlewares` (`core/src/boot/install.ts`) leaves out a middleware whose class
+  names a door. It is still built once per frond scope, at its first call. A reading
+  `App.doorMiddlewares(address, door)` hands the instances to the adapter in order: inherited
+  first, then the frond's own (`Assembly.middlewaresOf`).
+- The REST edge from phase 3 runs that chain around `decode → dispatch`. The body is read inside
+  `next()`.
+- The scan (`compiler/src/scan/scanner.ts`, the `middlewares/` reading) accepts the subclass. The
+  `middlewares:` order and its two refusals cover it unchanged.
+- Gated on Q3 (frond answering in another process) and Q4 (body parsed before us). Until Q3 is
+  settled, the boot refuses a door middleware whose frond is placed remotely. That is the
+  conservative default, and lifting a refusal later breaks nobody.
+- Q7 decides whether a door middleware's throws join the op's `errors`. Until then, the refusal
+  walk (`compiler/src/scan/refusals.ts`) does not follow them.
+- Tests: `core/tests/middleware-frond.test.ts` (a door middleware does not run behind JSON-RPC or
+  the in-process call), new `adapter/rest/tests/door-middleware.test.ts` (header on success and on
+  error, 413 before `body()` is called), `compiler/tests/middleware-form.test.ts`.
+- Size: ~200 lines. Gated on: Q3, Q4, Q7 (each with the default above).
+
+### Phase 6 — per handler, and `Response<…>`
+
+Cases 3.1 (301) and 3.4 (CSV).
+
+- `RestMiddleware(PostHandler)`: each method is the `around` for the op of the same name.
+- `Response<Status, Headers, Body>` is an interface in `adapter-rest`. The scan reads its `status`
+  and `headers` fields off the checked return type, not its type arguments.
+- New boot refusals: a method that names no op of its handler, a `status` that is not a literal,
+  and a `Response` returned from the frond-wide form.
+- `EffectiveOperation.protocols.rest` gains `responses: { status, headers, media? }[]`. The card
+  carries it or not, per Q2. Q5 decides whether the frond-wide header from phase 5 joins it.
+- Encode writes a `Response` as given. A string body goes out with `raw: true`
+  (`http/src/router/ResponseResult.ts`), so it is not JSON-encoded.
+- Tests: `compiler/tests/` for the field reading through an alias and for the three refusals.
+  `adapter/rest/tests/` for the 301 and for CSV-or-JSON by `Accept`. `Card.diff` stays stable if
+  Q2 puts `responses` on the card.
+- Size: ~250 lines. Gated on: Q2 and Q5.
+
+### Phase 7 — docs and a demo
+
+- A site page for the door middleware, and links from `site/content/docs/4.business/10.ports.md`
+  (which today points to `router.use` for HTTP needs).
+- A CLAUDE.md paragraph. KNOWN_ISSUES: the GraphQL fixes from phase 1 leave nothing to record. If
+  Q6 keeps REST as the only door with door middlewares, that becomes an entry: stated and left as is.
+- `demos/door-lifecycle`: the four cases, like the other one-concept demos, with its line in
+  CLAUDE.md's `## Commands`.
+
+### What can start now
+
+Phases 0, 1, 2 and 4 wait on no question: about 300 lines, three of the four fix defects that
+exist today. Phase 3 is the first one that waits for the owner, on Q1.
