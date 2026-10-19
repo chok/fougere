@@ -1,5 +1,6 @@
 import { Graph } from '@fougere/graph';
 import type { FrondDescriptor } from './descriptor/FrondDescriptor.js';
+import { Fronds } from './descriptor/Fronds.js';
 import type { EntityNode } from './EntityNode.js';
 import { relationGraph } from './module/relation/relationGraph.js';
 
@@ -11,7 +12,7 @@ export interface DomainCluster {
 
 /** Each entity of the fronds, with what it names and what names it. */
 export function buildGraph(fronds: FrondDescriptor[]): Map<string, EntityNode> {
-  const relations = relationGraph(fronds);
+  const relations = relationGraph(Fronds.hosting(fronds).schemas());
 
   return new Map(fronds.flatMap((frond) => frond.entities.map((entity) => [entity.name, {
     name: entity.name,

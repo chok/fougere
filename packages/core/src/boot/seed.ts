@@ -2,6 +2,7 @@ import { Page } from '../wire/Page.js';
 import { Graph } from '@fougere/graph';
 import { relationGraph } from '../module/relation/relationGraph.js';
 import type { FrondDescriptor } from '../descriptor/FrondDescriptor.js';
+import { Fronds } from '../descriptor/Fronds.js';
 import type { SeedEntry } from '../descriptor/SeedEntry.js';
 import type { SeedFactory } from '../descriptor/SeedFactory.js';
 import type { App } from './App.js';
@@ -25,7 +26,7 @@ export function orderSeeds(fronds: FrondDescriptor[]): SeedOrder {
     seeded.set(seed.entityName, [...seeded.get(seed.entityName) ?? [], seed]);
   }
 
-  const relations = relationGraph(fronds);
+  const relations = relationGraph(Fronds.hosting(fronds).schemas());
   const waiting = new Graph();
   for (const entity of seeded.keys()) waiting.add(entity);
   for (const entity of seeded.keys()) {

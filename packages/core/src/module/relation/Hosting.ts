@@ -1,3 +1,4 @@
+import type { Graph } from '@fougere/graph';
 import type { SchemaView } from '@fougere/schema';
 import type { Constraint } from '../../Constraint.js';
 import type { Peer } from './Peer.js';
@@ -21,6 +22,8 @@ export interface Hosting {
   storageOf(entity: string): Storage | undefined;
   /** Every entity of every frond — a row is named from wherever its namer was declared. */
   entities(): ReadonlyMap<string, SchemaView>;
+  /** Every `ref()` among those entities, from the namer to the named, labelled by its field. */
+  relations(): Graph;
   /**
    * The process that HOLDS an entity's rows, when this one does not. Absent when nothing can
    * reach it: no `remotes:` entry, or no transport to carry the ask.

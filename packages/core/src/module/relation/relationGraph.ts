@@ -1,24 +1,20 @@
 import { Graph } from '@fougere/graph';
-import { lowerFirst, Role } from '@fougere/schema';
-import type { FrondDescriptor } from '../../descriptor/FrondDescriptor.js';
+import { lowerFirst, Role, type SchemaView } from '@fougere/schema';
 
 /**
  * Every entity, and an edge per `ref()` from the entity that names a row to the entity it names,
- * labelled by the field. A target no frond here declares is still a node: the relation is real,
- * the rows are elsewhere.
+ * labelled by the field. A target none of them is still a node: the relation is real, the rows are
+ * elsewhere.
  */
-export function relationGraph(fronds: readonly FrondDescriptor[]): Graph {
+export function relationGraph(entities: Iterable<readonly [string, SchemaView]>): Graph {
   const relations = new Graph();
-  for (const frond of fronds) {
-    for (const entity of frond.entities) relations.add(entity.name);
-  }
+  const declared = [...entities];
+  for (const [name] of declared) relations.add(name);
 
-  for (const frond of fronds) {
-    for (const entity of frond.entities) {
-      for (const [field, declared] of Object.entries(entity.entityClass.getFields())) {
-        const role = Role.of(declared);
-        if (role.isReference() && role.target?.name) relations.connect(entity.name, lowerFirst(role.target.name), field);
-      }
+  for (const [name, entity] of declared) {
+    for (const [field, value] of Object.entries(entity.getFields())) {
+      const role = Role.of(value);
+      if (role.isReference() && role.target?.name) relations.connect(name, lowerFirst(role.target.name), field);
     }
   }
 

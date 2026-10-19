@@ -30,18 +30,11 @@ function keyed(namer: string, target: string, hosting: Hosting, seen = new Set<s
 
 /** Every field of every entity that names `target` — read over the whole app, both ways need it. */
 function referencesTo(target: string, hosting: Hosting): { entity: string; field: string; role: Role }[] {
-  const found: { entity: string; field: string; role: Role }[] = [];
-
-  for (const [entity, schema] of hosting.entities()) {
-    for (const [field, declared] of Object.entries(schema.getFields())) {
-      const role = Role.of(declared);
-      if (role.isReference() && role.target?.name && lowerFirst(role.target.name) === target) {
-        found.push({ entity, field, role });
-      }
-    }
-  }
-
-  return found;
+  return hosting.relations().incoming(target).map(({ from, label }) => ({
+    entity: from,
+    field: label,
+    role: Role.of(hosting.entities().get(from)!.getFields()[label]),
+  }));
 }
 
 /**

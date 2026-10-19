@@ -1,4 +1,5 @@
 import type { Container } from '@fougere/container';
+import type { Graph } from '@fougere/graph';
 import type { SchemaView } from '@fougere/schema';
 import type { Fronds } from '../../descriptor/Fronds.js';
 import type { Storage } from '../../storage/Storage.js';
@@ -10,6 +11,7 @@ import type { Hosting } from './Hosting.js';
 import { JOURNAL, type Journal } from './Journal.js';
 import type { Peer } from './Peer.js';
 import { peerOver } from './peerOver.js';
+import { relationGraph } from './relationGraph.js';
 
 /** Where the process serving an entity answers — what the remote router hands a release. */
 export interface Routing {
@@ -72,12 +74,15 @@ export function hostingFor(
     return undefined;
   };
 
+  let relations: Graph | undefined;
+
   const hosting: Hosting = {
     hostedHere: (entity) => !(options.remotes && (frondOf.get(entity) ?? '') in options.remotes),
     sourceOf: (name) => options.sourceOf?.(name) ?? 'default',
     enforces: (source, constraint) => options.enforces?.(source, constraint) ?? false,
     storageOf,
     entities: () => entityByName,
+    relations: () => (relations ??= relationGraph(entityByName)),
     journal: (entity) => (carriesRelease.has(entity) ? undefined : journalOf()),
     // Built from `remotes:` itself and not from the router: the router indexes by ENTITY, read
     // off a card, while the question here is asked of a PROCESS about rows it may be alone in
