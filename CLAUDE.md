@@ -1042,7 +1042,14 @@ names are provisional. Bound to a handler — `RestMiddleware(PostHandler)`, `Do
 it stands at that handler's address alone, one method per op it names, and may answer in the op's
 place (`RestResponse<301, { location: string }>`, named so as not to shadow the Web `Response`); a
 method naming no op of the handler refuses the boot (`door-middleware-unknown-op`), and so does a
-handler the frond does not serve. Pinned by `core/tests/door.test.ts` and
+handler the frond does not serve. What such a middleware may answer in an op's place is a field of
+its entry, `MiddlewareEntry.answers` (`{ find: [{ status: 301, headers: ['location'] }] }`), folded
+into the op's `protocols[door].responses` (`OperationOverrides.protocols`) and onto the REST route —
+what OpenAPI will publish. A `frond()` states it; the scan only fills it, reading each method's return
+type (`parseDeclaredAnswers`, `handler-parser.ts`): every member whose `status` is a number LITERAL,
+with its `headers` keys — the fields, never the type arguments, so an alias holds — while a `status:
+number` member is what `next()` hands back. The compiler reads the door's name off the class and
+knows no door. Pinned by `compiler/tests/door-answers.test.ts`, `core/tests/door.test.ts` and
 `testing/tests/rest-middleware.test.ts`.
 
 **A process serves the REST door of the fronds it hosts** — `routesOf`

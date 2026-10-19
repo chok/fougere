@@ -13,6 +13,7 @@ import { DEFAULT_CONVENTIONS } from './Conventions.js';
 import { getPresenterFields } from './prefab/presenter.js';
 import type { OperationContract } from './wire/OperationContract.js';
 import type { DeclaredSubject } from './DeclaredSubject.js';
+import type { DeclaredAnswer } from './descriptor/DeclaredAnswer.js';
 import type { DeclaredHandler } from './DeclaredHandler.js';
 import type { Declared } from './Declared.js';
 import { opsOf } from './prefab/opsOf.js';
@@ -70,7 +71,7 @@ export interface FrondDeclaration extends Pick<FrondConfig, 'pipes' | 'surfaces'
   providers?: Declared[];
   seeds?: { entityName: string; data: SeedEntry['data'] }[];
   /** What runs around this frond's operations, and around those of the fronds under it. */
-  middlewares?: (Ctor | DeclaredSubject)[];
+  middlewares?: (Ctor | DeclaredSubject & { answers?: Record<string, DeclaredAnswer[]> })[];
   /** The import scope this frond answers under. Defaults to the conventional one. */
   scope?: string;
   /** What `frond.config.ts` states — the third producer of an operation contract. */
@@ -181,6 +182,7 @@ export function frond(name: string, declared: FrondDeclaration = {}): FrondDescr
     ctor: ctorOf(m),
     deps: depsOf(m),
     filePath: fileOf(ctorOf(m)),
+    ...(typeof m !== 'function' && m.answers ? { answers: m.answers } : {}),
   }));
 
   const config = new FrondConfigReading(declared.config);

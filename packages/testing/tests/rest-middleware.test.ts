@@ -5,7 +5,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { RestMiddleware, type ResponseResult, type RestRequest, type RestResponse } from '@fougere/adapter-rest';
-import { configureFougere, serveRest, serveRpc, useFougereApp } from '@fougere/app';
+import { configureFougere, serveRest, serveRpc, tableOf, useFougereApp } from '@fougere/app';
 import { createContainer } from '@fougere/container';
 import { createApp, ErrorCode, FougereError, frond } from '@fougere/core';
 import { entity, primary, text } from '@fougere/schema';
@@ -52,7 +52,8 @@ configureFougere({
       find: { params: { id: [Note, 'id'] }, output: Note },
       write: { params: { title: [Note, 'title'] }, output: Note },
     } }],
-    middlewares: [Powered, UploadLimit, NoteRest],
+    // Stated by hand, as a `fronds.ts` with no scan writes it: what the scan would read off `find`.
+    middlewares: [Powered, UploadLimit, { ctor: NoteRest, answers: { find: [{ status: 301, headers: ['location'] }] } }],
     config: { middlewares: ['Powered', 'UploadLimit', 'NoteRest'] },
   })],
 });
@@ -114,5 +115,13 @@ describe('a REST middleware', () => {
 
     await expect(createApp({ fronds: [desk], createContainer, migrates: true } as never))
       .rejects.toThrow(/Misspelt\.fnid names no operation of NoteHandler, which serves find/);
+  });
+
+  it('publishes what it may answer in an op\'s place on that op\'s route, stated by hand', () => {
+    const find = tableOf(app).find((row) => row.route.operationName === 'find')!.route;
+    const write = tableOf(app).find((row) => row.route.operationName === 'write')!.route;
+
+    expect(find.responses).toEqual([{ status: 301, headers: ['location'] }]);
+    expect(write.responses).toBeUndefined();
   });
 });

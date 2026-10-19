@@ -3,10 +3,17 @@ import { HTTP_METHODS } from '@fougere/http';
 import { Protocols, RouteAddress, isScanned, type FrondDescriptor, type ProtocolConfig } from '@fougere/core';
 
 /** Where one operation answers, when what its contract derives is not what it should be. */
+/** An answer the op may give besides its own — a redirect, say — and the headers it sets. */
+const RESPONSE = Format.of()
+  .key('status', Format.count)
+  .key('headers', Format.listOf(Format.text))
+  .closed();
+
 const ROUTE = Format.of('protocol/rest/route')
   .key('method', Format.tokens(HTTP_METHODS))
   .key('path', Format.text)
   .key('status', Format.count)
+  .key('responses', Format.listOf(RESPONSE))
   .closed();
 
 /**

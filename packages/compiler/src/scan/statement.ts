@@ -164,7 +164,11 @@ function frondOf(frond: FrondDescriptor, imports: Imports): string {
     )))}`);
   }
   if (frond.middlewares.length) {
-    members.push(`middlewares: ${list(frond.middlewares.map((m) => subject(imports.default(m.filePath, frond), m.deps)))}`);
+    members.push(`middlewares: ${list(frond.middlewares.map((m) => subject(
+      imports.default(m.filePath, frond),
+      m.deps,
+      m.answers ? `answers: ${JSON.stringify(m.answers)}` : '',
+    )))}`);
   }
   if (frond.extensions?.length) {
     members.push(`extensions: ${list(frond.extensions.map((e) => {

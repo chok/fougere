@@ -3,6 +3,7 @@ import { Protocols } from '../Protocol.js';
 import type { FougereOperationProtocols } from '../FougereOperationProtocols.js';
 import type { Diagnostic } from '../diagnostic.js';
 import type { FrondDescriptor } from './FrondDescriptor.js';
+import type { DeclaredAnswer } from './DeclaredAnswer.js';
 
 export type OperationOverrideEntry = NonNullable<FrondDescriptor['operationsOverrides']>[string];
 
@@ -28,11 +29,31 @@ export class OperationOverrides {
     return this.frond.operationsOverrides?.[new RouteAddress({ address, operation }).toString()];
   }
 
-  /** What the op says to each protocol this process can serve — `rest`, `graphql`. */
+  /**
+   * What the op says to each protocol this process can serve — `rest`, `graphql` — and, beside what
+   * `operations:` states, the answers a door middleware bound to its handler declares it may give.
+   */
   protocols(address: string, operation: string): FougereOperationProtocols {
-    const entry = this.get(address, operation) ?? {};
+    const entry = { ...this.get(address, operation) } as Record<string, Record<string, unknown> | undefined>;
+    for (const { door, answers } of this.declaredAt(address, operation)) {
+      const said = entry[door]?.responses as DeclaredAnswer[] | undefined;
+      entry[door] = { ...entry[door], responses: [...(said ?? []), ...answers] };
+    }
 
     return Object.fromEntries(Object.entries(entry).filter(([key]) => Protocols.find(key))) as FougereOperationProtocols;
+  }
+
+  /** The answers this frond's door middlewares declare for one op of the handler they stand around. */
+  private declaredAt(address: string, operation: string): { door: string; answers: DeclaredAnswer[] }[] {
+    return this.frond.middlewares.flatMap((middleware) => {
+      const { door, handler } = middleware.ctor as { door?: string; handler?: abstract new (...args: never[]) => unknown };
+      const answers = middleware.answers?.[operation];
+      if (!door || !handler || !answers) return [];
+      const stands = this.frond.handlers.some((one) =>
+        one.address === address && (one.ctor === handler || one.ctor.prototype instanceof handler));
+
+      return stands ? [{ door, answers }] : [];
+    });
   }
 
   /** A key that names no op of this frond: a bare name, or an address the frond does not serve. */

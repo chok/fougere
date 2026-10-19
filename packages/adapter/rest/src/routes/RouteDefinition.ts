@@ -25,6 +25,11 @@ export interface RouteDefinition {
   cardinality?: Cardinality;
   /** A POST on the collection answering one row: what it answers did not exist before, so 201. */
   creates?: boolean;
+  /**
+   * What the op may answer besides its own — a door middleware's redirect — as OpenAPI's `responses`
+   * will publish it: stated in `operations:`, or read by the scan off a `RestResponse<…>`.
+   */
+  responses?: RestRoute['responses'];
   /** The operation in words — the method's own doc sentence, carried by the contract. */
   description?: string;
   // No presenter here. A route used to carry the instance and its field names so the
@@ -248,6 +253,7 @@ function routeFor({ address, base, facade, opName, meta, thirdParty }: Projectin
     handler: (invocation) => op(invocation),
     ...inputAndOutput(meta),
     successStatus: override.status,
+    ...(override.responses && { responses: override.responses }),
     cardinality: meta.cardinality,
     creates: method === 'POST' && meta.cardinality === 'one' && !designates(meta.binding),
     ...(meta.description && { description: meta.description }),

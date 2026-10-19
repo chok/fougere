@@ -9,6 +9,7 @@ export * from './PresenterFieldMeta.js';
 export * from './PresenterEntry.js';
 export * from './CollectorEntry.js';
 export * from './MiddlewareEntry.js';
+export * from './DeclaredAnswer.js';
 export * from './SeedEntry.js';
 export * from './SeedFactory.js';
 export * from './FrondSource.js';

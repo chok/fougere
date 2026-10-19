@@ -14,6 +14,7 @@ import {
   parseRefusals,
   parsePresenterMethods,
   parseConstructorParams,
+  parseDeclaredAnswers,
 } from './handler-parser.js';
 import { parseAbstract } from './Abstract.js';
 import { parseImplements } from './Implemented.js';
@@ -659,7 +660,7 @@ function inStatedOrder(middlewares: MiddlewareEntry[], stated: readonly string[]
  * else there runs around nothing, which is said rather than left silent — a forgotten `extends` reads
  * exactly like a helper.
  */
-async function toMiddlewareEntry(filePath: string): Promise<MiddlewareEntry | null> {
+async function toMiddlewareEntry(filePath: string, projectRoot?: string): Promise<MiddlewareEntry | null> {
   const ctor = await loadClass(filePath);
   if (!(ctor.prototype instanceof Middleware) && !(ctor.prototype instanceof DoorMiddleware)) {
     record({
@@ -699,12 +700,18 @@ async function toMiddlewareEntry(filePath: string): Promise<MiddlewareEntry | nu
     return null;
   }
   const deps = await depsOf(filePath);
+  // Bound to a handler, it may answer in an op's place: what its return types declare is published
+  // with the op — the same field a `frond()` states by hand.
+  const answers = ctor.prototype instanceof DoorMiddleware && (ctor as unknown as typeof DoorMiddleware).handler
+    ? Object.fromEntries(await parseDeclaredAnswers(filePath, projectRoot))
+    : {};
 
   return {
     name: ctor.name,
     ctor,
     deps,
     filePath,
+    ...(Object.keys(answers).length > 0 && { answers }),
   };
 }
 
@@ -763,7 +770,7 @@ async function scanFrond(frondPath: string, name: string, source: FrondDescripto
   const presenters = await collect(presentersDir, toPresenterEntry);
   const seeds = await collect(seedsDir, toSeedEntry);
   const reading = new FrondConfigReading(frondConfig);
-  const middlewares = reading.inOrder(inStatedOrder(await collect(middlewaresDir, (f) => toMiddlewareEntry(f)), frondConfig?.middlewares));
+  const middlewares = reading.inOrder(inStatedOrder(await collect(middlewaresDir, (f) => toMiddlewareEntry(f, projectRoot)), frondConfig?.middlewares));
   reading.markExposed(entities, handlers);
 
   return {

@@ -1,3 +1,4 @@
+import type { DeclaredAnswer } from './DeclaredAnswer.js';
 import type { Subject } from './Subject.js';
 /**
  * A discovered middleware — a class declaring `around(ctx, next)`, which runs before and after
@@ -9,4 +10,9 @@ import type { Subject } from './Subject.js';
 export interface MiddlewareEntry extends Subject {
   /** Class name — the key it registers under in its frond's scope. */
   name: string;
+  /**
+   * What a door middleware bound to a handler may answer in an op's place, by op — published on the
+   * op's contract at its door. The scan reads it off the return types; a `frond()` states it.
+   */
+  answers?: Record<string, DeclaredAnswer[]>;
 }
