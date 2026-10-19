@@ -161,7 +161,12 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
   2026-10-19 and served `/`, `/docs`, `/blog`; the call answered `The app refused to start` on a database
   nobody had migrated, which is what the compose's `migrate` service is for. The runtime stage's needs
   were measured apart: `.output`, `.data`, `posts/` and `better-sqlite3`, alone, boot and answer.
-- **Nothing generates OpenAPI**, so `RouteDefinition.description` is read by nobody. The op's
+- **A door middleware's declared answer with an open status is ignored, not refused** —
+  `parseDeclaredAnswers` (`compiler/src/scan/handler-parser.ts`) keeps a member whose `status` is a
+  number LITERAL and skips `status: number`, which is also what `next()` hands back
+  (`ResponseResult`). Telling a `RestResponse<number>` written on purpose from it would need the
+  type's name, and the compiler knows no door. Stated 2026-10-20.
+- **Nothing generates OpenAPI**, so `RouteDefinition.description` and `RouteDefinition.responses` are read by nobody. The op's
   sentence has two readers, neither of them REST: `adapter/graphql/src/OperationsConfig.ts` and the
   CLI's `--help`.
 - **`CrudViews` is typed on the five CRUD names** (`core/src/prefab/crud.ts`). Widening it to
