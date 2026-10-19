@@ -30,6 +30,8 @@ import { targetOf } from '../prefab/prefab.js';
 import { ownersOf, sharedNames, storageInUserCode, crudOnOwned } from './ownership.js';
 import { refuseArityDrift } from './arity.js';
 import { StorageGuard } from '../dispatch/StorageGuard.js';
+import { DoorMiddleware } from '../prefab/DoorMiddleware.js';
+import type { DoorAround } from '../entry/door.js';
 import { heldKeyOf, portBindings, seamChains, wrapping, SEAMS } from './ports.js';
 import { contractsKeyOf, facadeKeyOf } from '../wire/Facade.js';
 import { inheritsCrud, subjectOf } from '../prefab/CrudConstructor.js';
@@ -92,6 +94,10 @@ export interface Assembly {
    * and not a scope to walk.
    */
   middlewaresOf: Map<string, AppMiddleware[]>;
+  /** A frond's door middlewares, its ancestors' first — carried down like `middlewaresOf`. */
+  doorMiddlewaresOf: Map<string, DoorAround[]>;
+  /** The same, by the address a door answers for — what the cycle asks. */
+  doorMiddlewaresAt: Map<string, DoorAround[]>;
   /** What wraps each frond's seams, its ancestors' included — read the same way. */
   seamsOf: Map<string, Map<string, ProviderEntry[]>>;
   log: Logger;
@@ -151,7 +157,7 @@ function registerMiddlewares(
   ownLogger: OwnLogger,
   frondLog: Logger,
 ): void {
-  const { use, middlewaresOf } = assembly;
+  const { use, middlewaresOf, doorMiddlewaresOf, doorMiddlewaresAt } = assembly;
   // Its own frond means every address its handlers answer to — wider than its entities, since
   // a handler without one runs behind it too. A frond that serves nothing has none, which is
   // why what it declares only ever reaches its family.
@@ -163,8 +169,17 @@ function registerMiddlewares(
   const inherited = frond.extends ? middlewaresOf.get(frond.extends) ?? [] : [];
   const mine: AppMiddleware[] = [];
 
+  const inheritedAtDoors = frond.extends ? doorMiddlewaresOf.get(frond.extends) ?? [] : [];
+  const mineAtDoors: DoorAround[] = [];
+
   for (const middleware of frond.middlewares) {
     scope.register(middleware.name, middleware.ctor, { deps: ownLogger(middleware.name, middleware.deps), lifetime: 'singleton' });
+    // A door's middleware stands at that door alone, around its requests — not around every call.
+    if (middleware.ctor.prototype instanceof DoorMiddleware) {
+      const { door } = middleware.ctor as unknown as typeof DoorMiddleware;
+      mineAtDoors.push({ door, around: (received, next) => scope.resolve<DoorMiddleware>(middleware.name).around(received, next) });
+      continue;
+    }
     mine.push((context, next) =>
       scope.resolve<{ around: AppMiddleware }>(middleware.name).around(context, next));
   }
@@ -174,6 +189,8 @@ function registerMiddlewares(
     for (const address of addresses) use(around, address);
   }
   middlewaresOf.set(frond.name, [...inherited, ...mine]);
+  doorMiddlewaresOf.set(frond.name, [...inheritedAtDoors, ...mineAtDoors]);
+  for (const address of addresses) doorMiddlewaresAt.set(address, [...inheritedAtDoors, ...mineAtDoors]);
   if (frond.middlewares.length > 0) {
     assembly.plugged.push({ point: 'middleware', by: 'type', frond: frond.name, answers: frond.middlewares.map((one) => one.name) });
   }

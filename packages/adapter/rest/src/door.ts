@@ -1,13 +1,27 @@
-import { ErrorCode, FougereError, toHttpError, type Door } from '@fougere/core';
+import { DoorMiddleware, ErrorCode, FougereError, toHttpError, type Door } from '@fougere/core';
 import { HttpError, type ResponseResult } from '@fougere/http';
 import type { RouteDefinition } from './routes/RouteDefinition.js';
 
 /** What a host hands the REST door for one matched route — the body still to read, so the door reads it. */
 export interface RestRequest {
+  headers: Headers;
   params: Record<string, string>;
   query: Record<string, unknown>;
   body: () => Promise<unknown>;
   state: Record<string, unknown>;
+}
+
+/**
+ * The base a frond's REST middleware extends — `class Powered extends RestMiddleware()` in
+ * `middlewares/`. It stands around every REST request its frond answers, before the body is read:
+ * it sees the headers, refuses by throwing, and may decorate the answer.
+ */
+export function RestMiddleware() {
+  abstract class AtRest extends DoorMiddleware<RestRequest, ResponseResult> {
+    static override readonly door = 'rest';
+  }
+
+  return AtRest;
 }
 
 /** What a route's op is called with. */
@@ -26,6 +40,7 @@ export interface RestInvocation {
 export function restDoor(route: RouteDefinition): Door<RestRequest, RestInvocation, ResponseResult> {
   return {
     name: 'rest',
+    address: route.address,
     decode: async ({ params, query, body, state }) => ({ params, query, input: await read(body), state }),
     run: (invocation) => route.handler(invocation),
     encode: (outcome) => ('refused' in outcome ? refused(outcome.refused) : responseOf(route, outcome.answered)),

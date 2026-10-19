@@ -1029,6 +1029,16 @@ The terminal (`@fougere/oclif`) is a door too, and the one `trusted`: its caller
 the machine, so a refusal reaches it whole where every other door reads `Internal error` — a
 property a door states, not a case core knows. oclif parses the flags before the cycle; the door
 turns what it parsed into an invocation.
+A door middleware stands around a door's REQUESTS, where a `Middleware` stands around CALLS —
+`DoorMiddleware` (`core/src/prefab/DoorMiddleware.ts`), extended through the base a door's package
+hands out (`RestMiddleware()`, which names `door = 'rest'`), declared in `middlewares/` and ordered
+by the same `middlewares:` list. It runs when a door answers for ONE address (`Door.address`, a REST
+route) — so not for a GraphQL document, which spans several — around `decode → run → encode`, in the
+door's own terms: it reads the headers before the body is read, refuses by throwing, decorates the
+answer. A refusal becomes the door's answer where it is thrown, so a middleware outside it still
+decorates it. `install.ts` sets them apart from the call middlewares; a class extending
+`DoorMiddleware` directly stands at no door and is refused (`door-middleware-without-door`). The two
+names are provisional. Pinned by `core/tests/door.test.ts` and `testing/tests/rest-middleware.test.ts`.
 
 **A process serves the REST door of the fronds it hosts** — `routesOf`
 (`adapter/rest/src/routes/RouteDefinition.ts`) leaves out an op whose `placement` is `remote`, and

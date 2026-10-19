@@ -22,6 +22,11 @@ export interface Door<Received, Decoded, Answer> {
    * accident's own message included, where every other door reads `Internal error`.
    */
   readonly trusted?: boolean;
+  /**
+   * The one address it answers for, when it answers for one — a REST route. Its frond's door
+   * middlewares then stand around it; a door spanning several (a GraphQL document) has none.
+   */
+  readonly address?: string;
   /** What arrived, made into what the calls need — within `maxBodyBytes`, whatever the door. */
   decode(received: Received): Promise<Decoded>;
   /** The calls a request makes — one, or several for a document that asks for several things. */
@@ -33,10 +38,18 @@ export interface Door<Received, Decoded, Answer> {
 /** Running one request through a door — `app.answer`, or `answerAt` for a host holding no app. */
 export type Answering = <Received, Decoded, Answer>(door: Door<Received, Decoded, Answer>, received: Received) => Promise<Answer>;
 
-/** What the cycle needs of the app: where a request is entered, and who watches it. */
+/** A door middleware as the cycle runs it: the door it stands at, and its `around`. */
+export interface DoorAround {
+  door: string;
+  around(received: unknown, next: () => Promise<unknown>): Promise<unknown>;
+}
+
+/** What the cycle needs of the app: where a request is entered, who watches it, who stands around it. */
 export interface DoorCycle {
   enterRequest<R>(request: DoorRequest, fn: () => Promise<R>): Promise<R>;
   lifecycle: Pick<DispatchLifecycle, 'publish'>;
+  /** The door middlewares the frond of an address declared, outermost first. */
+  middlewaresAt?(address: string): readonly DoorAround[];
 }
 
 /** A cycle nobody watches — a host holding a runner and no app, or a boot that refused. */
@@ -50,24 +63,44 @@ const UNWATCHED: DoorCycle = { enterRequest: (_request, fn) => fn(), lifecycle: 
 export function answerAt<Received, Decoded, Answer>(
   door: Door<Received, Decoded, Answer>,
   received: Received,
-  { enterRequest, lifecycle }: DoorCycle = UNWATCHED,
+  { enterRequest, lifecycle, middlewaresAt }: DoorCycle = UNWATCHED,
 ): Promise<Answer> {
   const request = DoorRequest.open(door.name);
 
   return enterRequest(request, async () => {
     lifecycle.publish(DoorEvent.received(request));
 
-    let outcome: DoorOutcome;
-    try {
-      const decoded = await door.decode(received);
-      lifecycle.publish(DoorEvent.decoded(request));
-      outcome = { answered: await door.run(decoded) };
-    } catch (failure) {
+    const refused = (failure: unknown): Answer => {
       lifecycle.publish(DoorEvent.failed(request, failure));
-      outcome = { refused: door.trusted ? framedOf(failure) : publicOf(failure) };
-    }
 
-    const answer = door.encode(outcome, received);
+      return door.encode({ refused: door.trusted ? framedOf(failure) : publicOf(failure) }, received);
+    };
+    const edges = async (): Promise<Answer> => {
+      try {
+        const decoded = await door.decode(received);
+        lifecycle.publish(DoorEvent.decoded(request));
+
+        return door.encode({ answered: await door.run(decoded) }, received);
+      } catch (failure) {
+        return refused(failure);
+      }
+    };
+
+    // Outermost first: the first one stands around all the others. A refusal becomes the door's
+    // answer where it is thrown, so a middleware standing outside it still sees an answer.
+    const standing = door.address ? (middlewaresAt?.(door.address) ?? []).filter((one) => one.door === door.name) : [];
+    const through = standing.reduceRight<() => Promise<Answer>>(
+      (next, one) => async () => {
+        try {
+          return await one.around(received, next) as Answer;
+        } catch (failure) {
+          return refused(failure);
+        }
+      },
+      edges,
+    );
+
+    const answer = await through();
     lifecycle.publish(DoorEvent.encoded(request));
 
     return answer;

@@ -19,6 +19,7 @@ export function registerRoutes(
 ): void {
   for (const route of routes) {
     router.on(route.method, route.path, (ctx) => answer(restDoor(route), {
+      headers: ctx.request.headers,
       params: ctx.params,
       query: ctx.query,
       body: () => ctx.body(),

@@ -38,6 +38,16 @@ function stateOf(req: ExpressRequest): Record<string, unknown> {
   return req.user ? { user: req.user } : {};
 }
 
+function headersOf(req: ExpressRequest): Headers {
+  const headers = new Headers();
+  for (const [name, value] of Object.entries(req.headers ?? {})) {
+    if (typeof value === 'string') headers.set(name, value);
+    else if (Array.isArray(value)) for (const one of value) headers.append(name, String(one));
+  }
+
+  return headers;
+}
+
 function pathOf(req: ExpressRequest): string {
   return req.path ?? String(req.originalUrl ?? req.url ?? '').split('?')[0]!;
 }
@@ -111,6 +121,7 @@ export function rest(): ExpressMiddleware {
           method: req.method,
           path,
           query: queryOf(req),
+          headers: headersOf(req),
           body: () => readExpressBody(req, maxBodyBytes()),
           state: stateOf(req),
         });
@@ -118,9 +129,7 @@ export function rest(): ExpressMiddleware {
         // Not ours — Express's own passthrough, which is what `pass` always meant.
         if (outcome.kind === 'pass') return next();
 
-        if (outcome.kind === 'error' && outcome.headers) {
-          for (const [key, value] of Object.entries(outcome.headers)) res.set(key, value);
-        }
+        for (const [key, value] of Object.entries(outcome.headers ?? {})) res.set(key, value);
         res.status(outcome.status).json(outcome.body);
       } catch (err) {
         fail(res, next, err);

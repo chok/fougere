@@ -1,4 +1,4 @@
-import { DEFAULT_CONVENTIONS, Middleware, RouteAddress, frondDirsOf, frondPackage, providerDirsOf, resolveConventions, togetherKeyOf, type Conventions, type ConventionsInput, type Diagnostic, type ScanResult } from '@fougere/core';
+import { DEFAULT_CONVENTIONS, DoorMiddleware, Middleware, RouteAddress, frondDirsOf, frondPackage, providerDirsOf, resolveConventions, togetherKeyOf, type Conventions, type ConventionsInput, type Diagnostic, type ScanResult } from '@fougere/core';
 import { Fronds, addressOf, awaitKeyOf, cardinalityOf, computeBindingPlan, opsOf, emitKeyOf, getPresenterFields, outputOf, ownedBy, repositoryKeyOf, storageKeyOf, targetOf, type CollectorEntry, type EntityEntry, type FrondDescriptor, type HandlerEntry, type MiddlewareEntry, type OperationContract, type OperationsMap, type PresenterEntry, type ProviderEntry, type SeedEntry, type TypeRef, viewsOf, isExtension, FrondConfigReading, Term, type ExtensionEntry, type VocabularyEntry } from '@fougere/core/descriptor';
 import { frondNameOf, getModuleLoader, loadFrondConfig } from '@fougere/core/node';
 import type { FrondConfig, ErrorCode } from '@fougere/core';
@@ -655,12 +655,13 @@ function inStatedOrder(middlewares: MiddlewareEntry[], stated: readonly string[]
 }
 
 /**
- * A class in `middlewares/` that extends `Middleware`. Anything else there runs around nothing,
- * which is said rather than left silent — a forgotten `extends` reads exactly like a helper.
+ * A class in `middlewares/` that extends `Middleware`, or a door's base (`RestMiddleware()`). Anything
+ * else there runs around nothing, which is said rather than left silent — a forgotten `extends` reads
+ * exactly like a helper.
  */
 async function toMiddlewareEntry(filePath: string): Promise<MiddlewareEntry | null> {
   const ctor = await loadClass(filePath);
-  if (!(ctor.prototype instanceof Middleware)) {
+  if (!(ctor.prototype instanceof Middleware) && !(ctor.prototype instanceof DoorMiddleware)) {
     record({
       severity: 'warning',
       code: 'middleware-not-extended',
@@ -668,6 +669,18 @@ async function toMiddlewareEntry(filePath: string): Promise<MiddlewareEntry | nu
       subject: ctor.name,
       message: `${ctor.name} is in middlewares/ but does not extend Middleware, so it never runs. `
         + `Write \`class ${ctor.name} extends Middleware\`, or move it out of middlewares/.`,
+    });
+
+    return null;
+  }
+  if (ctor.prototype instanceof DoorMiddleware && !(ctor as unknown as typeof DoorMiddleware).door) {
+    record({
+      severity: 'blocking',
+      code: 'door-middleware-without-door',
+      filePath,
+      subject: ctor.name,
+      message: `${ctor.name} extends DoorMiddleware, which stands at no door. Extend the base the door's package gives — `
+        + '`class ' + ctor.name + ' extends RestMiddleware()` from @fougere/adapter-rest.',
     });
 
     return null;

@@ -52,7 +52,7 @@ async function getPosts(app: never) {
   };
   registerRoutes(router as never, routes);
 
-  return handler({ params: {}, query: {}, state: {}, body: async () => undefined });
+  return handler({ request: new Request('http://localhost/api/blog/posts'), params: {}, query: {}, state: {}, body: async () => undefined });
 }
 
 describe('a computed field reaching REST', () => {

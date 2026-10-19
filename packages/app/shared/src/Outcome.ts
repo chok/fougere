@@ -19,8 +19,8 @@ import type { DoorRequest } from './DoorRequest.js';
 export type Outcome =
   /** Not ours — the host's own routes must still reach their handler. */
   | { kind: 'pass' }
-  | { kind: 'ok'; status: number; body: unknown }
-  | { kind: 'error'; status: number; body: { message: string } & Record<string, unknown>; headers?: Record<string, string> };
+  | { kind: 'ok'; status: number; body: unknown; headers?: Record<string, string | string[]> }
+  | { kind: 'error'; status: number; body: { message: string } & Record<string, unknown>; headers?: Record<string, string | string[]> };
 
 // ── The call envelope ────────────────────────────
 
@@ -82,15 +82,18 @@ export async function serveRest(app: App, request: DoorRequest): Promise<Outcome
   }
 
   const { route, params } = match;
-  const { status, data } = await app.answer(restDoor(route), {
+  const { status, data, headers } = await app.answer(restDoor(route), {
+    headers: request.headers ?? new Headers(),
     params,
     query: request.query,
     body: request.body ?? (async () => undefined),
     state: request.state,
   });
-  if (status >= 400) return { kind: 'error', status, body: data as { message: string } & Record<string, unknown> };
+  if (status >= 400) {
+    return { kind: 'error', status, body: data as { message: string } & Record<string, unknown>, ...(headers && { headers }) };
+  }
 
-  return { kind: 'ok', status, body: data };
+  return { kind: 'ok', status, body: data, ...(headers && { headers }) };
 }
 
 // ── The server-side dual of the couple ───────────

@@ -61,19 +61,27 @@ export async function restAnswer(app: App, request: Request): Promise<Response |
     method,
     path: url.pathname,
     query: Object.fromEntries(url.searchParams),
+    headers: request.headers,
     body: () => jsonBodyOf(request),
     state: await stateFor(request.headers, app),
   });
 
   if (outcome.kind === 'pass') return undefined;
-  if (outcome.kind === 'error') {
-    return Response.json(outcome.body, { status: outcome.status, headers: outcome.headers });
+  const headers = headersOf(outcome.headers);
+  // A 204 carries no body, and a Response refuses one it was handed.
+  if (outcome.status === 204) return new Response(null, { status: 204, headers });
+
+  return Response.json(outcome.body, { status: outcome.status, headers });
+}
+
+/** A header named twice — `set-cookie` — is appended, never joined. */
+function headersOf(written: Record<string, string | string[]> = {}): Headers {
+  const headers = new Headers();
+  for (const [name, value] of Object.entries(written)) {
+    for (const one of Array.isArray(value) ? value : [value]) headers.append(name, one);
   }
 
-  // A 204 carries no body, and a Response refuses one it was handed.
-  if (outcome.status === 204) return new Response(null, { status: 204 });
-
-  return Response.json(outcome.body, { status: outcome.status });
+  return headers;
 }
 
 /** The session view over the wire, for a client refreshing after login or logout. */

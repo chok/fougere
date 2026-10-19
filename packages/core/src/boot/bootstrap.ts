@@ -2,7 +2,7 @@ import { createContainer, type Container } from '@fougere/container';
 import { resolveConventions } from '../Conventions.js';
 import { servedProtocols } from './protocols.js';
 import { unregistered } from './unregistered.js';
-import { answerAt } from '../entry/door.js';
+import { answerAt, type DoorAround } from '../entry/door.js';
 import { DoorEvent } from '../dispatch/DoorEvent.js';
 import { dependencyCycles } from './dependencyCycles.js';
 import { lowerFirst, type SchemaView } from '@fougere/schema';
@@ -608,10 +608,11 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     const relations: RelationCheck[] = [];
     const plugged: Plugged[] = [];
     const boundPorts = new Set<string>();
+    const doorMiddlewaresAt = new Map<string, DoorAround[]>();
     const assembly: Assembly = {
       container, routeRegistry, emissions, dispatcher, localDispatcher, effectiveByKey,
       boundPorts, refused, relations, hosting, operationModel, entityByName, frondOf, contractsOf,
-      getMiddlewares, use, middlewaresOf: new Map(), seamsOf: new Map(), log, options,
+      getMiddlewares, use, middlewaresOf: new Map(), doorMiddlewaresOf: new Map(), doorMiddlewaresAt, seamsOf: new Map(), log, options,
       state: appLifecycle.state(),
       extensions: appLifecycle.all(),
       plugged,
@@ -662,7 +663,11 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
       serveRpc: serveRpcOn(routeRegistry),
       extensions: () => appLifecycle.names(),
       observe: (observer) => dispatchLifecycle.add(observer),
-      answer: (door, received) => answerAt(door, received, { enterRequest: (entered, fn) => request.within(entered, fn), lifecycle: dispatchLifecycle }),
+      answer: (door, received) => answerAt(door, received, {
+        enterRequest: (entered, fn) => request.within(entered, fn),
+        lifecycle: dispatchLifecycle,
+        middlewaresAt: (address) => doorMiddlewaresAt.get(address) ?? [],
+      }),
       use(...args: [AppMiddleware] | [string, AppMiddleware]): void {
         return typeof args[0] === 'string'
           ? use(args[1] as AppMiddleware, args[0])

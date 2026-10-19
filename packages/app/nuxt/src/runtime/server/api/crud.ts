@@ -1,5 +1,5 @@
 /** REST catch-all — the h3 half of a facade whose decisions live in `@fougere/app`. */
-import { defineEventHandler, getQuery, createError, setResponseStatus, setResponseHeaders, toWebRequest } from 'h3';
+import { defineEventHandler, getQuery, getRequestHeaders, createError, setResponseStatus, setResponseHeaders, toWebRequest } from 'h3';
 import { jsonBodyOf, serveRest, useFougereApp } from '@fougere/app';
 import { stateOf } from '../stateOf.js';
 
@@ -13,6 +13,7 @@ export default defineEventHandler(async (event) => {
     method,
     path: event.path.replace(/\?.*$/, ''),
     query: getQuery(event) as Record<string, string>,
+    headers: new Headers(Object.entries(getRequestHeaders(event)).filter((entry): entry is [string, string] => entry[1] !== undefined)),
     body: async () => (hasBody ? jsonBodyOf(toWebRequest(event)) : undefined),
     state: stateOf(event),
   });
@@ -30,6 +31,7 @@ export default defineEventHandler(async (event) => {
     });
   }
 
+  if (outcome.headers) setResponseHeaders(event, outcome.headers);
   setResponseStatus(event, outcome.status);
 
   return outcome.body;

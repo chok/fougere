@@ -4,7 +4,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { createContainer } from '@fougere/container';
-import { createApp, DispatchEvent, DoorEvent, ErrorCode, FougereError, frond, type Door, type DoorOutcome } from '../src/index.js';
+import { createApp, DispatchEvent, DoorEvent, DoorMiddleware, ErrorCode, FougereError, frond, type Door, type DoorOutcome } from '../src/index.js';
 import { op } from './contract.js';
 
 class OrderHandler {
@@ -111,5 +111,82 @@ describe('a door', () => {
     await app.facadeFor('order')!.count!({});
 
     expect(calls.every((call) => call.request === undefined)).toBe(true);
+  });
+});
+
+/** What a door package hands out: the base, with the door it stands at. */
+abstract class LineMiddleware extends DoorMiddleware<string, DoorOutcome> {
+  static override readonly door = 'line';
+}
+
+const heard: string[] = [];
+
+class Outer extends LineMiddleware {
+  async around(received: string, next: () => Promise<DoorOutcome>): Promise<DoorOutcome> {
+    heard.push(`outer:${received}`);
+
+    return next();
+  }
+}
+
+class Gate extends LineMiddleware {
+  async around(received: string, next: () => Promise<DoorOutcome>): Promise<DoorOutcome> {
+    heard.push(`gate:${received}`);
+    if (received === 'forbidden') throw new FougereError({ code: ErrorCode.FORBIDDEN, message: 'Not at this door.' });
+    const answer = await next();
+
+    return 'answered' in answer ? { answered: { wrapped: answer.answered } } : answer;
+  }
+}
+
+abstract class OtherMiddleware extends DoorMiddleware<string, DoorOutcome> {
+  static override readonly door = 'other';
+}
+
+class Elsewhere extends OtherMiddleware {
+  async around(_received: string, next: () => Promise<DoorOutcome>): Promise<DoorOutcome> {
+    heard.push('elsewhere');
+
+    return next();
+  }
+}
+
+const guarded = frond('shop', {
+  handlers: [{ ctor: OrderHandler, deps: [], operations: { count: op({ cardinality: 'none' }) } }],
+  middlewares: [Outer, Gate, Elsewhere],
+  config: { middlewares: ['Outer', 'Gate', 'Elsewhere'] },
+});
+
+describe('a door middleware', () => {
+  it('stands around a door answering for its frond\'s address, outermost first, and may rewrite the answer', async () => {
+    heard.length = 0;
+    await using app = await createApp({ fronds: [guarded], createContainer });
+
+    const answer = await app.answer({ ...lineDoor(app), address: 'order' }, 'count');
+
+    expect(answer).toEqual({ answered: { wrapped: [2] } });
+    expect(heard).toEqual(['outer:count', 'gate:count']);
+  });
+
+  it('refuses before the door decodes, and the door says the refusal', async () => {
+    heard.length = 0;
+    await using app = await createApp({ fronds: [guarded], createContainer });
+    const steps: string[] = [];
+    app.observe((event) => { if (event instanceof DoorEvent) steps.push(event.stage); });
+
+    const answer = await app.answer({ ...lineDoor(app), address: 'order' }, 'forbidden') as { refused: FougereError };
+
+    expect([answer.refused.code, answer.refused.message]).toEqual([ErrorCode.FORBIDDEN, 'Not at this door.']);
+    expect(steps).toEqual(['received', 'failed', 'encoded']);
+  });
+
+  it('stands at no door answering for several addresses, and no call is wrapped by it', async () => {
+    heard.length = 0;
+    await using app = await createApp({ fronds: [guarded], createContainer });
+
+    await app.answer(lineDoor(app), 'count');
+    await app.facadeFor('order')!.count!({});
+
+    expect(heard).toEqual([]);
   });
 });
