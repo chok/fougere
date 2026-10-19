@@ -1,6 +1,7 @@
 /** Serve a GraphQL schema on an HttpRouter — no Apollo, no Yoga needed. */
 import type { HttpRouter, ResponseResult } from '@fougere/http';
 import { getOperationAST, graphql, parse, type GraphQLSchema } from 'graphql';
+import { publicResult } from './publicResult.js';
 
 export interface GraphQLServeOptions {
   /** Route path. Default: '/graphql'. */
@@ -49,14 +50,15 @@ export function registerGraphQL(
   const playground = options?.playground ?? false;
 
   /** The one place this file states what a GraphQL request answers. */
-  const answer = async (request: GraphQLRequest): Promise<ResponseResult> => ({
+  const answer = async (request: GraphQLRequest, state: Record<string, unknown>): Promise<ResponseResult> => ({
     status: 200,
-    data: await graphql({
+    data: publicResult(await graphql({
       schema,
       source: request.query,
       variableValues: request.variables,
       operationName: request.operationName,
-    }),
+      contextValue: { state },
+    })),
     headers: { 'content-type': 'application/json' },
   });
 
@@ -67,7 +69,7 @@ export function registerGraphQL(
       return { status: 400, data: { errors: [{ message: 'Missing query' }] } };
     }
 
-    return answer(body as GraphQLRequest);
+    return answer(body as GraphQLRequest, ctx.state);
   });
 
   router.on('GET', path, async (ctx): Promise<ResponseResult> => {
@@ -106,6 +108,6 @@ export function registerGraphQL(
       query: ctx.query.query,
       variables,
       operationName: ctx.query.operationName,
-    });
+    }, ctx.state);
   });
 }

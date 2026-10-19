@@ -1,6 +1,7 @@
 import SchemaBuilder from '@pothos/core';
 import { graphql, type ExecutionResult, type GraphQLSchema } from 'graphql';
 import { registerAll } from './auto-register.js';
+import { publicResult } from './publicResult.js';
 
 /** What a GraphQL request carries, whatever host read it. */
 export interface AppQuery {
@@ -41,11 +42,11 @@ export function schemaOf(app: AppLike, surface?: string): GraphQLSchema {
 
 /** Execute a query against the app's own operations. */
 export async function executeOn(app: AppLike, request: AppQuery): Promise<ExecutionResult> {
-  return graphql({
+  return publicResult(await graphql({
     schema: schemaOf(app, request.surface),
     source: request.query,
     variableValues: request.variables,
     operationName: request.operationName,
     contextValue: { state: request.state ?? {} },
-  });
+  }));
 }
