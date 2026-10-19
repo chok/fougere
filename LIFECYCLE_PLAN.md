@@ -1,6 +1,6 @@
 # Door lifecycle — measure and plan
 
-Status: proposal. No file under `packages/` was changed. Every claim cites a file and a symbol.
+Status: the open questions are decided (section 5, 2026-10-19). No file under `packages/` was changed. Every claim cites a file and a symbol.
 The probe used for section 1.9 is a throwaway Node script that imported the built packages; it is
 not committed. Its output is quoted where it is used.
 
@@ -25,7 +25,8 @@ Vocabulary used below:
    There are nine body readers, three error mappers, and one door (GraphQL) that maps none and
    leaks internal error messages. Measured in 1.9.
 3. **Recommendation:** open **one** hook per door at the start — a door middleware that wraps
-   `decode → middle` and runs before `encode`. It covers the four test cases. The output of the
+   `decode → middle` and runs before `encode`. It covers three of the four test cases; the fourth
+   (CSV) moves to a separate media-type project (3.4). The output of the
    middle becomes one ordered list (`AnswerStep`s, then `view.project` last and fixed). Ordering is
    a list, refused when ambiguous, like `middlewares:` already is. No topological sort.
 4. **Before any hook:** merge the two REST realizations into one edge. Otherwise every hook is
@@ -296,10 +297,14 @@ The native context at each step, for REST:
 - The three skips stay where they are: `written` (code wrote `args`), `view.closed`, no step. They
   are conditions on the list, not other mechanisms.
 - **Media type is not a core step.** It is a property of the bytes, so it belongs to `encode`, at
-  the door. Core answers a value; the door turns it into bytes.
-- **Written state is not a core step either.** Middlewares already write `context.state`, and
-  `HandlerFacade.answer` already judges what they wrote (`state.judge(…, entered)`). That is the
-  existing form.
+  the door. Core answers a value; the door turns it into bytes. Choosing that representation is
+  **out of scope here**: it is the media-type project (see 3.4).
+- **Writing state is out of scope, and not settled.** Middlewares do write `context.state`, and
+  `HandlerFacade.answer` judges what they wrote (`state.judge(…, entered)`), but that only covers a
+  value living for one call. Keeping a value across calls is a separate project: the dual of a
+  binding source, where an op writes (`keep('cart', id)`), a `state:` key in the config picks
+  where it lives (cookie, session, localStorage), and `@fougere/http` writes `Set-Cookie` for every
+  HTTP door.
 - **Dual of `BindingSources`, but not a registry yet.** `BindingSources` is a `Registry` because a
   parameter's kind arrives as data (`kind: 'collector'`). An answer step arrives with its extension,
   in ascent order (`stepsOver` in `boot/install.ts`). A registry would add a name with nothing to
@@ -318,7 +323,7 @@ REST:  receive → match → [ RestMiddleware ( decode → middle ) ] → encode
 ```
 
 - It runs **before** the body is read (case 3) because `decode` happens inside `next()`.
-- It sees the **answer** after `next()` (cases 1, 4).
+- It sees the **answer** after `next()` (case 1).
 - It can **add headers** through a response-headers bag that `encode` merges (case 2).
 - `next()` resolves to the projected answer `T`, never to bytes. So a middleware that does not
   declare `Response<…>` can only return `T` (the rule `AppMiddleware` already states).
@@ -329,7 +334,7 @@ What each extra hook would cost:
 |---|---|---|
 | at `match` | rewrite which op answers | the card's derived paths stop being the truth; a hidden route |
 | separate `decode` step list | custom body formats (multipart, CSV in) | a second list beside the middleware; an input contract the scan cannot see |
-| separate `encode` list (encoders by media type) | one CSV encoder for every op | a registry of formats — a list of types again, which the owner rejected |
+| separate `encode` list (encoders by media type) | one CSV encoder for every op | not a list of types (what the owner rejects is a type each adapter must learn, like `Redirect` or `File`), but a project of its own: see 3.4 |
 | at `send` | streaming, files, SSE | bypasses `encode`, so nothing it sends can be on the card; this is `router.use` / the host already |
 
 None of the four test cases needs them. Open them when a case does, one at a time.
@@ -428,7 +433,7 @@ export class Powered extends RestMiddleware() {
 - Hook: the frond-wide door middleware; writes the headers bag, returns `T`.
 - `finally` puts it on errors too.
 - Card / OpenAPI: nothing. A header written on a bag is not a declared response, and the frond-wide
-  form cannot declare one. If it must be published, that is an open question (5.5).
+  form cannot declare one. Decided (5.5): it stays invisible.
 
 ### 3.3 An upload refused on its headers (2 GB) before the body is read
 
@@ -454,9 +459,15 @@ export class UploadLimit extends RestMiddleware() {
   refusals (`SERVICE_UNAVAILABLE`, `VALIDATION_FAILED`, `BAD_REQUEST`, the gateway pair) and not
   `PAYLOAD_TOO_LARGE`, though every door that reads a body can answer it. Adding it there is the
   derived form: it follows from having an input, like `VALIDATION_FAILED`. A size the middleware
-  picks itself (2 GB) is not on the card — see 5.7.
+  picks itself (2 GB) is not on the card — decided in 5.7.
 
 ### 3.4 `text/csv` instead of JSON for the same op (by `Accept`)
+
+> **Replaced by the media-type project (decided 2026-10-19).** The code below shows what a door
+> middleware *can* do. It is not the intended form: a `toCsv` written op by op is a copy waiting to
+> happen. The media type is a project of its own — a generic projection chosen by `Accept`, where the
+> card itself becomes a media type (OpenAPI, SDL). What the owner rejects is a type each adapter must
+> learn (`Redirect`, `File`…), not encoders. This plan builds nothing for this case.
 
 ```ts
 export class PostRest extends RestMiddleware(PostHandler) {
@@ -500,50 +511,68 @@ reader and the error mapping.
 
 ---
 
-## 5. Open questions (for the owner)
+## 5. Decisions
 
-1. **Which status set wins when the two REST edges merge?** `registerRoutes` answers 201 / 204 /
-   404-on-false; the web hosts answer 200 everywhere (the comment in `shapeRest` defers this to
-   "whoever owns what a verb means"). Merging forces a choice, and either one changes behaviour for
-   half the hosts.
-2. **Where do declared responses live on the card?** `CardOp` is protocol-neutral today (no path,
-   no method). Put `responses` under a REST member of the op, or keep them off the card and only
-   in a future OpenAPI file? Nothing generates OpenAPI today (KNOWN_ISSUES, "Nothing generates
-   OpenAPI").
-3. **Where does a per-handler REST middleware run when its frond is remote?** The REST request
-   arrives in process A; `PostHandler` answers in process B. Run the middleware in A (where the
-   request is, but A may not hold the frond's code or its dependencies like `OldSlugRepository`) or
-   refuse REST for a remote frond's door middleware at boot?
-4. **Is `decode` inside the door chain acceptable for every host?** Express may have parsed the
-   body before us (`readExpressBody` reads `req.body` when a parser ran). Then case 3 cannot be
-   honoured, only reported. Refuse at boot, warn, or accept?
-5. **Should the frond-wide form be able to publish a header** (case 3.2) on the card, or is a
-   decorating header always invisible by design?
-6. **Do GraphQL and JSON-RPC get door middlewares later**, or is REST the only door with native
-   needs? The plan opens REST only.
-7. **Is a door middleware allowed to refuse with any `FougereError` code**, and if so does the
-   refusal join the op's `errors` on the card (the scan walks refusals upward from throw sites,
-   `compiler/src/scan/refusals.ts`) — or are door refusals kept apart from the op's contract?
-8. **Should `DispatchLifecycle` see the edges** (time spent in `decode`/`encode`), or stay on the
-   middle only?
-9. **What does REST do with a body that is not JSON?** `readExpressBody` and `http/src/hono.ts`
-   `body` turn it into `{}` in silence; Fastify answers 415. The shared reader (phase 2) has to pick
-   one: refuse with 415, or keep `{}`.
+Decided by the owner on 2026-10-19. Each line names what was decided and the measured reason.
+
+1. **Status codes: 201/204, read from the contract, never from the op name.** 201 for a POST on
+   the collection (no parameter designates a row) that answers a row of its entity. 204 when the op
+   answers nothing; a DELETE answering a boolean gives 204 on `true` and 404 on `false`. 404 when an
+   op answering one row answers `null`, whatever its name. 200 otherwise. `protocols.rest.status`
+   wins over all of these, on every host. Cost measured: the browser primitives go through
+   `/_fougere/call` (`CALL_ENDPOINT`, `app/shared/src/Designation.ts`), never through REST, so the
+   change on Nuxt, Next and Vite reaches outside REST clients only. In the tree, one reads REST
+   (`demos/multi-frond/test.ts`), and it reads no status.
+2. **Declared responses stay off the card for now.** The card publishes no REST path or method
+   today; a 301 tied to a path it does not name would be half a fact. They live in
+   `EffectiveOperation.protocols.rest`, and a future OpenAPI document is REST's card.
+3. **A door middleware whose frond answers in another process refuses the boot**, with a message
+   saying why. A door middleware is the frond's code (`middlewares/`), like its handlers. Running it
+   in the process that receives the request would make that process's boot fail as soon as the
+   middleware asks for one of the frond's dependencies (`OldSlugRepository`) — the day the frond
+   moves behind `fronds:`, with no line of code changed. That breaks the gradient. The refusal is
+   lifted only when a real case asks for it, and lifting it breaks nobody.
+4. **A body already parsed by the host is accepted, with no refusal.** Case 3.3 reads the headers,
+   and they are still there; what is lost is only avoiding the read, which the host then owns. One
+   sentence in the docs.
+5. **A header a frond-wide middleware writes stays off the card.** The frond-wide form decorates and
+   refuses, nothing more. A header that must be published is declared by `Response<…>` on a handler.
+6. **No door middleware for GraphQL and JSON-RPC for now.** JSON-RPC links trusted peers and has no
+   measured native need. GraphQL answers one response for many ops, so replacing one op's response
+   has no meaning there. Wait for a real case.
+7. **A door middleware's refusals stay out of the op's `errors`.** A GraphQL or JSON-RPC caller never
+   meets them, and adding them would put codes that cannot happen into a facade's `switch`. They are
+   published on REST's side, with the responses.
+8. **`DispatchLifecycle` stays on the middle.** Time spent at the edges is observability's, which
+   already wraps calls with a middleware.
+9. **A body that is not JSON is refused with 415.** The silent `{}` is what the tree refuses
+   elsewhere: JSON-RPC used to drop `body` in silence and now refuses it by name (`SENT`,
+   `transport/http/src/server.ts`). Fastify already answers 415. GET and HEAD carry no body. Accepting
+   multipart, the day it is needed, is a hook at `decode`.
+
+### Out of scope
+
+- **The media type** (case 3.4): a generic projection chosen by `Accept`, the card itself as a
+  media type (OpenAPI, SDL). A project of its own.
+- **Writing state that lives across calls**: the dual of a binding source — an op writes
+  (`keep('cart', id)`), a `state:` key in the config picks cookie, session or localStorage, and
+  `@fougere/http` writes `Set-Cookie` for every HTTP door. A project of its own, not settled by the
+  middlewares writing `context.state` for one call.
 
 ---
 
 ## 6. Implementation plan
 
 Base: `main` at `572b018` (fetched 2026-10-19, same commit as section 1). Seven phases. Each one is
-its own PR and leaves `main` green. A phase that waits on a question in section 5 says which one;
-the phases with no open question can start now.
+its own PR and leaves `main` green. Section 5 is decided, so no phase waits on a question any
+more; the order below is the order of dependencies.
 
 ```
 0 pin today ──┬── 1 GraphQL fixes
               ├── 2 one body reader ──┐
               ├── 4 output as one list │
-              └───────────────────────┴── 3 one REST edge (Q1, Q9) ── 5 frond-wide door middleware (Q3, Q4, Q7)
-                                                                        └── 6 per-handler + Response<…> (Q2, Q5) ── 7 docs + demo
+              └───────────────────────┴── 3 one REST edge ── 5 frond-wide door middleware
+                                                               └── 6 per-handler + Response<…> ── 7 docs + demo
 ```
 
 Every phase runs the same checks before its push: the changed packages' `test`, `pnpm -r typecheck`,
@@ -558,7 +587,8 @@ No behaviour change. Tests only.
   `registerRoutes`. That is why the gaps in 1.9 passed.
 - Add `registerRoutes` as a fifth facade there (through a fake `HttpRouter`, as in the 1.9 probe),
   and compare the **status** as well as the body.
-- Add a GraphQL test where an op throws a plain `Error`. It fails today. Phase 1 makes it pass.
+- The GraphQL test where an op throws a plain `Error` fails today, so it lands with its fix, in
+  phase 1: a red test may not sit on `main`.
 - Status assertions that split the two REST edges stay out until phase 3. A test may not be
   skipped to stay green, so phase 0 only adds what holds today.
 - Size: ~120 lines of tests. Gated on: nothing.
@@ -574,7 +604,7 @@ Three defects that exist today and need no decision.
 - `adapter/graphql/src/serve.ts` `registerGraphQL` passes `contextValue: { state: ctx.state }`.
 - `adapter/graphql/src/auto-register.ts` `registerAll`: the relation resolvers pass the caller's
   `ctx.state` instead of `state: {}`.
-- Tests: the phase 0 masking test, plus one per state fix in `adapter/graphql/tests/serve.test.ts`
+- Tests: the masking test (written here, since it is red before the fix), plus one per state fix in `adapter/graphql/tests/serve.test.ts`
   and `relation-batch.test.ts`.
 - Size: ~20 lines of code. Gated on: nothing.
 
@@ -597,10 +627,12 @@ Nine readers become two (1.8).
   `app/nuxt/src/runtime/server/api/crud.ts`, and `call`/`rest`/`graphql` in `app/shared/src/web.ts`.
 - What changes for users: a body over `maxBodyBytes` on those four doors now gets 413 instead of
   being read whole.
+- A body that is not JSON is refused with 415 on every reader (decision 9). `readExpressBody` and
+  Hono's `body` stop returning `{}` for it.
 - Tests: `transport/http/tests/limit.test.ts` and `receive.test.ts` stay green. New: one 413 test
-  for each door that had no limit. Nothing pins Nuxt's limit today.
-- Size: −150 lines net. Gated on: Q9 only for the non-JSON case. Phase 2 can ship without it and
-  keep `{}`.
+  for each door that had no limit, and a 415 test for each REST reader. Nothing pins Nuxt's limit
+  today.
+- Size: −150 lines net.
 
 ### Phase 3 — one REST edge
 
@@ -614,19 +646,19 @@ Nine readers become two (1.8).
   - decode: `body()` is called inside the edge, not by the host;
   - call: through `App.facadeFor`, so `decoded` applies on every host (today it applies only behind
     `registerRoutes`);
-  - encode: one status rule (Q1), `toHttpError`, headers written on success too.
+  - encode: one status rule (decision 1), `toHttpError`, headers written on success too.
 - `adapter/rest/src/register.ts` `registerRoutes` becomes `router.on(method, path, ctx => answer(…))`.
 - `app/shared/src/Outcome.ts` `serveRest` and `shapeRest` delegate to `restEdge`. Callers keep
   their names: `testing`, `app/shared/src/express.ts`, `web.ts`, Nuxt `crud.ts`.
-- **The status rule is Q1, and the PR cannot be written without it.** Either answer stops reading
-  the op name. Candidates: read the REST method that `deriveMethod` already chose (POST → 201,
-  DELETE with no body → 204), or 200 everywhere. `protocols.rest.status` wins over both, on every
-  host.
+- **The status rule is decision 1**, read from the contract: the method `deriveMethod` chose, the
+  binding plan (does a parameter designate a row), the output schema and the cardinality. Nothing
+  reads `operationName` any more. `protocols.rest.status` wins, on every host.
 - The two 404 body shapes (`{error}` and `{message}`) become the `toHttpError` shape, `{ code, message }`.
-- Tests to rewrite: `adapter/rest/tests/fastify.test.ts` (201/204/404) or
-  `app/shared/tests/serve.test.ts` (`shapeRest`), depending on Q1. Also `restRoutes.test.ts` and
-  `app/shared/tests/express.test.ts`. Phase 0's status assertions go in here, across both entries.
-- Size: ~200 lines moved, ~120 removed. Gated on: Q1, and Q9 if phase 2 left it open.
+- Tests to rewrite: `app/shared/tests/serve.test.ts` (`shapeRest` answers 200 today),
+  `restRoutes.test.ts` and `app/shared/tests/express.test.ts`. `adapter/rest/tests/fastify.test.ts`
+  (201/204/404) keeps its expectations and gains a renamed op (`remove`) answering the same. Phase
+  0's status assertions go in here, across both entries.
+- Size: ~200 lines moved, ~120 removed.
 
 ### Phase 4 — the middle's output as one list
 
@@ -658,44 +690,42 @@ Cases 3.2 (header) and 3.3 (upload refused on its headers).
   `next()`.
 - The scan (`compiler/src/scan/scanner.ts`, the `middlewares/` reading) accepts the subclass. The
   `middlewares:` order and its two refusals cover it unchanged.
-- Gated on Q3 (frond answering in another process) and Q4 (body parsed before us). Until Q3 is
-  settled, the boot refuses a door middleware whose frond is placed remotely. That is the
-  conservative default, and lifting a refusal later breaks nobody.
-- Q7 decides whether a door middleware's throws join the op's `errors`. Until then, the refusal
-  walk (`compiler/src/scan/refusals.ts`) does not follow them.
+- The boot refuses a door middleware whose frond is placed in another process (decision 3), naming
+  the frond, its address and the reason. A body the host parsed before us is accepted (decision 4).
+- The refusal walk (`compiler/src/scan/refusals.ts`) does not follow a door middleware's throws
+  (decision 7).
 - Tests: `core/tests/middleware-frond.test.ts` (a door middleware does not run behind JSON-RPC or
   the in-process call), new `adapter/rest/tests/door-middleware.test.ts` (header on success and on
   error, 413 before `body()` is called), `compiler/tests/middleware-form.test.ts`.
-- Size: ~200 lines. Gated on: Q3, Q4, Q7 (each with the default above).
+- Size: ~200 lines.
 
 ### Phase 6 — per handler, and `Response<…>`
 
-Cases 3.1 (301) and 3.4 (CSV).
+Case 3.1 (301). Case 3.4 (CSV) is out of scope: the media-type project.
 
 - `RestMiddleware(PostHandler)`: each method is the `around` for the op of the same name.
 - `Response<Status, Headers, Body>` is an interface in `adapter-rest`. The scan reads its `status`
   and `headers` fields off the checked return type, not its type arguments.
 - New boot refusals: a method that names no op of its handler, a `status` that is not a literal,
   and a `Response` returned from the frond-wide form.
-- `EffectiveOperation.protocols.rest` gains `responses: { status, headers, media? }[]`. The card
-  carries it or not, per Q2. Q5 decides whether the frond-wide header from phase 5 joins it.
-- Encode writes a `Response` as given. A string body goes out with `raw: true`
-  (`http/src/router/ResponseResult.ts`), so it is not JSON-encoded.
+- `EffectiveOperation.protocols.rest` gains `responses: { status, headers }[]`. The card does not
+  carry it (decision 2), and a frond-wide header never joins it (decision 5).
+- Encode writes a `Response` as given.
 - Tests: `compiler/tests/` for the field reading through an alias and for the three refusals.
-  `adapter/rest/tests/` for the 301 and for CSV-or-JSON by `Accept`. `Card.diff` stays stable if
-  Q2 puts `responses` on the card.
-- Size: ~250 lines. Gated on: Q2 and Q5.
+  `adapter/rest/tests/` for the 301, and for GraphQL and JSON-RPC still answering `NOT_FOUND`.
+- Size: ~200 lines.
 
 ### Phase 7 — docs and a demo
 
 - A site page for the door middleware, and links from `site/content/docs/4.business/10.ports.md`
   (which today points to `router.use` for HTTP needs).
-- A CLAUDE.md paragraph. KNOWN_ISSUES: the GraphQL fixes from phase 1 leave nothing to record. If
-  Q6 keeps REST as the only door with door middlewares, that becomes an entry: stated and left as is.
-- `demos/door-lifecycle`: the four cases, like the other one-concept demos, with its line in
+- A CLAUDE.md paragraph. KNOWN_ISSUES gains two entries, stated and left as is: REST is the only
+  door with door middlewares (decision 6), and a door middleware refuses the boot when its frond
+  answers elsewhere (decision 3).
+- `demos/door-lifecycle`: cases 3.1 to 3.3, like the other one-concept demos, with its line in
   CLAUDE.md's `## Commands`.
 
-### What can start now
+### Order of work
 
-Phases 0, 1, 2 and 4 wait on no question: about 300 lines, three of the four fix defects that
-exist today. Phase 3 is the first one that waits for the owner, on Q1.
+Phases 0 and 1 first: the GraphQL leak of an internal message is the priority. Then 2 and 4, in
+either order. Then 3, 5, 6 and 7, each on the one before it.
