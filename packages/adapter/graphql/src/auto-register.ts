@@ -32,6 +32,9 @@ interface Batch {
 /** The batch of ONE direction — the two sides of a relation must not share a read. */
 const directionKey = (entity: string, field: string) => `${entity}#${field}`;
 
+/** The caller's state, carried into a relation the way the root field carried it. */
+const stateIn = (ctx: unknown): Record<string, unknown> => (ctx as { state?: Record<string, unknown> } | undefined)?.state ?? {};
+
 /** How many keys go into one `list` call. */
 const KEYS_PER_READ = 1000;
 
@@ -333,7 +336,7 @@ export function registerAll(
             // A facade that serves no list — a handler narrowed to `findById` — keeps the
             // row-at-a-time path rather than losing the relation entirely.
             if (typeof targetList !== 'function') {
-              return targetFacade.findById({ params: { id: fk }, query: {}, input: undefined, state: {} });
+              return targetFacade.findById({ params: { id: fk }, query: {}, input: undefined, state: stateIn(ctx) });
             }
 
             return loadByKey(ctx, directionKey(targetKey(target), targetKeyName), String(fk), (ids) =>
@@ -341,7 +344,7 @@ export function registerAll(
               // value. Nothing new is published: a criterion learned to name several.
               readInSlices(ids, async (slice) => {
                 const result = await targetList.call(targetFacade, {
-                  params: {}, query: { where: { [targetKeyName]: slice } }, input: undefined, state: {},
+                  params: {}, query: { where: { [targetKeyName]: slice } }, input: undefined, state: stateIn(ctx),
                 }) as any;
                 const rows = Array.isArray(result) ? result : result?.items ?? result?.data ?? [];
 
@@ -385,7 +388,7 @@ export function registerAll(
             return loadByKey(ctx, directionKey(targetKey(target), reverseFkName), String(id), (ids) =>
               readInSlices(ids, async (slice) => {
                 const result = await targetFacade.list({
-                  params: {}, query: { where: { [reverseFkName]: slice } }, input: undefined, state: {},
+                  params: {}, query: { where: { [reverseFkName]: slice } }, input: undefined, state: stateIn(ctx),
                 }) as any;
                 const rows = Array.isArray(result) ? result : result?.items ?? result?.data ?? [];
                 const grouped = new Map<string, any[]>();

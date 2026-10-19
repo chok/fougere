@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { GraphQLObjectType, GraphQLSchema, GraphQLString } from 'graphql';
+import { ErrorCode, FougereError } from '@fougere/core';
 import type { Handler, HttpMethod, HttpRouter, RequestContext } from '@fougere/http';
 import { registerGraphQL } from '../src/index.js';
 
@@ -8,7 +9,15 @@ function fixture() {
   const schema = new GraphQLSchema({
     query: new GraphQLObjectType({
       name: 'Query',
-      fields: { hello: { type: GraphQLString, resolve: () => 'world' } },
+      fields: {
+        hello: { type: GraphQLString, resolve: () => 'world' },
+        who: { type: GraphQLString, resolve: (_, __, ctx: { state: { user?: string } }) => ctx.state.user ?? null },
+        boom: { type: GraphQLString, resolve: () => { throw new Error('secret at /etc/db.sqlite'); } },
+        refused: {
+          type: GraphQLString,
+          resolve: () => { throw new FougereError({ code: ErrorCode.FORBIDDEN, message: 'Not yours.' }); },
+        },
+      },
     }),
     mutation: new GraphQLObjectType({
       name: 'Mutation',
@@ -24,7 +33,7 @@ function fixture() {
   return { schema, mutate, router, handlers };
 }
 
-function context(method: HttpMethod, query: Record<string, string> = {}): RequestContext {
+function context(method: HttpMethod, query: Record<string, string> = {}, state: Record<string, unknown> = {}): RequestContext {
   return {
     request: new Request('http://localhost/graphql'),
     method,
@@ -32,7 +41,7 @@ function context(method: HttpMethod, query: Record<string, string> = {}): Reques
     params: {},
     query,
     body: async () => ({}),
-    state: {},
+    state,
   };
 }
 
@@ -63,5 +72,24 @@ describe('registerGraphQL', () => {
     const second = fixture();
     registerGraphQL(second.router, second.schema, { playground: true });
     expect(await second.handlers.get('GET /graphql')!(context('GET'))).toMatchObject({ status: 200, raw: true });
+  });
+
+  it('hands the resolvers the state the router middlewares wrote', async () => {
+    const { schema, router, handlers } = fixture();
+    registerGraphQL(router, schema);
+
+    const response = await handlers.get('GET /graphql')!(context('GET', { query: '{ who }' }, { user: 'ada' }));
+    expect(response.data).toEqual({ data: { who: 'ada' } });
+  });
+
+  it('never hands an accidental error to the caller, and keeps a refusal in its own words', async () => {
+    const { schema, router, handlers } = fixture();
+    registerGraphQL(router, schema);
+
+    const response = await handlers.get('GET /graphql')!(context('GET', { query: '{ boom refused }' }));
+    const errors = (response.data as { errors: { message: string; extensions: Record<string, unknown> }[] }).errors;
+    expect(errors.map((error) => error.message)).toEqual(['Internal error', 'Not yours.']);
+    expect(errors.map((error) => error.extensions.code)).toEqual([ErrorCode.INTERNAL_ERROR, ErrorCode.FORBIDDEN]);
+    expect(JSON.stringify(errors)).not.toContain('/etc/db.sqlite');
   });
 });

@@ -81,6 +81,21 @@ describe('a relation is read by the page', () => {
     expect(users[PAGE - 1].name).toBe(`name-u${(PAGE - 1) % DISTINCT}`);
   });
 
+  it("reads the relation with the caller's state", async () => {
+    const states: unknown[] = [];
+    const { orders, relation } = build({
+      list: async (inv: any) => {
+        states.push(inv.state);
+
+        return inv.query.where.id.map((id: string) => ({ id, name: id }));
+      },
+    });
+
+    await resolvePage(relation, orders, { state: { user: 'ada' } });
+
+    expect(states).toEqual([{ user: 'ada' }]);
+  });
+
   it('never answers two requests out of one read', async () => {
     const seen: unknown[] = [];
     const { orders, relation } = build({
