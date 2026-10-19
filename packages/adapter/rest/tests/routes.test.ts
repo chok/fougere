@@ -127,6 +127,13 @@ describe('generateRoutes', () => {
       .toThrow(/without its EffectiveOperation table/);
   });
 
+  it('projects no op answering in another process — its door is that process\'s', () => {
+    const app = fakeApp({ postHandler: fakeCrud() });
+    const remote = new Map([...opsMap(['list', 'findById'])].map(([name, meta]) => [name, { ...meta, placement: 'remote' }]));
+
+    expect(generateRoutes({ ...app, operationsFor: () => remote })).toEqual([]);
+  });
+
   it('generates CRUD routes for every address', () => {
     const app = fakeApp(
       { postHandler: fakeCrud() },

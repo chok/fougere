@@ -1,4 +1,5 @@
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
+import { Readable } from 'node:stream';
 import { ErrorCode, FougereError, readWithin, type Transport } from '@fougere/core';
 import type { RpcResponse } from '../jsonrpc/RpcResponse.js';
 import { handleRpc } from '../server.js';
@@ -52,7 +53,13 @@ function whyNotHere(host: string | undefined, options: ServeOptions): Error | un
 function answering(runner: Transport, options: ServeOptions) {
   return async (req: IncomingMessage, res: ServerResponse): Promise<void> => {
     if (req.method !== 'POST' || req.url !== CALL_PATH) {
-      res.writeHead(404).end();
+      const answered = options.beside && await options.beside(webRequestOf(req));
+      if (!answered) {
+        res.writeHead(404).end();
+
+        return;
+      }
+      res.writeHead(answered.status, Object.fromEntries(answered.headers)).end(Buffer.from(await answered.arrayBuffer()));
 
       return;
     }
@@ -76,6 +83,21 @@ function answering(runner: Transport, options: ServeOptions) {
 
     res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify(response));
   };
+}
+
+/** A Node request as a Web one, its body still a stream — built only for what is not a call. */
+function webRequestOf(req: IncomingMessage): Request {
+  const headers = new Headers();
+  for (const [name, value] of Object.entries(req.headers)) {
+    if (value !== undefined) headers.set(name, Array.isArray(value) ? value.join(', ') : value);
+  }
+  const reads = req.method !== 'GET' && req.method !== 'HEAD';
+
+  return new Request(`http://${req.headers.host ?? 'localhost'}${req.url ?? '/'}`, {
+    method: req.method,
+    headers,
+    ...(reads && { body: Readable.toWeb(req) as ReadableStream<Uint8Array>, duplex: 'half' }),
+  } as RequestInit);
 }
 
 /** The port a receiver ended up on — asked of the server, since 0 means "whatever is free". */

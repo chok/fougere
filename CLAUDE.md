@@ -993,6 +993,17 @@ entities, so a handler with no entity (`checkout.pay`) is served and the fields 
 own contract. A GraphQL TYPE is built from a schema an op returns, once per entity. Pinned by
 `adapter/rest/tests/stated.test.ts`, `routes.test.ts` and `core/tests/operation-overrides.test.ts`.
 
+**A process serves the REST door of the fronds it hosts** — `routesOf`
+(`adapter/rest/src/routes/RouteDefinition.ts`) leaves out an op whose `placement` is `remote`, and
+`fougere serve` answers REST beside the call envelope (`ServeOptions.beside`, over `restAnswer` in
+`app/shared/src/web.ts`). The calling process used to project a remote frond's routes and relay each
+call over JSON-RPC, so a door middleware would have run where the frond's code and dependencies were
+not. Every host answers through ONE `answer` (`adapter/rest/src/answer.ts`): the status read off the
+contract — `201` for a `POST` on the collection answering one row, `204` for nothing or a `DELETE`
+answering `true`, `404` for a missing row — and a page as `{ items, total, hasMore, endCursor }`.
+Pinned by `adapter/rest/tests/answer.test.ts`, `testing/tests/rest-status.test.ts` and
+`transport/http/tests/beside.test.ts`.
+
 **A REST path is read off the signature, never off the op's name** — `derivePath`
 (`adapter/rest/src/routes/RouteDefinition.ts`) over the binding plan. A primitive typed by an
 entity's primary (`id: Post['id']`) DESIGNATES a row and comes before the op —

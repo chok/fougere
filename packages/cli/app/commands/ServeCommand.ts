@@ -1,4 +1,6 @@
-import { createLocalRunner, envLevel, identityFromEnv, setLogLevel } from '@fougere/core';
+import { createLocalRunner, envLevel, identityFromEnv, serves, setLogLevel } from '@fougere/core';
+import { prefixOf } from '@fougere/adapter-rest';
+import { restAnswer } from '@fougere/app/web';
 import { loadConfig, remotesOf } from '@fougere/core/node';
 import { installLoader } from '../../src/loader.js';
 
@@ -68,8 +70,12 @@ export default class ServeCommand {
     // A served frond admits what it can establish. With no root injected it takes the
     // state it is handed, which is why the loopback default is the other half.
     const { verify, requireIdentity } = await identityFromEnv();
-    const { port: bound } = await serve((call, inv) => current(call, inv), { port, verify, requireIdentity });
+    // The REST door of the frond this process hosts, beside the call envelope: a frond moved
+    // here takes its door with it, and the process it left no longer answers for it.
+    const beside = (request: Request) => restAnswer(hosted, request);
+    const { port: bound } = await serve((call, inv) => current(call, inv), { port, verify, requireIdentity, beside });
     this.ui.step(`frond ${frond} served — POST http://127.0.0.1:${bound}/_fougere/call`);
+    if (serves(hosted.protocols, 'rest')) this.ui.info(`REST under http://127.0.0.1:${bound}${prefixOf(hosted.protocols)}`);
     this.ui.info(requireIdentity ? 'signed calls only (FOUGERE_ROOT_KEY is set)' : 'unsigned calls accepted — no FOUGERE_ROOT_KEY');
 
     if (!watching) {

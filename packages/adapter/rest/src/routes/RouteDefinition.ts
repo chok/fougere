@@ -196,9 +196,10 @@ function routesOf(
     throw new Error(`REST cannot project '${address}' without its EffectiveOperation table.`);
   }
 
-  // The resolved table defines the public operation set. This also works for remote proxy
-  // facades, which intentionally cannot enumerate their keys before discovery.
-  return [...effectiveOperations.keys()].map((opName) => routeFor({
+  // The resolved table defines the public operation set. An op answering in another process is
+  // that process's to serve: a door follows its frond, and relaying it here answered for a frond
+  // this process does not host.
+  return [...effectiveOperations.keys()].filter((opName) => effectiveOperations.get(opName)?.placement !== 'remote').map((opName) => routeFor({
     address,
     base: baseOf(app, frond),
     facade,

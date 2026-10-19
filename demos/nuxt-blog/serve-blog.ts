@@ -13,6 +13,7 @@ import { frondAliases, setModuleLoader, loadConfig, remotesOf } from '@fougere/c
 import { createContainer } from '@fougere/container';
 import { resolveStorage, layerOf } from '@fougere/defaults';
 import { serve } from '@fougere/transport-http';
+import { restAnswer } from '@fougere/app/web';
 import { calls } from '@fougere/calls';
 import { observability } from '@fougere/observability';
 
@@ -58,5 +59,7 @@ const app = await createApp({
   extensions: [observability({ service: 'blog-host' }), calls({ panel: 4400 })],
 });
 
-const { port } = await serve(createLocalRunner(app), { port: Number(declaredPort), host: hostname });
-log.info(`frond blog served — POST ${new URL('/_fougere/call', address).href} (bound :${port})`);
+// Its REST door comes with it: split, `/api/blog/…` is answered here and no longer by Nuxt.
+const beside = (request: Request) => restAnswer(app, request);
+const { port } = await serve(createLocalRunner(app), { port: Number(declaredPort), host: hostname, beside });
+log.info(`frond blog served — POST ${new URL('/_fougere/call', address).href}, REST ${new URL('/api/blog', address).href} (bound :${port})`);

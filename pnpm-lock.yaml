@@ -2073,9 +2073,15 @@ importers:
       '@clack/prompts':
         specifier: ^0.10.0
         version: 0.10.1
+      '@fougere/adapter-rest':
+        specifier: workspace:*
+        version: link:../adapter/rest
       '@fougere/adapter-sql':
         specifier: workspace:^
         version: link:../adapter/sql
+      '@fougere/app':
+        specifier: workspace:*
+        version: link:../app/shared
       '@fougere/compiler':
         specifier: workspace:*
         version: link:../compiler
