@@ -22,7 +22,9 @@ function log(msg: string) { console.log(`  ${msg}`); }
 function pass(msg: string) { console.log(`  \x1b[32m✓\x1b[0m ${msg}`); }
 function fail(msg: string) { console.error(`  \x1b[31m✗\x1b[0m ${msg}`); process.exit(1); }
 
-async function waitForServer(url: string, timeoutMs = 10000): Promise<void> {
+// The server scans its frond with TypeScript before it listens: 3 s on Linux at rest, measured
+// 2026-10-20, and over 10 s on CI while the heavy suites run beside it.
+async function waitForServer(url: string, timeoutMs = 30000): Promise<void> {
   const start = Date.now();
   while (Date.now() - start < timeoutMs) {
     try {
@@ -65,7 +67,8 @@ async function main() {
     try {
       await waitForServer(`http://localhost:${PORT}/api/blog/posts`);
     } catch (error) {
-      console.error(said.join('') || '  the server said nothing');
+      const ended = server.exitCode !== null || server.signalCode !== null;
+      console.error(said.join('') || `  the server said nothing, and ${ended ? `exited (${server.exitCode ?? server.signalCode})` : 'is still running'}`);
       throw error;
     }
     pass('Remote server started');
