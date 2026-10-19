@@ -13,3 +13,19 @@ describe('stateOf', () => {
     expect(stateOf({ context: { nitro: {} } } as never)).toEqual({});
   });
 });
+
+describe('the state of the request a server-side call runs within', () => {
+  it('is the session without its token, never the whole of Nitro\'s context', async () => {
+    const { stateOfRequest } = await import('../src/runtime/server/stateOf.js');
+    const context = { user: { id: 'u1' }, session: { id: 's1', token: 'secret' }, nitro: { internal: true } };
+
+    expect(stateOfRequest(() => ({ context }))).toEqual({ user: { id: 'u1' }, session: { id: 's1' } });
+  });
+
+  it('is nothing outside a request', async () => {
+    const { stateOfRequest } = await import('../src/runtime/server/stateOf.js');
+
+    expect(stateOfRequest(() => undefined)).toEqual({});
+    expect(stateOfRequest(() => { throw new Error('no request in scope'); })).toEqual({});
+  });
+});

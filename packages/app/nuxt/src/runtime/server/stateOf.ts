@@ -14,3 +14,17 @@ export function stateOf(event: Pick<H3Event, 'context'>): Record<string, unknown
     ...(session === undefined ? {} : { session: carried }),
   };
 }
+
+/**
+ * The state of the request a server-side call runs within — `stateOf` its event, never the whole of
+ * Nitro's context, which a call that crosses would carry. Outside a request there is none.
+ */
+export function stateOfRequest(eventNow: () => Pick<H3Event, 'context'> | undefined): Record<string, unknown> {
+  try {
+    const event = eventNow();
+
+    return event ? stateOf(event) : {};
+  } catch {
+    return {};
+  }
+}
