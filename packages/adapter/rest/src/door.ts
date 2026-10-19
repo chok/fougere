@@ -1,5 +1,5 @@
 import { DoorMiddleware, ErrorCode, FougereError, toHttpError, type Door } from '@fougere/core';
-import { HttpError, type ResponseResult } from '@fougere/http';
+import { HttpError, type HttpCarrier, type ResponseResult } from '@fougere/http';
 import type { RouteDefinition } from './routes/RouteDefinition.js';
 
 /** What a host hands the REST door for one matched route — the body still to read, so the door reads it. */
@@ -74,9 +74,14 @@ export function restDoor(route: RouteDefinition): Door<RestRequest, RestInvocati
   return {
     name: 'rest',
     address: route.address,
+    carries: 'http',
+    carrier: ({ headers }): HttpCarrier => ({ request: headers, response: new Headers() }),
     decode: async ({ params, query, body, state }) => ({ params, query, input: await read(body), state }),
     run: (invocation) => route.handler(invocation),
-    encode: (outcome) => ('refused' in outcome ? refused(outcome.refused) : responseOf(route, outcome.answered)),
+    encode: (outcome, _request, carrier) => leaving(
+      'refused' in outcome ? refused(outcome.refused) : responseOf(route, outcome.answered),
+      carrier as HttpCarrier | undefined,
+    ),
   };
 }
 
@@ -106,6 +111,14 @@ function responseOf(route: RouteDefinition, result: unknown): ResponseResult {
   }
 
   return { status, data: result };
+}
+
+/** What the keepers of `state:` wrote on the carrier goes out with the answer — every `Set-Cookie` line kept apart. */
+function leaving(answer: ResponseResult, carrier: HttpCarrier | undefined): ResponseResult {
+  const cookies = carrier?.response.getSetCookie() ?? [];
+  if (cookies.length === 0) return answer;
+
+  return { ...answer, headers: { ...answer.headers, 'set-cookie': cookies } };
 }
 
 function notFound(route: RouteDefinition): FougereError {

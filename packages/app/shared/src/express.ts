@@ -90,7 +90,11 @@ export function call(mountPath = '/_fougere/call'): ExpressMiddleware {
 
           return;
         }
-        res.status(200).json(await serveRpc(app, { path, body, state: stateOf(req) }));
+        const response = new Headers();
+        const answered = await serveRpc(app, { path, body, state: stateOf(req), carrier: { request: headersOf(req), response } });
+        const cookies = response.getSetCookie();
+        if (cookies.length > 0) res.set('set-cookie', cookies);
+        res.status(200).json(answered);
       } catch (err) {
         fail(res, next, err);
       }
@@ -152,8 +156,10 @@ export function graphql(mountPath = GRAPHQL_PATH): ExpressMiddleware {
           document: async () => (await readExpressBody(req, maxBodyBytes())) as GraphQLDocument | undefined,
           surface,
           state: stateOf(req),
+          headers: headersOf(req),
         });
         if (outcome.kind === 'pass') return next();
+        for (const [key, value] of Object.entries(outcome.kind === 'ok' ? outcome.headers ?? {} : {})) res.set(key, value);
         res.status(outcome.status).json(outcome.body);
       } catch (err) {
         fail(res, next, err);

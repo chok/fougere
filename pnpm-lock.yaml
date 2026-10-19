@@ -2351,6 +2351,18 @@ importers:
         specifier: ^11.18.0
         version: 11.18.0(typescript@7.0.2)
 
+  packages/state/cookie:
+    dependencies:
+      '@fougere/core':
+        specifier: workspace:*
+        version: link:../../core
+      '@fougere/http':
+        specifier: workspace:*
+        version: link:../../http
+      '@fougere/schema':
+        specifier: workspace:*
+        version: link:../../schema
+
   packages/testing:
     dependencies:
       '@fougere/app':
@@ -2390,6 +2402,9 @@ importers:
       '@fougere/observability':
         specifier: workspace:*
         version: link:../observability
+      '@fougere/state-cookie':
+        specifier: workspace:*
+        version: link:../state/cookie
       better-sqlite3:
         specifier: ^13.0.3
         version: 13.0.3

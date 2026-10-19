@@ -3,8 +3,8 @@ import type { OperationContract } from './wire/OperationContract.js';
 import type { Param } from './wire/Param.js';
 import type { TypeRef } from './wire/TypeRef.js';
 
-/** What a parameter is — a schema, a field of an entity (`[Post, 'id']`), or a primitive. */
-export type StatedType = SchemaView | readonly [SchemaView, string] | 'string' | 'number' | 'boolean';
+/** What a parameter is — a schema, a field of an entity (`[Post, 'id']`), a primitive, or `State`, the caller's kept state. */
+export type StatedType = SchemaView | readonly [SchemaView, string] | 'string' | 'number' | 'boolean' | 'State';
 
 /** A parameter, required unless it says otherwise. */
 export type StatedParam = StatedType | { type: StatedType; optional: true };

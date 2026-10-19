@@ -50,6 +50,7 @@ export function registerGraphQL(
   router.on('POST', path, (ctx) => answer(door, {
     document: async () => (await ctx.body()) as GraphQLDocument | undefined,
     state: ctx.state,
+    headers: ctx.request.headers,
   }));
 
   router.on('GET', path, async (ctx): Promise<ResponseResult> => {
@@ -66,6 +67,7 @@ export function registerGraphQL(
       }),
       readOnly: true,
       state: ctx.state,
+      headers: ctx.request.headers,
     });
   });
 }

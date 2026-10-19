@@ -1,7 +1,7 @@
 {
   "name": "@fougere/testing",
   "version": "0.24.0-alpha.0",
-  "description": "Tests derived from the declaration \u2014 cases, stubs and a gradient of realities.",
+  "description": "Tests derived from the declaration — cases, stubs and a gradient of realities.",
   "keywords": [
     "fougere",
     "typescript",
@@ -79,6 +79,7 @@
     "@fougere/adapter-sql": "workspace:*",
     "@fougere/observability": "workspace:*",
     "better-sqlite3": "^13.0.3",
-    "vitest": "^4.1.0"
+    "vitest": "^4.1.0",
+    "@fougere/state-cookie": "workspace:*"
   }
 }

@@ -19,14 +19,15 @@ export async function call(request: Request): Promise<Response> {
   }
 
   const app = await useFougereApp();
+  const response = new Headers();
+  const answered = await serveRpc(app, {
+    path: new URL(request.url).pathname,
+    body,
+    state: await stateFor(request.headers),
+    carrier: { request: request.headers, response },
+  });
 
-  return Response.json(
-    await serveRpc(app, {
-      path: new URL(request.url).pathname,
-      body,
-      state: await stateFor(request.headers),
-    }),
-  );
+  return Response.json(answered, { headers: response });
 }
 
 /** The REST projection, where `protocols.rest.prefix` mounts it — `/api` unless it says otherwise. */
@@ -97,11 +98,12 @@ export async function graphql(request: Request): Promise<Response> {
     document: async () => (await jsonBodyOf(request)) as GraphQLDocument | undefined,
     surface: graphqlSurfaceOf(new URL(request.url).pathname),
     state: await stateFor(request.headers),
+    headers: request.headers,
   });
 
   if (outcome.kind === 'pass') {
     return Response.json({ message: 'GraphQL is not served by this app' }, { status: 404 });
   }
 
-  return Response.json(outcome.body, { status: outcome.status });
+  return Response.json(outcome.body, { status: outcome.status, headers: headersOf(outcome.headers) });
 }

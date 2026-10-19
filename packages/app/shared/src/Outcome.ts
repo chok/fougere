@@ -11,6 +11,7 @@ import {
   type InvocationContext,
 } from '@fougere/core';
 import { pageDoor, PARSE_ERROR } from '@fougere/transport-http';
+import type { HttpCarrier } from '@fougere/http';
 import { restDoor } from '@fougere/adapter-rest';
 import { matchRoute, tableOf } from './RouteMatch.js';
 import type { DoorRequest } from './DoorRequest.js';
@@ -32,8 +33,11 @@ export function surfaceOf(path: string): string | undefined {
 }
 
 /** Receiving end for the browser — the page's door, with the state the host resolved server-side. */
-export function serveRpc(app: App, request: { path: string; body: unknown; state: Record<string, unknown> }): Promise<unknown> {
-  return app.answer(pageDoor(createAppRunner(app, surfaceOf(request.path)), request.state), request.body);
+export function serveRpc(
+  app: App,
+  request: { path: string; body: unknown; state: Record<string, unknown>; carrier?: HttpCarrier },
+): Promise<unknown> {
+  return app.answer(pageDoor(createAppRunner(app, surfaceOf(request.path)), request.state, request.carrier), request.body);
 }
 
 /**

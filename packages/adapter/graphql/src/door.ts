@@ -1,5 +1,5 @@
 import { ErrorCode, FougereError, toHttpError, type Door } from '@fougere/core';
-import { HttpError, type ResponseResult } from '@fougere/http';
+import { HttpError, type HttpCarrier, type ResponseResult } from '@fougere/http';
 import { getOperationAST, graphql, parse, type ExecutionResult, type GraphQLSchema } from 'graphql';
 import { publicResult } from './publicResult.js';
 
@@ -17,6 +17,8 @@ export interface GraphQLReceived {
   /** GET is the cacheable half of the protocol, so a mutation over it is refused rather than run. */
   readOnly?: boolean;
   state: Record<string, unknown>;
+  /** The request's headers — what a cookie-kept state arrives in. None, and the door keeps no state. */
+  headers?: Headers;
 }
 
 /**
@@ -27,6 +29,8 @@ export interface GraphQLReceived {
 export function graphqlDoor(schema: GraphQLSchema): Door<GraphQLReceived, GraphQLDocument & { query: string; state: Record<string, unknown> }, ResponseResult> {
   return {
     name: 'graphql',
+    carries: 'http',
+    carrier: ({ headers }): HttpCarrier | undefined => (headers ? { request: headers, response: new Headers() } : undefined),
     decode: async ({ document, readOnly, state }) => {
       const read = await documentOf(document);
       if (!read?.query) throw new FougereError({ code: ErrorCode.BAD_REQUEST, message: 'Missing query' });
@@ -41,9 +45,15 @@ export function graphqlDoor(schema: GraphQLSchema): Door<GraphQLReceived, GraphQ
       operationName,
       contextValue: { state },
     }),
-    encode: (outcome): ResponseResult => {
+    encode: (outcome, _received, carrier): ResponseResult => {
       if ('answered' in outcome) {
-        return { status: 200, data: publicResult(outcome.answered as ExecutionResult), headers: { 'content-type': 'application/json' } };
+        const cookies = (carrier as HttpCarrier | undefined)?.response.getSetCookie() ?? [];
+
+        return {
+          status: 200,
+          data: publicResult(outcome.answered as ExecutionResult),
+          headers: { 'content-type': 'application/json', ...(cookies.length > 0 && { 'set-cookie': cookies }) },
+        };
       }
       const { status, body } = toHttpError(outcome.refused);
 

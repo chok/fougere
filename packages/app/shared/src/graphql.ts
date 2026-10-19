@@ -15,9 +15,15 @@ export interface GraphQLRequest {
   /** The audience, when the facade was mounted per surface. */
   surface?: string;
   state: Record<string, unknown>;
+  /** The request's headers — what a cookie-kept state arrives in. */
+  headers?: Headers;
 }
 
-type GraphQLDoor = Door<{ document: GraphQLRequest['document']; state: Record<string, unknown> }, unknown, { status: number; data: unknown }>;
+type GraphQLDoor = Door<
+  { document: GraphQLRequest['document']; state: Record<string, unknown>; headers?: Headers },
+  unknown,
+  { status: number; data: unknown; headers?: Record<string, string | string[]> }
+>;
 
 /** Where every host mounts GraphQL unless it says otherwise. */
 export const GRAPHQL_PATH = '/graphql';
@@ -45,8 +51,10 @@ export async function serveGraphQL(app: App, request: GraphQLRequest): Promise<O
   if (!serves(app.protocols, 'graphql')) return { kind: 'pass' };
 
   // The same state every other facade stamps: what the server resolved, never the wire.
-  const { status, data } = await app.answer(doorOf(app, request.surface), { document: request.document, state: request.state });
-  if (status === 200) return { kind: 'ok', status, body: data };
+  const { status, data, headers } = await app.answer(doorOf(app, request.surface), {
+    document: request.document, state: request.state, ...(request.headers && { headers: request.headers }),
+  });
+  if (status === 200) return { kind: 'ok', status, body: data, ...(headers && { headers }) };
 
   // A request the engine never ran — no query, a body refused — has no result, only its errors.
   const [first] = (data as { errors: { message: string }[] }).errors;

@@ -134,6 +134,9 @@ packages/
     nuxt/ next/ react/ svelte/ vite/          @fougere/nuxt, /next, /react, /svelte, /vite
     admin/             @fougere/admin         React Admin derived at runtime from the identity card
 
+  state/                                      keep a caller's state between two requests
+    cookie/            @fougere/state-cookie      `cookie` in `state:` — read and written by every HTTP door
+
   transport/                                  move a call between processes
     http/              @fougere/transport-http    JSON-RPC 2.0 wire (serve + client subpath)
 

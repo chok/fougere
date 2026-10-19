@@ -1,5 +1,5 @@
 /** GraphQL, when the app declares `protocols: { graphql: {} }` — the h3 half of `serveGraphQL`. */
-import { defineEventHandler, createError, setResponseStatus, toWebRequest } from 'h3';
+import { defineEventHandler, createError, getRequestHeaders, setResponseHeaders, setResponseStatus, toWebRequest } from 'h3';
 import { graphqlSurfaceOf, jsonBodyOf, serveGraphQL, useFougereApp, type GraphQLDocument } from '@fougere/app';
 import { stateOf } from '../stateOf.js';
 
@@ -9,6 +9,7 @@ export default defineEventHandler(async (event) => {
     document: async () => (await jsonBodyOf(toWebRequest(event))) as GraphQLDocument | undefined,
     surface: graphqlSurfaceOf(event.path),
     state: stateOf(event),
+    headers: new Headers(Object.entries(getRequestHeaders(event)).filter((entry): entry is [string, string] => entry[1] !== undefined)),
   });
 
   if (outcome.kind === 'pass') {
@@ -19,6 +20,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: outcome.status, message: outcome.body.message, data: outcome.body });
   }
 
+  if (outcome.headers) setResponseHeaders(event, outcome.headers);
   setResponseStatus(event, outcome.status);
 
   return outcome.body;

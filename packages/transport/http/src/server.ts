@@ -86,9 +86,11 @@ export function peerDoor(runner: Transport, options: ReceiveOptions = {}): Door<
  * written — a peer's right — and `[id, draft, { id: 'admin' }]` would hand the handler a user no
  * collector read.
  */
-export function pageDoor(runner: Transport, state: Record<string, unknown>): Door<unknown, RpcCall, RpcResponse> {
+export function pageDoor(runner: Transport, state: Record<string, unknown>, carrier?: unknown): Door<unknown, RpcCall, RpcResponse> {
   return {
     name: 'rpc',
+    // The page's own HTTP request — what a cookie-kept state arrives and leaves in, written back by the host.
+    ...(carrier !== undefined && { carries: 'http', carrier: () => carrier }),
     decode: async (raw) => {
       const { address, op, sent } = envelopeOf(raw);
       if (sent.args !== undefined) {
