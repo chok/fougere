@@ -1007,6 +1007,11 @@ envelope is two doors over one wire (`transport/http/src/server.ts`): `peerDoor`
 `handleRpc` marked `crossed` too, so the receiver skipped judging the state of a caller outside the
 topology. Measured 2026-10-19: the cycle adds 83 ns to a request nobody watches, 217 ns watched.
 Pinned by `transport/http/tests/doors.test.ts`.
+`graphqlDoor` (`adapter/graphql/src/door.ts`) reads the document inside the cycle and runs the
+engine, whose resolvers make one call per root field and per relation — all carrying the one
+request, pinned by `testing/tests/graphql-request.test.ts`. A refusal before the engine (no query, a
+body refused, a mutation over GET) answers a status and an `errors` list; the protocol registers the
+door beside `executeOn`, and the hosts resolve it without naming the package.
 
 **A process serves the REST door of the fronds it hosts** — `routesOf`
 (`adapter/rest/src/routes/RouteDefinition.ts`) leaves out an op whose `placement` is `remote`, and

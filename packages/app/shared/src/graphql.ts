@@ -1,49 +1,41 @@
 /** The GraphQL facade — declared like the others, mounted like the others. */
-import { Protocols, serves, type App } from '@fougere/core';
+import { Protocols, serves, type App, type Door } from '@fougere/core';
 import type { Outcome } from './Outcome.js';
 
-/** What a GraphQL request carries, whatever host read it. */
-export interface GraphQLRequest {
+/** A document, its variables, and which operation of it to run. */
+export interface GraphQLDocument {
   query?: string;
   variables?: Record<string, unknown>;
   operationName?: string;
+}
+
+/** What a GraphQL request carries, whatever host read it — the document still to read. */
+export interface GraphQLRequest {
+  document: () => Promise<GraphQLDocument | undefined>;
   /** The audience, when the facade was mounted per surface. */
   surface?: string;
   state: Record<string, unknown>;
 }
 
-type ExecuteOn = (app: unknown, request: {
-  query: string;
-  variables?: Record<string, unknown>;
-  operationName?: string;
-  surface?: string;
-  state?: Record<string, unknown>;
-}) => Promise<unknown>;
+type GraphQLDoor = Door<{ document: GraphQLRequest['document']; state: Record<string, unknown> }, unknown, { status: number; data: unknown }>;
 
 /** What the imported adapter registered — the host names no package, and imports none. */
-export function executor(): ExecuteOn {
-  return (Protocols.resolve('graphql', 'protocols.graphql') as unknown as { executeOn: ExecuteOn }).executeOn;
+function doorOf(app: App, surface?: string): GraphQLDoor {
+  const registered = Protocols.resolve('graphql', 'protocols.graphql') as unknown as { door: (app: App, surface?: string) => GraphQLDoor };
+
+  return registered.door(app, surface);
 }
 
-/** Execute a GraphQL request against the app's own operations. */
+/** Execute a GraphQL request against the app's own operations, through its door. */
 export async function serveGraphQL(app: App, request: GraphQLRequest): Promise<Outcome> {
   if (!serves(app.protocols, 'graphql')) return { kind: 'pass' };
 
-  if (!request.query) {
-    return { kind: 'error', status: 400, body: { message: 'Missing query' } };
-  }
+  // The same state every other facade stamps: what the server resolved, never the wire.
+  const { status, data } = await app.answer(doorOf(app, request.surface), { document: request.document, state: request.state });
+  if (status === 200) return { kind: 'ok', status, body: data };
 
-  const executeOn = executor();
-  const result = await executeOn(app, {
-    query: request.query,
-    variables: request.variables,
-    operationName: request.operationName,
-    surface: request.surface,
-    // The same state every other facade stamps: what the server resolved, never the wire.
-    state: request.state,
-  });
+  // A request the engine never ran — no query, a body refused — has no result, only its errors.
+  const [first] = (data as { errors: { message: string }[] }).errors;
 
-  // A GraphQL error is not an HTTP error: the transport succeeded, and the errors ride
-  // in the body where a client is required to look for them.
-  return { kind: 'ok', status: 200, body: result as Record<string, unknown> };
+  return { kind: 'error', status, body: { message: first!.message, ...(data as Record<string, unknown>) } };
 }

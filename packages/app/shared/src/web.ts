@@ -1,7 +1,8 @@
 /** The three facades as Web-standard handlers: `Request` in, `Response` out. */
 import { serveRest, serveRpc, rpcParseError, useFougereApp, useFougereConfig, serveGraphQL } from './index.js';
+import type { GraphQLDocument } from './graphql.js';
 import { prefixOf } from '@fougere/adapter-rest';
-import { FougereError, maxBodyBytes, readWithin, toHttpError, type App } from '@fougere/core';
+import { FougereError, maxBodyBytes, readWithin, type App } from '@fougere/core';
 import { jsonBodyOf } from './jsonBody.js';
 import { sessionViewOf } from './session.js';
 import { stateFor } from './state.js';
@@ -82,17 +83,10 @@ export async function session(request: Request): Promise<Response> {
 
 /** GraphQL, at whatever path the host mounted it — `/graphql` by convention. */
 export async function graphql(request: Request): Promise<Response> {
-  let body: { query?: string; variables?: Record<string, unknown>; operationName?: string };
-  try {
-    body = (await jsonBodyOf(request) ?? {}) as typeof body;
-  } catch (refused) {
-    return refusal(refused);
-  }
-
   const app = await useFougereApp();
 
   const outcome = await serveGraphQL(app, {
-    ...body,
+    document: async () => (await jsonBodyOf(request)) as GraphQLDocument | undefined,
     surface: new URL(request.url).pathname.split('/').filter(Boolean)[1],
     state: await stateFor(request.headers),
   });
@@ -102,10 +96,4 @@ export async function graphql(request: Request): Promise<Response> {
   }
 
   return Response.json(outcome.body, { status: outcome.status });
-}
-
-function refusal(refused: unknown): Response {
-  const { status, body } = toHttpError(refused);
-
-  return Response.json(body, { status });
 }

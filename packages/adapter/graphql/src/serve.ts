@@ -1,20 +1,16 @@
 /** Serve a GraphQL schema on an HttpRouter — no Apollo, no Yoga needed. */
+import { answerAt, ErrorCode, FougereError, type Answering } from '@fougere/core';
 import type { HttpRouter, ResponseResult } from '@fougere/http';
-import { getOperationAST, graphql, parse, type GraphQLSchema } from 'graphql';
-import { publicResult } from './publicResult.js';
+import type { GraphQLSchema } from 'graphql';
+import { graphqlDoor, type GraphQLDocument } from './door.js';
 
 export interface GraphQLServeOptions {
   /** Route path. Default: '/graphql'. */
   path?: string;
   /** Enable GraphiQL playground on GET requests from browsers. Default: false. */
   playground?: boolean;
-}
-
-/** What a GraphQL request is, wherever the method read it from. */
-interface GraphQLRequest {
-  query: string;
-  variables?: Record<string, unknown>;
-  operationName?: string;
+  /** The app's cycle, which watches each request — `app.answer`. Without it the door runs unwatched. */
+  answer?: Answering;
 }
 
 function graphiqlHtml(path: string): string {
@@ -48,66 +44,37 @@ export function registerGraphQL(
 ): void {
   const path = options?.path ?? '/graphql';
   const playground = options?.playground ?? false;
+  const answer = options?.answer ?? answerAt;
+  const door = graphqlDoor(schema);
 
-  /** The one place this file states what a GraphQL request answers. */
-  const answer = async (request: GraphQLRequest, state: Record<string, unknown>): Promise<ResponseResult> => ({
-    status: 200,
-    data: publicResult(await graphql({
-      schema,
-      source: request.query,
-      variableValues: request.variables,
-      operationName: request.operationName,
-      contextValue: { state },
-    })),
-    headers: { 'content-type': 'application/json' },
-  });
-
-  router.on('POST', path, async (ctx) => {
-    const body = (await ctx.body()) as Partial<GraphQLRequest> | undefined;
-
-    if (!body?.query) {
-      return { status: 400, data: { errors: [{ message: 'Missing query' }] } };
-    }
-
-    return answer(body as GraphQLRequest, ctx.state);
-  });
+  router.on('POST', path, (ctx) => answer(door, {
+    document: async () => (await ctx.body()) as GraphQLDocument | undefined,
+    state: ctx.state,
+  }));
 
   router.on('GET', path, async (ctx): Promise<ResponseResult> => {
-    // No query param → GraphiQL, when it was asked for.
-    if (!ctx.query.query) {
-      return playground
-        ? {
-            status: 200,
-            data: graphiqlHtml(path),
-            headers: { 'content-type': 'text/html' },
-            raw: true,
-          }
-        : { status: 400, data: { errors: [{ message: 'Missing query parameter' }] } };
+    // No query param → GraphiQL, when it was asked for: a page, not a request to the schema.
+    if (!ctx.query.query && playground) {
+      return { status: 200, data: graphiqlHtml(path), headers: { 'content-type': 'text/html' }, raw: true };
     }
 
-    let variables: Record<string, unknown> | undefined;
-    let document;
-    try {
-      variables = ctx.query.variables ? JSON.parse(ctx.query.variables) : undefined;
-      document = parse(ctx.query.query);
-    } catch (err) {
-      return { status: 400, data: { errors: [{ message: (err as Error).message }] } };
-    }
-
-    // GET is the cacheable half of the protocol, so a mutation is refused rather than run.
-    const operation = getOperationAST(document, ctx.query.operationName);
-    if (operation && operation.operation !== 'query') {
-      return {
-        status: 405,
-        data: { errors: [{ message: 'Only GraphQL queries may be executed over GET' }] },
-        headers: { allow: 'POST' },
-      };
-    }
-
-    return answer({
-      query: ctx.query.query,
-      variables,
-      operationName: ctx.query.operationName,
-    }, ctx.state);
+    return answer(door, {
+      document: async () => ({
+        query: ctx.query.query,
+        variables: variablesOf(ctx.query.variables),
+        operationName: ctx.query.operationName,
+      }),
+      readOnly: true,
+      state: ctx.state,
+    });
   });
+}
+
+function variablesOf(written: string | undefined): Record<string, unknown> | undefined {
+  if (!written) return undefined;
+  try {
+    return JSON.parse(written);
+  } catch (cause) {
+    throw new FougereError({ code: ErrorCode.BAD_REQUEST, message: 'The variables are not valid JSON.', cause });
+  }
 }

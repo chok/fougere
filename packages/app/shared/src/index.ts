@@ -28,7 +28,7 @@ export { stateFor } from './state.js';
 
 export { jsonBodyOf } from './jsonBody.js';
 
-export { serveGraphQL, type GraphQLRequest } from './graphql.js';
+export { serveGraphQL, type GraphQLDocument, type GraphQLRequest } from './graphql.js';
 
 // Re-exported where every host already looks for it; it lives in its own adapter now.
 export { createMemoryStorage } from '@fougere/adapter-memory';

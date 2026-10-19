@@ -1,5 +1,6 @@
 /** The facades as Express middlewares — the form an Express app expects. */
 import { HttpError, readExpressBody } from '@fougere/http';
+import type { GraphQLDocument } from './graphql.js';
 import { maxBodyBytes } from '@fougere/core';
 import { rpcParseError, serveRest, serveRpc } from './Outcome.js';
 import { serveGraphQL } from './graphql.js';
@@ -136,12 +137,10 @@ export function graphql(mountPath = '/graphql'): ExpressMiddleware {
     void (async () => {
       try {
         const app = await useFougereApp();
-        const body = ((await readExpressBody(req, maxBodyBytes())) ?? {}) as {
-          query?: string;
-          variables?: Record<string, unknown>;
-          operationName?: string;
-        };
-        const outcome = await serveGraphQL(app, { ...body, state: stateOf(req) });
+        const outcome = await serveGraphQL(app, {
+          document: async () => (await readExpressBody(req, maxBodyBytes())) as GraphQLDocument | undefined,
+          state: stateOf(req),
+        });
         if (outcome.kind === 'pass') return next();
         res.status(outcome.status).json(outcome.body);
       } catch (err) {

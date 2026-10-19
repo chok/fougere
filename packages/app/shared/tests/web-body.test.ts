@@ -1,10 +1,9 @@
 /**
  * A web door reads a body within `maxBodyBytes`, and refuses a body that is not JSON rather than
- * reading it as `{}`. Four doors read without a limit before: REST and GraphQL here, Hono, and Nuxt.
+ * reading it as `{}`. REST and GraphQL read through it here and under Nuxt — without a limit, before.
  */
 import { afterEach, describe, it, expect } from 'vitest';
 import { setMaxBodyBytes } from '@fougere/core';
-import { graphql } from '../src/web.js';
 import { configureFougere } from '../src/boot.js';
 import { jsonBodyOf } from '../src/jsonBody.js';
 
@@ -21,12 +20,10 @@ describe('a web door reading a body', () => {
     await expect(jsonBodyOf(post('hello', 'text/plain'))).rejects.toMatchObject({ code: 'UNSUPPORTED_MEDIA_TYPE' });
   });
 
-  it('refuses a body over maxBodyBytes with 413, on GraphQL too', async () => {
+  it('refuses a body over maxBodyBytes with 413, counted when no length is declared', async () => {
     setMaxBodyBytes(16);
 
-    const response = await graphql(post(JSON.stringify({ query: '{ posts { id title body } }' })));
-
-    expect(response.status).toBe(413);
+    await expect(jsonBodyOf(post(JSON.stringify({ query: '{ posts { id title body } }' })))).rejects.toMatchObject({ code: 'PAYLOAD_TOO_LARGE' });
   });
 
   it('reads a POST with no body as nothing, and malformed JSON as a 400', async () => {

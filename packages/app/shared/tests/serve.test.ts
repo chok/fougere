@@ -118,13 +118,13 @@ describe('serveRest — what it declines', () => {
 describe('the GraphQL facade obeys the same declaration', () => {
   it('serves nothing when the app declares no graphql adapter', async () => {
     const { serveGraphQL } = await import('../src/graphql.js');
-    const outcome = await serveGraphQL(appOf({ rest: {} }), { query: '{ __typename }', state: {} });
+    const outcome = await serveGraphQL(appOf({ rest: {} }), { document: async () => ({ query: '{ __typename }' }), state: {} });
     expect(outcome).toEqual({ kind: 'pass' });
   });
 
   it('refuses a request with no query once declared', async () => {
     const { serveGraphQL } = await import('../src/graphql.js');
-    const outcome = await serveGraphQL(appOf({ graphql: {} }), { state: {} });
+    const outcome = await serveGraphQL(appOf({ graphql: {} }), { document: async () => undefined, state: {} });
     expect(outcome).toMatchObject({ kind: 'error', status: 400 });
   });
 
@@ -132,7 +132,7 @@ describe('the GraphQL facade obeys the same declaration', () => {
     const { serveGraphQL } = await import('../src/graphql.js');
     // No query AND no adapter: the answer is `pass`, not a 400. A facade that is not
     // served does not get to complain about what was sent to it.
-    expect(await serveGraphQL(appOf({}), { state: {} })).toEqual({ kind: 'pass' });
+    expect(await serveGraphQL(appOf({}), { document: async () => undefined, state: {} })).toEqual({ kind: 'pass' });
   });
 });
 
