@@ -49,13 +49,19 @@ async function writeFacades(root: string, app: string): Promise<void> {
  * same option `fougere()` takes for Vite and `fougere:` for Nuxt. The facade is written in the app,
  * where its tsconfig looks for it, and the boot learns the root through `FOUGERE_ROOT`.
  */
-export function withFougere(config: NextConfig = {}, options: { root?: string } = {}): NextConfig {
-  const app = process.cwd();
-  const root = options.root ? resolve(app, options.root) : projectRootOf(app);
-  process.env.FOUGERE_ROOT = root;
-  void writeFacades(root, app);
+/** The phase a production server starts in — it serves what its build wrote, and writes nothing. */
+const PRODUCTION_SERVER = 'phase-production-server';
 
-  return nextConfigOf(config, { root, app });
+export function withFougere(config: NextConfig = {}, options: { root?: string } = {}): (phase: string) => NextConfig {
+  return (phase) => {
+    const app = process.cwd();
+    const root = options.root ? resolve(app, options.root) : projectRootOf(app);
+    process.env.FOUGERE_ROOT = root;
+    // Writing scans, and a scan loads TypeScript: `next start` evaluates this file too.
+    if (phase !== PRODUCTION_SERVER) void writeFacades(root, app);
+
+    return nextConfigOf(config, { root, app });
+  };
 }
 
 /** The Next config Fougere adds to the app's own — what `withFougere` hands Next once it has written. */

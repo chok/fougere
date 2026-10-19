@@ -149,6 +149,9 @@ export async function statementOf(
 async function written(root: string, conventions: FougereConfig['conventions']): Promise<string> {
   const log = new Logger('boot');
   const built = join(root, '.fougere', 'fronds.generated.ts');
+  // A production server boots from what its build wrote, whether or not the compiler came along:
+  // `next start` runs in the install that built it, and scanning there would load TypeScript.
+  if (process.env.NODE_ENV === 'production' && existsSync(built)) return built;
   const compiler = await import('@fougere/compiler').catch((error: NodeJS.ErrnoException) => {
     if (error.code !== 'ERR_MODULE_NOT_FOUND') throw error;
 

@@ -56,16 +56,22 @@
   },
   "dependencies": {
     "@fougere/app": "workspace:*",
-    "@fougere/compiler": "workspace:*",
     "@fougere/core": "workspace:*",
     "jiti": "^2.7.0",
     "terser-webpack-plugin": "^5.3.14"
   },
+  "peerDependenciesMeta": {
+    "@fougere/compiler": {
+      "optional": true
+    }
+  },
   "devDependencies": {
+    "@fougere/compiler": "workspace:*",
     "next": "^15.5.26",
     "vitest": "^4.1.0"
   },
   "peerDependencies": {
+    "@fougere/compiler": "workspace:^",
     "next": "^15.0.0 || ^16.0.0"
   },
   "publishConfig": {

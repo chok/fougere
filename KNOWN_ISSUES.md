@@ -148,17 +148,13 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
 - **A seed cycle is not satisfiable by ordering** — `core/src/boot/seed.ts`, `orderSeeds`.
   It returns them as `cycle` beside `ordered` and the boot NAMES them; they are still planted
   in declaration order and the source answers — the order the statement lists them.
-- **`demos/next-blog` does not build for production** — `next build` stops prerendering `/` on
-  `sources.main: no \`type\`, and no imported adapter claims the conventional one`, though its config
-  imports `@fougere/adapter-sql`. Measured 2026-10-18, and identical at `4fa29d46`, before the boot moved
-  to the statement. Inside this monorepo a `@fougere/*` package is a link to `packages/…`, whose real path
-  holds no `node_modules`, so Next bundles it whatever `serverExternalPackages` says: the server chunk
-  carries its own `@fougere/core`, while `adapter-sql` — loaded outside it — registers `sqlite` in the
-  other. Forcing the packages external in webpack moves the failure to `Cannot find package
-  '@fougere/app'`, a dependency the demo does not state. Booting from `instrumentation.ts` does not
-  help either: Next builds it as a layer of its own, with its own copy of the packages, so
-  `configureFougere` there set a `@fougere/app` the routes never read (measured 2026-10-19, and
-  removed). An installed app, whose packages sit under `node_modules`, is not measured yet.
+- **`demos/next-blog` does not build for production INSIDE this monorepo** — a `@fougere/*` package here is
+  a link to `packages/…`, whose real path holds no `node_modules`, so Next bundles it whatever
+  `serverExternalPackages` says, and `adapter-sql`, loaded outside the bundle, registers `sqlite` in
+  another `@fougere/core`: `sources.main: no type … no adapter claims the conventional one`. Identical at
+  `4fa29d46`. An INSTALLED app does not have it: scaffolded by `create-fougere`, installed from packed
+  tarballs, `next build` then `next start` answer `/`, `/posts` and `post.list`, and the server loads no
+  module of `@fougere/compiler` or TypeScript (measured 2026-10-19).
 - **`site/Dockerfile` is not seen running end to end** — its build stage needs more than the 5.7 GB a
   Docker Desktop VM sharing other containers gave it: the prerender holds the whole doc
   (`--max-old-space-size=4096`) and a run in two died `cannot allocate memory`. One build went through
