@@ -18,6 +18,12 @@ export interface Container {
   /** Throws when nothing answers the name; `has` asks without throwing. */
   resolve<T>(name: string): T;
 
+  /**
+   * What each registration of THIS scope asks for, by name — a value asks for nothing. A dependency
+   * is resolved from the scope holding the registration, so a cycle never leaves one scope.
+   */
+  dependencies(): ReadonlyMap<string, readonly string[]>;
+
   /** Answers for this scope and its parents, and builds nothing. */
   has(name: string): boolean;
 

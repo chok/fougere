@@ -7,6 +7,7 @@ import type { RegisterOptions } from './registration/RegisterOptions.js';
 interface Entry {
   factory: (container: Container) => unknown;
   lifetime: Lifetime;
+  dependencies: readonly string[];
   instance?: unknown;
 }
 
@@ -51,6 +52,10 @@ export class ScopeContainer implements Container {
     if (entry.instance !== undefined) return entry.instance as T;
 
     return this.build<T>(name, entry);
+  }
+
+  dependencies(): ReadonlyMap<string, readonly string[]> {
+    return new Map([...this.registry].map(([name, entry]) => [name, entry.dependencies]));
   }
 
   has(name: string): boolean {
@@ -193,11 +198,12 @@ export class ScopeContainer implements Container {
     return {
       factory: (c) => new ctor(...deps.map((d) => c.resolve(d))),
       lifetime: options?.lifetime ?? 'transient',
+      dependencies: deps,
     };
   }
 
   private static held(value: unknown): Entry {
-    return { factory: () => value, lifetime: 'singleton', instance: value };
+    return { factory: () => value, lifetime: 'singleton', dependencies: [], instance: value };
   }
 
   private static disposable(value: unknown): value is AsyncDisposable | Disposable {

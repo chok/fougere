@@ -2,6 +2,7 @@ import { createContainer, type Container } from '@fougere/container';
 import { resolveConventions } from '../Conventions.js';
 import { servedProtocols } from './protocols.js';
 import { unregistered } from './unregistered.js';
+import { dependencyCycles } from './dependencyCycles.js';
 import { lowerFirst, type SchemaView } from '@fougere/schema';
 
 import type { HandlerEntry } from '../descriptor/HandlerEntry.js';
@@ -671,6 +672,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     built = app;
     await appLifecycle.up(app);
     refuseWhatDoesNotHold(unregistered(container, fronds, answeredElsewhere, resolveConventions(options.conventions)));
+    refuseWhatDoesNotHold(dependencyCycles(container, fronds));
     stopAnnouncing = announceLines(emissions, container, carry);
 
     return app;

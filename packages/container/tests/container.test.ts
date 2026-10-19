@@ -113,6 +113,28 @@ describe('Container', () => {
     });
   });
 
+  describe('dependencies()', () => {
+    it('says what each registration of its own scope asks for', () => {
+      const container = createContainer();
+      container.register('Logger', Logger);
+      container.registerValue('config', { env: 'prod' });
+
+      const scope = container.createScope();
+      scope.register('UserService', UserService, { deps: ['UserRepository', 'Logger'] });
+
+      expect(container.dependencies()).toEqual(new Map([['Logger', []], ['config', []]]));
+      expect(scope.dependencies()).toEqual(new Map([['UserService', ['UserRepository', 'Logger']]]));
+    });
+
+    it('reads what replaced a registration', () => {
+      const container = createContainer();
+      container.register('UserService', UserService, { deps: ['UserRepository', 'Logger'] });
+      container.replace('UserService', UserService, { deps: ['held:UserService', 'Logger'] });
+
+      expect(container.dependencies().get('UserService')).toEqual(['held:UserService', 'Logger']);
+    });
+  });
+
   describe('one key, one owner', () => {
     it('refuses a second registration under a name this scope holds', () => {
       const container = createContainer();

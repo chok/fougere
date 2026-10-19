@@ -252,6 +252,11 @@ One line each, kept because a past version of this file asserted the opposite.
   container answers `has()` and knows no policy about what a class may ask for. Pinned by `core/tests/unregistered.test.ts`. A neighbour's `AuthorRepository` used to
   answer `'AuthorRepository' is not registered` at the first call; the check found a seam link
   registered under its own name, which nothing could ever resolve, and it no longer is.
+- **Classes that ask for each other refuse the BOOT too** — `boot/dependencyCycles.ts`,
+  `dependency-cycle`, over `Container.dependencies()`: what the container was HANDED, since a port's
+  chain gives a wrapper the next link where its constructor names the port, and per scope, since a
+  dependency is resolved where it is held. It used to be the container's `dependency cycle: a → b`
+  at the first call. Pinned by `core/tests/dependency-cycle.test.ts`.
 - **A key has one owner in a scope, and replacing it is said** — `ScopeContainer.register` and
   `registerValue` refuse a name the scope already holds; `replace`/`replaceValue` stand in place
   of what answers, here or above, and refuse a name nothing holds. A child scope masking its parent
