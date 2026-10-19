@@ -7,7 +7,7 @@ import { describe, it, expect } from 'vitest';
 import { answerAt, ErrorCode, FougereError } from '@fougere/core';
 import { restDoor, type RestRequest, type RouteDefinition } from '../src/index.js';
 
-const request: RestRequest = { headers: new Headers(), params: {}, query: {}, body: async () => undefined, state: {} };
+const request: RestRequest = { operation: 'any', headers: new Headers(), params: {}, query: {}, body: async () => undefined, state: {} };
 const answer = (route: RouteDefinition, received: RestRequest) => answerAt(restDoor(route), received);
 
 function route(answered: unknown, shape: Partial<RouteDefinition> = {}): RouteDefinition {

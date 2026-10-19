@@ -1038,7 +1038,12 @@ door's own terms: it reads the headers before the body is read, refuses by throw
 answer. A refusal becomes the door's answer where it is thrown, so a middleware outside it still
 decorates it. `install.ts` sets them apart from the call middlewares; a class extending
 `DoorMiddleware` directly stands at no door and is refused (`door-middleware-without-door`). The two
-names are provisional. Pinned by `core/tests/door.test.ts` and `testing/tests/rest-middleware.test.ts`.
+names are provisional. Bound to a handler — `RestMiddleware(PostHandler)`, `DoorMiddleware.handler` —
+it stands at that handler's address alone, one method per op it names, and may answer in the op's
+place (`RestResponse<301, { location: string }>`, named so as not to shadow the Web `Response`); a
+method naming no op of the handler refuses the boot (`door-middleware-unknown-op`), and so does a
+handler the frond does not serve. Pinned by `core/tests/door.test.ts` and
+`testing/tests/rest-middleware.test.ts`.
 
 **A process serves the REST door of the fronds it hosts** — `routesOf`
 (`adapter/rest/src/routes/RouteDefinition.ts`) leaves out an op whose `placement` is `remote`, and

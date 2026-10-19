@@ -4,6 +4,8 @@ import type { RouteDefinition } from './routes/RouteDefinition.js';
 
 /** What a host hands the REST door for one matched route — the body still to read, so the door reads it. */
 export interface RestRequest {
+  /** The op the route names — what a middleware bound to a handler stands around. */
+  operation: string;
   headers: Headers;
   params: Record<string, string>;
   query: Record<string, unknown>;
@@ -12,16 +14,47 @@ export interface RestRequest {
 }
 
 /**
- * The base a frond's REST middleware extends — `class Powered extends RestMiddleware()` in
- * `middlewares/`. It stands around every REST request its frond answers, before the body is read:
- * it sees the headers, refuses by throwing, and may decorate the answer.
+ * An answer a REST middleware may give in the op's place, declared in its return type — the status
+ * and the headers are what the contract reads, in the vocabulary of OpenAPI's `responses`.
  */
-export function RestMiddleware() {
-  abstract class AtRest extends DoorMiddleware<RestRequest, ResponseResult> {
-    static override readonly door = 'rest';
+export interface RestResponse<Status extends number, Headers extends Record<string, string> = Record<never, string>, Body = null>
+  extends ResponseResult {
+  status: Status;
+  headers: Headers;
+  data: Body;
+}
+
+type HandlerClass = abstract new (...args: never[]) => unknown;
+
+/** A REST middleware standing around its whole frond: `class Powered extends RestMiddleware()`. */
+export function RestMiddleware(): abstract new () => DoorMiddleware<RestRequest, ResponseResult>;
+/**
+ * A REST middleware standing around one handler's operations, one method per op it names:
+ * `class PostRest extends RestMiddleware(PostHandler) { bySlug(request, next) { … } }`. An op it
+ * names nothing for goes straight through.
+ */
+export function RestMiddleware(handler: HandlerClass): new () => { around(request: RestRequest, next: () => Promise<ResponseResult>): Promise<ResponseResult> };
+export function RestMiddleware(handler?: HandlerClass): unknown {
+  if (!handler) {
+    abstract class AtRest extends DoorMiddleware<RestRequest, ResponseResult> {
+      static override readonly door = 'rest';
+    }
+
+    return AtRest;
   }
 
-  return AtRest;
+  abstract class AtHandler extends DoorMiddleware<RestRequest, ResponseResult> {
+    static override readonly door = 'rest';
+    static override readonly handler = handler;
+
+    around(request: RestRequest, next: () => Promise<ResponseResult>): Promise<ResponseResult> {
+      const own = (this as unknown as Record<string, unknown>)[request.operation];
+
+      return typeof own === 'function' ? own.call(this, request, next) : next();
+    }
+  }
+
+  return AtHandler;
 }
 
 /** What a route's op is called with. */

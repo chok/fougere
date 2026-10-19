@@ -83,6 +83,7 @@ export async function serveRest(app: App, request: DoorRequest): Promise<Outcome
 
   const { route, params } = match;
   const { status, data, headers } = await app.answer(restDoor(route), {
+    operation: route.operationName,
     headers: request.headers ?? new Headers(),
     params,
     query: request.query,

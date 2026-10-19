@@ -144,6 +144,49 @@ async function registerReads(
 }
 
 /**
+ * The addresses a door middleware bound to a handler stands at — that handler's, in this frond —
+ * and a method naming no operation of it refused, since a misspelt op would stand around nothing.
+ */
+function handledBy(
+  frond: FrondDescriptor,
+  middleware: FrondDescriptor['middlewares'][number],
+  handler: abstract new (...args: never[]) => unknown,
+  refused: Diagnostic[],
+): ReadonlySet<string> {
+  const served = frond.handlers.filter((one) => one.ctor === handler || one.ctor.prototype instanceof handler);
+  if (served.length === 0) {
+    refused.push({
+      severity: 'blocking',
+      code: 'door-middleware-handler-elsewhere',
+      frond: frond.name,
+      subject: middleware.name,
+      filePath: middleware.filePath,
+      message: `${middleware.name} stands around ${handler.name}, which the frond '${frond.name}' does not serve. `
+        + `Move ${middleware.name} into the frond of ${handler.name}.`,
+    });
+
+    return new Set();
+  }
+
+  const operations = new Set(served.flatMap((one) => [...one.operations.keys()]));
+  const prototype = middleware.ctor.prototype as Record<string, unknown>;
+  for (const method of Object.getOwnPropertyNames(prototype)) {
+    if (method === 'constructor' || typeof prototype[method] !== 'function' || operations.has(method)) continue;
+    refused.push({
+      severity: 'blocking',
+      code: 'door-middleware-unknown-op',
+      frond: frond.name,
+      subject: `${middleware.name}.${method}`,
+      filePath: middleware.filePath,
+      message: `${middleware.name}.${method} names no operation of ${handler.name}, which serves ${[...operations].join(', ')}. `
+        + 'Name the method after the operation it stands around.',
+    });
+  }
+
+  return new Set(served.map((one) => one.address));
+}
+
+/**
  * ONE instance per frond scope, built at its first call and closed with its frond.
  *
  * Its only consumer is the dispatch, which lives as long as the app, so its lifetime is not a
@@ -170,14 +213,15 @@ function registerMiddlewares(
   const mine: AppMiddleware[] = [];
 
   const inheritedAtDoors = frond.extends ? doorMiddlewaresOf.get(frond.extends) ?? [] : [];
-  const mineAtDoors: DoorAround[] = [];
+  const mineAtDoors: (DoorAround & { at?: ReadonlySet<string> })[] = [];
 
   for (const middleware of frond.middlewares) {
     scope.register(middleware.name, middleware.ctor, { deps: ownLogger(middleware.name, middleware.deps), lifetime: 'singleton' });
     // A door's middleware stands at that door alone, around its requests — not around every call.
     if (middleware.ctor.prototype instanceof DoorMiddleware) {
-      const { door } = middleware.ctor as unknown as typeof DoorMiddleware;
-      mineAtDoors.push({ door, around: (received, next) => scope.resolve<DoorMiddleware>(middleware.name).around(received, next) });
+      const { door, handler } = middleware.ctor as unknown as typeof DoorMiddleware;
+      const around = (received: unknown, next: () => Promise<unknown>) => scope.resolve<DoorMiddleware>(middleware.name).around(received, next);
+      mineAtDoors.push({ door, around, ...(handler && { at: handledBy(frond, middleware, handler, assembly.refused) }) });
       continue;
     }
     mine.push((context, next) =>
@@ -189,8 +233,11 @@ function registerMiddlewares(
     for (const address of addresses) use(around, address);
   }
   middlewaresOf.set(frond.name, [...inherited, ...mine]);
-  doorMiddlewaresOf.set(frond.name, [...inheritedAtDoors, ...mineAtDoors]);
-  for (const address of addresses) doorMiddlewaresAt.set(address, [...inheritedAtDoors, ...mineAtDoors]);
+  // A child inherits what stands around its whole frond; one bound to a handler stays with it.
+  doorMiddlewaresOf.set(frond.name, [...inheritedAtDoors, ...mineAtDoors.filter((one) => !one.at)]);
+  for (const address of addresses) {
+    doorMiddlewaresAt.set(address, [...inheritedAtDoors, ...mineAtDoors.filter((one) => !one.at || one.at.has(address))]);
+  }
   if (frond.middlewares.length > 0) {
     assembly.plugged.push({ point: 'middleware', by: 'type', frond: frond.name, answers: frond.middlewares.map((one) => one.name) });
   }

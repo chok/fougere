@@ -4,9 +4,10 @@
  * same op through JSON-RPC never meets it.
  */
 import { describe, expect, it } from 'vitest';
-import { RestMiddleware, type ResponseResult, type RestRequest } from '@fougere/adapter-rest';
+import { RestMiddleware, type ResponseResult, type RestRequest, type RestResponse } from '@fougere/adapter-rest';
 import { configureFougere, serveRest, serveRpc, useFougereApp } from '@fougere/app';
-import { ErrorCode, FougereError, frond } from '@fougere/core';
+import { createContainer } from '@fougere/container';
+import { createApp, ErrorCode, FougereError, frond } from '@fougere/core';
 import { entity, primary, text } from '@fougere/schema';
 
 class Note extends entity({ id: primary(), title: text() }) {}
@@ -33,6 +34,15 @@ class UploadLimit extends RestMiddleware() {
   }
 }
 
+/** One handler's ops, by name: an old id is moved, every other op goes straight through. */
+class NoteRest extends RestMiddleware(NoteHandler) {
+  async find(request: RestRequest, next: () => Promise<ResponseResult>): Promise<ResponseResult | RestResponse<301, { location: string }>> {
+    if (request.params.id === 'old') return { status: 301, headers: { location: '/api/desk/notes/n1/find' }, data: null };
+
+    return next();
+  }
+}
+
 configureFougere({
   migrates: true,
   config: { protocols: { rest: {} } },
@@ -42,8 +52,8 @@ configureFougere({
       find: { params: { id: [Note, 'id'] }, output: Note },
       write: { params: { title: [Note, 'title'] }, output: Note },
     } }],
-    middlewares: [Powered, UploadLimit],
-    config: { middlewares: ['Powered', 'UploadLimit'] },
+    middlewares: [Powered, UploadLimit, NoteRest],
+    config: { middlewares: ['Powered', 'UploadLimit', 'NoteRest'] },
   })],
 });
 const app = await useFougereApp();
@@ -80,5 +90,29 @@ describe('a REST middleware', () => {
     });
 
     expect(answer).toMatchObject({ result: { title: 'x' } });
+  });
+
+  it('stands around one handler\'s op by name, and may answer in its place', async () => {
+    const moved = await serveRest(app, { method: 'GET', path: '/api/desk/notes/old/find', query: {}, state: {} });
+    const written = await serveRest(app, {
+      method: 'POST', path: '/api/desk/notes/write/x', query: {}, state: {}, body: async () => undefined,
+    });
+
+    expect(moved).toMatchObject({ kind: 'ok', status: 301, headers: { location: '/api/desk/notes/n1/find', 'x-frond': 'desk' } });
+    expect(written).toMatchObject({ kind: 'ok', status: 201, body: { title: 'x' } });
+  });
+
+  it('refuses the boot for a method naming no operation of its handler', async () => {
+    class Misspelt extends RestMiddleware(NoteHandler) {
+      async fnid(_request: RestRequest, next: () => Promise<ResponseResult>): Promise<ResponseResult> { return next(); }
+    }
+    const desk = frond('desk', {
+      entities: [Note],
+      handlers: [{ ctor: NoteHandler, operations: { find: { params: { id: [Note, 'id'] }, output: Note } } }],
+      middlewares: [Misspelt],
+    });
+
+    await expect(createApp({ fronds: [desk], createContainer, migrates: true } as never))
+      .rejects.toThrow(/Misspelt\.fnid names no operation of NoteHandler, which serves find/);
   });
 });

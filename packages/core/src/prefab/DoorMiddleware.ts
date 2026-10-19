@@ -10,5 +10,11 @@ export abstract class DoorMiddleware<Received = unknown, Answer = unknown> {
   /** The door it stands at — set by the package's base, never by the frond. */
   static readonly door: string = '';
 
+  /**
+   * The handler whose operations it stands around, one method per op it names — none means every
+   * address of its frond.
+   */
+  static readonly handler?: abstract new (...args: never[]) => unknown;
+
   abstract around(received: Received, next: () => Promise<Answer>): Promise<Answer>;
 }
