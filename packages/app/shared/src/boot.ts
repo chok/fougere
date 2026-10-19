@@ -210,6 +210,7 @@ async function boot(): Promise<App> {
     ...layerOf(storage),
     protocols: fileConfig.protocols,
     ports: fileConfig.ports,
+    conventions: fileConfig.conventions,
     remotes,
     /** Who inherits code from whom — the tree, whole, so a refusal can name where an entry sits. */
     under: fileConfig.fronds,

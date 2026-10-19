@@ -81,10 +81,10 @@ export async function crossFrondImports(
           specifier,
           ...(target ? { target: target.name } : {}),
           message: target
-            ? `'${specifier}' reaches into the frond ${target.name} by a relative path, which breaks the day `
-              + `${target.name} moves. Import it as '${target.package}/…' instead.`
-            : `'${specifier}' reaches outside ${root.name}, into no frond. `
-              + `It will be missing when ${root.name} is deployed on its own.`,
+            ? `'${specifier}' reaches into the frond '${target.name}' by a relative path, which breaks the day `
+              + `'${target.name}' moves. Import it as '${target.package}/…' instead.`
+            : `'${specifier}' reaches outside the frond '${root.name}', into no frond. `
+              + `It will be missing when '${root.name}' is deployed on its own.`,
         });
       }
     }

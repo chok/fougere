@@ -5,6 +5,8 @@ import { repositoryKeyOf } from './prefab/RepositoryConstructor.js';
 import { storageKeyOf } from './storage/Storage.js';
 import { presenterKeyOf } from './prefab/presenter.js';
 import { collectorKeyOf } from './prefab/collector.js';
+import { OperationOverrides } from './descriptor/OperationOverrides.js';
+import { collectorsInScope } from './module/collector/operation.js';
 
 /** A subject declared in one frond and reached from another — the rules below find no other kind. */
 export type Misplaced = Diagnostic & {
@@ -100,22 +102,21 @@ export function verify(app: { fronds: readonly FrondDescriptor[] }): Misplaced[]
           filePath: subject.filePath,
           dependsOn: { key: dep, frond: declared.frond, kind: declared.kind },
           message:
-            `${subject.name} depends on ${dep}, the ${declared.kind} of frond '${declared.frond}'. ` +
-            `Each frond registers into its own scope, so this does not resolve here. ` +
-            `Declare ${dep} in '${frond.name}', or reach '${declared.frond}' through its ` +
-            `façade — the one sanctioned crossing.`,
+            `${subject.name} asks for ${dep}, which belongs to the frond '${declared.frond}', so '${frond.name}' cannot see it. `
+            + `Move ${dep} into '${frond.name}', or call '${declared.frond}' through its handler's facade.`,
         });
       }
     }
 
-    // Rule 2 — an operation parameter that wanted a collector this frond has not
-    // got. The preliminary binding convention can only see this frond's collector
-    // set, so it produces input evidence. EffectiveOperation refuses that evidence
-    // before boot: another frond's collector proves the provenance is not an input.
-    const own = new Set(frond.collectors.map((c) => c.typeName));
+    // Rule 2 — a parameter read from the request while another frond collects its type. A warning,
+    // not a refusal: `inviteUser(user: User)` reads its user from the request on purpose.
+    const own = new Set(collectorsInScope(frond, app.fronds).map((collector) => collector.typeName));
+    const declared = OperationOverrides.of(frond);
     for (const handler of frond.handlers) {
       for (const [opName, op] of handler.operations) {
+        const stated = declared.get(handler.address, opName)?.binding ?? [];
         for (const param of op.signature?.params ?? []) {
+          if (stated.some((entry) => entry.name === param.name)) continue;
           // Same key the scan writes and the binding plan looks up — `toLowerCase()`
           // here missed a two-word type in BOTH directions: neither confirmed the
           // collector was local nor found it elsewhere, so the rule reported nothing.
@@ -128,17 +129,17 @@ export function verify(app: { fronds: readonly FrondDescriptor[] }): Misplaced[]
           if (!elsewhere) continue;
           violations.push({
             code: 'collector-in-another-frond',
-            severity: 'blocking',
+            severity: 'warning',
             frond: frond.name,
             subject: `${handler.ctor.name}.${opName}(${param.name})`,
             filePath: handler.filePath,
             dependsOn: { key: collectorKeyOf(wanted), frond: elsewhere, kind: 'collector' },
             message:
-              `'${param.name}' is typed ${param.type.name}, and the collector that produces one ` +
-              `is declared in frond '${elsewhere}'. A binding plan only sees its own frond's ` +
-              `collectors, so the preliminary input interpretation is invalid. Fougere refuses ` +
-              `the operation before it can receive what the caller sent. ` +
-              `Move the collector into '${frond.name}'.`,
+              `${handler.ctor.name}.${opName} takes ${param.name} from the request, but the frond '${elsewhere}' has a `
+              + `${param.type.name} collector that '${frond.name}' cannot see.\n`
+              + `  - To use that collector: move it into '${frond.name}'.\n`
+              + `  - To keep the request: declare it in ${frond.name}/frond.config.ts:\n`
+              + `      operations: { '${handler.address}.${opName}': { binding: [{ name: '${param.name}', source: { kind: 'input' } }] } }`,
           });
         }
       }

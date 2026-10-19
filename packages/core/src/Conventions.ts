@@ -77,6 +77,11 @@ export function frondPackage(name: string, conventions: Conventions): string {
   return `${conventions.scope}/${name}`;
 }
 
+/** Where a frond's directory of one kind sits, as the project spells it — `fronds/shop/services/`. */
+export function directoryOf(frond: string, dir: keyof Conventions['dirs'], conventions: Conventions): string {
+  return `${conventions.fronds}/${frond}/${conventions.dirs[dir]}/`;
+}
+
 /** Directories whose classes register as providers — two spellings, one behaviour. */
 export function providerDirsOf(conventions: Conventions): string[] {
   return [...new Set([conventions.dirs.services, conventions.dirs.repositories])];

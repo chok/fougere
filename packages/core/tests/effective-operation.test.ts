@@ -207,16 +207,14 @@ describe('deterministic operation resolution', () => {
     });
   });
 
-  it('reports zero and multiple interpretations instead of using a fallback or order', () => {
+  it('refuses a parameter with no provenance, and reads a name with no read verb as a command', () => {
     const model = resolveEffectiveOperations([frond]);
 
     expect(model.forHandler(handler).has('execute')).toBe(false);
-    expect(model.forHandler(handler).has('computeReport')).toBe(false);
-    expect(model.forHandler(handler).has('findAndArchive')).toBe(false);
-    expect(model.resolutionDiagnostics).toEqual(expect.arrayContaining([
+    expect(model.forHandler(handler).get('computeReport')?.kind).toBe('command');
+    expect(model.forHandler(handler).get('findAndArchive')?.kind).toBe('command');
+    expect(model.resolutionDiagnostics).toEqual([
       expect.objectContaining({ code: 'parameter-binding-unknown', subject: 'PostHandler.execute(token)' }),
-      expect.objectContaining({ code: 'operation-kind-unknown', subject: 'PostHandler.computeReport' }),
-      expect.objectContaining({ code: 'operation-kind-ambiguous', subject: 'PostHandler.findAndArchive' }),
-    ]));
+    ]);
   });
 });

@@ -44,8 +44,7 @@ describe('an override names one op of one address', () => {
     const model = resolveEffectiveOperations([blog({ 'post.tally': { kind: 'query', rest: { path: '/tally' } } })]);
 
     expect(model.forHandler(post).get('tally')).toMatchObject({ kind: 'query', protocols: { rest: { path: '/tally' } } });
-    expect(model.forHandler(comment).has('tally')).toBe(false);
-    expect(model.diagnostics.find((one) => one.subject === 'CommentHandler.tally')?.code).toBe('operation-kind-unknown');
+    expect(model.forHandler(comment).get('tally')?.kind).toBe('command');
   });
 
   it('refuses a bare op name, and says the keys it could have been', () => {
@@ -72,34 +71,50 @@ describe('an override names one op of one address', () => {
   });
 });
 
-describe('the refusal of an op whose kind nothing tells', () => {
+describe('the kind an op whose name says nothing gets', () => {
   const only = (handler: HandlerEntry): FrondDescriptor => ({ ...blog(undefined), handlers: [handler] });
-  const refusalOf = (handler: HandlerEntry) => resolveEffectiveOperations([only(handler)]).diagnostics
-    .find((one) => one.code.startsWith('operation-kind-'))!;
+  const kindOf = (handler: HandlerEntry, name: string) => resolveEffectiveOperations([only(handler)]).forHandler(handler).get(name)?.kind;
 
-  it('hands over the three remedies, each with the line to write and where', () => {
-    const { message } = refusalOf(post);
-
-    expect(message).toContain("'tally' starts with no known verb.");
-    expect(message).toContain('Rename it to lead with a known verb:');
-    expect(message).toContain(`in /app/fronds/blog/frond.config.ts:\n    operations: { 'post.tally': { kind: 'query' } },   // or 'command'`);
-    expect(message).toContain(`in /app/fronds/blog/vocabulary/verbs.ts, listed in the statement's \`vocabulary\`:\n    export const tally = Verbs.term('tally', 'query');`);
+  it('is a command, and no refusal is raised', () => {
+    expect(kindOf(post, 'tally')).toBe('command');
+    expect(resolveEffectiveOperations([only(post)]).diagnostics).toEqual([]);
   });
 
-  it('offers only the declaration when the name carries both kinds', () => {
+  it('is a command when the name also carries a write', () => {
     class MixHandler { async getOrCreate() { return 0; } }
     const mixed = { ...handlerOf(MixHandler, 'mix'), operations: new Map([['getOrCreate', { signature: { name: 'getOrCreate', params: [] }, binding: [] }]]) } as HandlerEntry;
-    const { code, message } = refusalOf(mixed);
 
-    expect(code).toBe('operation-kind-ambiguous');
-    expect(message).toContain(`operations: { 'mix.getOrCreate': { kind: 'command' } },   // or 'query'`);
-    expect(message).not.toContain('Rename');
-    expect(message).not.toContain('Verbs.term');
+    expect(kindOf(mixed, 'getOrCreate')).toBe('command');
   });
 
-  it('is not raised once the verb is taught', () => {
+  it('is a query once the verb is taught', () => {
     Verbs.register('tally', 'query');
 
-    expect(resolveEffectiveOperations([only(post)]).forHandler(post).get('tally')?.kind).toBe('query');
+    expect(kindOf(post, 'tally')).toBe('query');
+  });
+});
+
+describe('a declared binding', () => {
+  class InviteHandler { async inviteUser() { return 0; } }
+  const invite = {
+    ...handlerOf(InviteHandler, 'invite'),
+    operations: new Map([['inviteUser', { signature: { name: 'inviteUser', params: [
+      { name: 'user', type: { raw: 'User', name: 'User' } },
+      { name: 'role', type: { raw: 'string', name: 'string' } },
+    ] } }]]),
+  } as HandlerEntry;
+  const declaring = (binding: unknown): FrondDescriptor =>
+    ({ ...blog({ 'invite.inviteUser': { binding } as never }), handlers: [invite] });
+
+  it('states the exception alone, and the other parameters keep what Fougere derives', () => {
+    const model = resolveEffectiveOperations([declaring([{ name: 'user', source: { kind: 'input' } }])]);
+
+    expect(model.diagnostics).toEqual([]);
+    expect(model.forHandler(invite).get('inviteUser')?.binding.map((one) => [one.name, one.source.kind]))
+      .toEqual([['user', 'input'], ['role', 'param']]);
+  });
+
+  it('refuses a name that is no parameter', () => {
+    expect(codesOf([declaring([{ name: 'usr', source: { kind: 'input' } }])])).toContain('operation-binding-invalid');
   });
 });

@@ -71,7 +71,7 @@ export default class CheckHandler {
           severity: 'warning',
           code: 'frond-holds-several-domains',
           filePath: fronds[0].source.path,
-          message: `${fronds[0].name} has ${clusters.length} groups of entities with no relation between them `
+          message: `The frond '${fronds[0].name}' has ${clusters.length} groups of entities with no relation between them `
             + `(${clusters.map((c) => c.name).join(', ')}). A ref() is missing, or they are separate fronds — see \`fougere graph\`.`,
         });
       }
@@ -207,7 +207,7 @@ async function statementFindings(root: string, fronds: readonly FrondDescriptor[
           code: 'handler-unstated',
           filePath: file,
           subject: handler.ctor.name,
-          message: `${handler.ctor.name} is in ${frond.name}'s code but not in fronds.ts, so the app starts without it.`,
+          message: `${handler.ctor.name} is in the code of the frond '${frond.name}' but not in fronds.ts, so the app starts without it.`,
         });
         continue;
       }

@@ -1,4 +1,5 @@
 import type { Container } from '@fougere/container';
+import { directoryOf, resolveConventions, type Conventions } from '../Conventions.js';
 import type { Diagnostic } from '../diagnostic.js';
 import type { FrondDescriptor } from '../descriptor/FrondDescriptor.js';
 import { SEAMS } from './ports.js';
@@ -13,6 +14,7 @@ export function unregistered(
   container: Container,
   fronds: readonly FrondDescriptor[],
   answeredElsewhere: (name: string) => boolean,
+  conventions: Conventions = resolveConventions(),
 ): Diagnostic[] {
   const refused = new Map<string, Diagnostic>();
   for (const frond of fronds) {
@@ -29,8 +31,8 @@ export function unregistered(
           frond: frond.name,
           subject: ctor.name,
           filePath,
-          message: `${ctor.name} asks for ${missing}, and nothing in ${frond.name} provides it. `
-            + `Add a class named ${missing} (in services/, for example), or check the spelling.`,
+          message: `${ctor.name} asks for ${missing}, and nothing in the frond '${frond.name}' provides it. `
+            + `Add a class named ${missing} in ${directoryOf(frond.name, 'services', conventions)}, or check the spelling.`,
         });
       }
     }

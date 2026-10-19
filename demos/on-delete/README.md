@@ -43,7 +43,7 @@ What DOES change is who refuses, and it reads differently:
 
 ```
 one engine   FOREIGN KEY constraint failed
-split        comment.authorId holds 1 row(s) naming this one, and states onDelete 'restrict'
+split        1 comment row(s) still point to this one through authorId. Delete them first, or set onDelete …
 ```
 
 ## Why one hop decides for the whole tree

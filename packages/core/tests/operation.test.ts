@@ -1,82 +1,21 @@
-import { describe, it, expect } from 'vitest';
-import { inferOperationKind, isReadOp, resolveIsReadOp } from '../src/wire/OperationContract.js';
+import { describe, expect, it } from 'vitest';
+import { inferOperationKind } from '../src/wire/OperationContract.js';
 
-describe('isReadOp (convention)', () => {
-  it('recognizes default read prefixes', () => {
-    expect(isReadOp('list')).toBe(true);
-    expect(isReadOp('listPosts')).toBe(true);
-    expect(isReadOp('get')).toBe(true);
-    expect(isReadOp('getPost')).toBe(true);
-    expect(isReadOp('findById')).toBe(true);
-    expect(isReadOp('searchPosts')).toBe(true);
-    expect(isReadOp('countPosts')).toBe(true);
-    expect(isReadOp('existsPost')).toBe(true);
-    expect(isReadOp('statsFor')).toBe(true);
+describe('the kind a name tells', () => {
+  it('is a query when every verb of the name reads', () => {
+    for (const name of ['list', 'listPosts', 'get', 'getPost', 'findById', 'searchPosts', 'countPosts', 'existsPost', 'statsFor', 'canPublish', 'isAvailable', 'getOrFetch']) {
+      expect(inferOperationKind(name), name).toBe('query');
+    }
   });
 
-  it('recognizes finite command verbs', () => {
-    expect(isReadOp('create')).toBe(false);
-    expect(isReadOp('update')).toBe(false);
-    expect(isReadOp('archivePost')).toBe(false);
-    expect(isReadOp('republishPost')).toBe(false);
-    expect(isReadOp('settle')).toBe(false);
-  });
-
-  it('refuses a name with zero evidence instead of silently calling it a command', () => {
-    expect(inferOperationKind('computeReport')).toEqual({
-      kind: undefined,
-      queryMatches: [],
-      commandMatches: [],
-    });
-    expect(() => isReadOp('computeReport')).toThrow(/cannot tell whether/);
-  });
-
-  it('refuses contradictory compound evidence', () => {
-    expect(inferOperationKind('findAndArchive')).toMatchObject({
-      kind: undefined,
-      queryMatches: ['find'],
-      commandMatches: ['archive'],
-    });
-    expect(() => isReadOp('getOrCreatePost')).toThrow(/cannot tell whether/);
+  it('is a command otherwise — a write verb, a word it does not know, or a write after a read', () => {
+    for (const name of ['create', 'update', 'archivePost', 'republishPost', 'settle', 'computeReport', 'hashPassword', 'cancelOrder', 'issueRefund', 'findAndArchive', 'getOrCreatePost']) {
+      expect(inferOperationKind(name), name).toBe('command');
+    }
   });
 
   it('matches whole words, never string prefixes', () => {
-    expect(() => isReadOp('hashPassword')).toThrow(/cannot tell whether/);
-  });
-
-  it('reads a predicate as a question, whatever verb it asks about', () => {
-    expect(isReadOp('canPublish')).toBe(true);
-    expect(isReadOp('isAvailable')).toBe(true);
-    expect(() => isReadOp('cancelOrder')).toThrow(/cannot tell whether/);
-    expect(() => isReadOp('issueRefund')).toThrow(/cannot tell whether/);
-  });
-});
-
-describe('resolveIsReadOp (convention + overrides)', () => {
-  it('falls back to convention when no override is present', () => {
-    expect(resolveIsReadOp('listPosts')).toBe(true);
-    expect(resolveIsReadOp('createPost')).toBe(false);
-    expect(resolveIsReadOp('listPosts', {})).toBe(true);
-    expect(resolveIsReadOp('createPost', {})).toBe(false);
-  });
-
-  it('overrides convention: a non-read-prefixed name can be declared as query', () => {
-    expect(() => resolveIsReadOp('computeReport')).toThrow(/cannot tell whether/);
-    expect(resolveIsReadOp('computeReport', { computeReport: { kind: 'query' } })).toBe(true);
-  });
-
-  it('overrides convention: a read-prefixed name can be declared as command', () => {
-    expect(() => resolveIsReadOp('findAndArchive')).toThrow(/cannot tell whether/);
-    expect(resolveIsReadOp('findAndArchive', { findAndArchive: { kind: 'command' } })).toBe(false);
-  });
-
-  it('ignores overrides that don\'t match the op name', () => {
-    expect(resolveIsReadOp('listPosts', { createPost: { kind: 'query' } })).toBe(true);
-    expect(resolveIsReadOp('createPost', { listPosts: { kind: 'command' } })).toBe(false);
-  });
-
-  it('handles override with kind undefined (no-op)', () => {
-    expect(resolveIsReadOp('listPosts', { listPosts: {} })).toBe(true);
-    expect(resolveIsReadOp('createPost', { createPost: {} })).toBe(false);
+    expect(inferOperationKind('hashPassword')).toBe('command');
+    expect(inferOperationKind('isbnLookup')).toBe('command');
   });
 });

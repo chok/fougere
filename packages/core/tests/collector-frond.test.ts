@@ -1,4 +1,4 @@
-/** A collector is local provenance: placing it in another frond is never an input fallback. */
+/** A collector is local: in another frond it is not used, and the boot says so without refusing. */
 import split, { identity } from './fixtures-collector-split/fronds.js';
 import { describe, it, expect } from 'vitest';
 import { createContainer } from '@fougere/container';
@@ -6,7 +6,7 @@ import { createApp, resolveEffectiveOperations } from '../src/index.js';
 
 
 describe('a collector declared in the wrong frond', () => {
-  it('is a blocking resolution error for every affected operation', async () => {
+  it('is a warning for every affected operation', async () => {
     const model = resolveEffectiveOperations(split, { diagnostics: [] });
     const invalid = model.resolutionDiagnostics
       .filter((diagnostic) => diagnostic.code === 'collector-in-another-frond');
@@ -17,16 +17,21 @@ describe('a collector declared in the wrong frond', () => {
       'PostHandler.whoExplicit(user)',
       'PostHandler.whoOptional(user)',
     ]);
-    expect(invalid.every((diagnostic) => diagnostic.severity === 'blocking')).toBe(true);
+    expect(invalid.every((diagnostic) => diagnostic.severity === 'warning')).toBe(true);
   });
 
-  it('refuses boot before a caller can supply a forged input', async () => {
-    await expect(createApp({ fronds: split, createContainer })).rejects.toThrow(
-      /collector-in-another-frond.*PostHandler\.whoExplicit\(user\)/s,
-    );
-    await expect(createApp({ fronds: split, createContainer })).rejects.toThrow(
-      /preliminary input interpretation is invalid/s,
-    );
+  it('boots, since reading the parameter from the request may be meant', async () => {
+    await using app = await createApp({ fronds: split, createContainer });
+
+    expect(app).toBeDefined();
+  });
+
+  it('says nothing once the request is declared, and the declaration names only that parameter', () => {
+    const [blog, ...rest] = split;
+    const declared = [{ ...blog!, operationsOverrides: { 'post.whoExplicit': { binding: [{ name: 'user', source: { kind: 'input' as const }, optional: true }] } } }, ...rest];
+    const model = resolveEffectiveOperations(declared, { diagnostics: [] });
+
+    expect(model.resolutionDiagnostics.map((one) => one.subject)).toEqual(['PostHandler.whoOptional(user)']);
   });
 
   it('keeps a collector valid when it is declared in the consuming frond', async () => {

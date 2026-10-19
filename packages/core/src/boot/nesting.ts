@@ -6,6 +6,7 @@
  * Documented: [fronds](https://fougere.dev/docs/infra/fronds).
  */
 import type { Diagnostic } from '../diagnostic.js';
+import { frondPackage, resolveConventions, type Conventions } from '../Conventions.js';
 import { isFrondDescriptor } from '../descriptor/FrondDescriptor.js';
 import type { FrondDescriptor } from '../descriptor/FrondDescriptor.js';
 import { Fronds } from '../descriptor/Fronds.js';
@@ -27,7 +28,7 @@ function refuseServingParent(
     filePath: parent.handlers[0]!.filePath,
     frond: parent.name,
     subject: parent.name,
-    message: `${parent.name} is extended by ${children.join(', ')}, so it cannot have handlers (${served.join(', ')}). `
+    message: `The frond '${parent.name}' is extended by ${children.map((one) => `'${one}'`).join(', ')}, so it cannot have handlers (${served.join(', ')}). `
       + 'Move its handlers into one of them.',
   });
 
@@ -39,6 +40,7 @@ function refuseParentEntities(
   parent: FrondDescriptor,
   children: string[],
   refused: Diagnostic[],
+  conventions: Conventions,
 ): void {
   if (parent.entities.length === 0) return;
 
@@ -48,9 +50,9 @@ function refuseParentEntities(
     filePath: parent.entities[0]!.filePath,
     frond: parent.name,
     subject: parent.name,
-    message: `${parent.name} is extended by ${children.join(', ')}, so it cannot have entities `
+    message: `The frond '${parent.name}' is extended by ${children.map((one) => `'${one}'`).join(', ')}, so it cannot have entities `
       + `(${parent.entities.map((entity) => entity.name).join(', ')}). Move them into one of them, `
-      + `and import them from there: import X from '@fronds/<child>/entities/X.js'.`,
+      + `and import them from there: import X from '${frondPackage(children[0]!, conventions)}/${conventions.dirs.entities}/X.js'.`,
   });
 }
 
@@ -61,6 +63,7 @@ export function nestingOf(
   remotes: Record<string, string> | undefined,
   /** This process carries a subset of the project — `only:`, so an absent name is expected. */
   narrowed = false,
+  conventions: Conventions = resolveConventions(),
 ): { under: Map<string, string>; refused: Diagnostic[] } {
   const refused: Diagnostic[] = [];
   const under = new Map<string, string>();
@@ -85,8 +88,8 @@ export function nestingOf(
       code: 'frond-extends-chain',
       filePath: 'fougere.config.ts',
       subject: statement.path,
-      message: `${statement.key} extends ${statement.extends}, which extends `
-        + `${statedFronds(stated).find((one) => one.key === statement.extends)?.extends}. `
+      message: `The frond '${statement.key}' extends '${statement.extends}', which extends `
+        + `'${statedFronds(stated).find((one) => one.key === statement.extends)?.extends}'. `
         + 'A frond can extend only one level. Move what they share into the frond they both extend.',
     });
   }
@@ -106,12 +109,12 @@ export function nestingOf(
         filePath: frond.source.path,
         frond: frond.name,
         subject: parent,
-        message: `${parent} is extended by ${children.join(', ')}, so it cannot have an address `
+        message: `The frond '${parent}' is extended by ${children.map((one) => `'${one}'`).join(', ')}, so it cannot have an address `
           + `(${address ?? remotes?.[parent]}). Give the address to one of them instead.`,
       });
     }
 
-    if (!refuseServingParent(frond, children, refused)) refuseParentEntities(frond, children, refused);
+    if (!refuseServingParent(frond, children, refused)) refuseParentEntities(frond, children, refused, conventions);
   }
 
   for (const statement of statements) {
@@ -130,7 +133,7 @@ export function nestingOf(
           code: 'frond-unknown',
           filePath: 'fougere.config.ts',
           subject: statement.path,
-          message: `No frond is named ${statement.path}. This project has: ${[...here.keys()].join(', ') || 'none'}.`,
+          message: `No frond is named '${statement.path}'. This project has: ${[...here.keys()].map((one) => `'${one}'`).join(', ') || 'none'}.`,
         });
       }
       continue;
@@ -143,7 +146,7 @@ export function nestingOf(
         filePath: frond.source.path,
         frond: frond.name,
         subject: statement.path,
-        message: `${statement.key} extends ${statement.extends}, which this process leaves out. `
+        message: `The frond '${statement.key}' extends '${statement.extends}', which this process leaves out. `
           + `Run the two in the same process, or remove extends: '${statement.extends}'.`,
       });
       continue;

@@ -25,7 +25,14 @@ const shop = (providers: Declared[]) => frond('shop', {
 describe('a dependency nothing answers', () => {
   it('refuses the boot, naming the class, what it asks for and its frond', async () => {
     await expect(createApp({ fronds: [shop([{ ctor: Notifier, deps: ['Mailer'] }])], createContainer }))
-      .rejects.toThrow(/Notifier asks for Mailer, and nothing in shop provides it/);
+      .rejects.toThrow(/Notifier asks for Mailer, and nothing in the frond 'shop' provides it\. Add a class named Mailer in fronds\/shop\/services\//);
+  });
+
+  it('names the directory the project calls it', async () => {
+    const conventions = { fronds: 'domains', dirs: { services: 'domain' } };
+
+    await expect(createApp({ fronds: [shop([{ ctor: Notifier, deps: ['Mailer'] }])], createContainer, conventions }))
+      .rejects.toThrow(/Add a class named Mailer in domains\/shop\/domain\//);
   });
 
   it('boots once something answers it', async () => {

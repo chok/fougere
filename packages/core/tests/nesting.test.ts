@@ -105,7 +105,7 @@ describe('nestingOf', () => {
 
     // `shop` also serves, so it is refused twice — both are true, and a boot names them together.
     expect(codesOf(refused)).toContain('frond-extends-chain');
-    expect(refused[0]?.message).toContain('cart extends shop, which extends blog');
+    expect(refused[0]?.message).toContain("The frond 'cart' extends 'shop', which extends 'blog'");
   });
 
   it('answers nothing when the config states no tree', async () => {

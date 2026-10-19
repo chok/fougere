@@ -90,6 +90,7 @@ export async function boot(options: BootOptions): Promise<App> {
     under: config.fronds,
     narrowed: only !== undefined,
     ports: config.ports,
+    conventions: config.conventions,
     // Read from the config for the same reason `ports` is, one line up: it is a fact the
     // project states, not one the caller passes. Absent here, `serveRest` and
     // `serveGraphQL` both answered `pass` on an app whose config declared them — the

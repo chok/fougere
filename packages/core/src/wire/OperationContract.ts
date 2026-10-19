@@ -5,7 +5,6 @@ import type { TypeRef } from './TypeRef.js';
 import type { ErrorCode } from './ErrorCode.js';
 import type { OperationKind } from './OperationKind.js';
 import { Verbs } from './Verbs.js';
-import type { OperationKindInference } from './OperationKindInference.js';
 import type { Cardinality } from './Cardinality.js';
 
 /** The contract of one operation — everything the façade needs to serve a call. */
@@ -50,13 +49,6 @@ const PRIMITIVE_RETURNS = new Set(['boolean', 'string', 'number', 'void', 'undef
 
 const COMPOUND_CONNECTORS = new Set(['and', 'or', 'then']);
 
-/** The verbs of each kind, for a refusal that has to say what a name could have led with. */
-export function knownVerbs(): { query: string[]; command: string[] } {
-  const of = (kind: OperationKind) => Verbs.entries.filter(([, told]) => told === kind).map(([verb]) => verb).sort();
-
-  return { query: of('query'), command: of('command') };
-}
-
 /** `getOrCreatePost` → `['get', 'or', 'create', 'post']`; `hash` never becomes `has`. */
 export function wordsOf(name: string): string[] {
   return name
@@ -68,68 +60,15 @@ export function wordsOf(name: string): string[] {
 }
 
 /**
- * Infer only when the leading word names one convention and a composed clause does not name the
- * opposite one.
+ * An operation reads when its name says so: every verb it names — the first word, and each word
+ * after `and`, `or` or `then` — is a read verb. Anything else is a command, which promises nothing:
+ * a read taken for a command still answers, a command taken for a read would be cached.
+ *
+ * Documented: [business logic](https://fougere.dev/docs/guides/business-logic).
  */
-export function inferOperationKind(name: string): OperationKindInference {
+export function inferOperationKind(name: string): OperationKind {
   const words = wordsOf(name);
-  const first = words[0];
-  const primary = first ? Verbs.find(first) : undefined;
+  const verbs = words.filter((_, at) => at === 0 || COMPOUND_CONNECTORS.has(words[at - 1]!));
 
-  if (!primary) return { kind: undefined, queryMatches: [], commandMatches: [] };
-
-  const queryMatches = primary === 'query' ? [first] : [];
-  const commandMatches = primary === 'command' ? [first] : [];
-  for (let i = 1; i < words.length; i++) {
-    if (!COMPOUND_CONNECTORS.has(words[i - 1])) continue;
-    const told = Verbs.find(words[i]!);
-    if (told === 'query') queryMatches.push(words[i]!);
-    if (told === 'command') commandMatches.push(words[i]!);
-  }
-
-  return {
-    kind: queryMatches.length > 0 && commandMatches.length === 0
-      ? 'query'
-      : commandMatches.length > 0 && queryMatches.length === 0
-        ? 'command'
-        : undefined,
-    queryMatches,
-    commandMatches,
-  };
-}
-
-/** Explicit config is authoritative; otherwise the finite convention may decline. */
-function resolveOperationKind(
-  name: string,
-  overrides?: Record<string, { kind?: OperationKind }>,
-): OperationKind | undefined {
-  return overrides?.[name]?.kind ?? inferOperationKind(name).kind;
-}
-
-/**
- * Compatibility for boolean readers. An indeterminate name throws: returning `false`
- * here would recreate the silent command fallback this module exists to prevent.
- */
-export function isReadOp(name: string): boolean {
-  return requireOperationKind(name) === 'query';
-}
-
-/** Resolve an explicit/conventional kind for existing adapters, never by fallback. */
-export function resolveIsReadOp(
-  name: string,
-  overrides?: Record<string, { kind?: OperationKind }>,
-): boolean {
-  return requireOperationKind(name, overrides) === 'query';
-}
-
-function requireOperationKind(
-  name: string,
-  overrides?: Record<string, { kind?: OperationKind }>,
-): OperationKind {
-  const kind = resolveOperationKind(name, overrides);
-  if (kind) return kind;
-  throw new Error(
-    `Fougere cannot tell whether '${name}' reads or writes. Say it in frond.config.ts: `
-    + `operations: { '<address>.${name}': { kind: 'query' } }, or add its verb in vocabulary/.`,
-  );
+  return verbs.length > 0 && verbs.every((verb) => Verbs.find(verb) === 'query') ? 'query' : 'command';
 }

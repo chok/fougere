@@ -7,6 +7,7 @@ import type { StorageFactory } from '../storage/StorageFactory.js';
 import type { Constraint } from '../Constraint.js';
 import type { Transport } from '../wire/Transport.js';
 import type { Extension } from './Extension.js';
+import type { ConventionsInput } from '../ConventionsInput.js';
 import type { App } from './App.js';
 
 /** Options for createApp(). */
@@ -72,6 +73,8 @@ export interface CreateAppOptions {
    * last name is what actually charges.
    */
   ports?: Record<string, string | readonly string[]>;
+  /** The project's directory names, as `fougere.config.ts` restates them — read by the refusals that name a path. */
+  conventions?: ConventionsInput;
   /** What this app takes on beyond its fronds, each stating what it does and what it undoes. */
   extensions?: readonly (Extension | undefined)[];
   /**

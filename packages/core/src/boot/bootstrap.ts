@@ -1,4 +1,5 @@
 import { createContainer, type Container } from '@fougere/container';
+import { resolveConventions } from '../Conventions.js';
 import { servedProtocols } from './protocols.js';
 import { unregistered } from './unregistered.js';
 import { lowerFirst, type SchemaView } from '@fougere/schema';
@@ -91,7 +92,7 @@ function keyClaims(
         filePath,
         frond,
         subject: key,
-        message: `${first} and ${frond} both have a ${what} named ${key}, the other in ${fileOf.get(key)}. `
+        message: `The fronds '${first}' and '${frond}' both have a ${what} named ${key}, the other in ${fileOf.get(key)}. `
           + 'Rename one, or leave one frond out of this process (only:).',
       });
 
@@ -137,7 +138,8 @@ async function readFronds(
     );
   }
 
-  const { under, refused } = nestingOf(options.under, fronds, options.remotes, options.narrowed);
+  const conventions = resolveConventions(options.conventions);
+  const { under, refused } = nestingOf(options.under, fronds, options.remotes, options.narrowed, conventions);
   const refusal = refusalOf(refused, 'thing(s) the frond tree does not allow');
   if (refusal) throw refusal;
 
@@ -148,10 +150,11 @@ async function readFronds(
   const ordered = parentsFirst(fronds, under);
 
   for (const term of options.vocabulary ?? []) term.register();
-  const termRefusal = refusalOf(termRefusals(ordered), 'term(s) nothing in this process answers');
+  const termRefusal = refusalOf(termRefusals(ordered, conventions), 'term(s) nothing in this process answers');
   if (termRefusal) throw termRefusal;
 
   const operationModel = resolveEffectiveOperations(ordered, {
+    conventions,
     diagnostics,
     remotes: options.remotes,
     protocols: servedProtocols(options.protocols, ordered),
@@ -667,7 +670,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
 
     built = app;
     await appLifecycle.up(app);
-    refuseWhatDoesNotHold(unregistered(container, fronds, answeredElsewhere));
+    refuseWhatDoesNotHold(unregistered(container, fronds, answeredElsewhere, resolveConventions(options.conventions)));
     stopAnnouncing = announceLines(emissions, container, carry);
 
     return app;

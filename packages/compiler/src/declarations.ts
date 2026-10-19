@@ -92,16 +92,10 @@ export async function handlerDeclarations(
           kind,
           message:
             kind === 'value'
-              ? `'${subject}' is declared in ${handler.name}, so only ${handler.name} can reach it. `
-                + `If it needs nothing but its arguments, it is a word of '${frond.name}' and belongs `
-                + `in \`${conventions.dirs.rules}/\`; if it holds a dependency, it belongs in `
-                + `\`${conventions.dirs.services}/\`. Either way it is stated once and imported, and `
-                + `the handler keeps only the gesture.`
-              : `'${subject}' is declared in ${handler.name}, which makes the shape of what an `
-                + `operation answers readable only from the file that answers it. A shape belongs `
-                + `with the entity it describes in \`${conventions.dirs.entities}/\`, or in `
-                + `\`${conventions.dirs.rules}/\` beside the words that compute it — where the caller, `
-                + `the test and the other operations can all name it.`,
+              ? `'${subject}' is declared in ${handler.name}, so nothing else can use it. Move it to `
+                + `\`${conventions.dirs.rules}/\` if it only needs its arguments, or to \`${conventions.dirs.services}/\` if it has dependencies.`
+              : `'${subject}' is declared in ${handler.name}, so nothing else can name this shape. Move it to `
+                + `\`${conventions.dirs.entities}/\` beside the entity it describes, or to \`${conventions.dirs.rules}/\`.`,
         });
       }
     }

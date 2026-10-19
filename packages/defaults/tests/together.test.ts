@@ -248,7 +248,7 @@ describe('what a frame refuses at boot', () => {
     // Not "compensate what you can": a remote frond registers no storage here, so there is
     // nothing to write through and nothing to take back.
     await expect(bootOf('fixtures-together-remote', { accounting: 'http://elsewhere' }))
-      .rejects.toThrow(/ledger belongs to accounting, which runs in another process/s);
+      .rejects.toThrow(/ledger belongs to the frond 'accounting', which runs in another process/s);
   });
 
   it('a name that resolves to nothing — a typo, not a member to skip', async () => {

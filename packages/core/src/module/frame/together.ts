@@ -115,7 +115,7 @@ function remoteMembers(members: Members, world: FrameWorld, asked: Asked, refuse
       refused.push({
         ...asked,
         code: 'together-member-remote',
-        message: `${member.name} belongs to ${frond}, which runs in another process, so Together cannot include it. `
+        message: `${member.name} belongs to the frond '${frond}', which runs in another process, so Together cannot include it. `
           + 'Run that frond here, or split the work in two and link the halves with a fact.',
       });
     }

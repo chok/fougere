@@ -18,7 +18,7 @@ const Generators = new Registry<() => string>('generator');
 
 Generators.register('ulid', ulid);     // the answer
 Generators.register('ulid', ulid);     // the same answer again: nothing happens
-Generators.register('ulid', other);    // refused — 'ulid' is answered twice for generator
+Generators.register('ulid', other);    // refused — Two generators are named 'ulid'
 Generators.replace('ulid', other);     // said: standing in its place is the point
 ```
 

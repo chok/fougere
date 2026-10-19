@@ -56,8 +56,8 @@ describe('verify — cross-frond dependency', () => {
     // The message carries the sentence `Known issues` asks a human to remember —
     // and states the mechanism, per-frond scopes, rather than a topology that has
     // nothing to do with it.
-    expect(violations[0].message).toContain("collector of frond 'identity'");
-    expect(violations[0].message).toContain('its own scope');
+    expect(violations[0].message).toContain("which belongs to the frond 'identity'");
+    expect(violations[0].message).toContain('cannot see it');
     // The target as a FIELD, not as prose. A reader deciding whether this
     // violation concerns a frond named in `remotes:` reads it here — parsing the
     // sentence would be a second opinion on a fact already held.
@@ -97,7 +97,7 @@ describe('verify — cross-frond dependency', () => {
 
     expect(violations).toHaveLength(1);
     expect(violations[0].subject).toBe('PostPresenter');
-    expect(violations[0].message).toContain("provider of frond 'ops'");
+    expect(violations[0].message).toContain("which belongs to the frond 'ops'");
   });
 
   it('assertSplittable throws with every violation spelled out', () => {
@@ -118,7 +118,7 @@ describe('verify — cross-frond dependency', () => {
 });
 
 describe('verify — collector in another frond', () => {
-  it('names the parameter whose preliminary input interpretation must be refused', async () => {
+  it('names each parameter read from the request while another frond collects its type', async () => {
     const violations = verify({ fronds: split }).filter((v) => v.code === 'collector-in-another-frond');
 
     // Two ops, same misplacement — the spelling of the param changes nothing.
@@ -128,9 +128,8 @@ describe('verify — collector in another frond', () => {
       'PostHandler.whoOptional(user)',
     ]);
     expect(violations[0].frond).toBe('blog');
-    expect(violations[0].message).toContain("declared in frond 'identity'");
-    expect(violations[0].message).toContain('preliminary input interpretation is invalid');
-    expect(violations[0].message).toContain('refuses the operation');
+    expect(violations[0].severity).toBe('warning');
+    expect(violations[0].message).toContain("takes user from the request, but the frond 'identity' has a User collector that 'blog' cannot see");
     // What the boot filters on when `remotes:` names a frond.
     expect(violations[0].dependsOn).toEqual({ key: 'UserCollector', frond: 'identity', kind: 'collector' });
     // The consumer is 'blog', the target is 'identity' — two different fields,

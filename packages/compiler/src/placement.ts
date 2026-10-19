@@ -71,7 +71,7 @@ export async function outsideConventions(
         frond: frond.name,
         filePath,
         kind: 'file',
-        message: `Fougere reads nothing in '${entry.name}' at the root of ${frond.name}. `
+        message: `Fougere reads nothing in '${entry.name}' at the root of the frond '${frond.name}'. `
           + `Plain functions go in \`${conventions.dirs.rules}/\`, classes with dependencies in \`${conventions.dirs.services}/\`.`,
       });
     }

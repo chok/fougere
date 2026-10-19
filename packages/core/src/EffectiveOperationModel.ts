@@ -1,4 +1,5 @@
-import { lowerFirst, type SchemaView } from '@fougere/schema';
+import { lowerFirst, upperFirst, type SchemaView } from '@fougere/schema';
+import { directoryOf, resolveConventions, type Conventions } from './Conventions.js';
 import { statementDrift, unansweredOperations } from './boot/statement-drift.js';
 import { reachedBy, servedBy } from './module/topology/declared.js';
 import type { BindingPlan } from './wire/binding.js';
@@ -6,15 +7,14 @@ import { computeBindingPlan } from './bindingPlan.js';
 import { targetOf } from './prefab/prefab.js';
 import { EFFECTIVE_OPERATION_SEMANTICS } from './EffectiveOperationSemantics.js';
 import type { CollectorEntry } from './descriptor/CollectorEntry.js';
-import { collectorsOf, groupedCollectors, refuseAmbiguousCollectors } from './module/collector/operation.js';
-import { isScanned, type FrondDescriptor } from './descriptor/FrondDescriptor.js';
+import { collectorsInScope, collectorsOf, groupedCollectors, refuseAmbiguousCollectors } from './module/collector/operation.js';
+import { type FrondDescriptor } from './descriptor/FrondDescriptor.js';
 import type { HandlerEntry } from './descriptor/HandlerEntry.js';
 import { OperationOverrides, type OperationOverrideEntry } from './descriptor/OperationOverrides.js';
 import { servedSurfaces } from './descriptor/surface.js';
 import type { Diagnostic } from './diagnostic.js';
 import { verify } from './verify.js';
-import { inferOperationKind, knownVerbs, wordsOf, type OperationContract } from './wire/OperationContract.js';
-import { RouteAddress } from './wire/RouteAddress.js';
+import { inferOperationKind, type OperationContract } from './wire/OperationContract.js';
 import { type OperationKind } from './wire/OperationKind.js';
 import { type OperationsMap } from './wire/OperationsMap.js';
 import { type TypeRef } from './wire/TypeRef.js';
@@ -95,10 +95,11 @@ export function resolveEffectiveOperations(
   const diagnostics = scanDiagnostics.filter((diagnostic) => diagnostic.code === 'input-contract-ambiguous');
 
   for (const frond of fronds) {
-    const collectorsByType = groupedCollectors(frond.collectors);
-    refuseAmbiguousCollectors(frond, collectorsByType, diagnostics);
+    refuseAmbiguousCollectors(frond, groupedCollectors(frond.collectors), diagnostics);
 
-    const collectorNames = new Set(frond.collectors.map((collector) => collector.typeName));
+    const seen = collectorsInScope(frond, fronds);
+    const collectorsByType = groupedCollectors(seen);
+    const collectorNames = new Set(seen.map((collector) => collector.typeName));
     const overrides = OperationOverrides.of(frond);
     diagnostics.push(...overrides.refusals());
     for (const handler of frond.handlers) {
@@ -137,13 +138,12 @@ function resolveOperation(resolving: Resolving, name: string, rawContract: Opera
   if (!contract || !answersData(resolving, name, contract)) return undefined;
 
   const kind = kindOf(resolving, name);
-  if (!kind) return undefined;
 
   const implementation = implementationOf(frond, handler, name, diagnostics);
   if (!implementation) return undefined;
 
   const parameters = parametersOf(contract);
-  if (!validateProvenance(fronds, frond, handler, name, contract, parameters, collectorsByType, diagnostics)) {
+  if (!validateProvenance(fronds, frond, handler, name, contract, parameters, collectorsByType, diagnostics, options.conventions ?? resolveConventions())) {
     return undefined;
   }
 
@@ -215,57 +215,9 @@ function answersData({ frond, handler, diagnostics }: Resolving, name: string, c
   return false;
 }
 
-/** Stated in `frond.config.ts`, or read off the verb the name leads with — never guessed between two. */
-function kindOf({ frond, handler, diagnostics }: Resolving, name: string): OperationKind | undefined {
-  const declared = OperationOverrides.of(frond).get(handler.address, name)?.kind;
-  if (declared) return declared;
-
-  const inference = inferOperationKind(name);
-  const inferred = new Set<OperationKind>();
-  if (inference.kind) inferred.add(inference.kind);
-  if (inference.queryMatches.length > 0) inferred.add('query');
-  if (inference.commandMatches.length > 0) inferred.add('command');
-  if (inferred.size === 1) return [...inferred][0];
-
-  const subject = `${handler.ctor.name}.${name}`;
-  const route = new RouteAddress({ address: handler.address, operation: name });
-  const ambiguous = inferred.size > 1;
-  diagnostics.push({
-    severity: 'blocking',
-    code: ambiguous ? 'operation-kind-ambiguous' : 'operation-kind-unknown',
-    filePath: handler.filePath,
-    frond: frond.name,
-    subject,
-    message: ambiguous
-      ? `Fougere cannot tell whether ${subject} reads or writes: its name looks like both `
-        + `(${inference.queryMatches.join(', ')} / ${inference.commandMatches.join(', ')}).\n\n`
-        + `  State it ${kindStatedIn(frond, route, 'command')}`
-      : `Fougere cannot tell whether ${subject} reads or writes: '${name}' starts with no known verb.\n\n`
-        + '  Rename it to lead with a known verb:\n'
-        + `    query:   ${knownVerbs().query.join(', ')}\n`
-        + `    command: ${knownVerbs().command.join(', ')}\n\n`
-        + `  Or state it ${kindStatedIn(frond, route, 'query')}\n\n`
-        + `  Or teach the verb ${verbTaughtIn(frond, wordsOf(name)[0] ?? name)}`,
-  });
-
-  return undefined;
-}
-
-/** The line that states an op's kind, and the file it goes in — the remedy a refusal hands over. */
-function kindStatedIn(frond: FrondDescriptor, route: RouteAddress, likely: OperationKind): string {
-  const other = likely === 'query' ? 'command' : 'query';
-  const where = isScanned(frond)
-    ? [`in ${frond.source.path}/frond.config.ts:`, `operations: { '${route}': { kind: '${likely}' } },`]
-    : [`in the frond('${frond.name}') declaration:`, `operationsOverrides: { '${route}': { kind: '${likely}' } },`];
-
-  return `for this operation, ${where[0]}\n    ${where[1]}   // or '${other}'`;
-}
-
-/** The line that teaches a verb once, for every op of the frond that leads with it. */
-function verbTaughtIn(frond: FrondDescriptor, verb: string): string {
-  const where = isScanned(frond) ? `in ${frond.source.path}/vocabulary/verbs.ts` : 'in a vocabulary/ file';
-
-  return `once, ${where}, listed in the statement's \`vocabulary\`:\n    export const ${verb} = Verbs.term('${verb}', 'query');   // or 'command'`;
+/** Stated in `frond.config.ts`, or read off the name: an operation reads when every verb it names reads. */
+function kindOf({ frond, handler }: Resolving, name: string): OperationKind {
+  return OperationOverrides.of(frond).get(handler.address, name)?.kind ?? inferOperationKind(name);
 }
 
 function parametersOf(contract: BoundContract): EffectiveParameter[] {
@@ -363,6 +315,7 @@ function validateProvenance(
   parameters: EffectiveParameter[],
   localCollectors: Map<string, CollectorEntry[]>,
   diagnostics: Diagnostic[],
+  conventions: Conventions,
 ): boolean {
   let valid = true;
   const declared = opsOf(handler.ctor)[name];
@@ -419,9 +372,9 @@ function validateProvenance(
           frond: frond.name,
           subject: `${handler.ctor.name}.${name}(${parameter.name})`,
           message: matches.length === 0
-            ? `${handler.ctor.name}.${name} takes ${parameter.name}: ${parameter.type ?? source.typeName}, and no collector in ${frond.name} provides one. `
-              + `Add one in ${frond.name}/collectors/: class … extends Collector(${parameter.type ?? source.typeName}).`
-            : `${matches.length} collectors in ${frond.name} provide ${source.typeName}. Keep one.`,
+            ? `${handler.ctor.name}.${name} takes ${parameter.name}: ${parameter.type ?? upperFirst(source.typeName)}, and no collector in the frond '${frond.name}' provides one. `
+              + `Add a Collector(${parameter.type ?? upperFirst(source.typeName)}) in ${directoryOf(frond.name, 'collectors', conventions)}.`
+            : `${matches.length} collectors in the frond '${frond.name}' provide ${source.typeName}. Keep one.`,
         });
       }
       continue;
@@ -570,11 +523,9 @@ function resolveContracts(
 
   for (const [opName, scanned] of handler.operations) {
     if (scanned.signature?.inherited && opName in declared) continue;
-    contracts.set(opName, {
-      ...scanned,
-      binding: scanned.binding
-        ?? (scanned.signature ? computeBindingPlan(scanned.signature.params, collectorTypeNames) : undefined),
-    });
+    contracts.set(opName, scanned.binding
+      ? collectedInScope(scanned, collectorTypeNames)
+      : { ...scanned, binding: scanned.signature ? computeBindingPlan(scanned.signature.params, collectorTypeNames) : undefined });
   }
 
   for (const [opName, override] of overrides) {
@@ -584,10 +535,39 @@ function resolveContracts(
       ...contracts.get(opName),
       ...(input !== undefined && { input }),
       ...(output !== undefined && { output }),
-      ...(binding !== undefined && { binding }),
+      ...(binding !== undefined && { binding: mergedBinding(contracts.get(opName)?.binding, binding) }),
       ...(description !== undefined && { description }),
     });
   }
 
   return contracts;
+}
+
+/**
+ * A binding the scan wrote saw the frond's own collectors only. A parameter it read from the request,
+ * whose type a collector of the frond it extends answers, comes from that collector — and is no
+ * longer the body the request is judged against.
+ */
+function collectedInScope(contract: OperationContract, collectorTypeNames: Set<string>): OperationContract {
+  const params = contract.signature?.params ?? [];
+  const typeOf = (name: string) => params.find((param) => param.name === name)?.type.name ?? '';
+  const moved = (contract.binding ?? []).filter((entry) =>
+    entry.source.kind === 'input' && collectorTypeNames.has(lowerFirst(typeOf(entry.name))));
+  if (moved.length === 0) return contract;
+
+  const binding = contract.binding!.map((entry) => moved.includes(entry)
+    ? { ...entry, source: { kind: 'collector' as const, typeName: lowerFirst(typeOf(entry.name)) } }
+    : entry);
+  const body = contract.input && moved.some((entry) => typeOf(entry.name) === contract.input!.name);
+
+  return { ...contract, binding, ...(body && { input: undefined }) };
+}
+
+/** A declared binding states the exceptions: each entry stands in for the derived one of its name. */
+function mergedBinding(derived: BindingPlan | undefined, declared: BindingPlan): BindingPlan {
+  if (!derived) return declared;
+  const byName = new Map(declared.map((entry) => [entry.name, entry]));
+  const named = new Set(derived.map((entry) => entry.name));
+
+  return [...derived.map((entry) => byName.get(entry.name) ?? entry), ...declared.filter((entry) => !named.has(entry.name))];
 }

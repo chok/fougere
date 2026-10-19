@@ -73,7 +73,7 @@ export class Emissions {
             filePath: frond.source.path,
             frond: frond.name,
             subject: fact,
-            message: `${frond.name} gives an order for ${fact}, but ${fact} is declared in another frond. `
+            message: `The frond '${frond.name}' gives an order for ${fact}, but ${fact} is declared in another frond. `
               + 'Move pipes: to the frond.config.ts of that frond.',
           });
         }

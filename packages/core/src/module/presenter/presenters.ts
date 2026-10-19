@@ -7,6 +7,8 @@ import type { PresenterEntry } from '../../descriptor/PresenterEntry.js';
 import type { AnswerStep } from '../../dispatch/AnswerStep.js';
 import { exposePresenters, registerPresenters } from './install.js';
 import { presented } from './presented.js';
+import { lowerFirst } from '@fougere/schema';
+import { collectorKeyOf } from '../../prefab/collector.js';
 
 /**
  * Presenters as an extension: their classes in each frond's scope, their computed fields as a step
@@ -31,9 +33,11 @@ export function presenters(): Presenting {
       byFrond.set(frond.name, declared);
     },
     steps(handler, frond, scope) {
-      const collectors = new Set(frond.collectors.map((collector) => collector.typeName));
+      const presenter = byFrond.get(frond.name)?.get(handler.address);
+      const asked = (presenter?.fieldMeta ?? []).flatMap((field) => field.params ?? []).map((param) => lowerFirst(param.type.name));
+      const collectors = new Set(asked.filter((type) => scope.has(collectorKeyOf(type))));
 
-      return presented(byFrond.get(frond.name)?.get(handler.address), scope, collectors, handler.address);
+      return presented(presenter, scope, collectors, handler.address);
     },
   };
 }
