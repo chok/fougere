@@ -207,7 +207,8 @@ export class Emissions {
       this.container.registerValue(awaitKeyOf(fact), (raw: unknown) => this.announce(fact, raw, true));
     }
     if (ambient.degraded && this.subscribers.size > 0) {
-      this.log.warn('This runtime has no async context, so a fact that triggers itself in a loop is not detected.');
+      this.log.warn('This runtime has no async context, so a fact that triggers itself in a loop is not detected. '
+        + 'On a Worker, add "nodejs_compat" to compatibility_flags.');
     }
   }
 

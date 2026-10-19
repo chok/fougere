@@ -46,7 +46,7 @@
   "imports": {
     "#ambient": {
       "types": "./src/boot/ambient.als.ts",
-      "workerd": "./dist/boot/ambient.queue.js",
+      "workerd": "./dist/boot/ambient.worker.js",
       "default": "./dist/boot/ambient.als.js"
     },
     "#crypto": {

@@ -997,7 +997,11 @@ own contract. A GraphQL TYPE is built from a schema an op returns, once per enti
 (`core/src/boot/ambient-port.ts`), `ambient.slot<T>(name)`: core keeps `operation` and `request`
 (`boot/slots.ts`) and the fact chain, `@fougere/observability` its `span` (`traceContext.ts`), and a
 name answers the same slot each time it is asked. The realization is chosen once, by `#ambient` —
-an `AsyncLocalStorage`, or nothing on a Worker, where a slot holds no value and `degraded` says so.
+an `AsyncLocalStorage` on Node; on a Worker, `ambient.worker.ts` picks at RUN time, since
+`nodejs_compat` hands `AsyncLocalStorage` over through `process.getBuiltinModule` and a bundle
+imports no `node:` module. Without the flag a slot holds no value and `degraded` says so, naming
+`nodejs_compat` — measured 2026-10-19 in workerd: `nodejs_als` alone hands nothing over, which is
+what the warnings used to advise.
 Core still holds no span: it carries values whose type it never sees. Observability used to keep a
 second `#trace-context` of its own, so the runtime was asked twice and a span could not see the
 request it ran within. The `Together` frame is not a slot: with no async context it becomes a lock.

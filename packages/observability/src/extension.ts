@@ -116,7 +116,7 @@ export function observability(options: ObservabilityOptions = {}): Extension {
       if (!traceContext.ambient) {
         app.container.resolve<Logger>('Logger').child(service).warn(
           'This runtime has no async context, so calls inside this process start their own trace instead of joining '
-          + "the caller's. Add \"nodejs_als\" to compatibility_flags to fix it.",
+          + "the caller's. Add \"nodejs_compat\" to compatibility_flags to fix it.",
         );
       }
 

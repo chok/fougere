@@ -209,7 +209,8 @@ export function registerFrames(
 
   if (registered > 0 && ambient.degraded) {
     world.log.warn(
-      'This runtime has no async context: Together runs one at a time, and one opened inside another times out.',
+      'This runtime has no async context: Together runs one at a time, and one opened inside another times out. '
+        + 'On a Worker, add "nodejs_compat" to compatibility_flags.',
     );
   }
 }
