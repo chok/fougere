@@ -1,6 +1,6 @@
 /** The three facades as Web-standard handlers: `Request` in, `Response` out. */
 import { serveRest, serveRpc, rpcParseError, useFougereApp, useFougereConfig, serveGraphQL } from './index.js';
-import type { GraphQLDocument } from './graphql.js';
+import { graphqlSurfaceOf, type GraphQLDocument } from './graphql.js';
 import { prefixOf } from '@fougere/adapter-rest';
 import { FougereError, maxBodyBytes, readWithin, type App } from '@fougere/core';
 import { jsonBodyOf } from './jsonBody.js';
@@ -95,7 +95,7 @@ export async function graphql(request: Request): Promise<Response> {
 
   const outcome = await serveGraphQL(app, {
     document: async () => (await jsonBodyOf(request)) as GraphQLDocument | undefined,
-    surface: new URL(request.url).pathname.split('/').filter(Boolean)[1],
+    surface: graphqlSurfaceOf(new URL(request.url).pathname),
     state: await stateFor(request.headers),
   });
 

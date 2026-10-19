@@ -1,6 +1,6 @@
 /** The facades as Express middlewares — the form an Express app expects. */
 import { HttpError, readExpressBody } from '@fougere/http';
-import type { GraphQLDocument } from './graphql.js';
+import { GRAPHQL_PATH, graphqlSurfaceOf, type GraphQLDocument } from './graphql.js';
 import { maxBodyBytes } from '@fougere/core';
 import { rpcParseError, serveRest, serveRpc } from './Outcome.js';
 import { serveGraphQL } from './graphql.js';
@@ -139,15 +139,18 @@ export function rest(): ExpressMiddleware {
 }
 
 /** GraphQL, at `/graphql` by default. Declines when the app declares no such adapter. */
-export function graphql(mountPath = '/graphql'): ExpressMiddleware {
+export function graphql(mountPath = GRAPHQL_PATH): ExpressMiddleware {
   return (req, res, next) => {
-    if (req.method !== 'POST' || pathOf(req) !== mountPath) return next();
+    const path = pathOf(req);
+    const surface = graphqlSurfaceOf(path, mountPath);
+    if (req.method !== 'POST' || (path !== mountPath && !surface)) return next();
 
     void (async () => {
       try {
         const app = await useFougereApp();
         const outcome = await serveGraphQL(app, {
           document: async () => (await readExpressBody(req, maxBodyBytes())) as GraphQLDocument | undefined,
+          surface,
           state: stateOf(req),
         });
         if (outcome.kind === 'pass') return next();

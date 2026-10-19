@@ -272,6 +272,12 @@ const module = defineNuxtModule<FougereModuleOptions>({
         method: 'post',
         handler: runtimeResolve('server/routes/graphql.post'),
       });
+      // Per audience, as the envelope is: `/graphql/public` serves the surface `public`.
+      addServerHandler({
+        route: '/graphql/**',
+        method: 'post',
+        handler: runtimeResolve('server/routes/graphql.post'),
+      });
     }
     addServerImportsDir(runtimeResolve('server/utils'));
 

@@ -1,12 +1,13 @@
 /** GraphQL, when the app declares `protocols: { graphql: {} }` — the h3 half of `serveGraphQL`. */
 import { defineEventHandler, createError, setResponseStatus, toWebRequest } from 'h3';
-import { jsonBodyOf, serveGraphQL, useFougereApp, type GraphQLDocument } from '@fougere/app';
+import { graphqlSurfaceOf, jsonBodyOf, serveGraphQL, useFougereApp, type GraphQLDocument } from '@fougere/app';
 import { stateOf } from '../stateOf.js';
 
 export default defineEventHandler(async (event) => {
   const app = await useFougereApp();
   const outcome = await serveGraphQL(app, {
     document: async () => (await jsonBodyOf(toWebRequest(event))) as GraphQLDocument | undefined,
+    surface: graphqlSurfaceOf(event.path),
     state: stateOf(event),
   });
 
