@@ -155,16 +155,16 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
   holds no `node_modules`, so Next bundles it whatever `serverExternalPackages` says: the server chunk
   carries its own `@fougere/core`, while `adapter-sql` — loaded outside it — registers `sqlite` in the
   other. Forcing the packages external in webpack moves the failure to `Cannot find package
-  '@fougere/app'`, a dependency the demo does not state. An installed app, whose packages sit under
-  `node_modules`, is not measured yet.
-- **A SvelteKit server booting from its build's statement is not measured** — `demos/sveltekit-blog`
-  builds with `adapter-auto`, which leaves no Node server to run, and `vite preview` loads the plugin,
-  which imports the compiler. It reaches the boot through `@fougere/app` as `demos/react-router-blog`
-  does, which was measured with the compiler removed. Stated 2026-10-18.
-- **`site/Dockerfile` does not build** — `nuxt build` stops in `site/modules/demo.ts`, which lists the
-  demos with `git ls-files`: the image holds no `git`, and `.dockerignore` leaves `.git` out. Measured
-  2026-10-18. What the runtime stage needs was measured apart: `.output`, `.data`, `posts/` and
-  `better-sqlite3`, alone in an empty directory, boot the site's three Fronds and answer a call.
+  '@fougere/app'`, a dependency the demo does not state. Booting from `instrumentation.ts` does not
+  help either: Next builds it as a layer of its own, with its own copy of the packages, so
+  `configureFougere` there set a `@fougere/app` the routes never read (measured 2026-10-19, and
+  removed). An installed app, whose packages sit under `node_modules`, is not measured yet.
+- **`site/Dockerfile` is not seen running end to end** — its build stage needs more than the 5.7 GB a
+  Docker Desktop VM sharing other containers gave it: the prerender holds the whole doc
+  (`--max-old-space-size=4096`) and a run in two died `cannot allocate memory`. One build went through
+  2026-10-19 and served `/`, `/docs`, `/blog`; the call answered `The app refused to start` on a database
+  nobody had migrated, which is what the compose's `migrate` service is for. The runtime stage's needs
+  were measured apart: `.output`, `.data`, `posts/` and `better-sqlite3`, alone, boot and answer.
 - **Nothing generates OpenAPI**, so `RouteDefinition.description` is read by nobody. The op's
   sentence has two readers, neither of them REST: `adapter/graphql/src/OperationsConfig.ts` and the
   CLI's `--help`.
