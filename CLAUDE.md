@@ -70,6 +70,8 @@ packages/
   schema/              @fougere/schema        entity(), field vocabulary, 4 axes, validation
   registry/            @fougere/registry      one answer per name — under schema, zero deps
   container/           @fougere/container     type-based DI, zero deps
+  graph/               @fougere/graph         a labelled directed multigraph and its four questions —
+                                                order, cycles, components, reach. Zero deps
   compiler/            @fougere/compiler      the scan: source → descriptors. The one package that
                                                 needs a filesystem and a TypeScript program
   core/                @fougere/core          the phases below, and what sits outside them

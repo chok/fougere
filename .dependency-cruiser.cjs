@@ -68,6 +68,13 @@ module.exports = {
       from: { path: '^packages/registry/src/' },
       to: { pathNot: '^packages/registry/src/' },
     },
+    {
+      name: 'graph-depends-on-something',
+      comment: '`@fougere/graph` sits beside the registry and the container, so it imports nothing at all — nodes, edges, and four questions.',
+      severity: 'error',
+      from: { path: '^packages/graph/src/' },
+      to: { pathNot: '^packages/graph/src/' },
+    },
   ],
   options: {
     tsPreCompilationDeps: true,

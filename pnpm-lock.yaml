@@ -2242,6 +2242,12 @@ importers:
         specifier: workspace:*
         version: link:../../cli
 
+  packages/graph:
+    devDependencies:
+      vitest:
+        specifier: ^4.1.0
+        version: 4.1.2(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(jsdom@27.4.0(@noble/hashes@2.0.1)(supports-color@10.2.2))(vite@8.3.3(@types/node@24.13.3)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.46.1)(tsx@4.21.0)(yaml@2.9.0))
+
   packages/http:
     devDependencies:
       '@types/node':
