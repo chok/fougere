@@ -1,7 +1,7 @@
 /** This package's own ascent and descent, in one value. */
 import { frond, Logger, LogLine, type App, type Extension, type LogSink } from '@fougere/core';
 import ExportHandler from './ExportHandler.js';
-import { traceContext } from '#trace-context';
+import { traceContext } from './traceContext.js';
 import { registerFlush, statementsUnder, tracing, type SpanSink } from './index.js';
 import { metrics, serveTopology } from './metrics/Metrics.js';
 import { otlp } from './otlp/OtlpExporter.js';

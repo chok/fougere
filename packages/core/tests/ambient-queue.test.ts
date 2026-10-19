@@ -40,10 +40,11 @@ describe('ambient.queue', () => {
     expect(seen).toEqual(['frame done', 'announced']);
   });
 
-  it('follows no emission chain, and says so by answering empty', async () => {
-    expect(ambient.currentChain()).toEqual([]);
-    await ambient.enterChain('a', async () => {
-      expect(ambient.currentChain()).toEqual([]);
+  it('holds nothing in a slot — a value cannot follow an await here', async () => {
+    const chain = ambient.slot<string[]>('chain');
+    expect(chain.current()).toBeUndefined();
+    await chain.within(['a'], async () => {
+      expect(chain.current()).toBeUndefined();
     });
   });
 });

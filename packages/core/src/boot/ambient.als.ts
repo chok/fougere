@@ -1,15 +1,23 @@
 /** The realization that can tell whose frame is open: an async context. */
 import { AsyncLocalStorage } from 'node:async_hooks';
-import type { Ambient } from './ambient-port.js';
-import type { DoorRequest } from '../wire/DoorRequest.js';
+import type { Ambient, Slot } from './ambient-port.js';
 
 const frame = new AsyncLocalStorage<string>();
-const chain = new AsyncLocalStorage<readonly string[]>();
-const operation = new AsyncLocalStorage<string>();
-const request = new AsyncLocalStorage<DoorRequest>();
+const slots = new Map<string, Slot<unknown>>();
 
 export const ambient: Ambient = {
   degraded: false,
+
+  slot<T>(name: string): Slot<T> {
+    const held = slots.get(name);
+    if (held) return held as Slot<T>;
+
+    const storage = new AsyncLocalStorage<T>();
+    const made: Slot<T> = { current: () => storage.getStore(), within: (value, fn) => storage.run(value, fn) };
+    slots.set(name, made as Slot<unknown>);
+
+    return made;
+  },
 
   enterFrame<R>(key: string, fn: () => Promise<R>): Promise<R> {
     const open = frame.getStore();
@@ -31,23 +39,5 @@ export const ambient: Ambient = {
       `${fact} is announced inside Together ${open}, whose writes may still be undone. `
       + `Announce it after run() returns.`,
     ));
-  },
-
-  currentChain: () => chain.getStore() ?? [],
-
-  enterChain<R>(fact: string, fn: () => Promise<R>): Promise<R> {
-    return chain.run([...(chain.getStore() ?? []), fact], fn);
-  },
-
-  currentOperation: () => operation.getStore(),
-
-  enterOperation<R>(label: string, fn: () => Promise<R>): Promise<R> {
-    return operation.run(label, fn);
-  },
-
-  currentRequest: () => request.getStore(),
-
-  enterRequest<R>(entered: DoorRequest, fn: () => Promise<R>): Promise<R> {
-    return request.run(entered, fn);
   },
 };

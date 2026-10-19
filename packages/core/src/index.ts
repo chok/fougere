@@ -52,6 +52,8 @@ export { JOURNAL, type Journal } from './module/relation/Journal.js';
 // them — or a test of one — has to be able to make one through the facade.
 export { DispatchEvent } from './dispatch/DispatchEvent.js';
 export { DoorEvent, type DoorStage } from './dispatch/DoorEvent.js';
+export { ambient } from './boot/slots.js';
+export type { Ambient, Slot } from './boot/ambient-port.js';
 export { DoorRequest } from './wire/DoorRequest.js';
 export { answerAt, type Answering, type Door, type DoorCycle, type DoorOutcome } from './entry/door.js';
 export type { CallPage, CallRecord } from './contract.js';

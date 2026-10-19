@@ -1,5 +1,5 @@
 /** @fougere/observability — one span per operation, and the trace that survives a wire. */
-import { traceContext } from '#trace-context';
+import { traceContext } from './traceContext.js';
 import { CARRIES_LINE, type AppMiddleware } from '@fougere/core';
 import { parseTraceparent, traceparentOf, randomHex, type SpanContext } from './traceparent.js';
 

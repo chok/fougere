@@ -2,8 +2,7 @@
  * The realization for a runtime with no async context: it cannot tell whose frame is open, so it
  * never guesses — it waits its turn.
  */
-import type { Ambient } from './ambient-port.js';
-import type { DoorRequest } from '../wire/DoorRequest.js';
+import type { Ambient, Slot } from './ambient-port.js';
 
 /** What a nested frame waits before it is told what it did — the hang, measured, plus a name. */
 const NESTED_TIMEOUT_MS = 5_000;
@@ -22,8 +21,13 @@ function raceWith(p: Promise<void>, ms: number): Promise<void> {
   });
 }
 
+/** Nothing is in scope here: a value cannot follow an await, so a slot holds none. */
+const empty: Slot<never> = { current: () => undefined, within: (_value, fn) => fn() };
+
 export const ambient: Ambient = {
   degraded: true,
+
+  slot: <T>(_name: string) => empty as Slot<T>,
 
   async enterFrame<R>(key: string, fn: () => Promise<R>): Promise<R> {
     const deadline = Date.now() + NESTED_TIMEOUT_MS;
@@ -60,24 +64,5 @@ export const ambient: Ambient = {
    */
   async beforeAnnounce(_fact: string): Promise<void> {
     while (busy) await raceWith(busy, NESTED_TIMEOUT_MS);
-  },
-
-  /** No chain can be followed here — an emission ring is not detected. Said at boot. */
-  currentChain: () => [],
-
-  enterChain<R>(_fact: string, fn: () => Promise<R>): Promise<R> {
-    return fn();
-  },
-
-  currentOperation: () => undefined,
-
-  enterOperation<R>(_label: string, fn: () => Promise<R>): Promise<R> {
-    return fn();
-  },
-
-  currentRequest: () => undefined,
-
-  enterRequest<R>(_request: DoorRequest, fn: () => Promise<R>): Promise<R> {
-    return fn();
   },
 };

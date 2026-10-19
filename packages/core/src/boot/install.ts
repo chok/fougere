@@ -22,7 +22,7 @@ import type { OperationsMap } from '../wire/OperationsMap.js';
 import type { AppMiddleware } from '../wire/AppMiddleware.js';
 import type { CreateAppOptions } from './CreateAppOptions.js';
 import { registerFrames } from '../module/frame/together.js';
-import { ambient } from '#ambient';
+import { operation } from './slots.js';
 import { lifetimeOf } from '../lifetime.js';
 import type { Diagnostic } from '../diagnostic.js';
 import { HandlerFacade } from '../dispatch/HandlerFacade.js';
@@ -435,7 +435,7 @@ function buildFacadeInto(
     steps: stepsOver(assembly, handler, frond, scope),
     middlewares: () => getMiddlewares(handler.address),
     state: assembly.state,
-    enterOperation: ambient.enterOperation,
+    enterOperation: (label, fn) => operation.within(label, fn),
     ownLogger,
   });
 

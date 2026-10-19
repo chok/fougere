@@ -75,7 +75,7 @@ describe('a line says what it was written during', () => {
     await using app = await createApp({ fronds, createContainer });
     const around: (string | undefined)[] = [];
     const watching: AppMiddleware = (ctx, next) => {
-      if (ctx.address === 'author') around.push(ambient.currentOperation());
+      if (ctx.address === 'author') around.push(ambient.slot<string>('operation').current());
 
       return next();
     };
@@ -90,8 +90,8 @@ describe('a line says what it was written during', () => {
   });
 
   it('says nothing of it where the runtime has no async context', async () => {
-    await degraded.enterOperation('blog:PostHandler.publish', async () => {
-      expect(degraded.currentOperation()).toBeUndefined();
+    await degraded.slot<string>('operation').within('blog:PostHandler.publish', async () => {
+      expect(degraded.slot<string>('operation').current()).toBeUndefined();
     });
   });
 });

@@ -1,9 +1,21 @@
-import type { DoorRequest } from '../wire/DoorRequest.js';
+/** One value carried across awaits — what the code running now is inside of. */
+export interface Slot<T> {
+  /** The value in scope, absent outside any and where there is no async context. */
+  current(): T | undefined;
+  /** Run `fn` with `value` in scope. */
+  within<R>(value: T, fn: () => Promise<R>): Promise<R>;
+}
 
-/** What a call needs to know about the call it is inside, and the two ways to answer it. */
+/**
+ * What runs now, carried without being handed along — one mechanism for every package, each
+ * keeping its own slot: core its operation and request, `@fougere/observability` its span.
+ */
 export interface Ambient {
   /** True when this runtime has no async context, and the boot says so. */
   readonly degraded: boolean;
+
+  /** The slot named `name` — the same one each time it is asked for, so two callers share it. */
+  slot<T>(name: string): Slot<T>;
 
   /** Run `fn` as the frame `key`. */
   enterFrame<R>(key: string, fn: () => Promise<R>): Promise<R>;
@@ -13,22 +25,4 @@ export interface Ambient {
    * back is a lie. Refuses when the caller's own frame can be told, waits when it cannot.
    */
   beforeAnnounce(fact: string): Promise<void>;
-
-  /** The facts already being announced up the stack, so a fact cannot cause itself. */
-  currentChain(): readonly string[];
-
-  /** Run `fn` with `fact` appended to the emission chain. */
-  enterChain<R>(fact: string, fn: () => Promise<R>): Promise<R>;
-
-  /** The operation this code runs inside — `blog:PostHandler.publish` — absent outside any. */
-  currentOperation(): string | undefined;
-
-  /** Run `fn` as the operation `label`. */
-  enterOperation<R>(label: string, fn: () => Promise<R>): Promise<R>;
-
-  /** The request at a door this code answers within — absent outside any, and where there is no async context. */
-  currentRequest(): DoorRequest | undefined;
-
-  /** Run `fn` as the request `request`, so every call it makes says which request it answers. */
-  enterRequest<R>(request: DoorRequest, fn: () => Promise<R>): Promise<R>;
 }

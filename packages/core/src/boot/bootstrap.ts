@@ -29,7 +29,7 @@ import type { CreateAppOptions } from './CreateAppOptions.js';
 import type { AppMiddleware } from '../wire/AppMiddleware.js';
 import { Carry } from '../builtin/Carry.js';
 import { Logger } from '../builtin/Logger.js';
-import { ambient } from '#ambient';
+import { operation, request } from './slots.js';
 import type { LogRecord } from '../builtin/LogRecord.js';
 import LogLine, { CARRIES_LINE } from '../builtin/LogLine.js';
 import { emitKeyOf, type Emit } from '../wire/Emit.js';
@@ -234,7 +234,7 @@ function dispatching(
       `[dispatch-observer] ${event.stage} ${event instanceof DoorEvent ? event.request.door : event.call.address.toString()}`,
       error,
     ),
-    ambient.currentRequest,
+    request.current,
   );
 
   return {
@@ -432,7 +432,7 @@ function readings(
  * `setLogLevel`'s at each line — and a frond declaring `class X extends Logger` takes the key.
  */
 function registerBuiltins(container: Container, carry: Carry): void {
-  container.registerValue('Logger', new Logger('app', { carry, during: ambient.currentOperation }));
+  container.registerValue('Logger', new Logger('app', { carry, during: operation.current }));
   container.register('Config', Config, { lifetime: 'singleton' });
 }
 
@@ -662,7 +662,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
       serveRpc: serveRpcOn(routeRegistry),
       extensions: () => appLifecycle.names(),
       observe: (observer) => dispatchLifecycle.add(observer),
-      answer: (door, received) => answerAt(door, received, { enterRequest: ambient.enterRequest, lifecycle: dispatchLifecycle }),
+      answer: (door, received) => answerAt(door, received, { enterRequest: (entered, fn) => request.within(entered, fn), lifecycle: dispatchLifecycle }),
       use(...args: [AppMiddleware] | [string, AppMiddleware]): void {
         return typeof args[0] === 'string'
           ? use(args[1] as AppMiddleware, args[0])

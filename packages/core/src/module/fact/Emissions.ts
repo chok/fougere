@@ -12,6 +12,9 @@ import type { OperationsMap } from '../../wire/OperationsMap.js';
 import type { Elsewhere } from './Elsewhere.js';
 import { LOG_LINE } from '../../builtin/LogLine.js';
 
+/** The facts being announced up the stack, so a fact cannot cause itself. */
+const chain = ambient.slot<readonly string[]>('chain');
+
 /** A facade and the op on it that accepts a fact. */
 interface Listener {
   facade: string;
@@ -360,7 +363,7 @@ export class Emissions {
     payload: unknown,
     listeners: Listener[] = this.subscribers.get(fact) ?? [],
   ): (Listener & { done: Promise<unknown> })[] {
-    const walked = ambient.currentChain();
+    const walked = chain.current() ?? [];
     if (walked.includes(fact)) {
       throw new Error(
         `Facts announced in a loop: ${[...walked, fact].join(' → ')}. `
@@ -377,7 +380,7 @@ export class Emissions {
     return listeners.map(({ facade, op }) => ({
       facade,
       op,
-      done: ambient.enterChain(fact, async () => {
+      done: chain.within([...walked, fact], async () => {
         return this.reach(facade, fact)[op]({ ...Invocation.empty, input: payload });
       }),
     }));

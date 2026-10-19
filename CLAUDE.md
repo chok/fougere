@@ -786,7 +786,7 @@ Pinned by `log/tests/call-lines.test.ts`.
 dep like a port chain's, so the container learns nothing; a frond whose provider extends `Logger`
 keeps its class whole, since `child()` hands back a bare one. `during` is the operation the
 process is running (`blog:PostHandler.publish`), read from the async context
-(`Ambient.currentOperation`) that `HandlerFacade` enters INSIDE the middlewares — so a call line
+(the `operation` slot, `boot/slots.ts`) that `HandlerFacade` enters INSIDE the middlewares — so a call line
 carries its caller and a handler's own line carries itself. The labels are the scan's
 (`implementation.className`), never `ctor.name`, which a bundler rewrites. A runtime with no async
 context writes none. Pinned by `core/tests/own-logger.test.ts`.
@@ -993,9 +993,18 @@ entities, so a handler with no entity (`checkout.pay`) is served and the fields 
 own contract. A GraphQL TYPE is built from a schema an op returns, once per entity. Pinned by
 `adapter/rest/tests/stated.test.ts`, `routes.test.ts` and `core/tests/operation-overrides.test.ts`.
 
+**What runs now is carried by ONE context, and each package keeps its own slot in it** — `Ambient`
+(`core/src/boot/ambient-port.ts`), `ambient.slot<T>(name)`: core keeps `operation` and `request`
+(`boot/slots.ts`) and the fact chain, `@fougere/observability` its `span` (`traceContext.ts`), and a
+name answers the same slot each time it is asked. The realization is chosen once, by `#ambient` —
+an `AsyncLocalStorage`, or nothing on a Worker, where a slot holds no value and `degraded` says so.
+Core still holds no span: it carries values whose type it never sees. Observability used to keep a
+second `#trace-context` of its own, so the runtime was asked twice and a span could not see the
+request it ran within. The `Together` frame is not a slot: with no async context it becomes a lock.
+
 **Every way in runs ONE cycle, and core names no door** — `Door` (`core/src/entry/door.ts`): a
 package brings `decode`, `run` and `encode` in its own terms, and `app.answer(door, received)` runs
-them. The cycle opens a `DoorRequest` in the async context (`Ambient.enterRequest`), so every call
+them. The cycle opens a `DoorRequest` in the async context (the `request` slot), so every call
 the request makes carries it on its `DispatchEvent` — a request is not a call, and a GraphQL
 document makes several. It announces `DoorEvent`s (`received`, `decoded`, `encoded`, `failed`) to
 the same observer as the calls, and makes a refusal public by `toPublicError` before the door says
