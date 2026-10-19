@@ -9,6 +9,7 @@ import type { ProtocolConfig } from './Protocol.js';
 import { mergeStated, statesModule, type FrondsStated } from './FrondsStated.js';
 import { statedFronds } from './StatedFrond.js';
 import { DEFAULT_CONVENTIONS } from './Conventions.js';
+import type { StateEntry } from './FougereStates.js';
 
 export interface FougereConfig {
   /**
@@ -34,6 +35,11 @@ export interface FougereConfig {
   ports?: PortChoice;
   /** The protocols this app serves beside its own calls — named here, made available by an import. */
   protocols?: ProtocolConfig;
+  /**
+   * How each name of the caller's state is kept between requests — `{ cart: { cookie: { maxAge:
+   * 604800 } } }` — named here, the way to keep it brought by an import (`@fougere/state-cookie`).
+   */
+  state?: Record<string, StateEntry>;
 }
 
 const CONFIG_FILES = ['fougere.config.ts', 'fougere.config.js', 'fougere.config.mjs'];

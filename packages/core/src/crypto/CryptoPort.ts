@@ -9,4 +9,6 @@ export interface CryptoPort {
   signerOf(privateKeyPem: string): Promise<Signer>;
   /** From an SPKI PEM (the root's) or a JWK (the one a grant embeds). */
   verifierOf(key: string | PublicJwk): Promise<Verifier>;
+  /** HMAC-SHA-256 under a secret — what proves a value the caller keeps came from us, unchanged. */
+  macOf(secret: string): Promise<(data: Uint8Array) => Promise<Uint8Array>>;
 }

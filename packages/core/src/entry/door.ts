@@ -1,6 +1,8 @@
 import { DoorEvent } from '../dispatch/DoorEvent.js';
 import type { DispatchLifecycle } from '../dispatch/DispatchLifecycle.js';
 import { DoorRequest } from '../wire/DoorRequest.js';
+import type { DeclaredState } from '../module/state/States.js';
+import type { Seal } from '../module/state/Seal.js';
 import { ErrorCode } from '../wire/ErrorCode.js';
 import { FougereError } from '../wire/FougereError.js';
 import { toPublicError } from '../wire/http-error.js';
@@ -27,12 +29,19 @@ export interface Door<Received, Decoded, Answer> {
    * middlewares then stand around it; a door spanning several (a GraphQL document) has none.
    */
   readonly address?: string;
+  /**
+   * What it carries a caller's state in — `http` — and the carrier of one request: what a keeper of
+   * `state:` reads the arriving state from and writes the leaving state to. A door carrying nothing
+   * keeps no state, and `state.set` there says so.
+   */
+  readonly carries?: string;
+  carrier?(received: Received): unknown;
   /** What arrived, made into what the calls need — within `maxBodyBytes`, whatever the door. */
   decode(received: Received): Promise<Decoded>;
   /** The calls a request makes — one, or several for a document that asks for several things. */
   run(decoded: Decoded): Promise<unknown>;
   /** The outcome in the door's own shape — a status, an `errors` list, a frame — beside what arrived. */
-  encode(outcome: DoorOutcome, received: Received): Answer;
+  encode(outcome: DoorOutcome, received: Received, carrier?: unknown): Answer;
 }
 
 /** Running one request through a door — `app.answer`, or `answerAt` for a host holding no app. */
@@ -50,6 +59,8 @@ export interface DoorCycle {
   lifecycle: Pick<DispatchLifecycle, 'publish'>;
   /** The door middlewares the frond of an address declared, outermost first. */
   middlewaresAt?(address: string): readonly DoorAround[];
+  /** What `state:` declares, and the seal its values travel under. */
+  keeping?: { declared: readonly DeclaredState[]; seal: Seal };
 }
 
 /** A cycle nobody watches — a host holding a runner and no app, or a boot that refused. */
@@ -63,24 +74,39 @@ const UNWATCHED: DoorCycle = { enterRequest: (_request, fn) => fn(), lifecycle: 
 export function answerAt<Received, Decoded, Answer>(
   door: Door<Received, Decoded, Answer>,
   received: Received,
-  { enterRequest, lifecycle, middlewaresAt }: DoorCycle = UNWATCHED,
+  { enterRequest, lifecycle, middlewaresAt, keeping }: DoorCycle = UNWATCHED,
 ): Promise<Answer> {
   const request = DoorRequest.open(door.name);
 
   return enterRequest(request, async () => {
     lifecycle.publish(DoorEvent.received(request));
 
+    const carrier = keeping && door.carries && door.carrier ? door.carrier(received) : undefined;
+    const kept = carrier === undefined ? [] : keeping!.declared.filter((one) => one.keeper.over === door.carries);
+    for (const one of kept) {
+      request.keepable.add(one.name);
+      const token = one.keeper.read(carrier, one.name, one.options);
+      const value = token === undefined ? undefined : await keeping!.seal.open(token);
+      if (value !== undefined) request.arrived.set(one.name, value);
+    }
+
     const refused = (failure: unknown): Answer => {
       lifecycle.publish(DoorEvent.failed(request, failure));
 
-      return door.encode({ refused: door.trusted ? framedOf(failure) : publicOf(failure) }, received);
+      return door.encode({ refused: door.trusted ? framedOf(failure) : publicOf(failure) }, received, carrier);
     };
     const edges = async (): Promise<Answer> => {
       try {
         const decoded = await door.decode(received);
         lifecycle.publish(DoorEvent.decoded(request));
+        const answered = await door.run(decoded);
+        // What the calls wrote leaves with an answer, never with a refusal: a failed op keeps nothing.
+        for (const [name, value] of request.written) {
+          const one = kept.find((declared) => declared.name === name)!;
+          one.keeper.write(carrier, name, value === undefined ? undefined : await keeping!.seal.close(value), one.options);
+        }
 
-        return door.encode({ answered: await door.run(decoded) }, received);
+        return door.encode({ answered }, received, carrier);
       } catch (failure) {
         return refused(failure);
       }

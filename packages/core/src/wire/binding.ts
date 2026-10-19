@@ -23,7 +23,9 @@ export type BindingSource =
   | { kind: 'input' }
   | { kind: 'context' }
   /** The whole query bag, for an op whose argument IS the options (list). */
-  | { kind: 'query' };
+  | { kind: 'query' }
+  /** `State` — the caller's kept state, read and written through the request. */
+  | { kind: 'state' };
 
 interface ParamBinding {
   name: string;

@@ -43,7 +43,7 @@ describe('app.extensionPoints()', () => {
     expect(points).toContainEqual({ point: 'Payment', by: 'type', frond: 'blog', answers: ['StripePayment'] });
     expect(points).toContainEqual({ point: 'middleware', by: 'type', frond: 'blog', answers: ['Audit'] });
     expect(points).toContainEqual({ point: 'answer step', by: 'name', frond: 'blog', subject: 'post', answers: ['presenters'] });
-    expect(points).toContainEqual(expect.objectContaining({ point: 'binding source', by: 'name', answers: ['fact', 'pipe', 'collector'] }));
+    expect(points).toContainEqual(expect.objectContaining({ point: 'binding source', by: 'name', answers: ['fact', 'pipe', 'collector', 'state'] }));
     expect(points).toContainEqual({ point: 'extension', by: 'name', answers: ['schema', 'seeds', 'presenters'] });
   });
 });

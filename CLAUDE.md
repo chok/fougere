@@ -1052,6 +1052,19 @@ number` member is what `next()` hands back. The compiler reads the door's name o
 knows no door. Pinned by `compiler/tests/door-answers.test.ts`, `core/tests/door.test.ts` and
 `testing/tests/rest-middleware.test.ts`.
 
+**The caller's state is the dual of a source, and core keeps none of it** — an op asks for `state:
+State` (`wire/State.ts`, the `state` binding source in `module/state/`) and reads or writes it by
+name; `state:` in `fougere.config.ts` says how each name is kept (`{ cart: { cookie: { … } } }`),
+judged by the `States` registry the way `sources:` is by `Sources`, and a package brings the way to
+keep it (`@fougere/state-cookie`). Core holds KEYS and TOKENS only: the door cycle reads what arrived
+through the keeper the door's carrier matches (`Door.carries`, `Door.carrier`), opens it with the
+`Seal`, and seals what the calls wrote before the door encodes — never on a refusal, a failed op
+keeps nothing. Signed, not encrypted (`FOUGERE_STATE_KEY`, HMAC through the crypto port): the caller
+reads its value and cannot change it, a changed one reads as absent, and what must stay hidden is a
+reference kept elsewhere. A name `state:` does not declare, or one the door cannot carry, refuses
+`state.set` naming what it keeps. Pinned by `core/tests/state.keeping.test.ts`, with a keeper and a
+door of no real kind.
+
 **A process serves the REST door of the fronds it hosts** — `routesOf`
 (`adapter/rest/src/routes/RouteDefinition.ts`) leaves out an op whose `placement` is `remote`, and
 `fougere serve` answers REST beside the call envelope (`ServeOptions.beside`, over `restAnswer` in

@@ -97,6 +97,7 @@ export async function boot(options: BootOptions): Promise<App> {
     // hosts got it right through their own boot (`app/shared/src/boot.ts`), and this
     // path, the conventional one, served nothing.
     protocols: config.protocols,
+    state: config.state,
     // boot() called the factory, so boot() owns closing what it opened. Not an extension:
     // it was opened before the container existed, so it closes after the container goes.
     onDispose: layer?.close,

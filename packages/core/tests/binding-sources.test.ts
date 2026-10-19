@@ -17,8 +17,8 @@ const typed = (name: string, typeName: string, generic?: string): Param => ({
 });
 
 describe('BindingSources', () => {
-  it('asks the fact, the link and the collector, in that order', () => {
-    expect(BindingSources.names).toEqual(['fact', 'pipe', 'collector']);
+  it('asks the fact, the link, the collector and the state, in that order', () => {
+    expect(BindingSources.names).toEqual(['fact', 'pipe', 'collector', 'state']);
   });
 
   it('takes a fact for a fact even when its type has a collector', () => {

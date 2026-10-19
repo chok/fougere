@@ -49,3 +49,6 @@ export function op(
 
   return params ? { ...rest, signature: { name: '', params } } : { ...rest, binding: args };
 }
+
+/** The caller's kept state — `state: State`. */
+export const kept = (name = 'state'): Argument => argument(name, { kind: 'state' });

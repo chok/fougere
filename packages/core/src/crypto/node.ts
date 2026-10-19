@@ -1,5 +1,5 @@
 /** Ed25519 through `node:crypto` — the default realization, and the fast one. */
-import { createHash, createPrivateKey, createPublicKey, sign, verify } from 'node:crypto';
+import { createHash, createHmac, createPrivateKey, createPublicKey, sign, verify } from 'node:crypto';
 import type { CryptoPort } from './CryptoPort.js';
 import type { PublicJwk } from './PublicJwk.js';
 import type { Signer } from './Signer.js';
@@ -23,6 +23,10 @@ export const crypto: CryptoPort = {
       : createPublicKey({ key: key as never, format: 'jwk' });
 
     return { async verify(data, signature) { return verify(null, data, parsed, signature); } };
+  },
+
+  async macOf(secret) {
+    return async (data) => new Uint8Array(createHmac('sha256', secret).update(data).digest());
   },
 };
 

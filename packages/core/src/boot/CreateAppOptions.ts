@@ -9,6 +9,7 @@ import type { Transport } from '../wire/Transport.js';
 import type { Extension } from './Extension.js';
 import type { ConventionsInput } from '../ConventionsInput.js';
 import type { App } from './App.js';
+import type { StateEntry } from '../FougereStates.js';
 
 /** Options for createApp(). */
 export interface CreateAppOptions {
@@ -84,6 +85,8 @@ export interface CreateAppOptions {
   onDispose?: () => Promise<void> | void;
   /** The protocols this app serves — see `FougereConfig.protocols`. */
   protocols?: ProtocolConfig;
+  /** How each name of the caller's state is kept — see `FougereConfig.state`. */
+  state?: Record<string, StateEntry>;
   /** Carries an announced fact out of this process — a broker, a queue, a log. */
   onEmit?: (fact: string, payload: unknown) => void | Promise<void>;
 }

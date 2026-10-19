@@ -3,6 +3,7 @@ import { resolveConventions } from '../Conventions.js';
 import { servedProtocols } from './protocols.js';
 import { unregistered } from './unregistered.js';
 import { answerAt, type DoorAround } from '../entry/door.js';
+import { keepingOf } from '../module/state/keeping.js';
 import { DoorEvent } from '../dispatch/DoorEvent.js';
 import { dependencyCycles } from './dependencyCycles.js';
 import { lowerFirst, type SchemaView } from '@fougere/schema';
@@ -29,7 +30,7 @@ import type { CreateAppOptions } from './CreateAppOptions.js';
 import type { AppMiddleware } from '../wire/AppMiddleware.js';
 import { Carry } from '../builtin/Carry.js';
 import { Logger } from '../builtin/Logger.js';
-import { operation, request } from './slots.js';
+import { operation, request } from '../slots.js';
 import type { LogRecord } from '../builtin/LogRecord.js';
 import LogLine, { CARRIES_LINE } from '../builtin/LogLine.js';
 import { emitKeyOf, type Emit } from '../wire/Emit.js';
@@ -609,6 +610,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     const plugged: Plugged[] = [];
     const boundPorts = new Set<string>();
     const doorMiddlewaresAt = new Map<string, DoorAround[]>();
+    const keeping = await keepingOf(options.state, log);
     const assembly: Assembly = {
       container, routeRegistry, emissions, dispatcher, localDispatcher, effectiveByKey,
       boundPorts, refused, relations, hosting, operationModel, entityByName, frondOf, contractsOf,
@@ -667,6 +669,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
         enterRequest: (entered, fn) => request.within(entered, fn),
         lifecycle: dispatchLifecycle,
         middlewaresAt: (address) => doorMiddlewaresAt.get(address) ?? [],
+        keeping,
       }),
       use(...args: [AppMiddleware] | [string, AppMiddleware]): void {
         return typeof args[0] === 'string'

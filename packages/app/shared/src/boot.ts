@@ -209,6 +209,7 @@ async function boot(): Promise<App> {
     // were left behind once, under Nuxt only.
     ...layerOf(storage),
     protocols: fileConfig.protocols,
+    state: fileConfig.state,
     ports: fileConfig.ports,
     conventions: fileConfig.conventions,
     remotes,

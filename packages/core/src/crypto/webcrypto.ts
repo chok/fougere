@@ -1,5 +1,5 @@
 /** Ed25519 through WebCrypto — what a runtime with no `node:` builtin has. */
-import { derOf } from './encoding.js';
+import { bytesOf, derOf } from './encoding.js';
 import type { CryptoPort } from './CryptoPort.js';
 import type { PublicJwk } from './PublicJwk.js';
 import type { Signer } from './Signer.js';
@@ -8,9 +8,9 @@ import type { Verifier } from './Verifier.js';
 interface WebSubtle {
   digest(algorithm: string, data: Uint8Array): Promise<ArrayBuffer>;
   importKey(
-    format: 'pkcs8' | 'spki' | 'jwk',
+    format: 'pkcs8' | 'spki' | 'jwk' | 'raw',
     key: Uint8Array | PublicJwk,
-    algorithm: { name: string },
+    algorithm: { name: string; hash?: string },
     extractable: boolean,
     usages: string[],
   ): Promise<unknown>;
@@ -19,6 +19,7 @@ interface WebSubtle {
 }
 
 const ED25519 = { name: 'Ed25519' } as const;
+const HMAC = { name: 'HMAC', hash: 'SHA-256' } as const;
 
 /** Read at call time — a Worker has the global, and reading it at module load does not. */
 const subtle = (): WebSubtle =>
@@ -43,6 +44,12 @@ export const crypto: CryptoPort = {
       : await subtle().importKey('jwk', key, ED25519, false, ['verify']);
 
     return { verify: (data, signature) => subtle().verify(ED25519, imported, signature, data) };
+  },
+
+  async macOf(secret) {
+    const key = await subtle().importKey('raw', bytesOf(secret), HMAC, false, ['sign']);
+
+    return async (data) => new Uint8Array(await subtle().sign(HMAC, key, data));
   },
 };
 
