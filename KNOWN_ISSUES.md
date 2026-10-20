@@ -173,6 +173,14 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
   `openApiOf` (`adapter/rest/src/openapi/document.ts`) writes `{ type: 'string' }` for `id: Post['id']`
   rather than the field's own shape, and leaves out the list options (`limit`, `cursor`, `orderBy`) an
   op taking the query bag reads. Stated 2026-10-20.
+- **A SvelteKit page cannot import a frond `fougere sync` wrote** — `applyScaffold`
+  (`cli/src/scaffold/Scaffold.ts`) states `@fronds` in `kit.alias`, which names ONE directory, and
+  SvelteKit owns the `paths` of the tsconfig it generates, so the fallback onto `.fougere/remotes/` has
+  nowhere to be written. The other hosts read a list. Stated 2026-10-20.
+- **`fougere build` compiles what an import reaches, and nothing else** — `compileProject`
+  (`compiler/src/compile.ts`) follows the static imports of the config and the statement, so a module
+  loaded through a path computed at run time is not in `.fougere/build/`, and `@fronds/<name>/X.ts`
+  written with its `.ts` keeps it, which no file there answers. Stated 2026-10-20.
 - **`CrudViews` is typed on the five CRUD names** (`core/src/prefab/crud.ts`). Widening it to
   admit a custom op also admits `{ lst: Card }`, the typo the five names catch. Measured
   2026-08-24: zero custom ops want a closed view.
@@ -244,11 +252,13 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
 - **`unique()` builds two unique indexes on a fresh table** — `createTableSQL` writes the column
   constraint (`<table>_<column>_key`) and `delta` adds `<table>_<column>_idx` through `indexSQL`
   for the same column, so every write on it is checked twice. Measured on Postgres 17, 2026-09-17.
-- **Under Bun, a schema refused while a handler module loads surfaces as a TDZ error** —
-  `toHandlerEntry` (`compiler/src/scan/scanner.ts`) spreads the module (`{ ...mod }`), and Bun
-  throws `Cannot access 'CheckInput' before initialization` on the class whose `entity({…})` threw.
-  Node shows the real `SchemaError` (here `Every field states a shape — got {"anyOf":…}`).
-  Measured 2026-09-17.
+- **Under Bun, a schema refused while a module loads surfaces as a TDZ error, through jiti's module
+  cache** — `Cannot access 'CheckInput' before initialization` where Node shows the `SchemaError`.
+  Remeasured 2026-10-20: the import itself throws it, not the `{ ...mod }` of `toHandlerEntry`
+  (`compiler/src/scan/scanner.ts`) this entry used to blame; Bun's native `import()` and jiti with
+  `moduleCache: false` both report the real error. `fougere dev` loads without the cache and `fougere
+  serve` natively, so `check`, `call` and `migrate` under Bun are where it shows. Turning the cache off
+  for the scan is not the fix: an entity class is compared by identity across the modules that import it.
 
 ## Settled
 

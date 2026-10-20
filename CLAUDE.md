@@ -302,7 +302,7 @@ Pinned by `schema/tests/axis-registration.test.ts`.
 composed format a registration changes. A name has ONE answer: the same answer registered again is a
 no-op, a different one is refused naming the registry, `replace` says standing in its place is the
 point. It used to be a `Map.set`, so two packages registering `sqlite` lost the first in silence. A
-host re-reading the project in the same process says so — `fougere serve --watch` reloads inside
+host re-reading the project in the same process says so — `fougere dev` reloads inside
 `Registry.reloading`, where an answer replaces the one it had; the packages it does not re-run keep
 theirs. Measured 2026-10-18: `--watch` re-registers each `vocabulary/` file with a new function, Nuxt
 and Vite restart in a fresh context and re-register nothing. A registry is ONE form of an extension
@@ -631,6 +631,37 @@ the compiler out as a dev dependency, boots from it (`demos/react-router-blog`, 
 statement: an app that writes its own builds and runs with TypeScript never installed
 (`demos/no-compiler`). Measured cost of a boot that scans, 2026-10-18: about 20 ms, the write and the
 import. Pinned by `defaults/tests/statement.test.ts`, `compiler/tests/statement.test.ts`.
+
+**`@fronds/<name>` is resolved by a rule, read where TypeScript reads it** — `fronds/<name>`, then
+`.fougere/remotes/<name>`, the `paths` of `@fougere/core/tsconfig`. A tool that reads `paths` reads
+them there: TypeScript, Next, Vite 8 (`resolve.tsconfigPaths`, set by `fougere()`), Nuxt's pages
+(`prepare:types` writes the line into the tsconfig Nuxt generates). One that does not is handed a
+table at its start — `frondAliases` (`core/src/FrondAliases.ts`), for jiti, Nitro, `fougereTest()`
+and Next's two bundlers, whose `paths` never map a `.js` request onto the `.ts` beside it — and it
+reads the fronds only at that start anyway. A rename is a `paths` entry of `fronds/tsconfig.json`
+(`frondNamesOf`), since TypeScript is the reader no config reaches; `fougere.frond` in a
+`package.json` is gone. A frond is not a workspace member and has no `package.json`: the starter's
+workspace holds the apps alone (`"workspaces": ["apps/*"]`), because Next writes `typescript ^5`
+where Vite writes `~6.0.2` and no single manifest holds both. The package manager a project is
+written for is read, never asked when it can be told (`writtenFor`,
+`cli/src/scaffold/WrittenFor.ts`): `--package-manager`, the launcher's `npm_config_user_agent`,
+the project around (`package-manager-detector`), then a question, then npm said aloud. yarn 1 writes
+an npm project. What each one SAYS is `PackageManager` (`@fougere/cli/package-manager`), which reads
+no disk: the docs write a command once, as an npm block marked `pm`, and the site's tabs
+(`site/modules/managers.ts`) and its home line say it in the reader's tool through the same table. Measured 2026-10-20: a frond created during `nuxt dev` answers at its first import,
+and `door:check` runs every host under npm, pnpm, bun and yarn 4. Pinned by `cli/tests/scaffold.test.ts`
+and `compiler/tests/scanner.test.ts` (the rename).
+
+**`dev` transpiles, `serve` starts what `build` wrote** — `fougere build` compiles what the config and
+the statement reach into `.fougere/build/` (`compileProject`, `compiler/src/compile.ts`), beside the
+alias table and a `modules.js` importing each module key of `fronds:` from the project. `fougere serve`
+boots it (`bootApp(root, { built })`) through `registerFrondAliases` — `module.registerHooks`, or
+`Bun.plugin` where Bun has no hook — and loads neither jiti nor TypeScript: measured by removing both,
+2026-10-20. `fougere dev` is what `serve --watch` was, watching the convention directories, since a
+statement's fronds carry no `source.path` and `--watch` had watched nothing since boots moved to
+statements. The same graph starts in 56 ms built against 77 through jiti with a warm cache and 138
+cold. Under Bun, `type: 'sqlite'` is realized by `bun:sqlite` (`openOnBun`, `adapter/sql`), because
+`better-sqlite3`'s binding crashes it. Pinned by `compiler/tests/compile.test.ts`.
 
 **The names the scan reads** — `core/src/Conventions.ts`, read by `@fougere/compiler`. Everything else a frond states, it
 states by its SHAPE; the twelve convention directories and the import scope are the one place
