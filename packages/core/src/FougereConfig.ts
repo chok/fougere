@@ -51,6 +51,9 @@ export function configFileIn(dir: string): string | undefined {
 
 const STATEMENT_FILES = ['fronds.ts', 'fronds.mts', 'fronds.js', 'fronds.mjs'];
 
+/** Where `fougere build` writes the project as JavaScript, and `fougere serve` starts it from. */
+export const BUILT = join('.fougere', 'build');
+
 /** The fronds a directory states by hand — `frond()` calls beside the config, booted with no scan. */
 export function statementFileIn(dir: string): string | undefined {
   return STATEMENT_FILES.map((file) => resolve(dir, file)).find((path) => existsSync(path));
