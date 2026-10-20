@@ -1090,7 +1090,9 @@ runs code from a CDN. The page is the first answer that is not JSON
 
 **An op an announcement calls has no caller** — `listens` (`wire/Emit.ts`): an op whose binding takes
 a `Fact<T>` or a `Pipe<T>`. REST serves no route to it, GraphQL no field, and `pageDoor` refuses it
-(`PageDoorOptions.listens`); the peer door still reaches it, which is how a fact crosses, and so does
+(`PageDoorOptions.listens`, over `app.listens`, which reads the op's code when this process read it
+and its frond's card otherwise — a page's call forwarded to a frond known by its card alone leaves
+signed by this process, and the far side's peer door then trusts it); the peer door still reaches it, which is how a fact crosses, and so does
 the terminal, the operator replaying one. Both subscribers the extensions bring answered `POST
 /api/calls/keeps/record` and `/api/observability/exports/record` to anyone, measured on
 `demos/nuxt-blog` the day the OpenAPI document listed them. What enters from outside is a command,

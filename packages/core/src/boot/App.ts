@@ -39,6 +39,11 @@ export interface App extends DispatchPort {
   operationsFor(address: string, surface?: string): EffectiveOperationsMap | undefined;
   /** The facts this app has a listener for — what a carrier must subscribe to on its behalf. */
   listensTo(): string[];
+  /**
+   * Whether an announcement calls this op — read off its code when this process read it, off its
+   * frond's card when the frond answers elsewhere. A door open to callers names no such op.
+   */
+  listens(address: string, op: string): Promise<boolean>;
   /** Hand a fact that came from OUTSIDE to the listeners in this process — and stop there. */
   deliver(fact: string, payload: unknown): Promise<void>;
   /**

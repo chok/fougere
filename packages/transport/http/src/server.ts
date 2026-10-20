@@ -92,7 +92,7 @@ export interface PageDoorOptions {
   /** The page's own HTTP request — what a cookie-kept state arrives and leaves in, written back by the host. */
   carrier?: unknown;
   /** Whether an announcement calls this op — one a page may not name. */
-  listens?: (address: string, op: string) => boolean;
+  listens?: (address: string, op: string) => boolean | Promise<boolean>;
 }
 
 export function pageDoor(runner: Transport, { state, carrier, listens }: PageDoorOptions): Door<unknown, RpcCall, RpcResponse> {
@@ -109,7 +109,7 @@ export function pageDoor(runner: Transport, { state, carrier, listens }: PageDoo
           operation: op,
         });
       }
-      if (listens?.(address, op)) {
+      if (await listens?.(address, op)) {
         throw new FougereError({
           code: ErrorCode.NOT_FOUND,
           message: `${address}.${op} is called by an announcement, never by a page: call the command that announces it.`,

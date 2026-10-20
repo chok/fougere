@@ -34,7 +34,7 @@ import { Logger } from '../builtin/Logger.js';
 import { operation, request } from '../slots.js';
 import type { LogRecord } from '../builtin/LogRecord.js';
 import LogLine, { CARRIES_LINE } from '../builtin/LogLine.js';
-import { emitKeyOf, type Emit } from '../wire/Emit.js';
+import { emitKeyOf, listens, type Emit } from '../wire/Emit.js';
 
 import { Config } from '../builtin/config.js';
 import { createRemoteRouter, createRemoteFacade, type RemoteRouter } from './remote.js';
@@ -653,6 +653,14 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
       facadeFor,
       operationsFor,
       listensTo: () => emissions.listensTo(),
+      listens: async (address, op) => {
+        const read = operationsFor(address)?.get(op);
+        if (read) return listens(read);
+        // A frond known by its card alone: an address no remote answers is refused by the call itself.
+        const route = await remoteRouter?.route(address).catch(() => undefined);
+
+        return route?.listening.has(op) ?? false;
+      },
       deliver: (fact, payload) => emissions.deliver(fact, payload),
       storageFor,
       presenterFor,

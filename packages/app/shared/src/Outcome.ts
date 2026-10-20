@@ -4,7 +4,6 @@ import {
   callValueOf,
   ErrorCode,
   FougereError,
-  listens,
   serves,
   type App,
   type BootRefusal,
@@ -44,7 +43,7 @@ export function serveRpc(
   return app.answer(pageDoor(createAppRunner(app, surface), {
     state: request.state,
     carrier: request.carrier,
-    listens: (address, op) => listens(app.operationsFor(address, surface)?.get(op) ?? {}),
+    listens: (address, op) => app.listens(address, op),
   }), request.body);
 }
 

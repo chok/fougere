@@ -169,11 +169,6 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
 - **A session row is never swept** — `@fougere/state-session` deletes a row once its names are all
   forgotten, and keeps every other one: a caller who never comes back leaves its row behind. Nothing
   expires it yet, which is why `session: {}` admits no `maxAge`. Stated 2026-10-20.
-- **A page reaches a listener of a frond this process never read** — `pageDoor` refuses an op an
-  announcement calls by reading `app.operationsFor` (`app/shared/src/Outcome.ts`, `serveRpc`), which
-  holds the fronds this process scanned. A frond known only by its card has no effective table here,
-  so a page naming its listener is forwarded, signed by the host, and the peer door takes it. The card
-  states `listens` (`CardOp`); reading it there closes it. Stated 2026-10-20.
 - **The OpenAPI document reads a parameter as a string unless the signature coerces it** —
   `openApiOf` (`adapter/rest/src/openapi/document.ts`) writes `{ type: 'string' }` for `id: Post['id']`
   rather than the field's own shape, and leaves out the list options (`limit`, `cursor`, `orderBy`) an

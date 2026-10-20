@@ -162,6 +162,21 @@ describe('a listener whose code this process never read', () => {
     expect(heard()).toEqual(['search:7']);
   });
 
+  it('is known as one by its card, so no door open to callers forwards a call to it', async () => {
+    // A page's call reaches this process, which forwards it signed by itself: the far side's peer
+    // door then trusts it. Only this side can refuse, and the card is all it has to read.
+    await using far = await createApp({ fronds: search, createContainer });
+    await using near = await createApp({
+      fronds: [blog],
+      createContainer,
+      remotes: { search: 'http://127.0.0.1:9' },
+      remoteTransport: () => createLocalRunner(far),
+    });
+
+    expect(await near.listens('index', 'reindex')).toBe(true);
+    expect(await near.listens('post', 'publish')).toBe(false);
+  });
+
   it('is reached once when its code was read here as well', async () => {
     const wire: string[] = [];
     await using far = await createApp({ fronds: search, createContainer });

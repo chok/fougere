@@ -27,6 +27,8 @@ interface Route {
    * shape `entity({...})` produces, live validation included.
    */
   outputs: Map<string, SchemaView>;
+  /** The ops an announcement calls there — what its card says each one `listens` to. */
+  listening: Set<string>;
 }
 
 export interface RemoteRouter {
@@ -188,6 +190,7 @@ function claimFacades(
         transport,
         outputs: new Map(facade.ops.flatMap((op) =>
           op.output ? [[op.name, Card.fromDescriptor(op.output).toSchema()] as const] : [])),
+        listening: new Set(facade.ops.flatMap((op) => (op.listens ? [op.name] : []))),
       });
     }
   }
