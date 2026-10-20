@@ -91,7 +91,8 @@ function webRequestOf(req: IncomingMessage): Request {
   for (const [name, value] of Object.entries(req.headers)) {
     if (value !== undefined) headers.set(name, Array.isArray(value) ? value.join(', ') : value);
   }
-  const reads = req.method !== 'GET' && req.method !== 'HEAD';
+  // A message carries a body when it says so — a length, or chunks — and a POST with neither has none.
+  const reads = Number(req.headers['content-length']) > 0 || req.headers['transfer-encoding'] !== undefined;
 
   return new Request(`http://${req.headers.host ?? 'localhost'}${req.url ?? '/'}`, {
     method: req.method,
