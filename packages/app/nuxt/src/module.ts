@@ -157,9 +157,9 @@ const module = defineNuxtModule<FougereModuleOptions>({
     const { fronds } = scan;
 
     // ── 1b. Resolve @fronds/* where TypeScript reads it, and watch the fronds ──
-    // A page resolves through the `paths` Vite reads, so a frond created while the server runs
-    // is found at its first import. Nitro reads no `paths`: the server bundle imports what the
-    // scan above found, and the table is as old as that scan.
+    // The table answers every frond this start found, on any Vite and in Nitro, which reads no
+    // `paths`. Vite 8 also reads the `paths`, which is what finds a frond created while the
+    // server runs; an older Vite ignores the option and keeps to the table.
     const scope = `${conventions.scope}/*`;
     const local = resolve(scanRoot, conventions.fronds);
     const paths: Record<string, string[]> = {
@@ -175,15 +175,13 @@ const module = defineNuxtModule<FougereModuleOptions>({
         config.compilerOptions = { ...config.compilerOptions, paths: { ...config.compilerOptions?.paths, ...paths } };
       }
     });
-    (nuxt as any).hook('nitro:config', (nitroConfig: any) => {
-      nitroConfig.alias = { ...aliases, ...nitroConfig.alias };
-    });
 
     // The frond directories ARE the watch list — nothing to declare. Without this, a
     // frond under `apps/../..` sits outside rootDir, so Nuxt never restarts: the scan,
     // the additive migration (once per boot) and the seeds all keep the previous shape,
     // and a field you just added is simply absent with no error anywhere.
-    for (const path of Object.values(aliases)) {
+    for (const [specifier, path] of Object.entries(aliases)) {
+      nuxt.options.alias[specifier] = path;
       const watched = [path];
       // Nuxt reads this list TWICE and a directory serves only the first read: the
       // watcher adds string entries, while the restart test is `pattern === path`

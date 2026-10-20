@@ -28,29 +28,29 @@ function projectWith(fronds: Record<string, string[]>): string {
 }
 
 /** Run the plugin's config hook the way Vite does, and hand back what it wrote. */
-function resolve(plugin: ReturnType<typeof fougere>, config: Record<string, any> = {}) {
-  const hook = plugin.config as { handler: (c: Record<string, any>) => void };
-  hook.handler(config);
+async function resolve(plugin: ReturnType<typeof fougere>, config: Record<string, any> = {}) {
+  const hook = plugin.config as { handler: (c: Record<string, any>) => Promise<void> };
+  await hook.handler(config);
 
   return config;
 }
 
 describe('entityNamesIn', () => {
-  it('reads every entity of every frond, by file name', () => {
+  it('reads every entity of every frond, by file name', async () => {
     const root = projectWith({ blog: ['Post.ts', 'Author.ts'], user: ['User.ts'] });
     expect(entityNamesIn(root).sort()).toEqual(['Author', 'Post', 'User']);
   });
 
-  it('accepts .tsx and ignores anything else', () => {
+  it('accepts .tsx and ignores anything else', async () => {
     const root = projectWith({ blog: ['Post.ts', 'Widget.tsx', 'notes.md', 'Post.js.map'] });
     expect(entityNamesIn(root).sort()).toEqual(['Post', 'Widget']);
   });
 
-  it('answers nothing for a project with no fronds, rather than throwing', () => {
+  it('answers nothing for a project with no fronds, rather than throwing', async () => {
     expect(entityNamesIn(mkdtempSync(join(tmpdir(), 'empty-')))).toEqual([]);
   });
 
-  it('skips a frond that declares no entities', () => {
+  it('skips a frond that declares no entities', async () => {
     const root = projectWith({ blog: ['Post.ts'] });
     mkdirSync(join(root, 'fronds', 'empty'), { recursive: true });
     expect(entityNamesIn(root)).toEqual(['Post']);
@@ -58,47 +58,47 @@ describe('entityNamesIn', () => {
 });
 
 describe('the plugin runs last and writes, rather than proposing', () => {
-  it('declares itself post so a framework plugin cannot overwrite it', () => {
+  it('declares itself post so a framework plugin cannot overwrite it', async () => {
     expect((fougere().config as { order: string }).order).toBe('post');
   });
 
-  it('reserves the entity identifiers — the class name is already gone by then', () => {
+  it('reserves the entity identifiers — the class name is already gone by then', async () => {
     const root = projectWith({ blog: ['Post.ts', 'Author.ts'] });
-    const config = resolve(fougere(), { root });
+    const config = await resolve(fougere(), { root });
 
     expect(config.build.minify).toBe('terser');
     expect(config.build.terserOptions.mangle.reserved.sort()).toEqual(['Author', 'Post']);
   });
 
-  it('overwrites a minifier the host already chose — that is the whole point', () => {
+  it('overwrites a minifier the host already chose — that is the whole point', async () => {
     const root = projectWith({ blog: ['Post.ts'] });
-    const config = resolve(fougere(), { root, build: { minify: 'esbuild' } });
+    const config = await resolve(fougere(), { root, build: { minify: 'esbuild' } });
     expect(config.build.minify).toBe('terser');
   });
 
-  it('keeps identifiers the app reserved itself', () => {
+  it('keeps identifiers the app reserved itself', async () => {
     const root = projectWith({ blog: ['Post.ts'] });
-    const config = resolve(fougere(), {
+    const config = await resolve(fougere(), {
       root,
       build: { terserOptions: { mangle: { reserved: ['MyThing'] } } },
     });
     expect(config.build.terserOptions.mangle.reserved.sort()).toEqual(['MyThing', 'Post']);
   });
 
-  it('takes extra names from the caller, for entities outside fronds/', () => {
+  it('takes extra names from the caller, for entities outside fronds/', async () => {
     const root = projectWith({ blog: ['Post.ts'] });
-    const config = resolve(fougere({ reserved: ['Legacy'] }), { root });
+    const config = await resolve(fougere({ reserved: ['Legacy'] }), { root });
     expect(config.build.terserOptions.mangle.reserved.sort()).toEqual(['Legacy', 'Post']);
   });
 
-  it('touches no minifier when there is nothing to protect', () => {
-    const config = resolve(fougere(), { root: mkdtempSync(join(tmpdir(), 'empty-')) });
+  it('touches no minifier when there is nothing to protect', async () => {
+    const config = await resolve(fougere(), { root: mkdtempSync(join(tmpdir(), 'empty-')) });
     expect(config.build).toBeUndefined();
   });
 
-  it('leaves the minifier alone when the app says so, and still externalizes', () => {
+  it('leaves the minifier alone when the app says so, and still externalizes', async () => {
     const root = projectWith({ blog: ['Post.ts'] });
-    const config = resolve(fougere({ keepClassNames: false }), { root });
+    const config = await resolve(fougere({ keepClassNames: false }), { root });
 
     expect(config.build).toBeUndefined();
     expect(config.ssr.external).toContain('jiti');
@@ -106,13 +106,13 @@ describe('the plugin runs last and writes, rather than proposing', () => {
 });
 
 describe('the runtime packages', () => {
-  it('keeps the boot out of the bundle — it reads frond sources off disk', () => {
-    const config = resolve(fougere(), { root: mkdtempSync(join(tmpdir(), 'x-')) });
+  it('keeps the boot out of the bundle — it reads frond sources off disk', async () => {
+    const config = await resolve(fougere(), { root: mkdtempSync(join(tmpdir(), 'x-')) });
     for (const pkg of RUNTIME_PACKAGES) expect(config.ssr.external).toContain(pkg);
   });
 
-  it('adds to what the app declared instead of replacing it', () => {
-    const config = resolve(fougere({ external: ['sharp'] }), {
+  it('adds to what the app declared instead of replacing it', async () => {
+    const config = await resolve(fougere({ external: ['sharp'] }), {
       root: mkdtempSync(join(tmpdir(), 'x-')),
       ssr: { external: ['mine'] },
     });
@@ -121,8 +121,8 @@ describe('the runtime packages', () => {
     expect(config.ssr.external).toContain('jiti');
   });
 
-  it('lists each package once', () => {
-    const config = resolve(fougere({ external: ['jiti'] }), {
+  it('lists each package once', async () => {
+    const config = await resolve(fougere({ external: ['jiti'] }), {
       root: mkdtempSync(join(tmpdir(), 'x-')),
       ssr: { external: ['jiti'] },
     });

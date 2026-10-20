@@ -5,7 +5,7 @@ import { join, dirname, resolve } from 'node:path';
 import type { Plugin } from 'vite';
 import { RUNTIME_PACKAGES } from '@fougere/core/node';
 import { type Conventions, DEFAULT_CONVENTIONS } from '@fougere/core';
-import { projectRootOf } from '@fougere/core/node';
+import { frondAliases, projectRootOf } from '@fougere/core/node';
 
 /** The entity names a build must not rename, read off the filesystem. */
 export function entityNamesIn(root: string, conventions: Conventions = DEFAULT_CONVENTIONS): string[] {
@@ -162,7 +162,7 @@ export function fougere(options: FougereViteOptions = {}): Plugin {
     /** `order. */
     config: {
       order: 'post',
-      handler(config: Record<string, any>) {
+      async handler(config: Record<string, any>) {
         config.ssr ??= {};
         config.ssr.external = [...new Set([...(config.ssr.external ?? []), ...external])];
 
@@ -175,15 +175,17 @@ export function fougere(options: FougereViteOptions = {}): Plugin {
         process.env.FOUGERE_ROOT = frondsOf(app);
         config.resolve ??= {};
         // `@fronds/<name>` is read where TypeScript reads it, so a frond created while the server
-        // runs resolves at its first import. Vite 8 states the option; an older one ignores it.
+        // runs resolves at its first import. Vite 8 states the option; an older one ignores it and
+        // keeps to the table below, which answers every frond this start found.
         config.resolve.tsconfigPaths ??= true;
+        const fronds = await frondAliases(frondsOf(app));
         // Vite admits BOTH shapes and a host picks one: SvelteKit states an array of
         // `{ find, replacement }`, and spreading an object over it made rolldown refuse the
         // whole plugin — `StringExpected … on BindingViteAliasPluginAlias.replacement`.
         const facade = join(app, FACADE);
         config.resolve.alias = Array.isArray(config.resolve.alias)
-          ? [...config.resolve.alias, { find: '@fronds/facade', replacement: facade }]
-          : { ...config.resolve.alias, '@fronds/facade': facade };
+          ? [...config.resolve.alias, { find: '@fronds/facade', replacement: facade }, ...Object.entries(fronds).map(([find, replacement]) => ({ find, replacement }))]
+          : { ...config.resolve.alias, '@fronds/facade': facade, ...fronds };
 
         if (options.keepClassNames === false) return;
 
