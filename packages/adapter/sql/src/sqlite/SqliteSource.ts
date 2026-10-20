@@ -55,13 +55,43 @@ export function createSqliteSource(opts: SqliteSourceOptions = {}): SqliteSource
   };
 }
 
+/** The SQLite this runtime has: Bun's own when it runs under Bun, where `better-sqlite3`'s native binding does not load. */
 function open(path: string): BetterSqlite.Database {
+  if ((globalThis as { Bun?: unknown }).Bun) return openOnBun(path);
   const [Database] = modulesOf('sqlite') as [typeof BetterSqlite];
   try {
     return new Database(path);
   } catch (error) {
     throw new Error(unopened(error, path), { cause: error });
   }
+}
+
+interface BunStatement { columnNames: string[] }
+interface BunDatabase {
+  prepare(sql: string): BunStatement;
+  exec(sql: string): void;
+  close(): void;
+}
+
+/**
+ * `bun:sqlite` in the shape Kysely's dialect and this source read. It already prepares, runs and iterates
+ * the same way; what it lacks is `reader` — whether a statement answers rows — which its columns say,
+ * and `pragma`, which is a statement like any other.
+ */
+function openOnBun(path: string): BetterSqlite.Database {
+  const { Database } = builtin<{ Database: new (path: string) => BunDatabase }>('bun:sqlite', 'sqlite');
+  const database = new Database(path);
+
+  return {
+    prepare: (sql: string) => {
+      const statement = database.prepare(sql);
+
+      return Object.assign(statement, { reader: statement.columnNames.length > 0 });
+    },
+    exec: (sql: string) => database.exec(sql),
+    pragma: (statement: string) => database.exec(`pragma ${statement}`),
+    close: () => database.close(),
+  } as unknown as BetterSqlite.Database;
 }
 
 function unopened(error: unknown, path: string): string {
