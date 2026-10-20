@@ -1,6 +1,5 @@
 import { Logger, applyConfig, createApp, type App, type CreateAppOptions, type Extension, type FougereConfig, type FrondDescriptor, type Transport } from '@fougere/core';
-import { getModuleLoader, loadConfig, remotesOf, statedModules, statementFileIn, statementIn, type ModuleLoader, type Statement } from '@fougere/core/node';
-import { createJiti } from 'jiti';
+import { getModuleLoader, loadConfig, MODULES, remotesOf, statedModules, statementFileIn, statementIn, type ModuleLoader, type Statement } from '@fougere/core/node';
 import { join, resolve, sep } from 'node:path';
 import { existsSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
@@ -10,6 +9,11 @@ import type { Container } from '@fougere/container';
 interface BootOptions {
   /** Project root. Defaults to process.cwd(). */
   root?: string;
+  /**
+   * Where `fougere build` wrote the project as JavaScript. Its config and its statement are read
+   * there, so nothing is transpiled; the data the config names stays under `root`.
+   */
+  built?: string;
   /** Override config (merged with fougere.config.ts). */
   config?: Partial<FougereConfig>;
   /** The container to resolve through. Absent, core builds its own. */
@@ -53,8 +57,9 @@ export async function boot(options: BootOptions): Promise<App> {
   const root = options.root ?? process.cwd();
   log.info(`root: ${root}`);
 
+  const code = options.built ?? root;
   log.debug('loading config');
-  const fileConfig = await loadConfig(root);
+  const fileConfig = await loadConfig(code);
   const config: FougereConfig = { ...fileConfig, ...options.config };
   // What this config changes in the process, said the same way at boot and at reload —
   // there is one applier, and a host re-reading later calls the very same function.
@@ -69,10 +74,10 @@ export async function boot(options: BootOptions): Promise<App> {
   }
 
   // What the config names by module — imported here, because core resolves no specifier.
-  const stated = await statedModules(config.fronds, fromProject(root));
+  const stated = await statedModules(config.fronds, fromProject(root, options.built));
   const only = options.only ?? options.fronds;
   // Every boot starts from a statement: the one the project wrote, or the one the scan writes for it.
-  const statement = await statementOf(root, { conventions: config.conventions });
+  const statement = await statementOf(code, { conventions: config.conventions });
   const hosted = [...statement.fronds, ...stated.fronds].filter((frond) => !only || only.includes(frond.name));
 
   log.debug('creating app');
@@ -121,13 +126,25 @@ export async function boot(options: BootOptions): Promise<App> {
  * A package a config names — `'@fougere/log'` — resolved from the PROJECT, whose dependency it is:
  * core's own loader takes it for a file path. A path goes to whatever loader the caller installed,
  * which knows the project's aliases.
+ *
+ * Built, the build already imported each one from the project: its module answers by key, and
+ * nothing is loaded to resolve them.
  */
-function fromProject(root: string): ModuleLoader {
-  const project = createJiti(pathToFileURL(resolve(root) + sep).href, { interopDefault: true });
+function fromProject(root: string, built?: string): ModuleLoader {
+  type Imports = (id: string) => Promise<Record<string, unknown>>;
+  let project: Promise<Imports> | undefined;
+  const imports = (): Promise<Imports> => project ??= built
+    ? import(pathToFileURL(join(built, MODULES)).href).then(({ default: table }: { default: Record<string, () => Promise<Record<string, unknown>>> }) =>
+      (id: string) => table[id]?.() ?? getModuleLoader()(id))
+    : import('jiti').then(({ createJiti }) => {
+      const jiti = createJiti(pathToFileURL(resolve(root) + sep).href, { interopDefault: true });
 
-  return (id, options) => (id.startsWith('.') || id.startsWith('/')
+      return (id: string) => jiti.import(id) as Promise<Record<string, unknown>>;
+    });
+
+  return (id, options) => (!built && (id.startsWith('.') || id.startsWith('/'))
     ? getModuleLoader()(id, options)
-    : project.import(id) as Promise<Record<string, unknown>>);
+    : imports().then((load) => load(id)));
 }
 
 /**

@@ -29,6 +29,8 @@ export interface BootAppOptions {
    * anything that outlives it is migrated by `fougere migrate --apply`.
    */
   migrates?: boolean;
+  /** Where `fougere build` wrote the project as JavaScript — read instead of the sources. */
+  built?: string;
 }
 
 /**
@@ -36,7 +38,7 @@ export interface BootAppOptions {
  * conventional way (container + sqlite + http remotes).
  */
 export async function bootApp(root: string, opts: BootAppOptions = {}): Promise<App> {
-  const config = await loadConfig(root);
+  const config = await loadConfig(opts.built ?? root);
   // What this process serves is never remote to it, whatever `fronds:` says of it elsewhere:
   // `fougere serve blog` refused to start on a config that places `blog` at an address.
   const served = new Set(opts.only ?? opts.fronds ?? []);
@@ -46,6 +48,7 @@ export async function bootApp(root: string, opts: BootAppOptions = {}): Promise<
 
   return boot({
     root,
+    built: opts.built,
     only: opts.only ?? opts.fronds,
     // `{}` and never undefined: `boot` reads the config's own `fronds:` when handed nothing.
     remotes: useRemotes ? elsewhere : {},
