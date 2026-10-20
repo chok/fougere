@@ -81,8 +81,8 @@ After every change to handlers, entities, Fronds, configuration, or topology:
 
 ```bash
 fougere check
-pnpm test
-pnpm typecheck
+__run__ test
+__run__ typecheck
 ```
 
 `fougere check` is the Fougere model barrier; tests and TypeScript come after it passes.

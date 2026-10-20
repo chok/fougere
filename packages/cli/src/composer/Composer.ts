@@ -38,6 +38,8 @@ export interface ComposerOptions {
   catalog: Catalog;
   exists: (name: string) => boolean;
   refusals: (plan: Plan, overwrite: boolean) => string[];
+  /** What the plan is written again with — `npm create fougere`, or the package manager that started this. */
+  entry?: string;
   input?: Readable;
   output?: Writable;
 }
@@ -125,7 +127,7 @@ export class Composer {
       ...(this.step === 'project' ? [] : [`${bar}  ${pc.dim(MEANING[this.step])}`, bar]),
       ...body.map((line) => `${bar}  ${line}`),
       bar,
-      `${bar}  ${pc.dim('Same, with no prompt:')} ${commandOf(plan)}`,
+      `${bar}  ${pc.dim('Same, with no prompt:')} ${commandOf(plan, this.options.entry)}`,
       ...(refusal ? [`${bar}  ${pc.yellow(refusal)}`] : []),
       `${pc.gray('└')}  ${pc.dim(this.hint())}`,
     ].join('\n');

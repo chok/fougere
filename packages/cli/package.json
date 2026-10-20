@@ -1,7 +1,7 @@
 {
   "name": "@fougere/cli",
   "version": "0.25.0-alpha.0",
-  "description": "The Fougere CLI \u2014 compose a workspace, serve a frond, call an operation.",
+  "description": "The Fougere CLI — compose a workspace, serve a frond, call an operation.",
   "keywords": [
     "fougere",
     "cli",
@@ -26,7 +26,11 @@
       "types": "./dist/src/index.d.ts",
       "import": "./dist/src/index.js"
     },
-    "./bin": "./dist/src/bin.js"
+    "./bin": "./dist/src/bin.js",
+    "./package-manager": {
+      "types": "./dist/src/scaffold/PackageManager.d.ts",
+      "import": "./dist/src/scaffold/PackageManager.js"
+    }
   },
   "files": [
     "dist",
@@ -56,6 +60,7 @@
     "jiti": "^2.4.2",
     "jsonc-parser": "^3.3.1",
     "magicast": "^0.5.4",
+    "package-manager-detector": "^1.9.0",
     "picocolors": "^1.1.1",
     "safe-regex": "^2.1.1"
   },

@@ -2118,6 +2118,9 @@ importers:
       magicast:
         specifier: ^0.5.4
         version: 0.5.4
+      package-manager-detector:
+        specifier: ^1.9.0
+        version: 1.9.0
       picocolors:
         specifier: ^1.1.1
         version: 1.1.1
@@ -2192,6 +2195,9 @@ importers:
       dequal:
         specifier: ^2.0.3
         version: 2.0.3
+      get-tsconfig:
+        specifier: ^4.14.3
+        version: 4.14.3
     devDependencies:
       '@types/node':
         specifier: ^22.0.0
@@ -8678,6 +8684,9 @@ packages:
 
   get-tsconfig@4.14.1:
     resolution: {integrity: sha512-Dz/6HxkrxgNehhxLVeyv8sad9UzF2xBVeaKBQNDfJ5XiSXmp2gTR0eO0RWiT2NCKS5aGP9jjkOMggTN90qU50A==}
+
+  get-tsconfig@4.14.3:
+    resolution: {integrity: sha512-++QEw4DIY7WGoukz+/+A/8dGYPT9l9yIadnmSgZ8Rjr3YVSVDipQSO9CdnJo9ePqFqUUqh+wk9uIaoiAwsiPkA==}
 
   giget@3.3.0:
     resolution: {integrity: sha512-gzi2D96p+AMfDcmJHGDj3KJ9NRiwvlFAU5yfa3ROwWZmFUjX4P43x3BcyRaOMMLto1vUo7C+86+MFhYTl6Ryiw==}
@@ -21017,6 +21026,10 @@ snapshots:
   get-stream@8.0.1: {}
 
   get-tsconfig@4.14.1:
+    dependencies:
+      resolve-pkg-maps: 1.0.0
+
+  get-tsconfig@4.14.3:
     dependencies:
       resolve-pkg-maps: 1.0.0
 

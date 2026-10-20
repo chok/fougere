@@ -7,8 +7,8 @@ import { FacadeTypes } from '../../../src/typescript/FacadeTypes.js';
 // lived in this file and went stale the day an op stopped being a bare name: nothing
 // compared the copy to the original, so the drift cost nothing until someone read it.
 import { assertIdentityCard, type IdentityCard } from '@fougere/core';
-import { resolveConventions, frondPackage } from '@fougere/core';
-import { loadConfig } from '@fougere/core/node';
+import { resolveConventions } from '@fougere/core';
+import { REMOTES, loadConfig } from '@fougere/core/node';
 import { codesOf, facadeModule, type Served } from '@fougere/core/node';
 
 function assertSafeName(kind: string, name: string): void {
@@ -131,13 +131,13 @@ export default class SyncHandler {
       throw new Error(`Frond '${input.frond}' not found on ${baseUrl}. Available: ${card.fronds.map((f) => f.name).join(', ')}`);
     }
 
-    // The consumer's own convention: a synced frond is laid out like the ones they wrote,
-    // and the export map below is what makes `@fronds/<name>/<dir>/X.js` resolve.
+    // The consumer's own convention: a synced frond is laid out like the ones they wrote, so
+    // `@fronds/<name>/<dir>/X.js` resolves the way theirs do.
     const conventions = resolveConventions((await loadConfig(this.cwd)).conventions);
     const entities = conventions.dirs.entities;
     const handlers = conventions.dirs.handlers;
 
-    const frondDir = join(this.cwd, '.fougere', 'remotes', input.frond);
+    const frondDir = join(this.cwd, REMOTES, input.frond);
     const entitiesDir = join(frondDir, entities);
     const handlersDir = join(frondDir, handlers);
     mkdirSync(entitiesDir, { recursive: true });
@@ -269,20 +269,6 @@ export default class SyncHandler {
     ]);
     writeFileSync(join(frondDir, 'index.ts'), indexLines.join('\n') + '\n');
 
-    // Package.json
-    writeFileSync(join(frondDir, 'package.json'), JSON.stringify({
-      name: frondPackage(input.frond, conventions),
-      version: '0.0.0-synced',
-      type: 'module',
-      fougere: { frond: input.frond, synced: true, source: baseUrl },
-      exports: {
-        '.': './index.ts',
-        [`./${entities}/*`]: `./${entities}/*.ts`,
-        [`./${handlers}/*`]: `./${handlers}/*.ts`,
-        './package.json': './package.json',
-      },
-    }, null, 2) + '\n');
-
     // .fougere/remotes.json is the central registry of synced remotes.
     this.updateRemotesRegistry(input.frond, baseUrl, frondDir);
 
@@ -290,8 +276,8 @@ export default class SyncHandler {
      * What the host no longer serves stops being importable here.
      *
      * The barrel is rewritten every run, so a dropped entity loses its export on its own
-     * — but the FILE stayed, and the generated `package.json` exports `'./entities/*'` as
-     * a wildcard, so `@fronds/blog/entities/Ticket.js` kept resolving to a class nothing
+     * — but the FILE stayed, and `@fronds/*` resolves by directory, so
+     * `@fronds/blog/entities/Ticket.js` kept resolving to a class nothing
      * behind it answers for. The consumer compiles, its local validator accepts, and the call
      * comes back NOT_FOUND at the facade — or never leaves, because the page dropped the
      * call and kept the type.

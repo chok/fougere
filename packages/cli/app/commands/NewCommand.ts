@@ -4,6 +4,8 @@ import { join } from 'node:path';
 import ProjectWriter from '../../fronds/scaffold/services/ProjectWriter.js';
 import { Composer } from '../../src/composer/Composer.js';
 import { OFFERED } from '../../src/composer/Offered.js';
+import { PackageManager } from '../../src/scaffold/PackageManager.js';
+import { writtenFor } from '../../src/scaffold/WrittenFor.js';
 import { type Catalog, type Plan, commandOf, planOf, refusalsOf } from '../../src/composer/Plan.js';
 import type { ui as createUi } from '../../src/ui.js';
 import type { App } from '@fougere/core';
@@ -22,6 +24,8 @@ export default class NewCommand {
   async run(raw: Record<string, unknown>) {
     const writer = new ProjectWriter();
     const cwd = process.cwd();
+    // `--local` links into this monorepo, which only pnpm's `link:` and overrides express.
+    const found = raw.local ? new PackageManager('pnpm') : await writtenFor(raw.packageManager as string | undefined, cwd);
     const catalog: Catalog = { fronds: writer.listTemplates('fronds'), apps: writer.listTemplates('apps') };
     const refusals = (plan: Plan, replace: boolean) => refusalsOf(plan, catalog, { cwd, replace });
     const exists = (name: string) => existsSync(join(cwd, name));
@@ -35,7 +39,7 @@ export default class NewCommand {
         throw new Error('No terminal to ask in. State the project: fougere new shop --frond blog --app nuxt, or --bare for the empty shell.');
       }
       const offered = { ...catalog, apps: catalog.apps.filter((app) => OFFERED.includes(app)) };
-      const composed = await new Composer({ name: (raw.name as string | undefined) ?? '', catalog: offered, exists, refusals }).ask();
+      const composed = await new Composer({ name: (raw.name as string | undefined) ?? '', catalog: offered, exists, refusals, entry: found?.create() }).ask();
       if (!composed) return;
 
       plan = composed.plan;
@@ -48,10 +52,13 @@ export default class NewCommand {
     const refused = refusals(plan, replace);
     if (refused.length) throw new Error(refused.join('\n'));
 
+    const manager = found ?? await this.managerOf(stated === undefined && terminal);
+    if (!manager) return;
+
     const dir = join(cwd, plan.name);
     const spinner = this.ui.spinner(`Writing ${plan.name}/`);
     try {
-      await writer.write(plan, dir, { local: Boolean(raw.local), replace, progress: spinner.update });
+      await writer.write(plan, dir, { local: Boolean(raw.local), replace, manager, progress: spinner.update });
     } catch (error) {
       spinner.stop('Nothing was written.');
       throw error;
@@ -59,13 +66,29 @@ export default class NewCommand {
     spinner.stop(`${plan.name}/ written`);
 
     const guided = !stated;
-    const installed = guided && await this.ui.confirm({ message: 'Install the dependencies now? (pnpm install)', initialValue: true })
-      && spawnSync('pnpm', ['install'], { cwd: dir, stdio: 'inherit' }).status === 0;
+    const installed = guided && await this.ui.confirm({ message: `Install the dependencies now? (${manager.install()})`, initialValue: true })
+      && spawnSync(manager.name, ['install'], { cwd: dir, stdio: 'inherit' }).status === 0;
 
-    const started = plan.apps.length > 1 ? plan.apps.map(({ name }) => `pnpm dev:${name}`) : plan.apps.map(() => 'pnpm dev');
-    const next = [`cd ${plan.name}`, ...(installed ? [] : ['pnpm install']), 'pnpm migrate', ...started];
+    const started = plan.apps.length > 1 ? plan.apps.map(({ name }) => manager.script(`dev:${name}`)) : plan.apps.map(() => manager.script('dev'));
+    const next = [`cd ${plan.name}`, ...(installed ? [] : [manager.install()]), manager.script('migrate'), ...started];
     this.ui.note(next.join('\n'), 'Next');
-    if (guided) this.ui.info(`The same project, with no prompt:\n${commandOf(plan)}`);
+    if (guided) this.ui.info(`The same project, with no prompt:\n${commandOf(plan, manager.create())}`);
     this.ui.outro('Ready.');
+  }
+
+  /** Asked only when nothing said it — and said back when nobody could be asked. */
+  private async managerOf(guided: boolean): Promise<PackageManager | undefined> {
+    if (!guided) {
+      this.ui.info('Written for npm: nothing said which package manager. --package-manager states it.');
+
+      return new PackageManager('npm');
+    }
+    const name = await this.ui.select({
+      message: 'Which package manager installs it?',
+      options: PackageManager.names.map((value) => ({ value })),
+      initialValue: 'npm',
+    });
+
+    return name ? PackageManager.of(`${name}/`) : undefined;
   }
 }

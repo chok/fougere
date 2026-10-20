@@ -7,10 +7,11 @@ import { stripVTControlCharacters as plain } from 'node:util';
 import ProjectWriter from '../fronds/scaffold/services/ProjectWriter.js';
 import { Composer } from '../src/composer/Composer.js';
 import { type Plan, commandOf, planOf, refusalsOf, treeOf } from '../src/composer/Plan.js';
+import { PackageManager } from '../src/scaffold/PackageManager.js';
 
 const catalog = { fronds: ['notes', 'blog'], apps: ['next', 'nuxt'] };
 
-/** `pnpm create fougere shop --frond blog --app nuxt`, read back as the flags citty would hand over. */
+/** `npm create fougere shop --frond blog --app nuxt`, read back as the flags citty would hand over. */
 function reread(command: string): Plan | undefined {
   const [, , , name, ...rest] = command.split(' ');
   const flags: Record<string, string | boolean> = {};
@@ -31,7 +32,8 @@ describe('a plan', () => {
     ];
 
     for (const plan of plans) expect(reread(commandOf(plan))).toEqual(plan);
-    expect(commandOf(plans[2])).toBe('pnpm create fougere shop --bare');
+    expect(commandOf(plans[2])).toBe('npm create fougere shop --bare');
+    expect(commandOf(plans[2], new PackageManager('bun').create())).toBe('bun create fougere shop --bare');
   });
 
   it('leaves the asking to the composer when the flags compose nothing', () => {
@@ -84,28 +86,33 @@ describe('the writer', () => {
 
       await new ProjectWriter().write({ ...plan, apps: [] }, join(cwd, 'shop'));
       expect(readdirSync(cwd)).toEqual(['shop']);
-      expect(existsSync(join(cwd, 'shop', 'fronds', 'blog', 'package.json'))).toBe(true);
+      expect(existsSync(join(cwd, 'shop', 'fronds', 'blog', 'entities', 'Post.ts'))).toBe(true);
     } finally {
       rmSync(cwd, { recursive: true, force: true });
     }
   });
 
-  it('starts one app at a time: dev for the first, dev:<name> for each', () => {
+  it('starts one app at a time: dev for the first, dev:<name> for each, in the words of the package manager', () => {
     const cwd = mkdtempSync(join(tmpdir(), 'fougere-scripts-'));
     try {
       const writer = new ProjectWriter();
       const scripts = (dir: string) =>
         (JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8')) as { scripts: Record<string, string> }).scripts;
       writer.createWorkspace(join(cwd, 'two'), 'two');
-      writer.runApps(join(cwd, 'two'), ['web', 'ops']);
+      writer.runApps(join(cwd, 'two'), ['web', 'ops'], new PackageManager('pnpm'));
       expect(scripts(join(cwd, 'two'))).toMatchObject({
         dev: 'pnpm -C apps/web dev',
+        build: "pnpm -r --filter './apps/*' build",
         'dev:web': 'pnpm -C apps/web dev',
         'dev:ops': 'pnpm -C apps/ops dev',
       });
 
+      writer.createWorkspace(join(cwd, 'npm'), 'npm');
+      writer.runApps(join(cwd, 'npm'), ['web'], new PackageManager('npm'));
+      expect(scripts(join(cwd, 'npm'))).toMatchObject({ dev: 'npm run dev -w apps/web', build: 'npm run build --workspaces --if-present' });
+
       writer.createWorkspace(join(cwd, 'none'), 'none');
-      writer.runApps(join(cwd, 'none'), []);
+      writer.runApps(join(cwd, 'none'), [], new PackageManager('npm'));
       expect(scripts(join(cwd, 'none'))).not.toHaveProperty('dev');
     } finally {
       rmSync(cwd, { recursive: true, force: true });
@@ -215,7 +222,7 @@ describe('the composer', () => {
 
     expect(frame).toContain('✓ Project  ›  ● Fronds  ›  ○ Apps');
     expect(frame).toMatch(/◼ blog\s+├─ fougere\.config\.ts/);
-    expect(frame).toContain('Same, with no prompt: pnpm create fougere shop --frond blog');
+    expect(frame).toContain('Same, with no prompt: npm create fougere shop --frond blog');
     expect(plain(composer.frame(40))).toMatch(/◼ blog\n/);
     press('\x03');
   });

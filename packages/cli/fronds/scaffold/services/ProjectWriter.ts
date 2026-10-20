@@ -3,9 +3,11 @@ import { cpSync, existsSync, mkdirSync, mkdtempSync, renameSync, readFileSync, r
 import { tmpdir } from 'node:os';
 import { basename, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { type Conventions, DEFAULT_CONVENTIONS, frondPackage } from '@fougere/core';
+import { type Conventions, DEFAULT_CONVENTIONS } from '@fougere/core';
+import { REMOTES } from '@fougere/core/node';
 import type { Plan } from '../../../src/composer/Plan.js';
-import { applyScaffold, type Scaffold } from '../../../src/scaffold/Scaffold.js';
+import { PackageManager } from '../../../src/scaffold/PackageManager.js';
+import { applyScaffold, settle, type Scaffold } from '../../../src/scaffold/Scaffold.js';
 import Shell from './Shell.js';
 import { version } from '../../../src/version.js';
 
@@ -165,23 +167,24 @@ export default class ProjectWriter {
    * piece landed, since fetching a host's starter can fail halfway. `replace` removes what the
    * destination held, and only then — a failed write leaves the old project as it was.
    */
-  async write(plan: Plan, dir: string, options: { local?: boolean; replace?: boolean; progress?: (step: string) => void } = {}): Promise<void> {
+  async write(plan: Plan, dir: string, options: { local?: boolean; replace?: boolean; manager?: PackageManager; progress?: (step: string) => void } = {}): Promise<void> {
     if (existsSync(dir) && !options.replace) throw new Error(`${basename(dir)}/ already exists.`);
+    // `--local` links into this monorepo, which only pnpm's `link:` and overrides express.
+    const manager = options.local ? new PackageManager('pnpm') : options.manager ?? PackageManager.of();
 
     const staged = mkdtempSync(join(dirname(dir), `.${basename(dir)}-`));
     try {
       const progress = options.progress ?? (() => {});
       progress('Writing the workspace');
-      this.createWorkspace(staged, plan.name);
+      this.createWorkspace(staged, plan.name, manager);
       for (const { template, name } of plan.fronds) {
         progress(`Adding the ${name} frond`);
         this.addFrond(staged, template, name);
       }
-      for (const { template, name } of plan.apps) await this.addApp(staged, template, name, progress);
+      for (const { template, name } of plan.apps) await this.addApp(staged, template, name, progress, manager);
       this.addExamples(staged, plan);
-      this.runApps(staged, plan.apps.map(({ name }) => name));
-      progress('Linking the fronds to the apps');
-      this.linkFronds(staged);
+      this.runApps(staged, plan.apps.map(({ name }) => name), manager);
+      settle(staged, manager);
       if (options.local) this.linkLocal(staged); else this.pinVersions(staged);
     } catch (error) {
       rmSync(staged, { recursive: true, force: true });
@@ -192,11 +195,15 @@ export default class ProjectWriter {
     renameSync(staged, dir);
   }
 
-  /** The workspace shell — fougere.config, pnpm-workspace (fronds/* apps/*), package.json. */
-  createWorkspace(dir: string, name: string): { path: string } {
+  /** The workspace shell — fougere.config, the fronds' tsconfig, a package.json whose members are the apps. */
+  createWorkspace(dir: string, name: string, manager: PackageManager = PackageManager.of()): { path: string } {
     cpSync(join(TEMPLATES, 'workspace'), dir, { recursive: true });
     restoreGitignore(dir);
     setPackageName(dir, name);
+    for (const file of ['AGENTS.md', 'CLAUDE.md']) {
+      const path = join(dir, file);
+      writeFileSync(path, readFileSync(path, 'utf8').replace(/__run__ (\w+)/g, (_, script: string) => manager.script(script)));
+    }
 
     return { path: dir };
   }
@@ -205,21 +212,12 @@ export default class ProjectWriter {
   addFrond(wsDir: string, template: string, name: string, conventions: Conventions = DEFAULT_CONVENTIONS): { path: string } {
     const dest = join(wsDir, conventions.fronds, name);
     cpSync(join(TEMPLATES, 'fronds', template), dest, { recursive: true });
-    // Only the import name. Carrying the convention is what makes a frond — the scan
-    // reads directories. `fougere.frond` IS read now (`scanner.ts`, `frondNameOf`), but
-    // it renames the contract, which a freshly scaffolded frond has no reason to do.
-    const pkgPath = join(dest, 'package.json');
-    if (existsSync(pkgPath)) {
-      const pkg = JSON.parse(readFileSync(pkgPath, 'utf8')) as { name: string };
-      pkg.name = frondPackage(name, conventions);
-      writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
-    }
 
     return { path: dest };
   }
 
   /** Add an app (consumer) under apps/<name>, from the host package that owns its wiring. */
-  async addApp(wsDir: string, template: string, name: string, progress: (step: string) => void = () => {}): Promise<{ path: string }> {
+  async addApp(wsDir: string, template: string, name: string, progress: (step: string) => void = () => {}, manager: PackageManager = PackageManager.of()): Promise<{ path: string }> {
     const dest = join(wsDir, 'apps', name);
     const starter = hosts().includes(template) ? starterOf(`@fougere/${template}`) : undefined;
     if (!starter) throw new Error(`No host ships a starter for '${template}'. Served: ${hosts().join(', ')}.`);
@@ -229,9 +227,9 @@ export default class ProjectWriter {
     if (scaffold?.create) {
       mkdirSync(dirname(dest), { recursive: true });
       progress(`Writing apps/${name} with ${scaffold.create[0]}`);
-      await this.shell.create(scaffold.create, dirname(dest), name);
+      await this.shell.create(scaffold.create, dirname(dest), name, manager);
       progress(`Adding Fougere to apps/${name}`);
-      applyScaffold(dest, scaffold);
+      applyScaffold(dest, scaffold, { local: join(wsDir, DEFAULT_CONVENTIONS.fronds), remotes: join(wsDir, REMOTES) });
     }
     cpSync(starter, dest, { recursive: true, filter: (source) => source !== manifest });
     restoreGitignore(dest);
@@ -280,51 +278,18 @@ export default class ProjectWriter {
 
   /**
    * One script per app, and `dev` for the first: two apps started together fight over a port and
-   * interleave their output, and a terminal app is not a server at all.
+   * interleave their output, and a terminal app is not a server at all. `build` builds every app.
    */
-  runApps(wsDir: string, apps: string[]): void {
+  runApps(wsDir: string, apps: string[], manager: PackageManager = PackageManager.of()): void {
     const path = join(wsDir, 'package.json');
     const pkg = JSON.parse(readFileSync(path, 'utf8')) as { scripts?: Record<string, string> };
-    const run = (app: string) => `pnpm -C apps/${app} dev`;
+    const run = (app: string) => manager.inApp(app, 'dev');
     pkg.scripts = {
-      ...(apps.length ? { dev: run(apps[0]) } : {}),
+      ...(apps.length ? { dev: run(apps[0]), build: manager.inEveryApp('build') } : {}),
       ...Object.fromEntries(apps.map((app) => [`dev:${app}`, run(app)])),
       ...pkg.scripts,
     };
     writeFileSync(path, JSON.stringify(pkg, null, 2) + '\n');
-  }
-
-  /**
-   * Every app depends on every frond of the workspace — stated once composition is done,
-   * because that is when the names exist.
-   *
-   * A template cannot carry it: the frond is named at composition time (`blog:catalog`),
-   * so a dependency written into `templates/apps/nuxt` would name the template instead
-   * and resolve to nothing. Which is what happened — the generated app imported
-   * `@fronds/blog` whatever you had called it, and did not start.
-   *
-   * `fronds/` and `apps/` are the registry, like `listTemplates`: nothing to declare.
-   */
-  linkFronds(wsDir: string, conventions: Conventions = DEFAULT_CONVENTIONS): void {
-    const dirs = (kind: string): string[] => {
-      const dir = join(wsDir, kind);
-      if (!existsSync(dir)) return [];
-
-      return readdirSync(dir, { withFileTypes: true }).filter((e) => e.isDirectory()).map((e) => e.name);
-    };
-
-    const fronds = dirs(conventions.fronds);
-    if (fronds.length === 0) return;
-
-    for (const app of dirs('apps')) {
-      const pkgPath = join(wsDir, 'apps', app, 'package.json');
-      if (!existsSync(pkgPath)) continue;
-
-      const pkg = JSON.parse(readFileSync(pkgPath, 'utf8')) as { dependencies?: Record<string, string> };
-      pkg.dependencies ??= {};
-      for (const frond of fronds) pkg.dependencies[frondPackage(frond, conventions)] = 'workspace:*';
-      writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
-    }
   }
 
   /**

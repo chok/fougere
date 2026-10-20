@@ -1,9 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { cpSync, existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { cpSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import ProjectWriter from '../fronds/scaffold/services/ProjectWriter.js';
 import Shell from '../fronds/scaffold/services/Shell.js';
+import { PackageManager } from '../src/scaffold/PackageManager.js';
+import { settle } from '../src/scaffold/Scaffold.js';
+import { writtenFor } from '../src/scaffold/WrittenFor.js';
 
 /**
  * The shell each host's own tool wrote, recorded from `create-nuxt@3`, `create-next-app@16`,
@@ -32,23 +35,85 @@ function expectFougereCheckWorkflow(root: string, typecheck: string): void {
 }
 
 describe('workspace project scaffold', () => {
-  it('emits a pnpm 12 project with native build permissions and the Fougere check workflow', async () => {
+  it('emits a project whose members are its apps, and the Fougere check workflow in the words of its package manager', async () => {
     const parent = mkdtempSync(join(tmpdir(), 'fougere-workspace-'));
     const root = join(parent, 'forest');
 
     try {
-      new ProjectWriter().createWorkspace(root, 'forest');
-      const pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')) as { packageManager?: string; pnpm?: unknown; dependencies: Record<string, string> };
-      const workspace = readFileSync(join(root, 'pnpm-workspace.yaml'), 'utf8');
+      new ProjectWriter().createWorkspace(root, 'forest', new PackageManager('npm'));
+      const pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')) as { packageManager?: string; workspaces?: string[]; dependencies: Record<string, string> };
 
-      expect(pkg.packageManager).toBe('pnpm@12.6.0');
-      expect(pkg.pnpm).toBeUndefined();
+      expect(pkg.workspaces).toEqual(['apps/*']);
+      expect(pkg.packageManager).toBeUndefined();
+      expect(existsSync(join(root, 'pnpm-workspace.yaml'))).toBe(false);
       expect(pkg.dependencies).toHaveProperty('better-sqlite3');
-      expect(workspace).toContain('better-sqlite3: false');
-      expect(workspace).toContain('esbuild: true');
-      expectFougereCheckWorkflow(root, 'pnpm typecheck');
+      expectFougereCheckWorkflow(root, 'npm run typecheck');
     } finally {
       rmSync(parent, { recursive: true, force: true });
+    }
+  });
+
+  it('writes which builds may run in each package manager\u2019s own file', () => {
+    const parent = mkdtempSync(join(tmpdir(), 'fougere-builds-'));
+    const project = (manager: PackageManager) => {
+      const root = join(parent, manager.name);
+      new ProjectWriter().createWorkspace(root, manager.name, manager);
+      settle(root, manager);
+
+      return { root, pkg: JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')) as Record<string, unknown> };
+    };
+
+    try {
+      const pnpm = project(new PackageManager('pnpm', '12.6.0'));
+      const workspace = readFileSync(join(pnpm.root, 'pnpm-workspace.yaml'), 'utf8');
+      expect(pnpm.pkg.packageManager).toBe('pnpm@12.6.0');
+      expect(workspace).toContain('  - apps/*');
+      expect(workspace).toContain('better-sqlite3: false');
+      expect(workspace).toContain('esbuild: true');
+
+      expect(project(new PackageManager('bun')).pkg.trustedDependencies).toEqual(['esbuild']);
+
+      const yarn = project(new PackageManager('yarn', '4.9.1'));
+      expect(yarn.pkg.dependenciesMeta).toEqual({ 'better-sqlite3': { built: false } });
+      expect(readFileSync(join(yarn.root, '.yarnrc.yml'), 'utf8')).toBe('nodeLinker: node-modules\n');
+
+      const npm = project(new PackageManager('npm'));
+      expect(Object.keys(npm.pkg)).not.toContain('trustedDependencies');
+      expect(existsSync(join(npm.root, 'pnpm-workspace.yaml'))).toBe(false);
+    } finally {
+      rmSync(parent, { recursive: true, force: true });
+    }
+  });
+
+  it('reads the package manager off whoever started the process, and npm when nobody says', () => {
+    expect(PackageManager.of('pnpm/12.6.0 npm/? node/v24.12.0 darwin arm64')).toEqual(new PackageManager('pnpm', '12.6.0'));
+    expect(PackageManager.of('bun/1.3.10 npm/? node/v24.3.0 darwin arm64').name).toBe('bun');
+    expect(PackageManager.of('yarn/4.9.1 npm/? node/v24.12.0 darwin arm64').inApp('web', 'dev')).toBe('yarn workspace web dev');
+    expect(PackageManager.of('')).toEqual(new PackageManager('npm'));
+    expect(PackageManager.of('yarn/1.22.22 npm/? node/v24.12.0 darwin arm64')).toEqual(new PackageManager('npm'));
+  });
+
+  it('says what a reader types — a package added, a binary run once — in each tool\u2019s own words', () => {
+    const lines = PackageManager.names.map((name) => new PackageManager(name)).map((manager) =>
+      [manager.add('@fougere/testing', true), manager.add('@fougere/adapter-rest'), manager.x('fougere dev blog')]);
+    expect(lines).toEqual([
+      ['npm install -D @fougere/testing', 'npm install @fougere/adapter-rest', 'npx fougere dev blog'],
+      ['pnpm add -D @fougere/testing', 'pnpm add @fougere/adapter-rest', 'pnpm dlx fougere dev blog'],
+      ['bun add -d @fougere/testing', 'bun add @fougere/adapter-rest', 'bunx fougere dev blog'],
+      ['yarn add -D @fougere/testing', 'yarn add @fougere/adapter-rest', 'yarn dlx fougere dev blog'],
+    ]);
+  });
+
+  it('takes what the command stated first, then the launcher, then the project the new one sits in', async () => {
+    const around = mkdtempSync(join(tmpdir(), 'fougere-around-'));
+    try {
+      writeFileSync(join(around, 'package.json'), JSON.stringify({ packageManager: 'bun@1.3.10' }));
+      expect(await writtenFor('yarn', around, 'pnpm/12.6.0')).toEqual(new PackageManager('yarn'));
+      expect(await writtenFor(undefined, around, 'pnpm/12.6.0')).toEqual(new PackageManager('pnpm', '12.6.0'));
+      expect(await writtenFor(undefined, around, '')).toEqual(new PackageManager('bun', '1.3.10'));
+      await expect(writtenFor('deno', around, '')).rejects.toThrow("'deno' is not a package manager Fougere writes for: npm, pnpm, bun, yarn.");
+    } finally {
+      rmSync(around, { recursive: true, force: true });
     }
   });
 });
@@ -192,7 +257,11 @@ describe('an app is the host\u2019s own shell, and Fougere adds its part', () =>
       expect(has('pnpm-workspace.yaml')).toBe(false);
       expect(JSON.parse(read('package.json')).packageManager).toBeUndefined();
       const paths = JSON.parse(read('tsconfig.json')).compilerOptions.paths;
-      expect(paths).toEqual({ '@/*': ['./*'], '@fronds/facade': ['./.fougere/facade.generated.ts'] });
+      expect(paths).toEqual({
+        '@/*': ['./*'],
+        '@fronds/facade': ['./.fougere/facade.generated.ts'],
+        '@fronds/*': ['../../fronds/*', '../../.fougere/remotes/*'],
+      });
       expect(read('app/page.tsx')).toContain("import './welcome.css'");
     } finally { dispose(); }
   });
@@ -216,7 +285,7 @@ describe('an app is the host\u2019s own shell, and Fougere adds its part', () =>
     const { read, dispose } = await app('svelte');
     try {
       expect(read('vite.config.ts')).toMatch(/plugins: \[\s*fougere\(\),\s*sveltekit\(/);
-      expect(read('vite.config.ts')).toMatch(/alias: \{\s*'@fronds\/facade': '\.\/\.fougere\/facade\.generated\.ts'\s*\}/);
+      expect(read('vite.config.ts')).toMatch(/alias: \{\s*'@fronds\/facade': '\.\/\.fougere\/facade\.generated\.ts',\s*'@fronds': '\.\.\/\.\.\/fronds'\s*\}/);
       expect(read('vite.config.ts')).toContain('adapter: adapter()');
       expect(read('tsconfig.json')).not.toContain('@fronds/facade');
       expect(read('src/routes/+page.svelte')).toContain('Your app is running on');

@@ -5,7 +5,7 @@
     "--template",
     "minimal",
     "--packageManager",
-    "pnpm",
+    "{pm}",
     "--no-install",
     "--gitInit",
     "false",

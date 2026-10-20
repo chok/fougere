@@ -42,7 +42,7 @@ function piecesOf(spec: string): Piece[] {
 }
 
 /** The dual of `planOf`: the line that writes this plan again, with no prompt. */
-export function commandOf(plan: Plan, entry = 'pnpm create fougere'): string {
+export function commandOf(plan: Plan, entry = 'npm create fougere'): string {
   const spec = (pieces: Piece[]) =>
     pieces.map(({ template, name }) => (name === template ? template : `${template}:${name}`)).join(',');
   const flags = (['fronds', 'apps'] as const)

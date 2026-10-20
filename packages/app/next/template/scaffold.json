@@ -6,7 +6,7 @@
     "--app",
     "--skip-install",
     "--disable-git",
-    "--use-pnpm",
+    "--use-{pm}",
     "--yes",
     "--no-tailwind",
     "--no-eslint",
