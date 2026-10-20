@@ -50,7 +50,8 @@ export function openApiOf(app: AppLike): OpenApiDocument {
         const wanted = derived ? title + usedAs : title;
         name = wanted;
         for (let n = 2; schemas[name]; n++) name = `${wanted}${n}`;
-        schemas[name] = descriptor as unknown as Schema;
+        // A reader shows a schema by its title, so a view says its own name and not its entity's.
+        schemas[name] = { ...descriptor, title: name } as unknown as Schema;
       }
       named.set(view, name);
     }
