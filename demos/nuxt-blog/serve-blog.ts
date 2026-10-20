@@ -7,11 +7,10 @@
  * files, and nothing made them agree.
  */
 import { createJiti } from 'jiti';
-import { applyConfig, createApp, createLocalRunner, Logger } from '@fougere/core';
-import { statementOf } from '@fougere/defaults';
+import { createLocalRunner, Logger, serves } from '@fougere/core';
+import { bootApp } from '@fougere/defaults';
 import { frondAliases, setModuleLoader, loadConfig, remotesOf } from '@fougere/core/node';
-import { createContainer } from '@fougere/container';
-import { resolveStorage, layerOf } from '@fougere/defaults';
+import { prefixOf } from '@fougere/adapter-rest';
 import { serve } from '@fougere/transport-http';
 import { restAnswer } from '@fougere/app/web';
 import { calls } from '@fougere/calls';
@@ -30,7 +29,6 @@ setModuleLoader((filePath: string) => jiti.import(filePath) as Promise<Record<st
 // Commenting the address is how you take the frond back in-process, so its absence means
 // this process has no caller — say that rather than binding a port nobody dials.
 const config = await loadConfig(process.cwd());
-applyConfig(config);
 const address = remotesOf(config).blog;
 if (!address) {
   throw new Error(
@@ -42,25 +40,20 @@ const { hostname, port: declaredPort } = new URL(address);
 
 const log = new Logger('blog-host');
 
-// The store comes from the same `fougere.config.ts` the address does, for the same reason:
-// naming a path here made this process serve a database the in-process form never wrote,
-// while the demo's whole claim is that commenting `remotes:` changes nothing. `layerOf`
-// hands the layer over WHOLE — naming a few of its members is how `transacted` and `close`
-// were left behind once.
-const storage = resolveStorage(config.sources, process.cwd());
-
-// The panel, on its own loopback port: every call this frond executes, as it happens.
-// Click through the Nuxt app on :3000 and they land here — including the ones that
-// arrived over the wire, which is the half a browser's devtools cannot show.
-const app = await createApp({
-  ...(await statementOf(process.cwd(), { only: ['blog'] })),
-  protocols: config.protocols,
-  createContainer,
-  ...layerOf(storage),
+// Booted the way `fougere serve blog` boots it — the whole `fougere.config.ts`, its sources,
+// protocols and statement — so nothing it says is copied here. Writing `createApp` by hand once left
+// `protocols:` behind, and the REST door answered 404 everywhere while this file said it served it.
+// What this process adds is its own: the panel, on a loopback port, shows every call this frond
+// executes, the ones that arrived over the wire included — the half a browser's devtools cannot show.
+const app = await bootApp(process.cwd(), {
+  only: ['blog'],
   extensions: [observability({ service: 'blog-host' }), calls({ panel: 4400 })],
 });
 
 // Its REST door comes with it: split, `/api/blog/…` is answered here and no longer by Nuxt.
 const beside = (request: Request) => restAnswer(app, request);
-const { port } = await serve(createLocalRunner(app), { port: Number(declaredPort), host: hostname, beside });
-log.info(`frond blog served — POST ${new URL('/_fougere/call', address).href}, REST ${new URL('/api/blog', address).href} (bound :${port})`);
+const { port } = await serve(createLocalRunner(app), {
+  port: Number(declaredPort), host: hostname, beside, answer: (door, received) => app.answer(door, received),
+});
+const rest = serves(app.protocols, 'rest') ? `, REST ${new URL(`${prefixOf(app.protocols)}/blog`, address).href}` : '';
+log.info(`frond blog served — POST ${new URL('/_fougere/call', address).href}${rest} (bound :${port})`);
