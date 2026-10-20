@@ -91,6 +91,8 @@ function operationOf(route: RouteDefinition, meta: OperationMeta, frond: string,
       required: inPath.has(param.name) || !param.optional,
       schema: { type: param.coerce ?? 'string' },
     }));
+  // A read carries no body: the fields of its input view are its query string.
+  const queried = route.method === 'GET' && meta.input ? queryOf(meta.input) : [];
 
   const operation = route.operationName[0]!.toUpperCase() + route.operationName.slice(1);
 
@@ -98,10 +100,16 @@ function operationOf(route: RouteDefinition, meta: OperationMeta, frond: string,
     operationId: `${route.address}.${route.operationName}`,
     tags: [frond],
     ...(meta.description && { description: meta.description }),
-    ...(parameters.length > 0 && { parameters }),
-    ...requestBodyOf(meta, reads ? [] : params.filter((param) => !inPath.has(param.name)), (view) => refOf(view, `${operation}Input`)),
+    ...(parameters.length + queried.length > 0 && { parameters: [...parameters, ...queried] }),
+    ...(route.method === 'GET' ? {} : requestBodyOf(meta, reads ? [] : params.filter((param) => !inPath.has(param.name)), (view) => refOf(view, `${operation}Input`))),
     responses: responsesOf(route, meta, inPath.size > 0, (view) => refOf(view, `${operation}Output`)),
   };
+}
+
+function queryOf(view: SchemaView): Schema[] {
+  const { properties, required = [] } = Card.fromSchema(view).descriptor;
+
+  return Object.entries(properties).map(([name, schema]) => ({ name, in: 'query', required: required.includes(name), schema }));
 }
 
 /** The input view whole, or the fields a change carries — the path designates, the body carries what changes. */

@@ -1,6 +1,7 @@
 import { DoorMiddleware, ErrorCode, FougereError, toHttpError, type Door } from '@fougere/core';
 import { HttpError, type HttpCarrier, type ResponseResult } from '@fougere/http';
 import type { RouteDefinition } from './routes/RouteDefinition.js';
+import type { Fields } from '@fougere/schema';
 
 /** What a host hands the REST door for one matched route — the body still to read, so the door reads it. */
 export interface RestRequest {
@@ -76,13 +77,32 @@ export function restDoor(route: RouteDefinition): Door<RestRequest, RestInvocati
     address: route.address,
     carries: 'http',
     carrier: ({ headers }): HttpCarrier => ({ request: headers, response: new Headers() }),
-    decode: async ({ params, query, body, state }) => ({ params, query, input: await read(body), state }),
+    // A read carries no body, so what its input view names arrives in the query string.
+    decode: async ({ params, query, body, state }) => ({
+      params,
+      query,
+      input: route.method === 'GET' && route.inputFields ? inputOf(route.inputFields, query) : await read(body),
+      state,
+    }),
     run: (invocation) => route.handler(invocation),
     encode: (outcome, _request, carrier) => leaving(
       'refused' in outcome ? refused(outcome.refused) : responseOf(route, outcome.answered),
       carrier as HttpCarrier | undefined,
     ),
   };
+}
+
+/** The fields of an input view the query string carries, read as the shape of each says — a query holds only text. */
+function inputOf(fields: Fields, query: Record<string, unknown>): Record<string, unknown> {
+  return Object.fromEntries(Object.entries(fields).flatMap(([key, field]): [string, unknown][] => {
+    if (query[key] === undefined) return [];
+    const text = String(query[key]);
+    const type = (field.shape as { type?: unknown }).type;
+    if (type === 'number' || type === 'integer') return [[key, text.trim() === '' ? text : Number(text)]];
+    if (type === 'boolean') return [[key, text === 'true' ? true : text === 'false' ? false : text]];
+
+    return [[key, text]];
+  }));
 }
 
 /** `@fougere/http` refuses a body in its own words, since it takes no dependency on core. */

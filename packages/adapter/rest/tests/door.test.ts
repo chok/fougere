@@ -5,6 +5,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { answerAt, ErrorCode, FougereError } from '@fougere/core';
+import { bool, number, text } from '@fougere/schema';
 import { restDoor, type RestRequest, type RouteDefinition } from '../src/index.js';
 
 const request: RestRequest = { operation: 'any', headers: new Headers(), params: {}, query: {}, body: async () => undefined, state: {} };
@@ -67,5 +68,17 @@ describe('a REST answer', () => {
     const refusing: RestRequest = { ...request, body: async () => { throw new FougereError({ code: ErrorCode.UNSUPPORTED_MEDIA_TYPE, message: 'Send JSON.' }); } };
 
     expect(await answer(route({ id: 'a' }, { method: 'POST' }), refusing)).toMatchObject({ status: 415, data: { code: 'UNSUPPORTED_MEDIA_TYPE' } });
+  });
+
+  it('reads a GET\'s input off the query string, each field as its shape says', async () => {
+    let received: unknown;
+    const searched = route(null, {
+      inputFields: { title: text(), limit: number({ integer: true }), drafts: bool() },
+      handler: async (invocation) => { received = (invocation as { input: unknown }).input; return []; },
+    });
+
+    await answer(searched, { ...request, query: { title: 'fern', limit: '5', drafts: 'false', other: 'x' } });
+
+    expect(received).toEqual({ title: 'fern', limit: 5, drafts: false });
   });
 });

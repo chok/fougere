@@ -8,7 +8,14 @@
  * when the budget expires, and surviving IS the verdict. Nothing in `demos/` states which
  * one it is, and nothing should: the shape is a consequence of what the demo has to say.
  *
- * Its ceiling is that first second. It judges that a process came up, never that what it
+ * A service that publishes what it serves is asked: when an address it printed answers
+ * `/api/openapi.json`, every read route there that takes no parameter is called, and a 404 or a
+ * 5xx fails it — a process can stay up and answer nothing, which is how the split blog of
+ * `demos/nuxt-blog` logged "REST served" over a door that answered 404 everywhere (2026-10-20).
+ * A demo that publishes nothing keeps the first verdict. Every `dev:*` script of a demo is a
+ * process it ships too, and runs beside `dev`.
+ *
+ * Its ceiling is still what a process says of itself. It judges that a process came up, never that what it
  * printed is true — `pnpm -C demos/ports-swap dev` refusing the third payment is the whole
  * point of that demo, and this file cannot tell that refusal from a crash. The suite in
  * `packages/` holds the claims; this holds the facade. What it catches is what no unit test
@@ -83,8 +90,17 @@ function migrated(demo: string): string | undefined {
   }
 }
 
-function start(demo: string): ChildProcess {
-  return spawn('pnpm', ['-C', path.join('demos', demo), 'dev'], {
+/** `dev`, then every `dev:*` — `dev:blog` is the split half of a demo, and a process of its own. */
+function scriptsOf(demo: string): string[] {
+  const manifest = path.join(demosDirectory, demo, 'package.json');
+  if (!existsSync(manifest)) return [];
+  const scripts = Object.keys(JSON.parse(readFileSync(manifest, 'utf8')).scripts ?? {});
+
+  return scripts.filter((name) => name === 'dev').concat(scripts.filter((name) => name.startsWith('dev:')).sort());
+}
+
+function start(demo: string, script: string): ChildProcess {
+  return spawn('pnpm', ['-C', path.join('demos', demo), script], {
     detached: true,
     stdio: ['ignore', 'pipe', 'pipe'],
   });
@@ -98,17 +114,54 @@ function release(child: ChildProcess): void {
   }
 }
 
-function run(demo: string): Promise<Verdict> {
-  const child = start(demo);
+/** What a process printed, its colours taken out. */
+function plain(output: string): string {
+  return output.replace(/\x1b\[[0-9;]*m/g, '');
+}
+
+/** Where a service said it listens — the addresses it printed, on this machine. */
+function originsIn(output: string): string[] {
+  const printed = plain(output).match(/https?:\/\/(?:127\.0\.0\.1|localhost|0\.0\.0\.0|\[::1\]):\d+/g) ?? [];
+
+  return [...new Set(printed.map((url) => new URL(url).origin))];
+}
+
+/**
+ * What a service that publishes its REST routes answers on them — the refusals, empty when it
+ * publishes none. A route taking a parameter needs a value this file cannot invent, so only those
+ * taking none are called.
+ */
+async function asked(output: string): Promise<string[]> {
+  const refusals: string[] = [];
+  for (const origin of originsIn(output)) {
+    const published = await fetch(`${origin}/api/openapi.json`).catch(() => undefined);
+    if (!published?.ok) continue;
+    const document = await published.json() as { paths?: Record<string, { get?: { parameters?: { in: string; required?: boolean }[] } }> };
+
+    for (const [route, operations] of Object.entries(document.paths ?? {})) {
+      if (!operations.get || route.includes('{') || operations.get.parameters?.some((one) => one.required)) continue;
+      const answered = await fetch(origin + route).catch((error: Error) => ({ status: 0, statusText: error.message }));
+      if (answered.status === 0 || answered.status === 404 || answered.status >= 500) {
+        refusals.push(`GET ${origin}${route} → ${answered.status || answered.statusText}`);
+      }
+    }
+  }
+
+  return refusals;
+}
+
+function run(demo: string, script: string): Promise<Verdict> {
+  const child = start(demo, script);
   let output = '';
 
   child.stdout!.on('data', (chunk) => { output += chunk; });
   child.stderr!.on('data', (chunk) => { output += chunk; });
 
   return new Promise<Verdict>((resolve) => {
-    const budget = setTimeout(() => {
+    const budget = setTimeout(async () => {
+      const refusals = await asked(output);
       release(child);
-      resolve({ shape: 'service', ok: true, output });
+      resolve({ shape: 'service', ok: refusals.length === 0, output: [output, ...refusals].join('\n') });
     }, BUDGET_MS);
 
     child.on('exit', (code) => {
@@ -120,33 +173,39 @@ function run(demo: string): Promise<Verdict> {
 }
 
 const tail = (output: string) =>
-  output.replace(/\x1b\[[0-9;]*m/g, '').trim().split('\n').filter(Boolean).slice(-4);
+  plain(output).trim().split('\n').filter(Boolean).slice(-4);
 
-const demos = demosOf(demosDirectory);
+// `pnpm smoke nuxt-blog` runs the demos named, every one with none.
+const named = process.argv.slice(2);
+const demos = demosOf(demosDirectory).filter((demo) => named.length === 0 || named.includes(demo));
 const failures: [string, string][] = [];
 const stated: [string, string][] = [];
 
 for (const demo of demos) {
-  if (!scriptOf(demo, 'dev')) {
+  const scripts = scriptsOf(demo);
+  if (scripts.length === 0) {
     const reason = STATED.get(demo);
     if (reason) stated.push([demo, reason]);
     else failures.push([demo, 'no `dev` script, and this file does not say why']);
     continue;
   }
 
-  process.stdout.write(`${demo.padEnd(20)} `);
   const refused = migrated(demo);
   if (refused) {
-    console.log('FAIL (migrate)');
+    console.log(`${demo.padEnd(28)} FAIL (migrate)`);
     failures.push([demo, refused]);
     continue;
   }
-  const verdict = await run(demo);
+  for (const script of scripts) {
+    const named = script === 'dev' ? demo : `${demo} ${script}`;
+    process.stdout.write(`${named.padEnd(28)} `);
+    const verdict = await run(demo, script);
 
-  if (verdict.ok) console.log(`ok   (${verdict.shape})`);
-  else {
-    console.log(`FAIL (exit ${verdict.code})`);
-    failures.push([demo, tail(verdict.output).join('\n    ')]);
+    if (verdict.ok) console.log(`ok   (${verdict.shape})`);
+    else {
+      console.log(verdict.shape === 'service' ? 'FAIL (asked)' : `FAIL (exit ${verdict.code})`);
+      failures.push([named, tail(verdict.output).join('\n    ')]);
+    }
   }
 }
 

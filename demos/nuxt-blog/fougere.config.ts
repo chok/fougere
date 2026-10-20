@@ -9,7 +9,7 @@ export default defineFougere({
   sources: { main: { type: 'sqlite', path: 'fougere.db' } },
   // Ce que cette app publie. Absent = non servi : le module monte la porte, la
   // config décide si elle sert quelque chose.
-  protocols: { rest: {}, graphql: {} },
+  protocols: { rest: { openapi: {} }, graphql: {} },
   fronds: {
     '@fougere/log': {},
     // La Frond blog vit dans un autre process (pnpm dev:blog). Commenter cette
