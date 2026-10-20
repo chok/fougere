@@ -1,0 +1,8 @@
+{
+  "compilerOptions": {
+    "paths": {
+      "@fronds/blog/*": ["./blog-v2/*"],
+      "@fronds/*": ["./*", "../.fougere/remotes/*"]
+    }
+  }
+}

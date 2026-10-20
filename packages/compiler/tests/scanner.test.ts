@@ -228,7 +228,7 @@ describe('frond naming', () => {
    * called `blog`, so renaming on disk does not rename the entity keys, the `@fronds/*`
    * import, or a `remotes:` entry pointing at it.
    */
-  it('honours `fougere.frond` in package.json as a rename', async () => {
+  it('reads a rename off the `paths` entry TypeScript resolves the import by', async () => {
     const result = await scanProject(nameRoot);
     const renamed = result.fronds.find((f) => f.source.path.endsWith('blog-v2'))!;
     expect(renamed.name).toBe('blog');

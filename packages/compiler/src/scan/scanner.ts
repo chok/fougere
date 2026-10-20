@@ -1,6 +1,6 @@
 import { DEFAULT_CONVENTIONS, DoorMiddleware, Middleware, RouteAddress, frondDirsOf, frondPackage, providerDirsOf, resolveConventions, togetherKeyOf, type Conventions, type ConventionsInput, type Diagnostic, type ScanResult } from '@fougere/core';
 import { Fronds, addressOf, awaitKeyOf, cardinalityOf, computeBindingPlan, opsOf, emitKeyOf, getPresenterFields, outputOf, ownedBy, repositoryKeyOf, storageKeyOf, targetOf, type CollectorEntry, type EntityEntry, type FrondDescriptor, type HandlerEntry, type MiddlewareEntry, type OperationContract, type OperationsMap, type PresenterEntry, type ProviderEntry, type SeedEntry, type TypeRef, viewsOf, isExtension, FrondConfigReading, Term, type ExtensionEntry, type VocabularyEntry } from '@fougere/core/descriptor';
-import { frondNameOf, getModuleLoader, loadFrondConfig } from '@fougere/core/node';
+import { frondNamesOf, getModuleLoader, loadFrondConfig } from '@fougere/core/node';
 import type { FrondConfig, ErrorCode } from '@fougere/core';
 import type { Param, Signature } from '@fougere/core/descriptor';
 import { readdir, readFile } from 'node:fs/promises';
@@ -819,9 +819,10 @@ export async function scanProject(
   await seedTypeProgram(declarations, workspaceRoot);
   await seedTypeProgram(declarations);
 
+  const names = frondNamesOf(root, conventions);
   const all = await Promise.all(
     dirNames.map(async (dir) => {
-      const name = await frondNameOf(join(frondsDir, dir), dir);
+      const name = names.get(dir) ?? dir;
 
       return scanFrond(
         join(frondsDir, dir), name,

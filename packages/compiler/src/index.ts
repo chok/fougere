@@ -7,3 +7,4 @@ export { crossFrondImports } from './imports.js';
 export { handlerDeclarations } from './declarations.js';
 export { outsideConventions } from './placement.js';
 export { writeStatement, writtenStatement } from './scan/written.js';
+export { compileProject, type Compiled } from './compile.js';

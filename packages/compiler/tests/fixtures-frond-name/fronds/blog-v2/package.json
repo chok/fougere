@@ -1,5 +1,0 @@
-{
-  "name": "@fronds/blog",
-  "type": "module",
-  "fougere": { "frond": "blog" }
-}
