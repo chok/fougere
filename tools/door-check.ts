@@ -15,19 +15,82 @@
  *
  * The scaffold is built OUTSIDE the repo on purpose: inside, pnpm resolves a workspace
  * link and the question cannot be asked at all.
+ *
+ * And once per package manager: the project is written for the one that ran `create`, so each
+ * writes its own workspace file, scripts and build permissions — and installs through its own
+ * resolver. `DOOR_HOSTS` and `DOOR_MANAGERS` narrow the matrix (`nuxt,react`, `npm,bun`).
  */
 import { execFileSync, spawn, type ChildProcess, type ExecFileSyncOptions } from 'node:child_process';
-import { mkdtempSync, readdirSync, readFileSync, appendFileSync, rmSync } from 'node:fs';
+import { appendFileSync, chmodSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { CHECKED } from '../packages/cli/src/composer/Offered.ts';
+import { PackageManager } from '../packages/cli/src/scaffold/PackageManager.ts';
 
 const ROOT = process.cwd();
 const PORT = process.env.DOOR_PORT ?? '3210';
 const BOOT_MS = 180_000;
 
+const work = mkdtempSync(path.join(tmpdir(), 'fougere-facade-'));
+const store = path.join(work, 'tarballs');
+
+/** yarn 4 comes through corepack: a `yarn` on PATH is yarn 1 often enough, and the scripts call `yarn` by name. */
+const shims = path.join(work, 'bin');
+mkdirSync(shims, { recursive: true });
+writeFileSync(path.join(shims, 'yarn'), '#!/bin/sh\nexec corepack yarn "$@"\n');
+chmodSync(path.join(shims, 'yarn'), 0o755);
+const env = { ...process.env, PATH: `${shims}${path.delimiter}${process.env.PATH}`, YARN_ENABLE_IMMUTABLE_INSTALLS: 'false' };
+
 const run = (cmd: string, args: string[], opts: ExecFileSyncOptions = {}): string =>
-  execFileSync(cmd, args, { ...opts, encoding: 'utf8', stdio: opts.stdio ?? 'pipe' });
+  execFileSync(cmd, args, { env, ...opts, encoding: 'utf8', stdio: opts.stdio ?? 'pipe' });
+const shell = (line: string, cwd: string): string => run('sh', ['-c', line], { cwd, stdio: 'inherit' });
+
+const managers = (process.env.DOOR_MANAGERS?.split(',') ?? [...PackageManager.names]) as PackageManager['name'][];
+const hosts = process.env.DOOR_HOSTS?.split(',') ?? CHECKED;
+
+/** What `create` would have handed over, had this manager run it. */
+const agentOf = (name: PackageManager['name']): string => {
+  const version = run(name, ['--version'], { cwd: tmpdir() }).trim().split('\n').at(-1);
+
+  return `${name}/${version} npm/? node/${process.version} ${process.platform} ${process.arch}`;
+};
+
+/** The app's `dev`, on the port this check listens on — each manager forwards arguments its own way. */
+const devOf: Record<PackageManager['name'], string[]> = {
+  npm: ['npm', 'run', 'dev', '--', '--port', PORT],
+  pnpm: ['pnpm', 'dev', '--port', PORT],
+  bun: ['bun', 'run', 'dev', '--port', PORT],
+  yarn: ['yarn', 'dev', '--port', PORT],
+};
+
+/**
+ * Every `@fougere/*` the project names, pointed at this commit's tarball — directly, and as an override
+ * for the packages that name each other. npm refuses an override that disagrees with a direct dependency,
+ * so both say the same `file:`.
+ */
+function fromTarballs(app: string, manager: PackageManager, tarball: Record<string, string>): void {
+  const manifests = [path.join(app, 'package.json'), ...readdirSync(path.join(app, 'apps')).map((dir) => path.join(app, 'apps', dir, 'package.json'))];
+  for (const file of manifests.filter((candidate) => existsSync(candidate))) {
+    const pkg = JSON.parse(readFileSync(file, 'utf8')) as Record<string, Record<string, string> | undefined>;
+    for (const list of ['dependencies', 'devDependencies'] as const) {
+      for (const name of Object.keys(pkg[list] ?? {})) if (tarball[name]) pkg[list]![name] = `file:${tarball[name]}`;
+    }
+    writeFileSync(file, JSON.stringify(pkg, null, 2) + '\n');
+  }
+
+  const specs = Object.fromEntries(Object.entries(tarball).map(([name, file]) => [name, `file:${file}`]));
+  if (manager.name === 'pnpm') {
+    // pnpm 11 stopped reading `overrides` from package.json: they belong in the workspace file.
+    const lines = Object.entries(specs).map(([name, spec]) => `  '${name}': ${spec}`).join('\n');
+    appendFileSync(path.join(app, 'pnpm-workspace.yaml'), `\noverrides:\n${lines}\n`);
+
+    return;
+  }
+  const root = path.join(app, 'package.json');
+  const pkg = JSON.parse(readFileSync(root, 'utf8')) as Record<string, unknown>;
+  pkg[manager.name === 'yarn' ? 'resolutions' : 'overrides'] = specs;
+  writeFileSync(root, JSON.stringify(pkg, null, 2) + '\n');
+}
 
 /** A package this repo publishes, and where it sits. */
 interface Publishable {
@@ -49,32 +112,36 @@ const publishable = (dir: string, found: Publishable[] = []): Publishable[] => {
   return found;
 };
 
-const work = mkdtempSync(path.join(tmpdir(), 'fougere-facade-'));
-const store = path.join(work, 'tarballs');
-
 /** Scaffold one host from the tarballs, migrate, boot, and ask the domain — or throw saying where it stopped. */
-async function open(host: string, overrides: string): Promise<void> {
-  const name = `door-${host}`;
-  const app = path.join(work, name);
-  console.log(`\n${host}: scaffolding outside the workspace`);
-  run('node', [path.join(ROOT, 'packages/entry/create/dist/bin.js'), name, '--frond', 'blog', '--app', host], { cwd: work });
+async function open(host: string, name: PackageManager['name'], tarball: Record<string, string>): Promise<void> {
+  const agent = agentOf(name);
+  const manager = PackageManager.of(agent);
+  const where = `${host} × ${name}`;
+  const project = `door-${host}-${name}`;
+  const app = path.join(work, project);
+  console.log(`\n${where}: scaffolding outside the workspace`);
+  run('node', [path.join(ROOT, 'packages/entry/create/dist/bin.js'), project, '--frond', 'blog', '--app', host], {
+    cwd: work,
+    env: { ...env, npm_config_user_agent: agent },
+  });
 
-  // The scaffold writes `latest` for every @fougere dep. These overrides are what make
-  // this a test of THIS commit rather than of what is already on the registry — and they
-  // belong in the workspace file: pnpm 11 stopped reading `overrides` from package.json.
-  appendFileSync(path.join(app, 'pnpm-workspace.yaml'), `\noverrides:\n${overrides}\n`);
+  // The scaffold pins every @fougere dep to the CLI's version. Pointing them at the tarballs is
+  // what makes this a test of THIS commit rather than of what is already on the registry.
+  fromTarballs(app, manager, tarball);
 
-  console.log(`${host}: installing from tarballs`);
-  run('pnpm', ['install', '--no-frozen-lockfile'], { cwd: app, stdio: 'inherit' });
+  console.log(`${where}: installing from tarballs`);
+  shell(name === 'pnpm' ? 'pnpm install --no-frozen-lockfile' : manager.install(), app);
 
   // The boot reads the schema and refuses a database behind it, so a newcomer migrates
   // first — and the `fougere` it runs is the one packed above.
-  console.log(`${host}: migrating`);
-  run('pnpm', ['migrate'], { cwd: app, stdio: 'inherit' });
+  console.log(`${where}: migrating`);
+  shell(manager.script('migrate'), app);
 
-  console.log(`${host}: booting`);
-  const server: ChildProcess = spawn('pnpm', ['dev', '--port', PORT], {
+  console.log(`${where}: booting`);
+  const [bin, ...args] = devOf[name];
+  const server: ChildProcess = spawn(bin, args, {
     cwd: path.join(app, 'apps', host),
+    env,
     stdio: ['ignore', 'pipe', 'pipe'],
     detached: true,
   });
@@ -103,7 +170,7 @@ async function open(host: string, overrides: string): Promise<void> {
       // both answer non-200, and only the body separates them.
       console.error(log);
       if (body) console.error(body.slice(0, 4000));
-      throw new Error(`${host}: the published facade did not open: GET / answered ${status || 'nothing'}`);
+      throw new Error(`${where}: the published facade did not open: GET / answered ${status || 'nothing'}`);
     }
 
     // A PAGE is not the facade. An app that boots with zero fronds renders every page and
@@ -122,7 +189,7 @@ async function open(host: string, overrides: string): Promise<void> {
     if (posts.status !== 200) {
       console.error(log);
       console.error((await posts.text()).slice(0, 4000));
-      throw new Error(`${host}: the example page did not open: GET /posts answered ${posts.status}`);
+      throw new Error(`${where}: the example page did not open: GET /posts answered ${posts.status}`);
     }
 
     for (const method of ['post.list', 'post.listPublished']) {
@@ -135,10 +202,10 @@ async function open(host: string, overrides: string): Promise<void> {
       if (!answer || !('result' in answer)) {
         console.error(log);
         console.error(JSON.stringify(answer)?.slice(0, 2000));
-        throw new Error(`${host}: the facade opens but answers nothing: ${method} returned no result`);
+        throw new Error(`${where}: the facade opens but answers nothing: ${method} returned no result`);
       }
     }
-    console.log(`${host}: the facade opens — GET / and /posts → 200, and post.list and post.listPublished answer`);
+    console.log(`${where}: the facade opens — GET / and /posts → 200, and post.list and post.listPublished answer`);
   } finally {
     try {
       process.kill(-server.pid!, 'SIGTERM');
@@ -155,9 +222,7 @@ try {
   for (const { name, dir } of pkgs) {
     tarball[name] = run('pnpm', ['pack', '--pack-destination', store], { cwd: dir }).trim().split('\n').at(-1)!;
   }
-  const overrides = Object.entries(tarball).map(([n, f]) => `  '${n}': file:${f}`).join('\n');
-
-  for (const host of CHECKED) await open(host, overrides);
+  for (const host of hosts) for (const name of managers) await open(host, name, tarball);
 } finally {
   rmSync(work, { recursive: true, force: true });
 }
