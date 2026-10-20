@@ -1,11 +1,11 @@
 /** `withFougere(config)` — what Next has to be told so a Fougere app builds. */
-import { mkdirSync, writeFileSync } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
+import { existsSync, mkdirSync, readdirSync, writeFileSync } from 'node:fs';
+import { dirname, join, relative, resolve } from 'node:path';
 import TerserPlugin from 'terser-webpack-plugin';
 import type { NextConfig } from 'next';
 
 import { resolveConventions } from '@fougere/core';
-import { projectRootOf, RUNTIME_PACKAGES } from '@fougere/core/node';
+import { frondNamesOf, projectRootOf, REMOTES, RUNTIME_PACKAGES } from '@fougere/core/node';
 
 /** Where the facades land, and what a page imports them by. */
 const FACADE = '.fougere/facade.generated.ts';
@@ -67,6 +67,10 @@ export function withFougere(config: NextConfig = {}, options: { root?: string } 
 /** The Next config Fougere adds to the app's own — what `withFougere` hands Next once it has written. */
 export function nextConfigOf(config: NextConfig, { root, app }: { root: string; app: string }): NextConfig {
   const userWebpack = config.webpack;
+  const conventions = resolveConventions();
+  const scope = conventions.scope;
+  const local = join(root, conventions.fronds);
+  const elsewhere = frondsElsewhere(root, local);
 
   return {
     ...config,
@@ -82,7 +86,13 @@ export function nextConfigOf(config: NextConfig, { root, app }: { root: string; 
       ...config.turbopack,
       // Relative to the app: Turbopack refuses an absolute target — "server relative imports are
       // not implemented yet" — where webpack, below, wants one.
-      resolveAlias: { ...config.turbopack?.resolveAlias, [SPECIFIER]: `./${FACADE}` },
+      // `paths` reaches Turbopack, but a `.js` request through it never finds the `.ts` beside it.
+      resolveAlias: {
+        ...config.turbopack?.resolveAlias,
+        [SPECIFIER]: `./${FACADE}`,
+        [`${scope}/*.js`]: `./${relative(app, local)}/*.ts`,
+        ...Object.fromEntries(elsewhere.map(([name, dir]) => [`${scope}/${name}/*.js`, `./${relative(app, dir)}/*.ts`])),
+      },
     },
     webpack: (webpackConfig, context) => {
       // The app's own webpack function runs FIRST, so it sees an untouched config
@@ -96,7 +106,8 @@ export function nextConfigOf(config: NextConfig, { root, app }: { root: string; 
       base.resolve.alias = {
         [SPECIFIER]: join(app, FACADE),
         ...base.resolve.alias,
-        '@fronds': join(root, resolveConventions().fronds),
+        ...Object.fromEntries(elsewhere.map(([name, dir]) => [`${scope}/${name}`, dir])),
+        [scope]: local,
       };
       // A frond is ESM TypeScript, so one entity imports another as `./Author.js` and the file is `.ts`.
       // `.js` is tried first: a frond package's `exports` may map `./entities/*.js` itself, and a
@@ -121,4 +132,18 @@ export function nextConfigOf(config: NextConfig, { root, app }: { root: string; 
       return base;
     },
   };
+}
+
+/**
+ * The fronds the convention would not find under `fronds/<name>` — the ones `fougere sync` wrote, and the
+ * ones `fronds/tsconfig.json` renames — as name and directory. A bundler alias names one directory.
+ */
+function frondsElsewhere(root: string, local: string): [string, string][] {
+  const remotes = join(root, REMOTES);
+  const synced = (existsSync(remotes) ? readdirSync(remotes, { withFileTypes: true }) : [])
+    .filter((entry) => entry.isDirectory() && !existsSync(join(local, entry.name)))
+    .map((entry): [string, string] => [entry.name, join(remotes, entry.name)]);
+  const renamed = [...frondNamesOf(root)].map(([directory, name]): [string, string] => [name, join(local, directory)]);
+
+  return [...synced, ...renamed];
 }

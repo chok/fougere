@@ -174,6 +174,9 @@ export function fougere(options: FougereViteOptions = {}): Plugin {
         // variable `@fougere/nuxt` sets for the same reason.
         process.env.FOUGERE_ROOT = frondsOf(app);
         config.resolve ??= {};
+        // `@fronds/<name>` is read where TypeScript reads it, so a frond created while the server
+        // runs resolves at its first import. Vite 8 states the option; an older one ignores it.
+        config.resolve.tsconfigPaths ??= true;
         // Vite admits BOTH shapes and a host picks one: SvelteKit states an array of
         // `{ find, replacement }`, and spreading an object over it made rolldown refuse the
         // whole plugin — `StringExpected … on BindingViteAliasPluginAlias.replacement`.

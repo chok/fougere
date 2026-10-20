@@ -14,7 +14,7 @@ import type { Nuxt } from '@nuxt/schema';
 import { Fronds, orderSeeds, serves, type ScanResult } from '@fougere/core';
 import { prefixOf } from '@fougere/app';
 import { frondPackage, resolveConventions, statedFronds, statesModule, type Conventions } from '@fougere/core';
-import { emitFacade, emitNames, frondAliases, configFileIn, statementFileIn, statementIn, setModuleLoader, loadCascadedConfig, projectRootOf, remotesOf } from '@fougere/core/node';
+import { emitFacade, emitNames, frondAliases, frondNamesOf, REMOTES, configFileIn, statementFileIn, statementIn, setModuleLoader, loadCascadedConfig, projectRootOf, remotesOf } from '@fougere/core/node';
 import { declaresStorage } from '@fougere/defaults';
 import type { SeedEntry, FougereConfig } from '@fougere/core';
 import { createJiti } from 'jiti';
@@ -110,7 +110,7 @@ const module = defineNuxtModule<FougereModuleOptions>({
     });
 
     // ── 0. A TS-aware loader, installed twice on purpose ──
-    // The Vite alias below covers `.vue` pages; this covers the SCAN, which loads a
+    // The `paths` below cover `.vue` pages; this covers the SCAN, which loads a
     // frond's own sources — so `@fronds/user/entities/User.js` inside a handler resolves
     // for the same reason it does in a page.
     //
@@ -156,13 +156,34 @@ const module = defineNuxtModule<FougereModuleOptions>({
       : await scanned(scanRoot, frondsFilter, conventions);
     const { fronds } = scan;
 
-    // ── 1b. Register @fronds/* aliases for all fronds, and watch them ──
+    // ── 1b. Resolve @fronds/* where TypeScript reads it, and watch the fronds ──
+    // A page resolves through the `paths` Vite reads, so a frond created while the server runs
+    // is found at its first import. Nitro reads no `paths`: the server bundle imports what the
+    // scan above found, and the table is as old as that scan.
+    const scope = `${conventions.scope}/*`;
+    const local = resolve(scanRoot, conventions.fronds);
+    const paths: Record<string, string[]> = {
+      [scope]: [local, resolve(scanRoot, REMOTES)].map((dir) => `${relative(nuxt.options.buildDir, dir)}/*`),
+    };
+    for (const [directory, name] of frondNamesOf(scanRoot, conventions)) {
+      paths[`${frondPackage(name, conventions)}/*`] = [`${relative(nuxt.options.buildDir, join(local, directory))}/*`];
+    }
+    nuxt.options.vite.resolve = { ...nuxt.options.vite.resolve, tsconfigPaths: true } as typeof nuxt.options.vite.resolve;
+    nuxt.hook('prepare:types', ({ tsConfig, sharedTsConfig }) => {
+      for (const config of [tsConfig, sharedTsConfig]) {
+        if (!config) continue;
+        config.compilerOptions = { ...config.compilerOptions, paths: { ...config.compilerOptions?.paths, ...paths } };
+      }
+    });
+    (nuxt as any).hook('nitro:config', (nitroConfig: any) => {
+      nitroConfig.alias = { ...aliases, ...nitroConfig.alias };
+    });
+
     // The frond directories ARE the watch list — nothing to declare. Without this, a
     // frond under `apps/../..` sits outside rootDir, so Nuxt never restarts: the scan,
     // the additive migration (once per boot) and the seeds all keep the previous shape,
     // and a field you just added is simply absent with no error anywhere.
-    for (const [specifier, path] of Object.entries(aliases)) {
-      nuxt.options.alias[specifier] = path;
+    for (const path of Object.values(aliases)) {
       const watched = [path];
       // Nuxt reads this list TWICE and a directory serves only the first read: the
       // watcher adds string entries, while the restart test is `pattern === path`
@@ -209,23 +230,6 @@ const module = defineNuxtModule<FougereModuleOptions>({
       const terser = (build.terserOptions ??= {});
       const mangle = ((terser as Record<string, any>).mangle ??= {});
       mangle.reserved = [...new Set([...(mangle.reserved ?? []), ...entityNames])];
-    }
-
-    // ── 1c. Register aliases for synced remote fronds (.fougere/remotes.json) ──
-    const remotesPath = resolve(rootDir, '.fougere', 'remotes.json');
-    if (existsSync(remotesPath)) {
-      try {
-        const remotes = JSON.parse(readFileSync(remotesPath, 'utf-8')) as Record<string, { url: string; path: string }>;
-        for (const [name, meta] of Object.entries(remotes)) {
-          // Don't override locally scanned fronds
-          const specifier = frondPackage(name, conventions);
-          if (!nuxt.options.alias[specifier]) {
-            nuxt.options.alias[specifier] = meta.path;
-            // Ensure Vite/Nitro can resolve files inside synced remotes
-            nuxt.options.build.transpile.push(meta.path);
-          }
-        }
-      } catch { /* corrupt remotes.json — skip */ }
     }
 
     // ── 2. Composables — the primitives, nothing else ──

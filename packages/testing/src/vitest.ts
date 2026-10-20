@@ -1,7 +1,14 @@
 import { createRequire } from 'node:module';
+import { resolveConventions } from '@fougere/core';
+import { frondAliases, loadConfig, projectRootOf } from '@fougere/core/node';
 
-/** The vitest configuration a Fougere project needs, so nobody has to discover it. */
-export function fougereTest(overrides: Record<string, unknown> = {}): Record<string, unknown> {
+/**
+ * The vitest configuration a Fougere project needs, so nobody has to discover it — `@fronds/<name>`
+ * included: a test above the fronds imports them the way a frond imports its neighbour.
+ */
+export async function fougereTest(overrides: Record<string, unknown> = {}): Promise<Record<string, unknown>> {
+  const root = projectRootOf(process.cwd());
+  const fronds = await frondAliases(root, resolveConventions((await loadConfig(root)).conventions));
   const require = createRequire(import.meta.url);
   let graphqlDir: string | undefined;
   try {
@@ -11,7 +18,7 @@ export function fougereTest(overrides: Record<string, unknown> = {}): Record<str
   }
 
   const base = {
-    resolve: (graphqlDir ? { alias: { graphql: graphqlDir }, dedupe: ['graphql'] } : {}),
+    resolve: graphqlDir ? { alias: { ...fronds, graphql: graphqlDir }, dedupe: ['graphql'] } : { alias: fronds },
     test: {
       // Both spellings of where a test lives: beside the frond it is about, and above
       // the fronds when it is about several of them.
