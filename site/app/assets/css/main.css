@@ -205,3 +205,9 @@ h1, h2, h3 {
   stroke-dasharray: 12 9;
   stroke-linecap: butt;
 }
+
+/* ── A command, in the reader's package manager (modules/managers.ts) ─────── */
+/* Its tabs stand above it, so the block keeps the corners a header would have squared. */
+.managers pre {
+  border-radius: 0.5rem;
+}

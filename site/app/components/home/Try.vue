@@ -6,7 +6,7 @@ const localePath = useLocalePath();
   <section id="try" class="try">
     <h2>{{ $t('home.tryTitle') }} <em>Fougere</em></h2>
     <div class="actions">
-      <HomeCode class="command" code="pnpm create fougere" />
+      <HomeInstall />
       <NuxtLink :to="localePath('/docs/getting-started')" class="primary">{{ $t('home.tryButton') }} →</NuxtLink>
     </div>
     <p class="or">
@@ -47,11 +47,6 @@ p {
   font-size: 19px;
   color: var(--ui-text-muted);
   max-width: 600px;
-}
-
-.command :deep(pre) {
-  padding: 16px 56px 16px 26px;
-  font-size: 16px;
 }
 
 .or {

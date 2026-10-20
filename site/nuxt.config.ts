@@ -1,3 +1,4 @@
+import { PackageManager } from '@fougere/cli/package-manager';
 import { DEMO_LANGUAGES } from './modules/demo';
 import { pastel } from './app/code/pastel';
 
@@ -15,7 +16,7 @@ export default defineNuxtConfig({
   experimental: { sharedPrerenderData: false },
   // `./modules/demo` is named rather than left to the modules/ scan: it writes into
   // content/ and must run before @nuxt/content reads it.
-  modules: ['./modules/demo', '@nuxt/ui', '@nuxt/content', '@nuxtjs/i18n', '@fougere/nuxt'],
+  modules: ['./modules/demo', './modules/managers', '@nuxt/ui', '@nuxt/content', '@nuxtjs/i18n', '@fougere/nuxt'],
   css: ['~/assets/css/main.css'],
   fonts: {
     families: [
@@ -66,6 +67,9 @@ export default defineNuxtConfig({
         'vscode-icons:file-type-git',
         'vscode-icons:file-type-json',
         'vscode-icons:file-type-toml',
+        // The package-manager marks, named off the list the tabs and the home page are made from.
+        ...PackageManager.names.map((name) => `vscode-icons:file-type-${name}`),
+        'vscode-icons:file-type-light-pnpm',
       ],
     },
   },
