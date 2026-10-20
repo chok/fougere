@@ -151,7 +151,7 @@ function frondOf(frond: FrondDescriptor, imports: Imports): string {
     members.push(`presenters: ${list(frond.presenters.map((p) => subject(imports.default(p.filePath, frond), p.deps, fieldMetaOf(p))))}`);
   }
   if (frond.collectors.length) {
-    members.push(`collectors: ${list(frond.collectors.map((c) => subject(imports.default(c.filePath, frond), c.deps)))}`);
+    members.push(`collectors: ${list(frond.collectors.map((c) => subject(imports.default(c.filePath, frond), c.deps, c.refuses ? `refuses: ${JSON.stringify(c.refuses)}` : '')))}`);
   }
   if (frond.providers.length) {
     members.push(`providers: ${list(frond.providers.map((p) => subject(

@@ -2,7 +2,7 @@ import { Crud, FougereError, ErrorCode, Page } from '@fougere/core';
 import Post from '../entities/Post.js';
 import PostRepository from '../repositories/PostRepository.js';
 import User from '@fronds/user/entities/User.js';
-import { requireUser, requireOwn, requireFreeSlug } from '../rules/post.js';
+import { requireOwn, requireFreeSlug } from '../rules/post.js';
 
 /** What an author may write — the io axes already exclude the server-owned fields. */
 export class PostDraft extends Post.pick('slug', 'title', 'summary', 'body') {}
@@ -58,8 +58,7 @@ export default class PostHandler extends Crud(Post, { list: PostCard }) {
   }
 
   /** Validate: signed-in author, free slug. Realize: stamp the author pair. */
-  async create(input: PostDraft, user?: User): Promise<Post> {
-    const author = requireUser(user);
+  async create(input: PostDraft, author: User): Promise<Post> {
     await requireFreeSlug(this.posts, input.slug, undefined);
 
     return this.posts.create({
@@ -70,8 +69,7 @@ export default class PostHandler extends Crud(Post, { list: PostCard }) {
   }
 
   /** Validate: the author only, free slug if it changes. */
-  async update(id: Post['id'], input: PostDraft, user?: User): Promise<Post> {
-    const author = requireUser(user);
+  async update(id: Post['id'], input: PostDraft, author: User): Promise<Post> {
     const post = await requireOwn(this.posts, id, author);
     if (input.slug && input.slug !== post.slug) await requireFreeSlug(this.posts, input.slug, id);
 
@@ -83,8 +81,7 @@ export default class PostHandler extends Crud(Post, { list: PostCard }) {
    * Validate: the author, a draft, a body worth publishing. Realize: the
    * server stamps the pair.
    */
-  async publish(id: Post['id'], user?: User): Promise<Post> {
-    const author = requireUser(user);
+  async publish(id: Post['id'], author: User): Promise<Post> {
     const post = await requireOwn(this.posts, id, author);
     if (post.status === 'published') {
       throw new FougereError({ code: ErrorCode.CONFLICT, message: 'Already published' });
@@ -97,8 +94,7 @@ export default class PostHandler extends Crud(Post, { list: PostCard }) {
   }
 
   /** Validate: the author only. */
-  async delete(id: Post['id'], user?: User): Promise<boolean> {
-    const author = requireUser(user);
+  async delete(id: Post['id'], author: User): Promise<boolean> {
     await requireOwn(this.posts, id, author);
 
     return this.posts.delete(id);

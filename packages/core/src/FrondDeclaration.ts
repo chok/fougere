@@ -12,6 +12,7 @@ import type { ExtensionEntry } from './descriptor/ExtensionEntry.js';
 import { DEFAULT_CONVENTIONS } from './Conventions.js';
 import { getPresenterFields } from './prefab/presenter.js';
 import type { OperationContract } from './wire/OperationContract.js';
+import type { ErrorCode } from './wire/ErrorCode.js';
 import type { DeclaredSubject } from './DeclaredSubject.js';
 import type { DeclaredAnswer } from './descriptor/DeclaredAnswer.js';
 import type { DeclaredHandler } from './DeclaredHandler.js';
@@ -67,7 +68,7 @@ export interface FrondDeclaration extends Pick<FrondConfig, 'pipes' | 'surfaces'
   handlers?: (Ctor | DeclaredHandler)[];
   /** A computed field IS a method; what TypeScript erases of it — its type, its parameters — is `fieldMeta`. */
   presenters?: (Ctor | DeclaredSubject & { fieldMeta?: PresenterFieldMeta[] })[];
-  collectors?: (Ctor | DeclaredSubject)[];
+  collectors?: (Ctor | DeclaredSubject & { refuses?: ErrorCode[] })[];
   providers?: Declared[];
   seeds?: { entityName: string; data: SeedEntry['data'] }[];
   /** What runs around this frond's operations, and around those of the fronds under it. */
@@ -158,6 +159,7 @@ export function frond(name: string, declared: FrondDeclaration = {}): FrondDescr
       ctor,
       deps: depsOf(c),
       filePath: fileOf(ctor),
+      ...(typeof c !== 'function' && c.refuses ? { refuses: c.refuses } : {}),
     };
   });
 

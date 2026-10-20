@@ -1,4 +1,3 @@
-import { FougereError, ErrorCode } from '@fougere/core';
 import type { Emit } from '@fougere/core';
 import type Post from '../entities/Post.js';
 import type PostDraft from '../entities/PostDraft.js';
@@ -38,8 +37,7 @@ export default class PostHandler {
    * `input` is supplied by the caller; `user` is supplied by the collector. The resolved
    * binding plan, rather than their position, determines the operation's input contract.
    */
-  async createDraft(input: PostDraft, user?: User): Promise<Post> {
-    if (!user) throw new FougereError({ code: ErrorCode.UNAUTHORIZED, message: 'sign in to write' });
+  async createDraft(input: PostDraft, user: User): Promise<Post> {
     const post = await this.posts.create({ ...input, author: user.name, status: 'draft' });
     await this.changed({ id: post.id, author: post.author, status: post.status, at: new Date() });
 

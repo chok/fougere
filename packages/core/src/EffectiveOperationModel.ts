@@ -7,7 +7,7 @@ import { computeBindingPlan } from './bindingPlan.js';
 import { targetOf } from './prefab/prefab.js';
 import { EFFECTIVE_OPERATION_SEMANTICS } from './EffectiveOperationSemantics.js';
 import type { CollectorEntry } from './descriptor/CollectorEntry.js';
-import { collectorsInScope, collectorsOf, groupedCollectors, refuseAmbiguousCollectors } from './module/collector/operation.js';
+import { collectorsInScope, collectorsOf, groupedCollectors, refuseAmbiguousCollectors, refusalsWithCollected } from './module/collector/operation.js';
 import { type FrondDescriptor } from './descriptor/FrondDescriptor.js';
 import type { HandlerEntry } from './descriptor/HandlerEntry.js';
 import { OperationOverrides, type OperationOverrideEntry } from './descriptor/OperationOverrides.js';
@@ -158,6 +158,7 @@ function resolveOperation(resolving: Resolving, name: string, rawContract: Opera
     ? { schema: fact, closed: false }
     : effectiveOutput(frond, handler, name, contract);
 
+  const errors = refusalsWithCollected(contract.errors, contract.binding, collectorsByType);
   const className = handler.ctor.name.replace(/Handler$/, '');
   const surface = handler.surface ? `/${handler.surface}` : '/default';
   const remote = options.remotes?.[frond.name];
@@ -166,6 +167,7 @@ function resolveOperation(resolving: Resolving, name: string, rawContract: Opera
     ...contract,
     ...(input ? { input } : {}),
     ...(output.schema ? { output: output.schema } : {}),
+    ...(errors ? { errors } : {}),
     id: `${frond.name}${surface}/${className}.${name}`,
     operation: `${className}.${name}`,
     name,

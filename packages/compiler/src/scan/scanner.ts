@@ -613,8 +613,11 @@ async function toCollectorEntry(filePath: string): Promise<CollectorEntry | null
   // was built on needs no schema.
   const typeName = lowerFirst((target as { name: string }).name);
   const deps = await depsOf(filePath);
+  // What its `missing()` refuses, walked like an op's — through the helpers it calls.
+  const missing = `${(ctor as { name: string }).name}.missing`;
+  const refuses = (await parseRefusals(filePath, (name) => name === missing).catch(() => new Map<string, ErrorCode[]>())).get(missing);
 
-  return { typeName, ctor, deps, filePath };
+  return { typeName, ctor, deps, filePath, ...(refuses?.length ? { refuses } : {}) };
 }
 
 /**

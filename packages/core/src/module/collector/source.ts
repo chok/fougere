@@ -27,6 +27,9 @@ export const collector: BindingSourceType<'collector'> = {
 
     return found ? collectedAs(found, await found.collect(ctx)) : undefined;
   },
+  missing(source, { ctx, scope }) {
+    collectorIn(scope, source.typeName)?.missing?.(ctx);
+  },
   given(source, value, { scope }) {
     const found = collectorIn(scope, source.typeName);
 

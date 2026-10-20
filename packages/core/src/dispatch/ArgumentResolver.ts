@@ -32,6 +32,7 @@ export class ArgumentResolver {
           break;
         }
         case 'input': {
+          if (ctx.input === undefined && !binding.optional) throw refused(binding.name, 'Required');
           args.push(ctx.input);
           break;
         }
@@ -39,8 +40,17 @@ export class ArgumentResolver {
           args.push(ctx.query);
           break;
         }
-        default:
-          args.push(await BindingSources.resolve(binding.source.kind).resolve(binding.source, { ctx, scope: this.scope }));
+        default: {
+          const source = BindingSources.resolve(binding.source.kind);
+          const call = { ctx, scope: this.scope };
+          const value = await source.resolve(binding.source, call);
+          // No `?`, so the absence is a refusal — said by the source when it has words for it.
+          if (value === undefined && !binding.optional) {
+            source.missing?.(binding.source, call);
+            throw refused(binding.name, 'Required');
+          }
+          args.push(value);
+        }
       }
     }
 

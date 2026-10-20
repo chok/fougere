@@ -3,6 +3,8 @@ import type { FrondDescriptor } from '../../descriptor/FrondDescriptor.js';
 import type { Diagnostic } from '../../diagnostic.js';
 import type { EffectiveOperation } from '../../EffectiveOperation.js';
 import type { EffectiveParameter } from '../../EffectiveParameter.js';
+import type { BindingPlan } from '../../wire/binding.js';
+import type { ErrorCode } from '../../wire/ErrorCode.js';
 
 /**
  * The collectors a frond's operations can be handed: its own, then those of the frond it extends —
@@ -63,4 +65,22 @@ export function collectorsOf(
       filePath: collector.filePath,
     }] : [];
   });
+}
+
+/**
+ * An op's refusals with what its required collectors refuse beside them: `publish(id, user: User)`
+ * answers `UNAUTHORIZED` when nobody signed in, said by the collector's `missing()` and never by
+ * the handler — so the contract would lose it if only the handler's body were read.
+ */
+export function refusalsWithCollected(
+  errors: readonly ErrorCode[] | undefined,
+  binding: BindingPlan,
+  collectorsByType: Map<string, CollectorEntry[]>,
+): ErrorCode[] | undefined {
+  const collected = binding.flatMap(({ source, optional }) => (source.kind === 'collector' && !optional
+    ? (collectorsByType.get(source.typeName) ?? []).flatMap((collector) => collector.refuses ?? [])
+    : []));
+  if (collected.length === 0) return errors ? [...errors] : undefined;
+
+  return [...new Set([...(errors ?? []), ...collected])].sort();
 }

@@ -26,10 +26,7 @@ export default class PostHandler extends Crud(Post) {
    * The draft→published transition.
    * Validate: author only, draft only. Realise: the server stamps the pair.
    */
-  async publish(id: Post['id'], user?: User): Promise<Post> {
-    if (!user) {
-      throw new FougereError({ code: ErrorCode.UNAUTHORIZED, message: 'Login required to publish' });
-    }
+  async publish(id: Post['id'], user: User): Promise<Post> {
     const post = await super.findById(id);
     if (!post) {
       throw new FougereError({ code: ErrorCode.NOT_FOUND, message: `Post '${id}' not found` });

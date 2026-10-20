@@ -1098,6 +1098,19 @@ the terminal, the operator replaying one. Both subscribers the extensions bring 
 `demos/nuxt-blog` the day the OpenAPI document listed them. What enters from outside is a command,
 which announces. Pinned by `testing/tests/listener-doors.test.ts`.
 
+**A parameter with no `?` that nothing filled is refused before the handler runs** —
+`ArgumentResolver.resolve`: a path or query value with `Required`, an input view nothing was sent for
+the same way, and a collected one in its collector's words — `missing(ctx)`, which throws and may tell
+one absence from another (`BindingSourceType.missing`, `CollectorResolver.missing`). Without it the
+collector refuses with `Required` too. The handler used to check it: `if (!user) throw UNAUTHORIZED`
+in every op, a `requireUser` helper in the site. Because the check left the handler, the scan reads
+what `missing()` refuses — walked through its helpers like an op — onto `CollectorEntry.refuses`
+(stated by a `frond()` as `{ ctor, refuses }`, written into the emitted statement), and the operation
+model folds it into the `errors` of every op requiring that collector (`refusalsWithCollected`), so the
+card and OpenAPI still promise the `401`. An input that arrived `undefined` used to reach the handler
+— `searchByTitle` answered 500, found by the smoke. Pinned by `core/tests/required-parameter.test.ts`
+and `compiler/tests/collector-refuses.test.ts`.
+
 **A process serves the REST door of the fronds it hosts** — `routesOf`
 (`adapter/rest/src/routes/RouteDefinition.ts`) leaves out an op whose `placement` is `remote`, and
 `fougere serve` answers REST beside the call envelope (`ServeOptions.beside`, over `restAnswer` in

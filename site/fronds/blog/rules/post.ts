@@ -7,14 +7,6 @@ import User from '@fronds/user/entities/User.js';
 // nothing, which makes them words of the frond rather than a service — and keeps them out of
 // the handler, where only public methods become operations.
 
-export function requireUser(user: User | undefined): User {
-  if (!user) {
-    throw new FougereError({ code: ErrorCode.UNAUTHORIZED, message: 'Sign in to write' });
-  }
-
-  return user;
-}
-
 export async function requireOwn(posts: PostRepository, id: string, author: User): Promise<Post> {
   const post = await posts.findById(id);
   if (!post) {

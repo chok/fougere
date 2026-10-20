@@ -22,5 +22,11 @@ export interface BindingCall {
 export interface BindingSourceType<K extends BindingSource['kind'] = BindingSource['kind']> {
   claim(param: Param, collectorTypeNames: ReadonlySet<string>): BindingSourceOf<K> | undefined;
   resolve(source: BindingSourceOf<K>, call: BindingCall): unknown;
+  /**
+   * A parameter with no `?` it resolved nothing for — refused here, in this source's own words
+   * (`UNAUTHORIZED` for a user nobody signed in). Returning means it has none: core refuses with
+   * `Required`. Never asked of an optional parameter, whose absence is a value.
+   */
+  missing?(source: BindingSourceOf<K>, call: BindingCall): void;
   given(source: BindingSourceOf<K>, value: unknown, call: BindingCall): unknown;
 }

@@ -1,4 +1,4 @@
-import { Collector } from '@fougere/core';
+import { Collector, ErrorCode, FougereError } from '@fougere/core';
 import type { InvocationContext } from '@fougere/core';
 import User from '@fronds/user/entities/User.js';
 
@@ -10,5 +10,10 @@ import User from '@fronds/user/entities/User.js';
 export default class CurrentUserCollector extends Collector(User) {
   async collect(ctx: InvocationContext) {
     return ctx.state.user as User | undefined;
+  }
+
+  /** A required `user: User` with nobody signed in. */
+  missing(): never {
+    throw new FougereError({ code: ErrorCode.UNAUTHORIZED, message: 'Sign in to write' });
   }
 }
