@@ -33,13 +33,16 @@ describe('the OpenAPI document', () => {
   });
 
   it('lists what the op can refuse, at the status a refusal is answered with', () => {
-    const responses = row.get!.responses as Record<string, { 'x-fougere-codes'?: string[] }>;
-    const created = collection.post!.responses as Record<string, { 'x-fougere-codes'?: string[] }>;
+    type Refused = { content: { 'application/json': { schema: { allOf: [unknown, { properties: { code: { enum: string[] } } }] }; example: { code: string } } } };
+    const codesOf = (response: Refused | undefined) => response?.content['application/json'].schema.allOf[1].properties.code.enum;
+    const responses = row.get!.responses as Record<string, Refused>;
+    const created = collection.post!.responses as Record<string, Refused>;
 
-    expect(responses['404']!['x-fougere-codes']).toEqual(['NOT_FOUND']);
-    expect(responses['503']!['x-fougere-codes']).toEqual(['SERVICE_UNAVAILABLE']);
+    expect(codesOf(responses['404'])).toEqual(['NOT_FOUND']);
+    expect(responses['404']!.content['application/json'].example.code).toBe('NOT_FOUND');
+    expect(codesOf(responses['503'])).toEqual(['SERVICE_UNAVAILABLE']);
     expect(created['404']).toBeUndefined();
-    expect(created['400']!['x-fougere-codes']).toEqual(expect.arrayContaining(['VALIDATION_FAILED', 'BAD_REQUEST']));
+    expect(codesOf(created['400'])).toEqual(expect.arrayContaining(['VALIDATION_FAILED', 'BAD_REQUEST']));
   });
 
   it('writes a schema once, as the card writes it, and says who writes each field', () => {

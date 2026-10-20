@@ -1078,7 +1078,7 @@ door of no real kind.
 **What REST serves, it can publish, and only on request** — `openApiOf`
 (`adapter/rest/src/openapi/document.ts`) reads OpenAPI 3.1 off `generateRoutes` and `operationsFor`,
 never off a declaration of its own: the status `responseOf` answers, the door middlewares' `responses`,
-and `refusalsOf` at `toHttpError`'s status, the codes under `x-fougere-codes`. A schema is the card's
+and `refusalsOf` at `toHttpError`'s status, each status narrowing `Refusal.code` to its own. A schema is the card's
 descriptor — JSON Schema already — named by the entity, and a view cut from it by its use
 (`PostUpdateInput`). `protocols: { rest: { openapi: true } }` serves it at `{prefix}/openapi.json` with
 a Scalar page at `{prefix}/docs` (`describedAt`, answered by `serveRest` before a route is matched, and

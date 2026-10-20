@@ -141,15 +141,22 @@ function responsesOf(route: RouteDefinition, meta: OperationMeta, designates: bo
   }
 
   const missing = designates && (route.method === 'DELETE' || meta.cardinality === 'one' || meta.cardinality === 'maybe');
-  const codes = [...refusalsOf({ kind: meta.kind, input: meta.input, errors: meta.errors }), ...(missing ? [ErrorCode.NOT_FOUND] : [])];
+  const codes = new Set([...refusalsOf({ kind: meta.kind, input: meta.input, errors: meta.errors }), ...(missing ? [ErrorCode.NOT_FOUND] : [])]);
+  const refusedAt = new Map<number, ErrorCode[]>();
   for (const code of codes) {
     const { status } = toHttpError(new FougereError({ code, message: code }));
-    const key = String(status);
-    const refused = responses[key] as { 'x-fougere-codes'?: string[] } | undefined;
-    responses[key] = {
-      description: 'Refused.',
-      content: { 'application/json': { schema: { $ref: '#/components/schemas/Refusal' } } },
-      'x-fougere-codes': [...new Set([...(refused?.['x-fougere-codes'] ?? []), code])],
+    refusedAt.set(status, [...(refusedAt.get(status) ?? []), code]);
+  }
+  // Each status names its own codes, so a reader's example is one this status can answer.
+  for (const [status, refused] of refusedAt) {
+    responses[String(status)] = {
+      description: `Refused: ${refused.join(', ')}.`,
+      content: {
+        'application/json': {
+          schema: { allOf: [{ $ref: '#/components/schemas/Refusal' }, { properties: { code: { enum: refused } } }] },
+          example: { code: refused[0], message: 'What was refused, in words.' },
+        },
+      },
     };
   }
 
