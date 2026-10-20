@@ -4,7 +4,7 @@
  * same op through JSON-RPC never meets it.
  */
 import { describe, expect, it } from 'vitest';
-import { RestMiddleware, type ResponseResult, type RestRequest, type RestResponse } from '@fougere/adapter-rest';
+import { openApiOf, RestMiddleware, type ResponseResult, type RestRequest, type RestResponse } from '@fougere/adapter-rest';
 import { configureFougere, serveRest, serveRpc, tableOf, useFougereApp } from '@fougere/app';
 import { createContainer } from '@fougere/container';
 import { createApp, ErrorCode, FougereError, frond } from '@fougere/core';
@@ -123,5 +123,11 @@ describe('a REST middleware', () => {
 
     expect(find.responses).toEqual([{ status: 301, headers: ['location'] }]);
     expect(write.responses).toBeUndefined();
+  });
+
+  it('is what the OpenAPI document says the op may answer besides its own', () => {
+    const find = openApiOf(app).paths['/api/desk/notes/{id}/find']!.get as { responses: Record<string, unknown> };
+
+    expect(find.responses['301']).toMatchObject({ headers: { location: { schema: { type: 'string' } } } });
   });
 });

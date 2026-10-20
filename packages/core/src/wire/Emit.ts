@@ -72,6 +72,14 @@ export function factsListenedTo(handlers: readonly { operations: OperationsMap }
   return [...new Set(handlers.flatMap((handler) => [...handler.operations.values()].flatMap(taken)))];
 }
 
+/**
+ * An op an announcement calls — it takes a `Fact<T>` or a `Pipe<T>` — and so one no caller names: a
+ * door open to callers serves no route to it. What enters from outside is a command, which announces.
+ */
+export function listens(op: { binding?: readonly { source: { kind: string } }[] }): boolean {
+  return (op.binding ?? []).some(({ source }) => source.kind === 'fact' || source.kind === 'pipe');
+}
+
 /** `Fact` and `Pipe` name themselves, and the plan reads them before it reads a collector. */
 const NO_COLLECTOR = new Set<string>();
 

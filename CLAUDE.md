@@ -1049,7 +1049,7 @@ method naming no op of the handler refuses the boot (`door-middleware-unknown-op
 handler the frond does not serve. What such a middleware may answer in an op's place is a field of
 its entry, `MiddlewareEntry.answers` (`{ find: [{ status: 301, headers: ['location'] }] }`), folded
 into the op's `protocols[door].responses` (`OperationOverrides.protocols`) and onto the REST route —
-what OpenAPI will publish. A `frond()` states it; the scan only fills it, reading each method's return
+what OpenAPI publishes. A `frond()` states it; the scan only fills it, reading each method's return
 type (`parseDeclaredAnswers`, `handler-parser.ts`): every member whose `status` is a number LITERAL,
 with its `headers` keys — the fields, never the type arguments, so an alias holds — while a `status:
 number` member is what `next()` hands back. The compiler reads the door's name off the class and
@@ -1074,6 +1074,25 @@ reads its value and cannot change it, a changed one reads as absent, and what mu
 reference kept elsewhere. A name `state:` does not declare, or one the door cannot carry, refuses
 `state.set` naming what it keeps. Pinned by `core/tests/state.keeping.test.ts`, with a keeper and a
 door of no real kind.
+
+**What REST serves, it can publish, and only on request** — `openApiOf`
+(`adapter/rest/src/openapi/document.ts`) reads OpenAPI 3.1 off `generateRoutes` and `operationsFor`,
+never off a declaration of its own: the status `responseOf` answers, the door middlewares' `responses`,
+and `refusalsOf` at `toHttpError`'s status, the codes under `x-fougere-codes`. A schema is the card's
+descriptor — JSON Schema already — named by the entity, and a view cut from it by its use
+(`PostUpdateInput`). `protocols: { rest: { openapi: true } }` serves it at `{prefix}/openapi.json` with
+a Scalar page at `{prefix}/docs` (`describedAt`, answered by `serveRest` before a route is matched, and
+`registerDescribed` on an `HttpRouter`); nothing is published without the line, since the document
+names every op and what each refuses at once. The page is the first answer that is not JSON
+(`ResponseResult.raw`), the case the media-type work takes over. Pinned by `testing/tests/openapi.test.ts`.
+
+**An op an announcement calls has no caller** — `listens` (`wire/Emit.ts`): an op whose binding takes
+a `Fact<T>` or a `Pipe<T>`. REST serves no route to it, GraphQL no field, and `pageDoor` refuses it
+(`PageDoorOptions.listens`); the peer door still reaches it, which is how a fact crosses, and so does
+the terminal, the operator replaying one. Both subscribers the extensions bring answered `POST
+/api/calls/keeps/record` and `/api/observability/exports/record` to anyone, measured on
+`demos/nuxt-blog` the day the OpenAPI document listed them. What enters from outside is a command,
+which announces. Pinned by `testing/tests/listener-doors.test.ts`.
 
 **A process serves the REST door of the fronds it hosts** — `routesOf`
 (`adapter/rest/src/routes/RouteDefinition.ts`) leaves out an op whose `placement` is `remote`, and

@@ -4,7 +4,7 @@ import type SchemaBuilder from '@pothos/core';
 import type { Fields, SchemaView } from '@fougere/schema';
 import { Shapes } from '@fougere/schema';
 import { type OperationMeta } from './OperationMeta.js';
-import type { EntityEntry as CoreEntityEntry, HandlerEntry as CoreHandlerEntry } from '@fougere/core';
+import { listens, type EntityEntry as CoreEntityEntry, type HandlerEntry as CoreHandlerEntry } from '@fougere/core';
 import { registerOperations, registerType } from './OperationsConfig.js';
 
 type HandlerFacade = Record<string, Function>;
@@ -274,10 +274,12 @@ export function registerAll(
         : undefined) ?? frond.handlers.find((h) => !h.surface && h.address === address);
       if (!surfaceName && handler?.exposed === false) continue;
 
-      const operations = app.operationsFor(address, surfaceName);
-      if (!operations) {
+      const effective = app.operationsFor(address, surfaceName);
+      if (!effective) {
         throw new Error(`GraphQL cannot project '${address}' without its EffectiveOperation table.`);
       }
+      // An op an announcement calls is no caller's to name, so it is no field.
+      const operations = new Map([...effective].filter(([, meta]) => !listens(meta)));
 
       const name = upperFirst(address);
       const rows = operations.get('list')?.output ?? operations.get('findById')?.output;

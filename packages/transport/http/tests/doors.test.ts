@@ -26,7 +26,7 @@ describe('the doors of the call envelope', () => {
   it('never marks a page\'s call crossed, and gives it the state the host resolved', async () => {
     const { runner, seen } = recording();
 
-    await answerAt(pageDoor(runner, { user: 'host' }), envelope({ state: { user: 'admin' } }));
+    await answerAt(pageDoor(runner, { state: { user: 'host' } }), envelope({ state: { user: 'admin' } }));
 
     expect(seen[0]!.crossed).toBeUndefined();
     expect(seen[0]!.state).toEqual({ user: 'host' });
@@ -35,8 +35,18 @@ describe('the doors of the call envelope', () => {
   it('refuses `args` from a page, which a peer may send', async () => {
     const { runner } = recording();
 
-    const answered = await answerAt(pageDoor(runner, {}), envelope({ args: ['1'] })) as { error: { data: { code: string } } };
+    const answered = await answerAt(pageDoor(runner, { state: {} }), envelope({ args: ['1'] })) as { error: { data: { code: string } } };
     expect(answered.error.data.code).toBe('BAD_REQUEST');
     expect(await answerAt(peerDoor(runner), envelope({ args: ['1'] }))).toMatchObject({ result: 'ok' });
+  });
+
+  it('refuses a page an op an announcement calls, which a peer delivering a fact reaches', async () => {
+    const { runner, seen } = recording();
+    const listens = (address: string, op: string) => `${address}.${op}` === 'post.list';
+
+    const answered = await answerAt(pageDoor(runner, { state: {}, listens }), envelope({})) as { error: { data: { code: string } } };
+    expect(answered.error.data.code).toBe('NOT_FOUND');
+    expect(seen).toHaveLength(0);
+    expect(await answerAt(peerDoor(runner), envelope({}))).toMatchObject({ result: 'ok' });
   });
 });

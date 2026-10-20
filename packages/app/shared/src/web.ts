@@ -71,6 +71,7 @@ export async function restAnswer(app: App, request: Request): Promise<Response |
   const headers = headersOf(outcome.headers);
   // A 204 carries no body, and a Response refuses one it was handed.
   if (outcome.status === 204) return new Response(null, { status: 204, headers });
+  if (outcome.kind === 'ok' && outcome.raw) return new Response(outcome.body as string, { status: outcome.status, headers });
 
   return Response.json(outcome.body, { status: outcome.status, headers });
 }

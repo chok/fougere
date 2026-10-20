@@ -120,7 +120,7 @@ export type {
   DeclaredFrond,
   DeclaredEdge,
 } from './contract.js';
-export { type Emit } from './wire/Emit.js';
+export { listens, type Emit } from './wire/Emit.js';
 export { type Fact } from './wire/Fact.js';
 export { type Pipe } from './wire/Pipe.js';
 export { callValueOf } from './contract.js';

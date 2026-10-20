@@ -22,6 +22,8 @@ const ROUTE = Format.of('protocol/rest/route')
  */
 const REST = Format.of('protocol/rest')
   .key('prefix', Format.text)
+  /** Publish what REST serves: `{prefix}/openapi.json`, and `{prefix}/docs` to read it. Nothing without it. */
+  .key('openapi', Format.flag)
   .key('overrides', Format.recordOf(ROUTE))
   .closed();
 

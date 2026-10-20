@@ -26,6 +26,7 @@ interface ExpressResponse {
   status(code: number): ExpressResponse;
   set(field: string, value: unknown): ExpressResponse;
   json(body: unknown): unknown;
+  send(body: unknown): unknown;
 }
 
 type Next = (err?: unknown) => void;
@@ -134,7 +135,8 @@ export function rest(): ExpressMiddleware {
         if (outcome.kind === 'pass') return next();
 
         for (const [key, value] of Object.entries(outcome.headers ?? {})) res.set(key, value);
-        res.status(outcome.status).json(outcome.body);
+        if (outcome.kind === 'ok' && outcome.raw) res.status(outcome.status).send(outcome.body);
+        else res.status(outcome.status).json(outcome.body);
       } catch (err) {
         fail(res, next, err);
       }

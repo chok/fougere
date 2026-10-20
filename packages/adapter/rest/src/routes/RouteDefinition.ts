@@ -1,7 +1,7 @@
 import type { Fields } from '@fougere/schema';
 import { Card, Visibility } from '@fougere/schema';
 import type { HttpMethod } from '@fougere/http';
-import { RouteAddress, wordsOf, type Cardinality, type FougereFrondProtocols, type HandlerEntry as CoreHandlerEntry, type ProtocolConfig } from '@fougere/core';
+import { listens, RouteAddress, wordsOf, type Cardinality, type FougereFrondProtocols, type HandlerEntry as CoreHandlerEntry, type ProtocolConfig } from '@fougere/core';
 import type { BindingPlan } from '@fougere/core/descriptor';
 import type { OperationMeta } from './OperationMeta.js';
 import type { GenerateRoutesOptions } from './GenerateRoutesOptions.js';
@@ -60,7 +60,7 @@ interface FrondLike {
   protocols?: FougereFrondProtocols;
 }
 
-interface AppLike {
+export interface AppLike {
   fronds: FrondLike[];
   /** What `fougere.config.ts` says to each protocol — where REST is mounted, a third party's routes. */
   protocols?: ProtocolConfig;
@@ -203,8 +203,14 @@ function routesOf(
 
   // The resolved table defines the public operation set. An op answering in another process is
   // that process's to serve: a door follows its frond, and relaying it here answered for a frond
-  // this process does not host.
-  return [...effectiveOperations.keys()].filter((opName) => effectiveOperations.get(opName)?.placement !== 'remote').map((opName) => routeFor({
+  // this process does not host. An op an announcement calls is no caller's to name.
+  const served = (opName: string) => {
+    const meta = effectiveOperations.get(opName);
+
+    return meta?.placement !== 'remote' && !listens(meta ?? {});
+  };
+
+  return [...effectiveOperations.keys()].filter(served).map((opName) => routeFor({
     address,
     base: baseOf(app, frond),
     facade,

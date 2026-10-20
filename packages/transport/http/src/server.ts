@@ -86,10 +86,18 @@ export function peerDoor(runner: Transport, options: ReceiveOptions = {}): Door<
  * written — a peer's right — and `[id, draft, { id: 'admin' }]` would hand the handler a user no
  * collector read.
  */
-export function pageDoor(runner: Transport, state: Record<string, unknown>, carrier?: unknown): Door<unknown, RpcCall, RpcResponse> {
+export interface PageDoorOptions {
+  /** What the host resolved of the caller, server-side. */
+  state: Record<string, unknown>;
+  /** The page's own HTTP request — what a cookie-kept state arrives and leaves in, written back by the host. */
+  carrier?: unknown;
+  /** Whether an announcement calls this op — one a page may not name. */
+  listens?: (address: string, op: string) => boolean;
+}
+
+export function pageDoor(runner: Transport, { state, carrier, listens }: PageDoorOptions): Door<unknown, RpcCall, RpcResponse> {
   return {
     name: 'rpc',
-    // The page's own HTTP request — what a cookie-kept state arrives and leaves in, written back by the host.
     ...(carrier !== undefined && { carries: 'http', carrier: () => carrier }),
     decode: async (raw) => {
       const { address, op, sent } = envelopeOf(raw);
@@ -97,6 +105,14 @@ export function pageDoor(runner: Transport, state: Record<string, unknown>, carr
         throw new FougereError({
           code: ErrorCode.BAD_REQUEST,
           message: `${address}.${op}: a page sends params, query and input, not \`args\` (only fronds send \`args\`).`,
+          address,
+          operation: op,
+        });
+      }
+      if (listens?.(address, op)) {
+        throw new FougereError({
+          code: ErrorCode.NOT_FOUND,
+          message: `${address}.${op} is called by an announcement, never by a page: call the command that announces it.`,
           address,
           operation: op,
         });

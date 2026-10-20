@@ -4,6 +4,7 @@ import {
   callValueOf,
   ErrorCode,
   FougereError,
+  listens,
   serves,
   type App,
   type BootRefusal,
@@ -12,7 +13,7 @@ import {
 } from '@fougere/core';
 import { pageDoor, PARSE_ERROR } from '@fougere/transport-http';
 import type { HttpCarrier } from '@fougere/http';
-import { restDoor } from '@fougere/adapter-rest';
+import { describedAt, restDoor } from '@fougere/adapter-rest';
 import { matchRoute, tableOf } from './RouteMatch.js';
 import type { DoorRequest } from './DoorRequest.js';
 
@@ -20,7 +21,8 @@ import type { DoorRequest } from './DoorRequest.js';
 export type Outcome =
   /** Not ours — the host's own routes must still reach their handler. */
   | { kind: 'pass' }
-  | { kind: 'ok'; status: number; body: unknown; headers?: Record<string, string | string[]> }
+  /** `raw`: the body is written as it is, under the `content-type` it names — a page, not JSON. */
+  | { kind: 'ok'; status: number; body: unknown; headers?: Record<string, string | string[]>; raw?: boolean }
   | { kind: 'error'; status: number; body: { message: string } & Record<string, unknown>; headers?: Record<string, string | string[]> };
 
 // ── The call envelope ────────────────────────────
@@ -37,7 +39,13 @@ export function serveRpc(
   app: App,
   request: { path: string; body: unknown; state: Record<string, unknown>; carrier?: HttpCarrier },
 ): Promise<unknown> {
-  return app.answer(pageDoor(createAppRunner(app, surfaceOf(request.path)), request.state, request.carrier), request.body);
+  const surface = surfaceOf(request.path);
+
+  return app.answer(pageDoor(createAppRunner(app, surface), {
+    state: request.state,
+    carrier: request.carrier,
+    listens: (address, op) => listens(app.operationsFor(address, surface)?.get(op) ?? {}),
+  }), request.body);
 }
 
 /**
@@ -47,7 +55,7 @@ export function serveRpc(
 export function refusedRpc(refusal: BootRefusal, body: unknown, disclosed: boolean): Promise<unknown> {
   const message = disclosed ? refusal.message : 'The app refused to start.';
 
-  return answerAt(pageDoor(async () => { throw new FougereError({ code: ErrorCode.SERVICE_UNAVAILABLE, message }); }, {}), body);
+  return answerAt(pageDoor(async () => { throw new FougereError({ code: ErrorCode.SERVICE_UNAVAILABLE, message }); }, { state: {} }), body);
 }
 
 /** The answer a host returns when it could not even parse the payload. */
@@ -66,10 +74,13 @@ export async function serveRest(app: App, request: DoorRequest): Promise<Outcome
   // this serves nothing and the request carries on to whatever the app itself routes.
   if (!serves(app.protocols, 'rest')) return { kind: 'pass' };
 
+  const method = request.method.toUpperCase();
+  const described = describedAt(app, method, request.path);
+  if (described) return { kind: 'ok', status: described.status, body: described.data, ...(described.headers && { headers: described.headers }), ...(described.raw && { raw: true }) };
+
   const segments = request.path.split('/').filter(Boolean);
   if (segments.length < 2) return { kind: 'pass' };
 
-  const method = request.method.toUpperCase();
   const match = matchRoute(tableOf(app), method, segments);
   if (!match) return { kind: 'pass' };
 
