@@ -16,14 +16,19 @@ const ROUTE = Format.of('protocol/rest/route')
   .key('responses', Format.listOf(RESPONSE))
   .closed();
 
+/** The page reading the document, at `{prefix}/docs` — `true` is Swagger UI. None without it. */
+const OPENAPI = Format.of('protocol/rest/openapi')
+  .key('ui', Format.either(Format.tokens(['swagger', 'scalar'] as const), Format.flag))
+  .closed();
+
 /**
  * Where the app mounts REST, and the routes of a frond it cannot edit — `betterAuth()`, a package's.
  * A frond of this project says its own in its `frond.config.ts`.
  */
 const REST = Format.of('protocol/rest')
   .key('prefix', Format.text)
-  /** Publish what REST serves: `{prefix}/openapi.json`, and `{prefix}/docs` to read it. Nothing without it. */
-  .key('openapi', Format.flag)
+  /** Publish what REST serves at `{prefix}/openapi.json`. Nothing without it. */
+  .key('openapi', OPENAPI)
   .key('overrides', Format.recordOf(ROUTE))
   .closed();
 

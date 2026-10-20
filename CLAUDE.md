@@ -1080,10 +1080,12 @@ door of no real kind.
 never off a declaration of its own: the status `responseOf` answers, the door middlewares' `responses`,
 and `refusalsOf` at `toHttpError`'s status, each status narrowing `Refusal.code` to its own. A schema is the card's
 descriptor — JSON Schema already — named by the entity, and a view cut from it by its use
-(`PostUpdateInput`). `protocols: { rest: { openapi: true } }` serves it at `{prefix}/openapi.json` with
-a Scalar page at `{prefix}/docs` (`describedAt`, answered by `serveRest` before a route is matched, and
-`registerDescribed` on an `HttpRouter`); nothing is published without the line, since the document
-names every op and what each refuses at once. The page is the first answer that is not JSON
+(`PostUpdateInput`). `protocols: { rest: { openapi: {} } }` serves it at `{prefix}/openapi.json`, and `ui`
+adds a page at `{prefix}/docs` — `true` for Swagger UI, `'scalar'` for Scalar with its telemetry off —
+each file pinned by version and by SRI hash (`describedAt`, answered by `serveRest` before a route is
+matched, and `registerDescribed` on an `HttpRouter`). Nothing is published without the line, since the
+document names every op and what each refuses at once, and the page is a decision of its own, since it
+runs code from a CDN. The page is the first answer that is not JSON
 (`ResponseResult.raw`), the case the media-type work takes over. Pinned by `testing/tests/openapi.test.ts`.
 
 **An op an announcement calls has no caller** — `listens` (`wire/Emit.ts`): an op whose binding takes

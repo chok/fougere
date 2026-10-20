@@ -12,7 +12,7 @@ import { testApp } from '../src/index.js';
 const app = await testApp({ root: join(import.meta.dirname, 'fixtures'), fronds: ['press'] });
 afterAll(() => app.dispose());
 
-const published = { ...app, protocols: { ...app.protocols, rest: { openapi: true } } };
+const publishing = (openapi: object) => ({ ...app, protocols: { ...app.protocols, rest: { openapi } } });
 
 describe('the OpenAPI document', () => {
   const document = openApiOf(app);
@@ -59,12 +59,26 @@ describe('what REST publishes', () => {
     expect(describedAt(app, 'GET', '/api/openapi.json')).toBeUndefined();
   });
 
-  it('serves the document and a page reading it, through the same answer as a route', async () => {
-    const json = await serveRest(published, { method: 'GET', path: '/api/openapi.json', query: {}, state: {} });
-    const page = await serveRest(published, { method: 'GET', path: '/api/docs', query: {}, state: {} });
+  it('serves the document, and a page only when ui names one', async () => {
+    const bare = publishing({});
+    const json = await serveRest(bare, { method: 'GET', path: '/api/openapi.json', query: {}, state: {} });
 
     expect(json).toMatchObject({ kind: 'ok', status: 200, body: { openapi: '3.1.0' } });
+    expect(describedAt(bare, 'GET', '/api/docs')).toBeUndefined();
+  });
+
+  it('reads the document with Swagger UI by default, every file pinned by its hash', async () => {
+    const page = await serveRest(publishing({ ui: true }), { method: 'GET', path: '/api/docs', query: {}, state: {} }) as { body: string };
+
     expect(page).toMatchObject({ kind: 'ok', raw: true, headers: { 'content-type': 'text/html; charset=utf-8' } });
-    expect((page as { body: string }).body).toContain("Scalar.createApiReference('#app', { url: \"/api/openapi.json\" })");
+    expect(page.body).toContain('SwaggerUIBundle({ url: "/api/openapi.json"');
+    expect(page.body.match(/integrity="sha384-/g)).toHaveLength(2);
+  });
+
+  it('reads it with Scalar when named, its telemetry off', () => {
+    const page = describedAt(publishing({ ui: 'scalar' }), 'GET', '/api/docs')!;
+
+    expect(page.data).toContain('telemetry: false');
+    expect(page.data).toContain('integrity="sha384-');
   });
 });

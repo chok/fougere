@@ -4,8 +4,7 @@
 import { answerAt, type Answering } from '@fougere/core';
 import type { HttpRouter } from '@fougere/http';
 import { restDoor } from './door.js';
-import { describedAt } from './openapi/described.js';
-import { prefixOf } from './RestProtocol.js';
+import { describedAt, describedPaths } from './openapi/described.js';
 import type { AppLike, RouteDefinition } from './routes/RouteDefinition.js';
 
 export interface RegisterOptions {
@@ -31,10 +30,7 @@ export function registerRoutes(
   }
 }
 
-/** What REST publishes of itself, on a router — nothing unless `protocols: { rest: { openapi: true } }`. */
+/** What REST publishes of itself, on a router — nothing unless `protocols: { rest: { openapi: {} } }`. */
 export function registerDescribed(router: HttpRouter, app: AppLike): void {
-  if (app.protocols?.rest?.openapi !== true) return;
-  for (const path of ['/openapi.json', '/docs'].map((tail) => prefixOf(app.protocols) + tail)) {
-    router.on('GET', path, async () => describedAt(app, 'GET', path)!);
-  }
+  for (const path of describedPaths(app)) router.on('GET', path, async () => describedAt(app, 'GET', path)!);
 }
