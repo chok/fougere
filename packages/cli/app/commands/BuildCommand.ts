@@ -33,6 +33,7 @@ export default class BuildCommand {
 
     this.ui.success(`${built.path} — ${built.fronds.length} frond(s), ${built.entities} entities, ${built.handlers} handlers`);
     this.ui.step(built.fronds.map((name) => pc.bold(name)).join(', '));
+    this.ui.step(`${built.built}/ — ${built.files} file(s) of JavaScript, what \`fougere serve\` starts`);
 
     // Said here, where someone can still fix the source: the statement states fronds, not findings.
     for (const diagnostic of built.diagnostics) this.ui.warn(diagnostic);

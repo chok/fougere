@@ -113,8 +113,8 @@ export async function run(app: App, root = new URL('..', import.meta.url).pathna
           );
 
           try {
-            await installLoader(process.cwd());
             const AppCommand = appCommand ? (await loader(appCommand)).default : undefined;
+            if (!(AppCommand as { built?: boolean } | undefined)?.built) await installLoader(process.cwd());
             if (typeof AppCommand === 'function') {
               const cmd = new (AppCommand as new (...a: unknown[]) => { run: (raw: Record<string, unknown>) => Promise<void> })(app, terminal);
               await cmd.run(input);

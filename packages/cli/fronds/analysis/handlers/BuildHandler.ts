@@ -1,7 +1,7 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname, join, relative, resolve } from 'node:path';
-import { emitStatement } from '@fougere/compiler';
-import { emitFacade, emitNames } from '@fougere/core/node';
+import { compileProject, emitStatement } from '@fougere/compiler';
+import { BUILT, emitFacade, emitNames } from '@fougere/core/node';
 import ProjectScan from '../services/ProjectScan.js';
 import type Build from '../entities/Build.js';
 
@@ -27,6 +27,9 @@ export interface BuildReport {
   facade: string;
   /** Where the names went — the unions a config is judged against. */
   names: string;
+  /** Where the project went as JavaScript — what `fougere serve` starts — and how many files it holds. */
+  built: string;
+  files: number;
   fronds: string[];
   entities: number;
   handlers: number;
@@ -68,11 +71,16 @@ export default class BuildHandler {
     const names = join(dirname(out), NAMES_OUT);
     await writeFile(names, emitNames(scan));
 
+    // And the project itself, transpiled, so a server starts it with Node and nothing else.
+    const built = await compileProject(scan.root, scan, resolve(scan.root, BUILT));
+
     return {
       out,
       path: relative(scan.root, out),
       facade: relative(scan.root, facade),
       names: relative(scan.root, names),
+      built: relative(scan.root, built.out),
+      files: built.files.length,
       fronds: scan.fronds.map((frond) => frond.name),
       entities: scan.fronds.reduce((total, frond) => total + frond.entities.length, 0),
       handlers: scan.fronds.reduce((total, frond) => total + frond.handlers.length, 0),

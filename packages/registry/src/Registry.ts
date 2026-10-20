@@ -9,7 +9,7 @@ export type Replaced = (registry: string, name: string) => void;
  * the one answer each name has. A name answered twice is refused naming the registry, unless the same
  * answer comes back or `replace` says standing in its place is the point.
  *
- * A host that re-reads a project in the same process — `fougere serve --watch` — re-runs the files
+ * A host that re-reads a project in the same process — `fougere dev` — re-runs the files
  * that answer, and says so: inside `Registry.reloading`, an answer replaces the one it had.
  * The packages it does not re-run keep theirs, so nothing is lost and nothing is noted.
  */

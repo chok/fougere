@@ -1,8 +1,9 @@
 import { createLocalRunner, envLevel, identityFromEnv, serves, setLogLevel } from '@fougere/core';
 import { prefixOf } from '@fougere/adapter-rest';
 import { restAnswer } from '@fougere/app/web';
-import { loadConfig, remotesOf } from '@fougere/core/node';
-import { installLoader } from '../../src/loader.js';
+import { ALIASES, BUILT, loadConfig, registerFrondAliases, remotesOf, statementFileIn } from '@fougere/core/node';
+import { readFileSync } from 'node:fs';
+import { join, resolve } from 'node:path';
 
 import { Registry } from '@fougere/registry';
 import { serve, type ReceiveOptions } from '@fougere/transport-http';
@@ -18,13 +19,25 @@ const DRAIN_MS = 5_000;
 /** One save fires several events; the boot must not start once per event. */
 const SETTLE_MS = 60;
 
+/** What a host boots, and the directories whose change boots it again — none for what a build wrote. */
+export interface Hosting {
+  boot(): Promise<App>;
+  watched: string[];
+}
+
 /**
  * The host end of the gradient: one frond, alone in this process, reachable
  * over HTTP, and reaching the fronds `fronds:` places elsewhere. The same
  * fronds/** an app runs in-process; only the runtime moves.
+ *
+ * `serve` starts what `fougere build` wrote, with Node alone; `dev` (`DevCommand`) starts the sources.
  */
 export default class ServeCommand {
   static DEFAULT_PORT = 4100;
+  /** Starts what `fougere build` wrote, so the runner installs no loader for the project's TypeScript. */
+  static built = true;
+  /** The command a usage line names. */
+  protected verb = 'serve';
 
   constructor(private app: App, private ui: Ui) {}
 
@@ -44,18 +57,14 @@ export default class ServeCommand {
 
 
 
-    if (!frond) { this.ui.error('Usage: fougere serve <frond>'); return; }
+    if (!frond) { this.ui.error(`Usage: fougere ${this.verb} <frond>`); return; }
 
     const root = process.cwd();
-    const watching = raw.watch === true;
-
-    // Cache-free from the FIRST boot when watching, so every boot in this process reads
-    // the same way rather than the first one being special.
-    await installLoader(root, watching);
-    const { bootApp } = await import('@fougere/defaults');
+    const hosting = await this.hosting(root, frond);
+    if (!hosting) return;
 
     setLogLevel(envLevel() ?? 'info');
-    let hosted = await bootApp(root, { only: [frond] });
+    let hosted = await hosting.boot();
     if (!hosted.fronds.some((f) => f.name === frond)) {
       this.ui.error(`No frond '${frond}' in this project.`);
 
@@ -79,7 +88,7 @@ export default class ServeCommand {
     if (serves(hosted.protocols, 'rest')) this.ui.info(`REST under http://127.0.0.1:${bound}${prefixOf(hosted.protocols)}`);
     this.ui.info(requireIdentity ? 'signed calls only (FOUGERE_ROOT_KEY is set)' : 'unsigned calls accepted — no FOUGERE_ROOT_KEY');
 
-    if (!watching) {
+    if (hosting.watched.length === 0) {
       this.ui.info('Ctrl-C to stop.');
 
       // The listening server keeps the event loop alive; the command returns and stays up.
@@ -91,7 +100,7 @@ export default class ServeCommand {
       let next: App;
       let replaced = 0;
       try {
-        next = await Registry.reloading(() => bootApp(root, { only: [frond] }), () => { replaced += 1; });
+        next = await Registry.reloading(() => hosting.boot(), () => { replaced += 1; });
       } catch (error) {
         // The previous app keeps serving: a dev loop that dies on a typo is worse than
         // one that holds the last state which booted.
@@ -112,7 +121,7 @@ export default class ServeCommand {
     let settling: NodeJS.Timeout | undefined;
     let watched = 0;
 
-    for (const path of hosted.fronds.map((f) => f.source.path)) {
+    for (const path of hosting.watched) {
       try {
         watch(path, { recursive: true }, () => {
           clearTimeout(settling);
@@ -125,5 +134,20 @@ export default class ServeCommand {
     }
 
     this.ui.info(`watching ${watched} path(s) — Ctrl-C to stop.`);
+  }
+
+  /** The project `fougere build` wrote, booted by Node: `@fronds/<name>` resolves through the table it left. */
+  protected async hosting(root: string, frond: string): Promise<Hosting | undefined> {
+    const built = resolve(root, BUILT);
+    if (!statementFileIn(built)) {
+      this.ui.error(`Nothing built in ${BUILT}/. Run \`fougere build\` first — or \`fougere dev ${frond}\` to run the sources.`);
+
+      return undefined;
+    }
+    const table = JSON.parse(readFileSync(join(built, ALIASES), 'utf8')) as Record<string, string>;
+    registerFrondAliases(Object.fromEntries(Object.entries(table).map(([alias, dir]) => [alias, join(built, dir)])));
+    const { bootApp } = await import('@fougere/defaults');
+
+    return { boot: () => bootApp(root, { only: [frond], built }), watched: [] };
   }
 }
