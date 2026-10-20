@@ -1,6 +1,6 @@
 {
   "name": "@fougere/state-session",
-  "version": "0.24.0-alpha.0",
+  "version": "0.25.0-alpha.0",
   "description": "A caller's state kept in a session — what `state: { cart: { session: {} } }` names: one cookie holds a reference, the values a row in a source.",
   "keywords": [
     "fougere",

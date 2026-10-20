@@ -1,6 +1,6 @@
 {
   "name": "@fougere/state-cookie",
-  "version": "0.24.0-alpha.0",
+  "version": "0.25.0-alpha.0",
   "description": "A caller's state kept in a cookie — what `state: { cart: { cookie: {} } }` names, signed by core, carried by every HTTP door.",
   "keywords": [
     "fougere",
