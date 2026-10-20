@@ -96,7 +96,7 @@ function scriptsOf(demo: string): string[] {
   if (!existsSync(manifest)) return [];
   const scripts = Object.keys(JSON.parse(readFileSync(manifest, 'utf8')).scripts ?? {});
 
-  return scripts.filter((name) => name === 'dev').concat(scripts.filter((name) => name.startsWith('dev:')).sort());
+  return [...scripts.filter((name) => name === 'dev'), ...scripts.filter((name) => name.startsWith('dev:')).sort()];
 }
 
 function start(demo: string, script: string): ChildProcess {
@@ -135,8 +135,9 @@ async function asked(output: string): Promise<string[]> {
   const refusals: string[] = [];
   for (const origin of originsIn(output)) {
     const published = await fetch(`${origin}/api/openapi.json`).catch(() => undefined);
-    if (!published?.ok) continue;
-    const document = await published.json() as { paths?: Record<string, { get?: { parameters?: { in: string; required?: boolean }[] } }> };
+    // A dev server answers its page for any path it does not know, and that page is no document.
+    if (!published?.ok || !published.headers.get('content-type')?.includes('json')) continue;
+    const document = await published.json().catch(() => ({})) as { paths?: Record<string, { get?: { parameters?: { in: string; required?: boolean }[] } }> };
 
     for (const [route, operations] of Object.entries(document.paths ?? {})) {
       if (!operations.get || route.includes('{') || operations.get.parameters?.some((one) => one.required)) continue;
@@ -159,7 +160,7 @@ function run(demo: string, script: string): Promise<Verdict> {
 
   return new Promise<Verdict>((resolve) => {
     const budget = setTimeout(async () => {
-      const refusals = await asked(output);
+      const refusals = await asked(output).catch((error: Error) => [`asking it failed: ${error.message}`]);
       release(child);
       resolve({ shape: 'service', ok: refusals.length === 0, output: [output, ...refusals].join('\n') });
     }, BUDGET_MS);
