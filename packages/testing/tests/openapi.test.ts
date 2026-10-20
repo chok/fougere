@@ -42,8 +42,12 @@ describe('the OpenAPI document', () => {
     expect(created['400']!['x-fougere-codes']).toEqual(expect.arrayContaining(['VALIDATION_FAILED', 'BAD_REQUEST']));
   });
 
-  it('writes a schema once, as the card writes it', () => {
-    expect(document.components.schemas.Article).toMatchObject({ title: 'Article', type: 'object' });
+  it('writes a schema once, as the card writes it, and says who writes each field', () => {
+    const { Article: article, ArticleUpdateInput: patch } = document.components.schemas as Record<string, { properties: Record<string, { readOnly?: boolean }>; required?: string[] }>;
+
+    expect(article).toMatchObject({ title: 'Article', type: 'object', properties: { id: { readOnly: true }, createdAt: { readOnly: true } } });
+    expect(patch!.required).toBeUndefined();
+    expect(Object.keys(patch!.properties)).not.toContain('id');
   });
 });
 

@@ -1,4 +1,4 @@
-import { Card, type SchemaDescriptor, type SchemaView } from '@fougere/schema';
+import { Card, type SchemaView } from '@fougere/schema';
 import { ErrorCode, FougereError, refusalsOf, toHttpError } from '@fougere/core';
 import { generateRoutes, type AppLike, type RouteDefinition } from '../routes/RouteDefinition.js';
 import type { OperationMeta } from '../routes/OperationMeta.js';
@@ -33,16 +33,25 @@ const REFUSAL: Schema = {
 export function openApiOf(app: AppLike): OpenApiDocument {
   const schemas: Record<string, Schema> = { Refusal: REFUSAL };
   const named = new Map<SchemaView, string>();
-  // An entity keeps its own name; a view cut from it is named by where it is used — `ArticleUpdateInput`.
+  // An entity keeps its own name; a view cut from it is named by where it is used — `PostUpdateInput` —
+  // unless it states what a schema already written states. What a view borrowed from is not a shape.
   const refOf = (view: SchemaView, usedAs: string): Schema => {
     let name = named.get(view);
     if (!name) {
-      const descriptor: SchemaDescriptor = Card.fromSchema(view).descriptor;
-      const title = descriptor.title ?? 'Row';
-      const wanted = descriptor['x-fougere-derived'] ? title + usedAs : title;
-      name = wanted;
-      for (let n = 2; schemas[name] && JSON.stringify(schemas[name]) !== JSON.stringify(descriptor); n++) name = `${wanted}${n}`;
-      schemas[name] = descriptor as unknown as Schema;
+      const { 'x-fougere-derived': derived, ...descriptor } = Card.fromSchema(view).descriptor;
+      // A patch view requires nothing: every field it carries is a change, and none must be sent.
+      const patch = view.getOpts().patch === true;
+      if (patch) delete descriptor.required;
+      descriptor.properties = writtenBy(descriptor.properties as Record<string, Schema>, patch) as typeof descriptor.properties;
+      const shape = JSON.stringify(descriptor);
+      name = Object.keys(schemas).find((one) => JSON.stringify(schemas[one]) === shape);
+      if (!name) {
+        const title = descriptor.title ?? 'Row';
+        const wanted = derived ? title + usedAs : title;
+        name = wanted;
+        for (let n = 2; schemas[name]; n++) name = `${wanted}${n}`;
+        schemas[name] = descriptor as unknown as Schema;
+      }
       named.set(view, name);
     }
 
@@ -144,6 +153,20 @@ function responsesOf(route: RouteDefinition, meta: OperationMeta, designates: bo
   }
 
   return responses;
+}
+
+/**
+ * What the lifecycle axis says of who writes a field, in OpenAPI's words: a value the server fills
+ * at creation is `readOnly`, so no request sends it; a field no update may change is not in a patch.
+ */
+function writtenBy(properties: Record<string, Schema>, patch: boolean): Record<string, Schema> {
+  return Object.fromEntries(Object.entries(properties).flatMap(([key, property]) => {
+    const lifecycle = (property['x-fougere'] as { lifecycle?: { create?: unknown; update?: unknown } } | undefined)?.lifecycle;
+    if (patch && lifecycle?.update === 'forbidden') return [];
+    const filled = lifecycle?.create === 'now' || (typeof lifecycle?.create === 'object' && lifecycle.create !== null && 'generate' in lifecycle.create);
+
+    return [[key, filled ? { ...property, readOnly: true } : property]];
+  }));
 }
 
 function pageOf(row: Schema): Schema {
