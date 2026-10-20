@@ -136,6 +136,7 @@ packages/
 
   state/                                      keep a caller's state between two requests
     cookie/            @fougere/state-cookie      `cookie` in `state:` — read and written by every HTTP door
+    session/           @fougere/state-session     `session` in `state:` — one cookie holds a reference, the values one row
 
   transport/                                  move a call between processes
     http/              @fougere/transport-http    JSON-RPC 2.0 wire (serve + client subpath)
@@ -1062,7 +1063,13 @@ judged by the `States` registry the way `sources:` is by `Sources`, and a packag
 keep it (`@fougere/state-cookie`). Core holds KEYS and TOKENS only: the door cycle reads what arrived
 through the keeper the door's carrier matches (`Door.carries`, `Door.carrier`), opens it with the
 `Seal`, and seals what the calls wrote before the door encodes — never on a refusal, a failed op
-keeps nothing. Signed, not encrypted (`FOUGERE_STATE_KEY`, HMAC through the crypto port): the caller
+keeps nothing. A keeper is handed every name it keeps in one request at once, so names sharing one
+place are read and written once, and it may bring the fronds it keeps rows in (`StateKeeper.fronds`),
+folded in beside an extension's only when `state:` names it. `@fougere/state-session` is that case: a
+`stateSession` row holds every name kept in `session`, the caller holds a random reference written
+through the `cookie` keeper, and a row whose names are all forgotten is deleted. A name `state:` does
+not declare has no default way to be kept: a session needs a table, and a table appearing because an
+op called `state.set` is a hidden runtime. Signed, not encrypted (`FOUGERE_STATE_KEY`, HMAC through the crypto port): the caller
 reads its value and cannot change it, a changed one reads as absent, and what must stay hidden is a
 reference kept elsewhere. A name `state:` does not declare, or one the door cannot carry, refuses
 `state.set` naming what it keeps. Pinned by `core/tests/state.keeping.test.ts`, with a keeper and a

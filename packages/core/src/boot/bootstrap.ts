@@ -3,7 +3,8 @@ import { resolveConventions } from '../Conventions.js';
 import { servedProtocols } from './protocols.js';
 import { unregistered } from './unregistered.js';
 import { answerAt, type DoorAround } from '../entry/door.js';
-import { keepingOf } from '../module/state/keeping.js';
+import { keeperFronds, keepingOf } from '../module/state/keeping.js';
+import { States } from '../module/state/States.js';
 import { DoorEvent } from '../dispatch/DoorEvent.js';
 import { dependencyCycles } from './dependencyCycles.js';
 import { lowerFirst, type SchemaView } from '@fougere/schema';
@@ -122,13 +123,14 @@ function keyClaims(
 async function readFronds(
   options: CreateAppOptions,
   log: Logger,
+  keptIn: readonly FrondDescriptor[],
 ): Promise<{ fronds: Fronds; operationModel: EffectiveOperationModel }> {
   const scanStart = performance.now();
   // An extension's fronds sit beside the app's own: it is installed like any other, and
   // its handlers resolve at call time — by which point the extension's `up` has put what
   // they ask for in the container.
-  const brought = (options.extensions ?? [])
-    .flatMap((extension) => extension?.fronds ?? [])
+  // So are the fronds a keeper of `state:` keeps its rows in, brought only where `state:` names it.
+  const brought = [...(options.extensions ?? []).flatMap((extension) => extension?.fronds ?? []), ...keptIn]
     .map((frond) => ({ ...frond, brought: true as const }));
   const fronds = hostedBy([...(options.fronds ?? []), ...brought]);
   const diagnostics: Diagnostic[] = [];
@@ -588,7 +590,8 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     registerBuiltins(container, carry);
     log.debug('builtins registered (Logger, Config)');
 
-    const { fronds, operationModel } = await readFronds(options, log);
+    const declaredState = States.declared(options.state);
+    const { fronds, operationModel } = await readFronds(options, log, keeperFronds(declaredState));
     appLifecycle.add(...frondExtensions(fronds));
     const remoteRouter = remoteRouterOf(options);
     const { inflight, routeRegistry, dispatchLifecycle, dispatcher, localDispatcher, getMiddlewares, use } =
@@ -610,7 +613,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     const plugged: Plugged[] = [];
     const boundPorts = new Set<string>();
     const doorMiddlewaresAt = new Map<string, DoorAround[]>();
-    const keeping = await keepingOf(options.state, log);
+    const keeping = await keepingOf(declaredState, storageFor, log);
     const assembly: Assembly = {
       container, routeRegistry, emissions, dispatcher, localDispatcher, effectiveByKey,
       boundPorts, refused, relations, hosting, operationModel, entityByName, frondOf, contractsOf,

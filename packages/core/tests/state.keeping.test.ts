@@ -18,8 +18,14 @@ interface Memo {
 States.register('memo', {
   over: 'line',
   format: Format.of().closed(),
-  read: (carrier, name) => (carrier as Memo).arrived.get(name),
-  write: (carrier, name, token) => { (carrier as Memo).leaving.set(name, token); },
+  read: (carrier, names) => new Map(names.flatMap(({ name }) => {
+    const token = (carrier as Memo).arrived.get(name);
+
+    return token === undefined ? [] : [[name, token] as const];
+  })),
+  write: (carrier, written) => {
+    for (const { name, token } of written) (carrier as Memo).leaving.set(name, token);
+  },
 });
 
 class CartHandler {

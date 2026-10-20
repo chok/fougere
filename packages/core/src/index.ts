@@ -55,7 +55,7 @@ export { DispatchEvent } from './dispatch/DispatchEvent.js';
 export { DoorEvent, type DoorStage } from './dispatch/DoorEvent.js';
 export { State } from './wire/State.js';
 export { States, type DeclaredState } from './module/state/States.js';
-export type { StateKeeper } from './module/state/StateKeeper.js';
+export type { KeptName, StateKeeper, StorageFor, WrittenName } from './module/state/StateKeeper.js';
 export type { FougereStates, StateEntry } from './FougereStates.js';
 export { ambient } from './slots.js';
 export type { Ambient, Slot } from './boot/ambient-port.js';

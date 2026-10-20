@@ -166,6 +166,9 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
   number LITERAL and skips `status: number`, which is also what `next()` hands back
   (`ResponseResult`). Telling a `RestResponse<number>` written on purpose from it would need the
   type's name, and the compiler knows no door. Stated 2026-10-20.
+- **A session row is never swept** — `@fougere/state-session` deletes a row once its names are all
+  forgotten, and keeps every other one: a caller who never comes back leaves its row behind. Nothing
+  expires it yet, which is why `session: {}` admits no `maxAge`. Stated 2026-10-20.
 - **Nothing generates OpenAPI**, so `RouteDefinition.description` and `RouteDefinition.responses` are read by nobody. The op's
   sentence has two readers, neither of them REST: `adapter/graphql/src/OperationsConfig.ts` and the
   CLI's `--help`.

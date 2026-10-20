@@ -2363,6 +2363,18 @@ importers:
         specifier: workspace:*
         version: link:../../schema
 
+  packages/state/session:
+    dependencies:
+      '@fougere/core':
+        specifier: workspace:*
+        version: link:../../core
+      '@fougere/schema':
+        specifier: workspace:*
+        version: link:../../schema
+      '@fougere/state-cookie':
+        specifier: workspace:*
+        version: link:../cookie
+
   packages/testing:
     dependencies:
       '@fougere/app':
@@ -2405,6 +2417,9 @@ importers:
       '@fougere/state-cookie':
         specifier: workspace:*
         version: link:../state/cookie
+      '@fougere/state-session':
+        specifier: workspace:*
+        version: link:../state/session
       better-sqlite3:
         specifier: ^13.0.3
         version: 13.0.3

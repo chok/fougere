@@ -51,8 +51,14 @@ function lineOf(name: string, token: string | undefined, options: CookieOptions)
 States.register('cookie', {
   over: 'http',
   format: COOKIE,
-  read: (carrier, name) => cookiesOf((carrier as HttpCarrier).request.get('cookie')).get(name),
-  write: (carrier, name, token, options) => {
-    (carrier as HttpCarrier).response.append('set-cookie', lineOf(name, token, options as CookieOptions));
+  read: (carrier, names) => {
+    const cookies = cookiesOf((carrier as HttpCarrier).request.get('cookie'));
+
+    return new Map(names.flatMap(({ name }) => (cookies.has(name) ? [[name, cookies.get(name)!] as const] : [])));
+  },
+  write: (carrier, written) => {
+    for (const { name, token, options } of written) {
+      (carrier as HttpCarrier).response.append('set-cookie', lineOf(name, token, options as CookieOptions));
+    }
   },
 });

@@ -1,8 +1,9 @@
 import { DoorEvent } from '../dispatch/DoorEvent.js';
 import type { DispatchLifecycle } from '../dispatch/DispatchLifecycle.js';
 import { DoorRequest } from '../wire/DoorRequest.js';
+import type { Keeping } from '../module/state/keeping.js';
 import type { DeclaredState } from '../module/state/States.js';
-import type { Seal } from '../module/state/Seal.js';
+import type { StateKeeper } from '../module/state/StateKeeper.js';
 import { ErrorCode } from '../wire/ErrorCode.js';
 import { FougereError } from '../wire/FougereError.js';
 import { toPublicError } from '../wire/http-error.js';
@@ -59,8 +60,8 @@ export interface DoorCycle {
   lifecycle: Pick<DispatchLifecycle, 'publish'>;
   /** The door middlewares the frond of an address declared, outermost first. */
   middlewaresAt?(address: string): readonly DoorAround[];
-  /** What `state:` declares, and the seal its values travel under. */
-  keeping?: { declared: readonly DeclaredState[]; seal: Seal };
+  /** What `state:` declares, the seal its values travel under, and where a keeper's rows are. */
+  keeping?: Keeping;
 }
 
 /** A cycle nobody watches — a host holding a runner and no app, or a boot that refused. */
@@ -82,12 +83,15 @@ export function answerAt<Received, Decoded, Answer>(
     lifecycle.publish(DoorEvent.received(request));
 
     const carrier = keeping && door.carries && door.carrier ? door.carrier(received) : undefined;
-    const kept = carrier === undefined ? [] : keeping!.declared.filter((one) => one.keeper.over === door.carries);
-    for (const one of kept) {
-      request.keepable.add(one.name);
-      const token = one.keeper.read(carrier, one.name, one.options);
-      const value = token === undefined ? undefined : await keeping!.seal.open(token);
-      if (value !== undefined) request.arrived.set(one.name, value);
+    const kept = keptBy(carrier === undefined ? [] : keeping!.declared.filter((one) => one.keeper.over === door.carries));
+    for (const [keeper, names] of kept) {
+      const tokens = await keeper.read(carrier, names, keeping!.storageFor);
+      for (const { name } of names) {
+        request.keepable.add(name);
+        const token = tokens.get(name);
+        const value = token === undefined ? undefined : await keeping!.seal.open(token);
+        if (value !== undefined) request.arrived.set(name, value);
+      }
     }
 
     const refused = (failure: unknown): Answer => {
@@ -101,9 +105,13 @@ export function answerAt<Received, Decoded, Answer>(
         lifecycle.publish(DoorEvent.decoded(request));
         const answered = await door.run(decoded);
         // What the calls wrote leaves with an answer, never with a refusal: a failed op keeps nothing.
-        for (const [name, value] of request.written) {
-          const one = kept.find((declared) => declared.name === name)!;
-          one.keeper.write(carrier, name, value === undefined ? undefined : await keeping!.seal.close(value), one.options);
+        for (const [keeper, names] of kept) {
+          const written = await Promise.all(names.filter(({ name }) => request.written.has(name)).map(async ({ name, options }) => {
+            const value = request.written.get(name);
+
+            return { name, options, token: value === undefined ? undefined : await keeping!.seal.close(value) };
+          }));
+          if (written.length > 0) await keeper.write(carrier, written, keeping!.storageFor);
         }
 
         return door.encode({ answered }, received, carrier);
@@ -131,6 +139,14 @@ export function answerAt<Received, Decoded, Answer>(
 
     return answer;
   });
+}
+
+/** The names a door carries, by the keeper that keeps them — names sharing one place are read and written once. */
+function keptBy(declared: readonly DeclaredState[]): Map<StateKeeper, DeclaredState[]> {
+  const kept = new Map<StateKeeper, DeclaredState[]>();
+  for (const one of declared) kept.set(one.keeper, [...(kept.get(one.keeper) ?? []), one]);
+
+  return kept;
 }
 
 /** A failure in the vocabulary every door speaks — an accident framed as `INTERNAL_ERROR`. */
