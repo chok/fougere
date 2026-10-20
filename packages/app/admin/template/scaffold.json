@@ -13,6 +13,7 @@
     "react-admin": "^5.15.1"
   },
   "devDependencies": {
+    "@fougere/compiler": "latest",
     "@fougere/vite": "latest"
   },
   "wire": {
