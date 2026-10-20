@@ -54,6 +54,7 @@ const storage = resolveStorage(config.sources, process.cwd());
 // arrived over the wire, which is the half a browser's devtools cannot show.
 const app = await createApp({
   ...(await statementOf(process.cwd(), { only: ['blog'] })),
+  protocols: config.protocols,
   createContainer,
   ...layerOf(storage),
   extensions: [observability({ service: 'blog-host' }), calls({ panel: 4400 })],
