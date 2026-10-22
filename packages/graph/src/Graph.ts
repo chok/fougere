@@ -91,9 +91,9 @@ export class Graph<N = string, L = string> {
 
   /** One closed path per knot of nodes that reach each other — `[a, b, a]`, or `[a, a]` for a loop. */
   cycles(): N[][] {
-    return this.knots()
-      .filter((knot) => knot.length > 1 || this.outgoing(knot[0]).some((edge) => edge.to === knot[0]))
-      .map((knot) => this.loopThrough(knot[0], new Set(knot)));
+    return this.stronglyConnectedComponents()
+      .filter((component) => component.length > 1 || this.outgoing(component[0]).some((edge) => edge.to === component[0]))
+      .map((component) => this.loopThrough(component[0], new Set(component)));
   }
 
   /** What is joined, whichever way the edges point. */
@@ -151,12 +151,12 @@ export class Graph<N = string, L = string> {
    * The strongly connected components, each starting with its first-added node, in that node's order
    * — Tarjan's, walked with a stack of its own so a long chain cannot exhaust the call stack.
    */
-  private knots(): N[][] {
+  private stronglyConnectedComponents(): N[][] {
     const index = new Map<N, number>();
     const low = new Map<N, number>();
     const stack: N[] = [];
     const stacked = new Set<N>();
-    const knots: N[][] = [];
+    const stronglyConnectedComponents: N[][] = [];
 
     const enter = (node: N) => {
       index.set(node, index.size);
@@ -190,22 +190,22 @@ export class Graph<N = string, L = string> {
         if (parent) low.set(parent.node, Math.min(low.get(parent.node)!, low.get(frame.node)!));
         if (low.get(frame.node) !== index.get(frame.node)) continue;
 
-        const knot: N[] = [];
+        const component: N[] = [];
         let member: N;
         do {
           member = stack.pop()!;
           stacked.delete(member);
-          knot.push(member);
+          component.push(member);
         } while (member !== frame.node);
-        knots.push(knot.sort((a, b) => this.rank.get(a)! - this.rank.get(b)!));
+        stronglyConnectedComponents.push(component.sort((a, b) => this.rank.get(a)! - this.rank.get(b)!));
       }
     }
 
-    return knots.sort((a, b) => this.rank.get(a[0])! - this.rank.get(b[0])!);
+    return stronglyConnectedComponents.sort((a, b) => this.rank.get(a[0])! - this.rank.get(b[0])!);
   }
 
   /** The shortest way out of `start` and back, without leaving the knot. */
-  private loopThrough(start: N, knot: Set<N>): N[] {
+  private loopThrough(start: N, component: Set<N>): N[] {
     const cameFrom = new Map<N, N>();
     const queue = [start];
 
@@ -217,7 +217,7 @@ export class Graph<N = string, L = string> {
 
           return [start, ...back.reverse(), start];
         }
-        if (!knot.has(to) || cameFrom.has(to)) continue;
+        if (!component.has(to) || cameFrom.has(to)) continue;
         cameFrom.set(to, queue[index]);
         queue.push(to);
       }
