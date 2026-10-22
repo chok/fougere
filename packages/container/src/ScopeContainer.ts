@@ -13,7 +13,7 @@ interface Entry {
 
 /** A scope reaches its parent and its children through members only a scope can read. */
 export class ScopeContainer implements Container {
-  private readonly built: (AsyncDisposable | Disposable)[] = [];
+  private readonly toDispose: (AsyncDisposable | Disposable)[] = [];
   private readonly children: ScopeContainer[] = [];
   private readonly registry = new Map<string, Entry>();
   private readonly resolving: string[];
@@ -25,19 +25,19 @@ export class ScopeContainer implements Container {
   }
 
   register<T>(name: string, ctor: Constructor<T>, options?: RegisterOptions): void {
-    this.claim(name, ScopeContainer.built(ctor, options));
+    this.addEntry(name, ScopeContainer.entryOfClass(ctor, options));
   }
 
   registerValue<T>(name: string, value: T): void {
-    this.claim(name, ScopeContainer.held(value));
+    this.addEntry(name, ScopeContainer.entryOfValue(value));
   }
 
   replace<T>(name: string, ctor: Constructor<T>, options?: RegisterOptions): void {
-    this.substitute(name, ScopeContainer.built(ctor, options));
+    this.replaceEntry(name, ScopeContainer.entryOfClass(ctor, options));
   }
 
   replaceValue<T>(name: string, value: T): void {
-    this.substitute(name, ScopeContainer.held(value));
+    this.replaceEntry(name, ScopeContainer.entryOfValue(value));
   }
 
   resolve<T>(name: string): T {
@@ -71,11 +71,11 @@ export class ScopeContainer implements Container {
   }
 
   async dispose(): Promise<void> {
-    this.parent?.forget(this);
+    this.parent?.removeChild(this);
 
     const failures = await this.disposeChildren();
 
-    failures.push(...(await this.disposeBuilt()));
+    failures.push(...(await this.disposeInstances()));
 
     this.registry.clear();
 
@@ -103,18 +103,18 @@ export class ScopeContainer implements Container {
       } catch (error) {
         failures.push(error);
       } finally {
-        this.forget(child);
+        this.removeChild(child);
       }
     }
 
     return failures;
   }
 
-  private async disposeBuilt(): Promise<unknown[]> {
+  private async disposeInstances(): Promise<unknown[]> {
     const failures: unknown[] = [];
-    while (this.built.length > 0) {
+    while (this.toDispose.length > 0) {
       try {
-        await ScopeContainer.close(this.built.pop()!);
+        await ScopeContainer.close(this.toDispose.pop()!);
       } catch (error) {
         failures.push(error);
       }
@@ -144,7 +144,7 @@ export class ScopeContainer implements Container {
       if (entry.lifetime === 'singleton') {
         entry.instance = value;
 
-        this.remember(value);
+        this.disposeLater(value);
       }
 
       return value;
@@ -154,16 +154,16 @@ export class ScopeContainer implements Container {
   }
 
   private buildFallback<T>(name: string): T {
-    const made = this.fallback?.(name);
+    const value = this.fallback?.(name);
 
-    if (made === undefined) throw new ContainerError(this.errorMessage(name));
+    if (value === undefined) throw new ContainerError(this.errorMessage(name));
 
-    this.registerValue(name, made);
+    this.registerValue(name, value);
 
-    return made as T;
+    return value as T;
   }
 
-  private claim(name: string, entry: Entry): void {
+  private addEntry(name: string, entry: Entry): void {
     if (this.registry.has(name)) {
       throw new ContainerError(
         `'${name}' is already registered in this scope. Use replace() to replace it.`,
@@ -173,7 +173,7 @@ export class ScopeContainer implements Container {
     this.registry.set(name, entry);
   }
 
-  private substitute(name: string, entry: Entry): void {
+  private replaceEntry(name: string, entry: Entry): void {
     if (!this.has(name)) {
       throw new ContainerError(`'${name}' is not registered, so it cannot be replaced. Use register().`);
     }
@@ -181,18 +181,18 @@ export class ScopeContainer implements Container {
     this.registry.set(name, entry);
   }
 
-  private forget(child: ScopeContainer): void {
+  private removeChild(child: ScopeContainer): void {
     const at = this.children.indexOf(child);
 
     if (at !== -1) this.children.splice(at, 1);
   }
 
   /** What this scope will close. A value that answers neither `[Symbol.asyncDispose]` nor `[Symbol.dispose]` is not one of them. */
-  private remember(value: unknown): void {
-    if (ScopeContainer.disposable(value)) this.built.push(value);
+  private disposeLater(value: unknown): void {
+    if (ScopeContainer.isDisposable(value)) this.toDispose.push(value);
   }
 
-  private static built<T>(ctor: Constructor<T>, options?: RegisterOptions): Entry {
+  private static entryOfClass<T>(ctor: Constructor<T>, options?: RegisterOptions): Entry {
     const deps = options?.deps ?? [];
 
     return {
@@ -202,11 +202,11 @@ export class ScopeContainer implements Container {
     };
   }
 
-  private static held(value: unknown): Entry {
+  private static entryOfValue(value: unknown): Entry {
     return { factory: () => value, lifetime: 'singleton', dependencies: [], instance: value };
   }
 
-  private static disposable(value: unknown): value is AsyncDisposable | Disposable {
+  private static isDisposable(value: unknown): value is AsyncDisposable | Disposable {
     return typeof value === 'object' && value !== null
       && (typeof (value as AsyncDisposable)[Symbol.asyncDispose] === 'function'
         || typeof (value as Disposable)[Symbol.dispose] === 'function');
