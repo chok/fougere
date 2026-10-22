@@ -11,7 +11,7 @@ import shop from './fixtures-seam-storage/fronds.js';
 import familyFronds from './fixtures-seam-family/fronds.js';
 import { describe, it, expect, beforeEach } from 'vitest';
 import { createContainer } from '@fougere/container';
-import { createApp, createLocalRunner, Invocation, type FrondsStated, type StorageFactory } from '../src/index.js';
+import { createApp, createLocalRunner, Invocation, type FrondEntries, type StorageFactory } from '../src/index.js';
 
 /** `ledger` holds a link and answers nothing; `warehouse` declares none and sits under it. */
 
@@ -113,7 +113,7 @@ describe('a class that stands in front of a seam', () => {
 describe('a link declared by the frond above', () => {
   beforeEach(() => { (globalThis as Record<string, unknown>).__wrote = []; });
 
-  const family = (under?: FrondsStated) => createApp({
+  const family = (under?: FrondEntries) => createApp({
     fronds: familyFronds,
     createContainer,
     storageFactory,

@@ -1,5 +1,5 @@
 import { Logger, applyConfig, createApp, type App, type CreateAppOptions, type Extension, type FougereConfig, type FrondDescriptor, type Transport } from '@fougere/core';
-import { getModuleLoader, loadConfig, MODULES, remotesOf, statedModules, statementFileIn, statementIn, type ModuleLoader, type Statement } from '@fougere/core/node';
+import { getModuleLoader, loadConfig, MODULES, remotesOf, configModules, statementFileIn, statementIn, type ModuleLoader, type Statement } from '@fougere/core/node';
 import { join, resolve, sep } from 'node:path';
 import { existsSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
@@ -74,7 +74,7 @@ export async function boot(options: BootOptions): Promise<App> {
   }
 
   // What the config names by module — imported here, because core resolves no specifier.
-  const stated = await statedModules(config.fronds, fromProject(root, options.built));
+  const stated = await configModules(config.fronds, fromProject(root, options.built));
   const only = options.only ?? options.fronds;
   // Every boot starts from a statement: the one the project wrote, or the one the scan writes for it.
   const statement = await statementOf(code, { conventions: config.conventions });

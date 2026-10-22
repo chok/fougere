@@ -16,11 +16,11 @@ export interface BindingCall {
 }
 
 /**
- * One way a parameter gets its value, beyond the request itself: it CLAIMS a parameter from its
+ * One way a parameter gets its value, beyond the request itself: it BINDS a parameter from its
  * signature, RESOLVES it from a call, and judges a value code wrote in its place (`given`).
  */
 export interface BindingSourceType<K extends BindingSource['kind'] = BindingSource['kind']> {
-  claim(param: Param, collectorTypeNames: ReadonlySet<string>): BindingSourceOf<K> | undefined;
+  bind(param: Param, collectorTypeNames: ReadonlySet<string>): BindingSourceOf<K> | undefined;
   resolve(source: BindingSourceOf<K>, call: BindingCall): unknown;
   /**
    * A parameter with no `?` it resolved nothing for — refused here, in this source's own words

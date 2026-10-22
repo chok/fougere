@@ -20,25 +20,25 @@ const announcedIn = (param: Param, typeName: 'Fact' | 'Pipe'): string | undefine
 
 const payload = (_source: unknown, { ctx }: BindingCall): unknown => ctx.input;
 
-const judged = (_source: unknown, value: unknown, { ctx, input }: BindingCall): unknown =>
+const validatedAsInput = (_source: unknown, value: unknown, { ctx, input }: BindingCall): unknown =>
   validateInput(input, { ...ctx, input: value }).input;
 
 export const fact: BindingSourceType<'fact'> = {
-  claim(param) {
+  bind(param) {
     const factName = announcedIn(param, 'Fact');
 
     return factName === undefined ? undefined : { kind: 'fact', factName };
   },
   resolve: payload,
-  given: judged,
+  given: validatedAsInput,
 };
 
 export const pipe: BindingSourceType<'pipe'> = {
-  claim(param) {
+  bind(param) {
     const factName = announcedIn(param, 'Pipe');
 
     return factName === undefined ? undefined : { kind: 'pipe', factName };
   },
   resolve: payload,
-  given: judged,
+  given: validatedAsInput,
 };

@@ -3,7 +3,7 @@ import { resolve, sep } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { applyConfig, createApp, Logger, migrating } from '@fougere/core';
 import { resolveConventions } from '@fougere/core';
-import { frondAliases, loadCascadedConfig, remotesOf, setModuleLoader, statedModules } from '@fougere/core/node';
+import { frondAliases, loadCascadedConfig, remotesOf, setModuleLoader, configModules } from '@fougere/core/node';
 
 import type { App, CreateAppOptions, FougereConfig, Transport } from '@fougere/core';
 import { layerOf, remoteTransport, statementOf, type ResolvedStorage, type Statement } from '@fougere/defaults';
@@ -186,7 +186,7 @@ async function boot(): Promise<App> {
   // is not — it is opened here, before the container, so it closes after the container.
 
   // What the config names by module — imported here, because core resolves no specifier.
-  const stated = await statedModules(fileConfig.fronds);
+  const stated = await configModules(fileConfig.fronds);
   const remotes = remotesOf(fileConfig);
   // The host's word wins — and where it speaks, the environment is never read for a key.
   let transport: ((url: string) => Transport) | undefined = _config.remoteTransport;

@@ -1,6 +1,6 @@
 import type { LogLevel } from './LogLevel.js';
 import type { LogRecord } from './LogRecord.js';
-import type { Carry } from './Carry.js';
+import type { LineBuffer } from './LineBuffer.js';
 import type { LoggerOptions } from './LoggerOptions.js';
 import type { Rendered } from './Rendered.js';
 
@@ -72,13 +72,13 @@ function stamp(at: number | Date): string {
 export class Logger {
   private name: string;
   private color: boolean;
-  private carry?: Carry;
+  private lineBuffer?: LineBuffer;
   private during?: () => string | undefined;
 
   constructor(prefix?: string, options?: Omit<LoggerOptions, 'name'>) {
     this.name = prefix ?? 'app';
     this.color = options?.color ?? supportsColor();
-    this.carry = options?.carry;
+    this.lineBuffer = options?.lineBuffer;
     this.during = options?.during;
   }
 
@@ -86,7 +86,7 @@ export class Logger {
   child(name: string): Logger {
     return new Logger(`${this.name}:${name}`, {
       color: this.color,
-      ...(this.carry ? { carry: this.carry } : {}),
+      ...(this.lineBuffer ? { lineBuffer: this.lineBuffer } : {}),
       ...(this.during ? { during: this.during } : {}),
     });
   }
@@ -104,7 +104,7 @@ export class Logger {
       ...(during ? { during } : {}),
     };
 
-    this.carry?.push({ ...record, args: args.map(objectOf) });
+    this.lineBuffer?.push({ ...record, args: args.map(objectOf) });
 
     // The console ALWAYS, whoever else took the line. Skipping it once a destination
     // existed made `calls()` — a devtools ring that prints nothing — silence the

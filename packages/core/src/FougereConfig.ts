@@ -6,8 +6,8 @@ import type { SourceConfig } from './SourceConfig.js';
 import type { PortChoice } from './PortChoice.js';
 import { getModuleLoader } from './loader.js';
 import type { ProtocolConfig } from './Protocol.js';
-import { mergeStated, statesModule, type FrondsStated } from './FrondsStated.js';
-import { statedFronds } from './StatedFrond.js';
+import { mergeFrondEntries, statesModule, type FrondEntries } from './FrondEntries.js';
+import { keyedFrondEntries } from './KeyedFrondEntry.js';
 import { DEFAULT_CONVENTIONS } from './Conventions.js';
 import type { StateEntry } from './FougereStates.js';
 
@@ -30,14 +30,14 @@ export interface FougereConfig {
    * What this app is made of, and who inherits code from whom. The key is a frond name or a
    * module specifier; nesting says only that a child resolves what its parent declared.
    */
-  fronds?: FrondsStated;
+  fronds?: FrondEntries;
   /** What answers a port — a name, or the chain from the outside in. */
   ports?: PortChoice;
   /** The protocols this app serves beside its own calls — named here, made available by an import. */
   protocols?: ProtocolConfig;
   /**
    * How each name of the caller's state is kept between requests — `{ cart: { cookie: { maxAge:
-   * 604800 } } }` — named here, the way to keep it brought by an import (`@fougere/state-cookie`).
+   * 604800 } } }` — named here, the way to keep it fromExtension by an import (`@fougere/state-cookie`).
    */
   state?: Record<string, StateEntry>;
 }
@@ -52,7 +52,7 @@ export function configFileIn(dir: string): string | undefined {
 const STATEMENT_FILES = ['fronds.ts', 'fronds.mts', 'fronds.js', 'fronds.mjs'];
 
 /** Where `fougere build` writes the project as JavaScript, and `fougere serve` starts it from. */
-export const BUILT = join('.fougere', 'build');
+export const BUILD_DIRECTORY = join('.fougere', 'build');
 
 /** The fronds a directory states by hand — `frond()` calls beside the config, booted with no scan. */
 export function statementFileIn(dir: string): string | undefined {
@@ -98,8 +98,8 @@ export async function loadConfig(root: string, options?: { fresh?: boolean }): P
  */
 export function remotesOf(config: FougereConfig): Record<string, string> {
   const addresses: Record<string, string> = {};
-  for (const stated of statedFronds(config.fronds)) {
-    if (stated.value !== undefined && !statesModule(stated.key)) addresses[stated.key] = stated.value;
+  for (const entry of keyedFrondEntries(config.fronds)) {
+    if (entry.value !== undefined && !statesModule(entry.key)) addresses[entry.key] = entry.value;
   }
 
   return addresses;
@@ -115,7 +115,7 @@ export function remotesOf(config: FougereConfig): Record<string, string> {
 function mergeGlobal(base: FougereConfig, override: Partial<FougereConfig>): FougereConfig {
   const merged: FougereConfig = { ...base, ...override };
   if (base.fronds || override.fronds) {
-    merged.fronds = mergeStated(base.fronds ?? {}, override.fronds ?? {});
+    merged.fronds = mergeFrondEntries(base.fronds ?? {}, override.fronds ?? {});
   }
 
   return merged;

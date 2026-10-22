@@ -27,7 +27,7 @@ function servedModel(app: App): unknown {
   const stated = new Map(declared.fronds.map((one) => [one.frond, one]));
 
   return {
-    fronds: app.fronds.filter((frond) => !frond.brought).map((frond) => ({
+    fronds: app.fronds.filter((frond) => !frond.fromExtension).map((frond) => ({
       name: frond.name,
       declared: stated.get(frond.name)?.placement ?? 'local',
       at: stated.get(frond.name)?.at ?? null,
@@ -162,7 +162,7 @@ export function calls(options: CallsOptions = {}): Extension {
         ...(port !== undefined ? { port } : {}),
         title: asked.title ?? app.fronds[0]?.name ?? 'fougere',
         // What this app SERVES: a frond an extension brought is instrumentation.
-        fronds: app.fronds.filter((frond) => !frond.brought).map((frond) => frond.name),
+        fronds: app.fronds.filter((frond) => !frond.fromExtension).map((frond) => frond.name),
         model: servedModel(app),
         logs: (cursor) => logs.since(cursor),
         errors: (cursor) => errors.since(cursor),

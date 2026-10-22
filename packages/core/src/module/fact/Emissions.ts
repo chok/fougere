@@ -9,7 +9,7 @@ import { Invocation } from '../../wire/Invocation.js';
 import type { Logger } from '../../builtin/Logger.js';
 import type { Fronds } from '../../descriptor/Fronds.js';
 import type { OperationsMap } from '../../wire/OperationsMap.js';
-import type { Elsewhere } from './Elsewhere.js';
+import type { RemoteListeners } from './RemoteListeners.js';
 import { LOG_LINE } from '../../builtin/LogLine.js';
 
 /** The facts being announced up the stack, so a fact cannot cause itself. */
@@ -54,8 +54,8 @@ export class Emissions {
     private readonly container: Container,
     private readonly log: Logger,
     private readonly refused: Diagnostic[],
-    private readonly carry?: Carrier,
-    private readonly elsewhere?: Elsewhere,
+    private readonly carrier?: Carrier,
+    private readonly remoteListeners?: RemoteListeners,
   ) {
     for (const frond of fronds) {
       this.fileOf.set(frond.name, frond.source.path);
@@ -94,7 +94,7 @@ export class Emissions {
     for (const [op, contract] of contracts) {
       for (const bound of contract.binding ?? []) {
         if (bound.source.kind === 'pipe') {
-          this.claimPipe(bound.source.factName, { facade, op });
+          this.addPipe(bound.source.factName, { facade, op });
           continue;
         }
         if (bound.source.kind !== 'fact') continue;
@@ -106,11 +106,11 @@ export class Emissions {
   }
 
   /** One more op that finishes this fact. What ORDER they run in is settled at `register`. */
-  private claimPipe(fact: string, taking: Listener): void {
-    const held = this.pipes.get(fact) ?? [];
-    if (held.some((one) => `${one.facade}.${one.op}` === `${taking.facade}.${taking.op}`)) return;
-    held.push(taking);
-    this.pipes.set(fact, held);
+  private addPipe(fact: string, taking: Listener): void {
+    const pipes = this.pipes.get(fact) ?? [];
+    if (pipes.some((one) => `${one.facade}.${one.op}` === `${taking.facade}.${taking.op}`)) return;
+    pipes.push(taking);
+    this.pipes.set(fact, pipes);
   }
 
   /**
@@ -192,7 +192,7 @@ export class Emissions {
       // without bringing anything back — so the answers would hold this process's
       // subscribers only, and say nothing about it. Refused here rather than half-answered
       // at the first call: the second type is in a signature, so a boot can read it.
-      if (this.carry) {
+      if (this.carrier) {
         this.refused.push({
           severity: 'blocking',
           code: 'emit-await-with-carrier',
@@ -222,10 +222,10 @@ export class Emissions {
     await ambient.beforeAnnounce(fact);
 
     const payload = await this.finished(fact, this.stamped(fact, raw));
-    const listeners = [...(this.subscribers.get(fact) ?? []), ...await this.listenersElsewhere(fact, waiting)];
+    const listeners = [...(this.subscribers.get(fact) ?? []), ...await this.remoteListenersOf(fact, waiting)];
 
     /** Whoever is not in this process — and it is the ONLY way to reach them. */
-    const delivery = this.carry?.(fact, payload);
+    const delivery = this.carrier?.(fact, payload);
     if (delivery) void Promise.resolve(delivery).catch((cause) => this.log.error(`${fact} — carrier refused it`, cause));
 
     const handed = this.handToListeners(fact, payload, listeners);
@@ -302,25 +302,25 @@ export class Emissions {
    * the announcement — it was finishing the fact, and half a fact is not one.
    */
   private async finished(fact: string, payload: unknown): Promise<unknown> {
-    let carried = payload;
+    let current = payload;
     for (const link of this.pipes.get(fact) ?? []) {
-      const answered = await this.reach(link.facade, fact)[link.op]({ ...Invocation.empty, input: carried });
+      const answer = await this.reach(link.facade, fact)[link.op]({ ...Invocation.empty, input: current });
 
       // A link that answers nothing SUPPRESSES the fact — every subscriber was then handed
       // `null` and crashed reading it, one message each. It is refused rather than named,
       // because a fact is what HAPPENED: the announcer already said so and cannot be told
       // otherwise, `Emit` returning void. Filtering belongs to whoever announces, or to
       // each reader; it is not a link's to decide for everyone.
-      if (answered === null || answered === undefined) {
+      if (answer === null || answer === undefined) {
         throw new Error(
           `${link.facade}.${link.op} takes Pipe<${fact}> and returned nothing. `
           + 'It must return the fact, changed or as it is.',
         );
       }
-      carried = answered;
+      current = answer;
     }
 
-    return carried;
+    return current;
   }
 
   /**
@@ -341,10 +341,10 @@ export class Emissions {
    *
    * A line never crosses: delivering it is a call, and a call writes lines.
    */
-  private async listenersElsewhere(fact: string, waiting: boolean): Promise<Listener[]> {
-    if (!this.elsewhere || fact === LOG_LINE) return [];
+  private async remoteListenersOf(fact: string, waiting: boolean): Promise<Listener[]> {
+    if (!this.remoteListeners || fact === LOG_LINE) return [];
 
-    const { listeners, unreachable } = await this.elsewhere.listenersOf(fact);
+    const { listeners, unreachable } = await this.remoteListeners.listenersOf(fact);
     if (unreachable.length > 0) {
       const unknown = `${fact}: ${unreachable.join(', ')} did not answer`;
       if (waiting) throw new Error(`${unknown}, so its subscribers could not be asked. Emit<${fact}, …> needs every answer.`);

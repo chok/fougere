@@ -2,7 +2,7 @@ import type { Term } from '@fougere/registry';
 import type { Container } from '@fougere/container';
 import type { ProtocolConfig } from '../Protocol.js';
 import type { FrondDescriptor } from '../descriptor/FrondDescriptor.js';
-import type { FrondsStated } from '../FrondsStated.js';
+import type { FrondEntries } from '../FrondEntries.js';
 import type { StorageFactory } from '../storage/StorageFactory.js';
 import type { Constraint } from '../Constraint.js';
 import type { Transport } from '../wire/Transport.js';
@@ -51,7 +51,7 @@ export interface CreateAppOptions {
    * flattened, because a refusal names where an entry sits in it (`shop.cart`). The host has
    * already turned its addresses and its modules into `remotes` and `fronds`.
    */
-  under?: FrondsStated;
+  under?: FrondEntries;
   /**
    * This process carries a subset of what the project declares — `only:` at the host. A name
    * the tree states and this process left out is then expected, not a typo.

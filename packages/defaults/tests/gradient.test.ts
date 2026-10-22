@@ -428,7 +428,7 @@ const session = { name: 'session', state: { user: json(Member) } };
 
 /** What crosses between two processes: the invocation as JSON, marked by the receiver as crossed. */
 const acrossTheWire = (run: Transport): Transport => (call, invocation) =>
-  run(call, { ...JSON.parse(JSON.stringify(invocation)), crossed: true });
+  run(call, { ...JSON.parse(JSON.stringify(invocation)), fromAnotherProcess: true });
 
 describe('state — judged where it entered, read the same at every placement', () => {
   const signedIn = { ...Invocation.empty, state: { user: { id: 'u-1', name: 'Ada', since: new Date(0) } } };

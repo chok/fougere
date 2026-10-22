@@ -73,7 +73,7 @@ export function ownersOf(
  * The entities a class was BUILT ON — what a prefab may legitimately be handed the storage
  * of. Empty for a plain service, which is why one cannot ask for a storage at all.
  */
-function builtOn(ctor: unknown): string[] {
+function entitiesOfPrefab(ctor: unknown): string[] {
   const owned = ownedBy(ctor);
   if (owned.length > 0) return owned.map((e) => lowerFirst((e as { name: string }).name));
   const target = targetOf(ctor) as { name?: string } | undefined;
@@ -96,8 +96,8 @@ function refuseStorageKeyAsProvider(
   // The key the boot registers it under, which a bundler may have renamed — the same reading
   // `ProviderEntry.name` exists for.
   const registered = nameOf(provider);
-  const held = entityOfStorageKey(registered, known);
-  if (!held) return;
+  const entity = entityOfStorageKey(registered, known);
+  if (!entity) return;
 
   refused.push({
     severity: 'blocking',
@@ -105,7 +105,7 @@ function refuseStorageKeyAsProvider(
     filePath: provider.filePath,
     frond,
     subject: registered,
-    message: `The name ${registered} is taken by ${held}'s storage. Rename this class.`,
+    message: `The name ${registered} is taken by ${entity}'s storage. Rename this class.`,
   });
 }
 
@@ -121,7 +121,7 @@ function refuseStorageReached(
   known: (entity: string) => boolean,
   refused: Diagnostic[],
 ): void {
-  const allowed = decl.kind === 'provider' ? builtOn(decl.ctor) : [];
+  const allowed = decl.kind === 'provider' ? entitiesOfPrefab(decl.ctor) : [];
 
   for (const dep of decl.deps) {
     const framed = membersOfTogetherKey(dep);

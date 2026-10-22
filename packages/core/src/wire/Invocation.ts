@@ -37,7 +37,7 @@ export class Invocation implements InvocationContext {
   readonly identity?: string;
   readonly caller?: string;
   readonly runAt?: number;
-  readonly crossed?: true;
+  readonly fromAnotherProcess?: true;
 
   /** Gives every entry and every transport the same ten-member value, frozen. */
   private constructor(context: PartialInvocation) {
@@ -52,7 +52,7 @@ export class Invocation implements InvocationContext {
     if (context.identity !== undefined) this.identity = context.identity;
     if (context.caller !== undefined) this.caller = context.caller;
     if (context.runAt !== undefined) this.runAt = context.runAt;
-    if (context.crossed) this.crossed = true;
+    if (context.fromAnotherProcess) this.fromAnotherProcess = true;
     Object.freeze(this);
   }
 

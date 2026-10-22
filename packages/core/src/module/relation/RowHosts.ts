@@ -2,7 +2,7 @@ import type { Graph } from '@fougere/graph';
 import type { SchemaView } from '@fougere/schema';
 import type { Constraint } from '../../Constraint.js';
 import type { Peer } from './Peer.js';
-import type { Journal } from './Journal.js';
+import type { Journal } from '../../wire/Journal.js';
 import type { Storage } from '../../storage/Storage.js';
 
 /**
@@ -10,7 +10,7 @@ import type { Storage } from '../../storage/Storage.js';
  *
  * Documented: [entities](https://fougere.dev/docs/schema/entities).
  */
-export interface Hosting {
+export interface RowHosts {
   /** False behind `remotes:` — whose `sourceOf` still answers the default, and means nothing. */
   hostedHere(entity: string): boolean;
   sourceOf(entity: string): string;

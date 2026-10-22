@@ -25,8 +25,8 @@ export class PresenterExecutor {
     const rows = Array.isArray(result) ? result : [result];
     const values = new Map<string, unknown[]>();
     for (const name of this.fieldNames) {
-      const answered = await this.computed(name, rows, args[name] ?? []);
-      if (answered) values.set(name, answered);
+      const answer = await this.computed(name, rows, args[name] ?? []);
+      if (answer) values.set(name, answer);
     }
 
     const enriched = rows.map((item, index) => {
@@ -51,13 +51,13 @@ export class PresenterExecutor {
     if (typeof field !== 'function') return undefined;
 
     try {
-      const answered = await field.call(this.presenter, rows, ...args);
-      if (!Array.isArray(answered) || answered.length !== rows.length) {
-        const actual = Array.isArray(answered) ? answered.length : typeof answered;
+      const answer = await field.call(this.presenter, rows, ...args);
+      if (!Array.isArray(answer) || answer.length !== rows.length) {
+        const actual = Array.isArray(answer) ? answer.length : typeof answer;
         throw new Error(`expected ${rows.length} value(s) for ${rows.length} row(s), got ${actual}`);
       }
 
-      return answered;
+      return answer;
     } catch (cause) {
       throw new FougereError({
         code: ErrorCode.INTERNAL_ERROR,

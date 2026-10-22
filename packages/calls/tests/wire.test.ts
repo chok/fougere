@@ -38,7 +38,7 @@ describe('over the wire', () => {
       ) as CallPage;
 
       expect(page.calls).toHaveLength(1);
-      expect(page.calls[0]).toMatchObject({ frond: 'shop', address: 'order', operation: 'list', route: 'local', verdict: 'ok' });
+      expect(page.calls[0]).toMatchObject({ frond: 'shop', address: 'order', operation: 'list', route: 'local', status: 'ok' });
       expect(page.cursor).toBe(1);
 
       // Reading is itself a call, and it must not appear in what it reads.

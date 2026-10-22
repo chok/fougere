@@ -1,6 +1,7 @@
-import { FieldValueValidator, dotted, json, type Entity, type Field, type SchemaView } from '@fougere/schema';
+import { FieldValueValidator, dotted, json, type Field } from '@fougere/schema';
 import { ErrorCode } from '../../wire/ErrorCode.js';
 import { FougereError } from '../../wire/FougereError.js';
+import { targetOf } from '../../prefab/prefab.js';
 
 const readers = new WeakMap<object, Field>();
 
@@ -10,20 +11,20 @@ const readers = new WeakMap<object, Field>();
  * answers what it built.
  */
 export function collectedAs(collector: object, value: unknown): unknown {
-  const target = (collector.constructor as { __entity?: Partial<SchemaView> }).__entity;
+  const target = targetOf(collector.constructor);
   if (value === null || value === undefined || typeof target?.getFields !== 'function') return value;
 
   let reader = readers.get(target);
   if (!reader) {
-    reader = json(target as Entity);
+    reader = json(target);
     readers.set(target, reader);
   }
 
-  const verdict = FieldValueValidator.of(reader).parse(value);
-  if ('value' in verdict) return verdict.value;
+  const parsed = FieldValueValidator.of(reader).parse(value);
+  if ('value' in parsed) return parsed.value;
 
   throw new FougereError({
     code: ErrorCode.VALIDATION_FAILED,
-    message: `${collector.constructor.name}: ${verdict.path?.length ? `${dotted(verdict.path)}: ` : ''}${verdict.message}`,
+    message: `${collector.constructor.name}: ${parsed.path?.length ? `${dotted(parsed.path)}: ` : ''}${parsed.message}`,
   });
 }

@@ -1,6 +1,6 @@
 import type { RpcAnswer } from '../../wire/RpcAnswer.js';
 import type { Storage } from '../../storage/Storage.js';
-import type { Hosting } from './Hosting.js';
+import type { RowHosts } from './RowHosts.js';
 import { dependentsOf, releasing } from './relations.js';
 import { release as releaseRow } from './Release.js';
 
@@ -10,7 +10,7 @@ import { release as releaseRow } from './Release.js';
  */
 export function serveRelationReadings(
   serveRpc: (operation: string, answer: RpcAnswer) => void,
-  hosting: Hosting,
+  rowHosts: RowHosts,
   storageFor: (entity: string) => Storage | undefined,
 ): void {
   serveRpc('holds', async (invocation) => {
@@ -23,10 +23,10 @@ export function serveRelationReadings(
     return { missing: keys.filter((key) => !found.has(String(key))) };
   });
 
-  serveRpc('dependents', (invocation) => dependentsOf(String(invocation.params.entity), hosting));
+  serveRpc('dependents', (invocation) => dependentsOf(String(invocation.params.entity), rowHosts));
 
   serveRpc('release', async (invocation) => {
-    await releaseRow(String(invocation.params.entity), invocation.params.key, releasing(hosting),
+    await releaseRow(String(invocation.params.entity), invocation.params.key, releasing(rowHosts),
       (invocation.params.visited ?? []) as readonly string[]);
 
     return { released: true };

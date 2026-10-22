@@ -18,7 +18,8 @@ import type { DeclaredAnswer } from './descriptor/DeclaredAnswer.js';
 import type { DeclaredHandler } from './DeclaredHandler.js';
 import type { Declared } from './Declared.js';
 import { opsOf } from './prefab/opsOf.js';
-import { contractOf, isStatedOperation } from './StatedOperation.js';
+import { targetOf } from './prefab/prefab.js';
+import { contractOf, isStatementOperation } from './StatementOperation.js';
 import type { Ctor } from './Ctor.js';
 import type { FrondConfig } from './FrondConfig.js';
 import type { PresenterFieldMeta } from './descriptor/PresenterFieldMeta.js';
@@ -33,7 +34,7 @@ const ctorOf = (d: Declared): Ctor => (typeof d === 'function' ? d : d.ctor) as 
  * `Post`.
  */
 function subjectOf(ctor: Ctor, kind: string): { name: string } {
-  const subject = (ctor as unknown as { __entity?: { name: string } }).__entity;
+  const subject = targetOf(ctor);
   if (!subject?.name) {
     throw new Error(
       `${ctor.name} is listed as a ${kind}, so it must extend ${kind === 'presenter' ? 'Presenter(Entity)' : 'Collector(Type)'}.`,
@@ -50,12 +51,12 @@ const depsOf = (d: Declared): string[] => (typeof d === 'function' ? [] : d.deps
  * looks like there. What a prefab declares of itself is merged BELOW: a method the author
  * wrote over `create` is the one that runs, so its contract is the one that answers.
  */
-function statedOperations(h: Ctor | DeclaredHandler): Map<string, OperationContract> {
+function declaredOperations(h: Ctor | DeclaredHandler): Map<string, OperationContract> {
   const declared = typeof h === 'function' ? undefined : h.operations;
   const own = opsOf(ctorOf(h));
   const merged = new Map<string, OperationContract>(Object.entries(own));
   for (const [op, contract] of declared instanceof Map ? declared : Object.entries(declared ?? {})) {
-    merged.set(op, isStatedOperation(contract) ? contractOf(op, contract) : contract as OperationContract);
+    merged.set(op, isStatementOperation(contract) ? contractOf(op, contract) : contract as OperationContract);
   }
 
   return merged;
@@ -118,7 +119,7 @@ export function frond(name: string, declared: FrondDeclaration = {}): FrondDescr
       // A handler about no stored row is ordinary — the address is not a promise that an
       // entity carries it, which is why this is not looked up.
       entityName: address,
-      operations: statedOperations(h),
+      operations: declaredOperations(h),
       deps: depsOf(h),
       filePath: fileOf(ctor),
       exposed: true,

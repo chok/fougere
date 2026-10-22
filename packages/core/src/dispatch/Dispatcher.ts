@@ -7,7 +7,7 @@ import type { RoutePolicy } from './RoutePolicy.js';
 import { RouteRegistry } from './RouteRegistry.js';
 import { routeNotFound, servedOperations } from './routeNotFound.js';
 import type { InFlight } from './InFlight.js';
-import type { Journal } from '../module/relation/Journal.js';
+import type { Journal } from '../wire/Journal.js';
 
 /** Resolves and executes every call through the same transverse lifecycle. */
 export class Dispatcher implements DispatchPort {

@@ -32,14 +32,14 @@ import { refuseArityDrift } from './arity.js';
 import { StorageGuard } from '../dispatch/StorageGuard.js';
 import { DoorMiddleware } from '../prefab/DoorMiddleware.js';
 import type { DoorAround } from '../entry/door.js';
-import { heldKeyOf, portBindings, seamChains, wrapping, SEAMS } from './ports.js';
+import { ownKeyOf, portBindings, hostPortChains, wrapping, HOST_PORTS } from './ports.js';
 import { contractsKeyOf, facadeKeyOf } from '../wire/Facade.js';
 import { inheritsCrud, subjectOf } from '../prefab/CrudConstructor.js';
 import { repositoryKeyOf } from '../prefab/RepositoryConstructor.js';
 import { storageKeyOf } from '../storage/Storage.js';
 import { declares } from '../Source.js';
-import { heldBy, refuseUnwritableNull, releasing } from '../module/relation/relations.js';
-import type { Hosting } from '../module/relation/Hosting.js';
+import { relationChecksOf, refuseUnwritableNull, releasing } from '../module/relation/relations.js';
+import type { RowHosts } from '../module/relation/RowHosts.js';
 import type { RelationCheck } from '../module/relation/RelationCheck.js';
 import { RelationGuard } from '../module/relation/RelationGuard.js';
 import { registerCollectors } from '../module/collector/install.js';
@@ -78,7 +78,7 @@ export interface Assembly {
    */
   relations: RelationCheck[];
   /** Where each entity is hosted — one answer for a frond's storage, its frames and its surfaces. */
-  hosting: Hosting;
+  rowHosts: RowHosts;
   /** What the model resolved before the boot performed any side effect. */
   operationModel: EffectiveOperationModel;
   entityByName: Map<string, SchemaView>;
@@ -99,7 +99,7 @@ export interface Assembly {
   /** The same, by the address a door answers for — what the cycle asks. */
   doorMiddlewaresAt: Map<string, DoorAround[]>;
   /** What wraps each frond's seams, its ancestors' included — read the same way. */
-  seamsOf: Map<string, Map<string, ProviderEntry[]>>;
+  hostPortsOf: Map<string, Map<string, ProviderEntry[]>>;
   log: Logger;
   options: CreateAppOptions;
   /** What a call's `state` may hold, read off every extension this process mounts. */
@@ -248,12 +248,12 @@ function registerMiddlewares(
 }
 
 /** What wraps a seam here: what the parent already put in front, then this frond's own. */
-function inheritedSeams(
+function inheritedHostPorts(
   frond: FrondDescriptor,
-  seamsOf: Map<string, Map<string, ProviderEntry[]>>,
+  hostPortsOf: Map<string, Map<string, ProviderEntry[]>>,
   declared: Map<string, ProviderEntry[]>,
 ): Map<string, ProviderEntry[]> {
-  const above = frond.extends ? seamsOf.get(frond.extends) : undefined;
+  const above = frond.extends ? hostPortsOf.get(frond.extends) : undefined;
   if (!above) return declared;
 
   const all = new Map(declared);
@@ -272,7 +272,7 @@ function registerStorages(
   frond: FrondDescriptor,
   assembly: Assembly,
   scope: Container,
-  seams: Map<string, ProviderEntry[]>,
+  hostPorts: Map<string, ProviderEntry[]>,
   owners: Map<string, string>,
   frondLog: Logger,
 ): void {
@@ -280,7 +280,7 @@ function registerStorages(
   if (!options.storageFactory) return;
 
   const unenforced: string[] = [];
-  const release = releasing(assembly.hosting);
+  const release = releasing(assembly.rowHosts);
   for (const entity of frond.entities) {
     const key = storageKeyOf(entity.name);
     const source = options.sourceOf?.(entity.name) ?? 'default';
@@ -299,10 +299,10 @@ function registerStorages(
     // The declared chain first, then the guard OUTSIDE it: the guard hands on the value
     // it parsed, so a wrapper reads what the entity says a row is rather than what
     // arrived. Same order the client facade has held since `StorageGuard` existed.
-    const linked = wrapping('Storage', seams.get('Storage') ?? [], scoped, (dep) => scope.resolve(dep));
+    const linked = wrapping('Storage', hostPorts.get('Storage') ?? [], scoped, (dep) => scope.resolve(dep));
     // Storage is a way out like the client surface — see `StorageGuard`.
     refused.push(...refuseUnwritableNull(entity.entityClass, entity.name, entity.filePath));
-    const relations = heldBy(entity.entityClass, entity.name, assembly.hosting);
+    const relations = relationChecksOf(entity.entityClass, entity.name, assembly.rowHosts);
     assembly.relations.push(...relations);
     const guarded = new StorageGuard(entity.entityClass.getFields(), entity.name)
       .guard(new RelationGuard(entity.name, relations, release).guard(linked));
@@ -359,13 +359,13 @@ function registerProviders(
   // provider — a link goes where its frond goes, which is what a frond behind `remotes:`
   // takes with it. A link is built by `wrapping`, never by the container: it asks for the seam,
   // and nothing answers that name.
-  const seams = seamChains(frond.providers, ports, refused);
-  const links = new Set([...seams.values()].flat());
+  const hostPorts = hostPortChains(frond.providers, ports, refused);
+  const links = new Set([...hostPorts.values()].flat());
   for (const provider of frond.providers) {
     if (links.has(provider)) continue;
     scope.register(nameOf(provider), provider.ctor, { deps: ownLogger(nameOf(provider), provider.deps), ...lifetimeOf(provider.ctor) });
   }
-  for (const [seam, links] of seams) {
+  for (const [seam, links] of hostPorts) {
     boundPorts.add(seam);
     frondLog.debug(`seam ${seam} → ${links.map((one) => one.ctor.name).join(' → ')} → the realization`);
     plugged.push({ point: seam, by: 'type', frond: frond.name, answers: [...links.map(nameOf), 'the realization'] });
@@ -380,15 +380,15 @@ function registerProviders(
     if (chain.length === 0) continue;
     // A seam is bound where its realization is BUILT, not under a container key — nothing
     // resolves `Storage`, and `<Entity>Storage` is what a handler asks for.
-    if (SEAMS.has(port)) continue;
+    if (HOST_PORTS.has(port)) continue;
     // Registered from the INSIDE OUT, each wrapper asking for the one it stands in front
     // of: the container resolves a dep by NAME, so wrapping is a substituted key and
     // needs nothing of the container itself. The outermost answers under the port.
     const realization = chain.at(-1)!;
-    const held = realization.deps.includes(port);
-    const wrappers = held ? chain : chain.slice(0, -1);
-    let inner = held ? heldKeyOf(port) : nameOf(realization);
-    if (held) scope.registerValue(inner, scope.resolve(port));
+    const wraps = realization.deps.includes(port);
+    const wrappers = wraps ? chain : chain.slice(0, -1);
+    let inner = wraps ? ownKeyOf(port) : nameOf(realization);
+    if (wraps) scope.registerValue(inner, scope.resolve(port));
     for (const wrapper of wrappers.slice(1).reverse()) {
       const deps = ownLogger(nameOf(wrapper), wrapper.deps).map((dep) => (dep === port ? inner : dep));
       inner = nameOf(wrapper);
@@ -410,7 +410,7 @@ function registerProviders(
     frondLog.debug(`${frond.providers.length} provider(s): ${frond.providers.map(nameOf).join(', ')}`);
   }
 
-  return seams;
+  return hostPorts;
 }
 
 /**
@@ -439,7 +439,7 @@ function registerSurfaceStorage(
   const guarded = new StorageGuard(entity.entityClass.getFields(), entity.name, {
     ...(narrowed ? { view: (outputSchema as { getFields(): Fields }).getFields() } : {}),
     outOfView: (message) => frondLog.warn(message),
-  }).guard(new RelationGuard(entity.name, heldBy(entity.entityClass, entity.name, assembly.hosting), releasing(assembly.hosting)).guard(scoped));
+  }).guard(new RelationGuard(entity.name, relationChecksOf(entity.entityClass, entity.name, assembly.rowHosts), releasing(assembly.rowHosts)).guard(scoped));
 
   surfaceScope.registerValue(storageKeyOf(entity.name), guarded);
   surfaceScope.registerValue(repositoryKeyOf(entity.name), guarded);
@@ -561,7 +561,7 @@ function ownershipOf(frond: FrondDescriptor, { entityByName, refused }: Assembly
 
 /** A frame is read from the same `deps` every port is: asking for one IS declaring it. */
 function registerFramesOf(frond: FrondDescriptor, assembly: Assembly, scope: Container, frondLog: Logger): void {
-  const { entityByName, frondOf, options, hosting, refused } = assembly;
+  const { entityByName, frondOf, options, rowHosts: hosting, refused } = assembly;
   const wanted = [...frond.handlers, ...frond.providers, ...frond.presenters, ...frond.collectors]
     .flatMap((declared) => declared.deps.map((key) => ({ key, filePath: declared.filePath })));
 
@@ -573,7 +573,7 @@ function registerFramesOf(frond: FrondDescriptor, assembly: Assembly, scope: Con
     sourceOf: options.sourceOf,
     transacts: options.transacts,
     transacted: options.transacted,
-    hosting,
+    rowHosts: hosting,
     log: frondLog,
   }, refused);
 }
@@ -659,9 +659,9 @@ export async function installFrond(frond: FrondDescriptor, assembly: Assembly): 
   const ownLogger = ownLoggers(scope, basesOf(frond.providers, (base) => base === 'Logger').has('Logger'));
   const declared = registerProviders(frond, scope, options.ports, assembly.boundPorts, assembly.refused, ownLogger, frondLog, assembly.plugged);
   // An ancestor's links stand OUTSIDE this frond's own; a seam has no container key to inherit through.
-  const seams = inheritedSeams(frond, assembly.seamsOf, declared);
-  assembly.seamsOf.set(frond.name, seams);
-  registerStorages(frond, assembly, scope, seams, owners, frondLog);
+  const hostPorts = inheritedHostPorts(frond, assembly.hostPortsOf, declared);
+  assembly.hostPortsOf.set(frond.name, hostPorts);
+  registerStorages(frond, assembly, scope, hostPorts, owners, frondLog);
   registerFramesOf(frond, assembly, scope, frondLog);
 
   for (const extension of assembly.extensions) extension.install?.(frond, { scope, container, ownLogger, log: frondLog });

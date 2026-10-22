@@ -35,7 +35,7 @@ export class State {
     this.request.written.set(name, value);
   }
 
-  forget(name: string): void {
+  delete(name: string): void {
     this.set(name, undefined);
   }
 }

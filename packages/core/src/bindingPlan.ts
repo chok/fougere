@@ -26,8 +26,8 @@ export function computeBindingPlan(
 /** The first source that claims the parameter, then the request's own parts — the input last. */
 function sourceOf(param: Param, collectorTypeNames: ReadonlySet<string>): BindingSource {
   for (const source of BindingSources.all) {
-    const claimed = source.claim(param, collectorTypeNames);
-    if (claimed) return claimed;
+    const bound = source.bind(param, collectorTypeNames);
+    if (bound) return bound;
   }
 
   const typeName = param.type.name;

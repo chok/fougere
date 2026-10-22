@@ -12,7 +12,7 @@ export interface DomainCluster {
 
 /** Each entity of the fronds, with what it names and what names it. */
 export function buildGraph(fronds: FrondDescriptor[]): Map<string, EntityNode> {
-  const relations = relationGraph(Fronds.hosting(fronds).schemas());
+  const relations = relationGraph(Fronds.list(fronds).schemas());
 
   return new Map(fronds.flatMap((frond) => frond.entities.map((entity) => [entity.name, {
     name: entity.name,

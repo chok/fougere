@@ -6,7 +6,7 @@
  * extension: the same reading `extensions/` already does off a module's form.
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { statedModules } from '../src/StatedModules.js';
+import { configModules } from '../src/ConfigModules.js';
 import { setModuleLoader } from '../src/loader.js';
 import { frond } from '../src/FrondDeclaration.js';
 
@@ -17,11 +17,11 @@ const modules: Record<string, Record<string, unknown>> = {
   './fronds/local.ts': { default: () => ({ name: 'local', handlers: [] }) },
 };
 
-describe('statedModules', () => {
+describe('configModules', () => {
   beforeEach(() => { setModuleLoader(async (id: string) => modules[id] ?? {}); });
 
   it('sends a descriptor to the fronds and a rising shape to the extensions', async () => {
-    const { fronds, extensions } = await statedModules({
+    const { fronds, extensions } = await configModules({
       cart: { extends: 'shop' },
       '@acme/audit': './lines.jsonl',
       '@acme/watch': {},
@@ -32,18 +32,18 @@ describe('statedModules', () => {
   });
 
   it('reads the export off the last segment, and falls back to the default', async () => {
-    const { fronds } = await statedModules({ './fronds/local.ts': {} });
+    const { fronds } = await configModules({ './fronds/local.ts': {} });
 
     expect(fronds.map((one) => one.name)).toEqual(['local']);
   });
 
   it('names the export a module was supposed to have', async () => {
-    await expect(statedModules({ '@acme/silent': {} }))
+    await expect(configModules({ '@acme/silent': {} }))
       .rejects.toThrow(/has no export named silent/);
   });
 
   it('says nothing about the fronds a scan finds on disk', async () => {
-    const { fronds, extensions } = await statedModules({ cart: { extends: 'shop' }, blog: 'http://a' });
+    const { fronds, extensions } = await configModules({ cart: { extends: 'shop' }, blog: 'http://a' });
 
     expect(fronds).toEqual([]);
     expect(extensions).toEqual([]);
@@ -51,12 +51,12 @@ describe('statedModules', () => {
 
   it('hands over a frond the config built in place, with nothing to import', async () => {
     const auth = frond('auth');
-    const { fronds } = await statedModules({ blog: 'http://127.0.0.1:4100', auth });
+    const { fronds } = await configModules({ blog: 'http://127.0.0.1:4100', auth });
 
     expect(fronds).toEqual([auth]);
   });
 
   it('refuses an entry whose key is not the name of the frond it holds', async () => {
-    await expect(statedModules({ login: frond('auth') })).rejects.toThrow("Rename the entry 'auth'");
+    await expect(configModules({ login: frond('auth') })).rejects.toThrow("Rename the entry 'auth'");
   });
 });

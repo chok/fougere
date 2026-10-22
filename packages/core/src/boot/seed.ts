@@ -26,7 +26,7 @@ export function orderSeeds(fronds: FrondDescriptor[]): SeedOrder {
     seeded.set(seed.entityName, [...seeded.get(seed.entityName) ?? [], seed]);
   }
 
-  const relations = relationGraph(Fronds.hosting(fronds).schemas());
+  const relations = relationGraph(Fronds.list(fronds).schemas());
   const waiting = new Graph();
   for (const entity of seeded.keys()) waiting.add(entity);
   for (const entity of seeded.keys()) {

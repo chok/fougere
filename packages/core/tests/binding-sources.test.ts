@@ -29,7 +29,7 @@ describe('BindingSources', () => {
 
   it('asks a source standing in place of another before the request input is assumed', async () => {
     const tenant: BindingSourceType<'collector'> = {
-      claim: (param) => (param.type.name === 'Tenant' ? { kind: 'collector', typeName: 'tenant' } : undefined),
+      bind: (param) => (param.type.name === 'Tenant' ? { kind: 'collector', typeName: 'tenant' } : undefined),
       resolve: () => 'acme',
       given: (_source, value) => value,
     };

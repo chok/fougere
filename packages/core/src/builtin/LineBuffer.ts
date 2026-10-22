@@ -12,8 +12,8 @@ import type { LogRecord } from './LogRecord.js';
  * would miss. Bounded: a boot that never finishes must not grow, and what is dropped is
  * the OLDEST since the lines explaining a refusal are the last.
  */
-export class Carry {
-  private held: LogRecord[] = [];
+export class LineBuffer {
+  private lines: LogRecord[] = [];
   private take?: (line: LogRecord) => void;
 
   static readonly MAX = 500;
@@ -27,14 +27,14 @@ export class Carry {
 
       return;
     }
-    this.held.push(record);
-    if (this.held.length > Carry.MAX) this.held.shift();
+    this.lines.push(record);
+    if (this.lines.length > LineBuffer.MAX) this.lines.shift();
   }
 
   /** Hand what is held over, and everything after it. */
   to(take: (line: LogRecord) => void): () => void {
     this.take = take;
-    for (const line of this.held.splice(0)) take(line);
+    for (const line of this.lines.splice(0)) take(line);
 
     return () => { this.take = undefined; };
   }
@@ -44,7 +44,7 @@ export class Carry {
    * destination. Nothing is printed: the console had every one of these lines when it was
    * written, and the hold exists only to hand them on later.
    */
-  forget(): void {
-    this.held.length = 0;
+  drop(): void {
+    this.lines.length = 0;
   }
 }

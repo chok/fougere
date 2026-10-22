@@ -1,5 +1,5 @@
 /**
- * One wire, two trust boundaries. A peer's call is marked `crossed`: the sender's own boundary
+ * One wire, two trust boundaries. A peer's call is marked `fromAnotherProcess`: the sender's own boundary
  * judged it. A page's call never is — it used to be, so the receiver skipped judging the state
  * of a caller that sits outside the topology.
  */
@@ -20,7 +20,7 @@ describe('the doors of the call envelope', () => {
     const { runner, seen } = recording();
 
     expect(await answerAt(peerDoor(runner), envelope({ state: { user: 'peer' } }))).toEqual({ jsonrpc: '2.0', id: 7, result: 'ok' });
-    expect(seen[0]).toMatchObject({ crossed: true, state: { user: 'peer' } });
+    expect(seen[0]).toMatchObject({ fromAnotherProcess: true, state: { user: 'peer' } });
   });
 
   it('never marks a page\'s call crossed, and gives it the state the host resolved', async () => {
@@ -28,7 +28,7 @@ describe('the doors of the call envelope', () => {
 
     await answerAt(pageDoor(runner, { state: { user: 'host' } }), envelope({ state: { user: 'admin' } }));
 
-    expect(seen[0]!.crossed).toBeUndefined();
+    expect(seen[0]!.fromAnotherProcess).toBeUndefined();
     expect(seen[0]!.state).toEqual({ user: 'host' });
   });
 

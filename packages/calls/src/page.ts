@@ -217,8 +217,8 @@ function calls() {
       + (many ? '<td class="soft">' + esc(c.frond ?? '—') + '</td>' : '')
       + '<td class="lead">' + esc(c.address + '.' + c.operation)
         + (c.surface ? '<span class="soft">/' + esc(c.surface) + '</span>' : '')
-        + (c.verdict === 'failed' ? ' <span class="chip failed">' + esc(c.refusal?.code ?? 'failed') + '</span>' : '')
-        + (c.verdict === 'running' ? ' <span class="chip warn">running</span>' : '') + '</td>'
+        + (c.status === 'failed' ? ' <span class="chip failed">' + esc(c.refusal?.code ?? 'failed') + '</span>' : '')
+        + (c.status === 'running' ? ' <span class="chip warn">running</span>' : '') + '</td>'
       + '<td class="soft">' + route + '</td>'
       + '<td class="num">' + (c.ms === undefined ? '' : c.ms + 'ms') + '</td>'
       + '<td class="bar">' + (width ? '<span class="meter ' + costOf(c.ms) + '" style="width:'
@@ -342,7 +342,7 @@ function shape() {
   const seenOf = (name) => {
     const mine = state.calls.filter((c) => c.frond === name);
     const routes = new Set(mine.filter((c) => c.route).map((c) => c.route));
-    return { count: mine.length, failed: mine.filter((c) => c.verdict === 'failed').length, routes };
+    return { count: mine.length, failed: mine.filter((c) => c.status === 'failed').length, routes };
   };
 
   const here = state.model.fronds.filter((f) => f.declared === 'local');
@@ -418,7 +418,7 @@ function show(call) {
     .find((one) => one.address === call.address + '.' + call.operation);
   const rows = [
     ['route', routeOf(call)],
-    ['verdict', call.verdict === 'failed' ? (call.refusal?.code ?? 'failed') : call.verdict],
+    ['status', call.status === 'failed' ? (call.refusal?.code ?? 'failed') : call.status],
     ['took', call.ms === undefined ? 'unsettled' : call.ms + 'ms'],
     ['frond', call.frond ?? '—'],
     ['surface', call.surface ?? '—'],

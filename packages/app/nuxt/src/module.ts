@@ -13,7 +13,7 @@ import {
 import type { Nuxt } from '@nuxt/schema';
 import { Fronds, orderSeeds, serves, type ScanResult } from '@fougere/core';
 import { prefixOf } from '@fougere/app';
-import { frondPackage, resolveConventions, statedFronds, statesModule, type Conventions } from '@fougere/core';
+import { frondPackage, resolveConventions, keyedFrondEntries, statesModule, type Conventions } from '@fougere/core';
 import { emitFacade, emitNames, frondAliases, frondNamesOf, REMOTES, configFileIn, statementFileIn, statementIn, setModuleLoader, loadCascadedConfig, projectRootOf, remotesOf } from '@fougere/core/node';
 import { declaresStorage } from '@fougere/defaults';
 import type { SeedEntry, FougereConfig } from '@fougere/core';
@@ -399,7 +399,7 @@ function configFilesOf(rootDir: string, scanRoot: string): string[] {
  */
 /** The fronds a `fronds.ts` states, read the way the boot will read them — no scan, no compiler. */
 async function statedIn(frondsFile: string, only: string[] | undefined): Promise<ScanResult> {
-  return { fronds: Fronds.hosting((await statementIn(frondsFile, only)).fronds), diagnostics: [] };
+  return { fronds: Fronds.list((await statementIn(frondsFile, only)).fronds), diagnostics: [] };
 }
 
 /**
@@ -484,7 +484,7 @@ export function generateBootPlugin(
 
   // A module key is imported by the BUNDLE, like a seed: nothing resolves a specifier once the
   // app is built, and the loader core falls back to looks from its own directory.
-  const moduleKeys = statedFronds(config.fronds).map((entry) => entry.key).filter(statesModule);
+  const moduleKeys = keyedFrondEntries(config.fronds).map((entry) => entry.key).filter(statesModule);
   if (moduleKeys.length > 0) {
     lines.push(`import { getModuleLoader, setModuleLoader } from '@fougere/core/node';`);
     moduleKeys.forEach((key, i) => {

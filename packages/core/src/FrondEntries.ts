@@ -15,8 +15,8 @@ import type { FrondDescriptor } from './descriptor/FrondDescriptor.js';
  *
  * Documented: [fronds](https://fougere.dev/docs/infra/fronds).
  */
-export type FrondsStated = {
-  readonly [frond in NameOf<'frond'> | (string & {})]?: FrondStated;
+export type FrondEntries = {
+  readonly [frond in NameOf<'frond'> | (string & {})]?: FrondEntry;
 };
 
 /**
@@ -24,7 +24,7 @@ export type FrondsStated = {
  * that answers elsewhere, the argument for a module key — or the frond itself, built by the
  * config's own import: `auth: betterAuth({ … })`.
  */
-export type FrondStated = string | FrondAttributes | FrondDescriptor;
+export type FrondEntry = string | FrondAttributes | FrondDescriptor;
 
 export interface FrondAttributes {
   /**
@@ -59,8 +59,8 @@ export function statesModule(key: string): boolean {
  * address keeps the `extends` the workspace gave it — and an app naming a different `extends`
  * replaces it, silently, the way every scalar key of this config replaces.
  */
-export function mergeStated(base: FrondsStated, override: FrondsStated): FrondsStated {
-  const merged: Record<string, FrondStated> = { ...base } as Record<string, FrondStated>;
+export function mergeFrondEntries(base: FrondEntries, override: FrondEntries): FrondEntries {
+  const merged: Record<string, FrondEntry> = { ...base } as Record<string, FrondEntry>;
   for (const [key, value] of Object.entries(override)) {
     if (value === undefined) continue;
 

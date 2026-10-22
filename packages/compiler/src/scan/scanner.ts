@@ -832,7 +832,7 @@ export async function scanProject(
       );
     }),
   );
-  const fronds = Fronds.hosting(filter ? all.filter((f) => filter.includes(f.name)) : all);
+  const fronds = Fronds.list(filter ? all.filter((f) => filter.includes(f.name)) : all);
 
   return { fronds, diagnostics, ...(vocabulary.length > 0 ? { vocabulary } : {}) };
 }

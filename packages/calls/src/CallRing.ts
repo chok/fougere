@@ -36,9 +36,9 @@ export class CallRing {
     if (!record) return;
 
     if (event.stage === 'resolved' && event.routeKind) record.route = event.routeKind;
-    if (event.stage === 'completed') record.verdict = 'ok';
+    if (event.stage === 'completed') record.status = 'ok';
     if (event.stage === 'failed') {
-      record.verdict = 'failed';
+      record.status = 'failed';
       record.refusal = refusalOf(event.error);
     }
     if (event.stage === 'settled') {
@@ -66,7 +66,7 @@ export class CallRing {
       ...(trace ? { trace } : {}),
       ...(caller ? { caller } : {}),
       startedAt: Date.now(),
-      verdict: 'running',
+      status: 'running',
     };
 
     this.held.push(record);

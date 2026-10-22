@@ -12,7 +12,7 @@ process.env.FOUGERE_STATE_KEY = 'a key for the test, long enough to sign with';
 class CartHandler {
   async open(state: State) { state.set('cart', 'c42'); state.set('draft', 'd1'); state.set('locale', 'fr'); return { opened: true }; }
   async current(state: State) { return { cart: state.get('cart') ?? null, draft: state.get('draft') ?? null, locale: state.get('locale') ?? null }; }
-  async close(state: State) { state.forget('cart'); state.forget('draft'); return { closed: true }; }
+  async close(state: State) { state.delete('cart'); state.delete('draft'); return { closed: true }; }
 }
 
 configureFougere({

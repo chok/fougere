@@ -13,8 +13,8 @@ import type { Logger } from '../../builtin/Logger.js';
 import type { ProviderEntry } from '../../descriptor/ProviderEntry.js';
 import { StorageGuard } from '../../dispatch/StorageGuard.js';
 import { RelationGuard } from '../relation/RelationGuard.js';
-import { heldBy, releasing } from '../relation/relations.js';
-import type { Hosting } from '../relation/Hosting.js';
+import { relationChecksOf, releasing } from '../relation/relations.js';
+import type { RowHosts } from '../relation/RowHosts.js';
 import { recording, unwind, type Undo } from './frame.js';
 import type { Diagnostic } from '../../diagnostic.js';
 
@@ -31,7 +31,7 @@ export interface FrameWorld {
   transacts?: (source: string) => boolean;
   transacted?: <R>(source: string, fn: (storageFactory: StorageFactory) => Promise<R>) => Promise<R>;
   /** What a member's references ask before a write — the answer its frond's own storage gets. */
-  hosting: Hosting;
+  rowHosts: RowHosts;
   log: Logger;
 }
 
@@ -157,13 +157,13 @@ async function inScope<R>(
       return storage;
     });
     // Providers after every storage is in place: one may depend on another member's.
-    const built = members.providers.map((provider) => {
+    const instances = members.providers.map((provider) => {
       scope.register(provider.ctor.name, provider.ctor, { deps: provider.deps, ...lifetimeOf(provider.ctor) });
 
       return scope.resolve(provider.ctor.name);
     });
 
-    return await fn(storages, built);
+    return await fn(storages, instances);
   } finally {
     await scope.dispose();
   }
@@ -225,7 +225,7 @@ export function registerFrames(
 function frameOver(key: string, members: Members, scope: Container, world: FrameWorld): Frame {
   const sources = new Set(members.entities.map((member) => world.sourceOf?.(member.name) ?? 'default'));
   const validator = (storage: Storage, name: string, schema: SchemaView) =>
-    new StorageGuard(schema.getFields(), name).guard(new RelationGuard(name, heldBy(schema, name, world.hosting), releasing(world.hosting)).guard(storage));
+    new StorageGuard(schema.getFields(), name).guard(new RelationGuard(name, relationChecksOf(schema, name, world.rowHosts), releasing(world.rowHosts)).guard(storage));
 
   const source = sources.size === 1 ? [...sources][0]! : undefined;
   if (world.transacted && source !== undefined && (world.transacts?.(source) ?? true)) {

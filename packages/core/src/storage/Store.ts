@@ -157,29 +157,29 @@ export function storageOver(open: (entity: SchemaView, name: string) => Store): 
  * The same comparisons SQL compiles, answered in memory. Every one a criterion names has
  * to hold — the rule two criteria already follow.
  */
-function compares(held: unknown, comparison: Comparison): boolean {
+function compares(stored: unknown, comparison: Comparison): boolean {
   return comparisonsIn(comparison).every(([name, asked]) => {
     switch (name) {
-      case 'gte': return ordered(held, asked, (a, b) => a >= b);
-      case 'lte': return ordered(held, asked, (a, b) => a <= b);
-      case 'gt': return ordered(held, asked, (a, b) => a > b);
-      case 'lt': return ordered(held, asked, (a, b) => a < b);
-      case 'ne': return !Object.is(held, asked);
-      case 'contains': return String(held ?? '').includes(String(asked));
-      case 'notIn': return !(asked as readonly unknown[]).some((one) => Object.is(held, one));
-      case 'isNull': return (held === null || held === undefined) === Boolean(asked);
+      case 'gte': return ordered(stored, asked, (a, b) => a >= b);
+      case 'lte': return ordered(stored, asked, (a, b) => a <= b);
+      case 'gt': return ordered(stored, asked, (a, b) => a > b);
+      case 'lt': return ordered(stored, asked, (a, b) => a < b);
+      case 'ne': return !Object.is(stored, asked);
+      case 'contains': return String(stored ?? '').includes(String(asked));
+      case 'notIn': return !(asked as readonly unknown[]).some((one) => Object.is(stored, one));
+      case 'isNull': return (stored === null || stored === undefined) === Boolean(asked);
       case 'between': {
         const [low, high] = asked as [unknown, unknown];
 
-        return ordered(held, low, (a, b) => a >= b) && ordered(held, high, (a, b) => a <= b);
+        return ordered(stored, low, (a, b) => a >= b) && ordered(stored, high, (a, b) => a <= b);
       }
     }
   });
 }
 
 /** A row that holds nothing compares to nothing — the answer SQL gives for NULL. */
-const ordered = (held: unknown, asked: unknown, holds: (a: number, b: number) => boolean): boolean =>
-  held === null || held === undefined ? false : holds(order(held), order(asked));
+const ordered = (stored: unknown, asked: unknown, holds: (a: number, b: number) => boolean): boolean =>
+  stored === null || stored === undefined ? false : holds(order(stored), order(asked));
 
 /** What a Date and a number have in common, and a string keeps for itself. */
 const order = (value: unknown): number =>

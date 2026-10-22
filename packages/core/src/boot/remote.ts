@@ -55,7 +55,7 @@ export function createRemoteRouter(
   const transports = new Map<string, Transport>();
 
   /** Which remote label claimed a facade name — so a second claim can name the first. */
-  const claimedBy = new Map<string, string>();
+  const remoteOfFacade = new Map<string, string>();
 
   const discover = async (): Promise<void> => {
     // Asking is concurrent; INDEXING is not, and is done in the order `remotes` declares.
@@ -78,13 +78,13 @@ export function createRemoteRouter(
       }),
     );
 
-    for (const answered of cards) {
-      if (!answered) continue;
+    for (const reached of cards) {
+      if (!reached) continue;
 
-      pending.delete(answered.label);
-      claimFacades(answered, byAddress, claimedBy);
-      storedBy(answered, stored);
-      listenedBy(answered, byFact);
+      pending.delete(reached.label);
+      registerRemoteFacades(reached, byAddress, remoteOfFacade);
+      storedBy(reached, stored);
+      listenedBy(reached, byFact);
     }
   };
 
@@ -132,11 +132,11 @@ export function createRemoteFacade(
   const opFn = (op: string) => async (received: InvocationContext = Invocation.empty) => {
     const { frond, transport, outputs } = await router.route(address);
     const call: FrondCall = { frond, address, op };
-    const state = received.crossed ? { ...received.state } : shape.judge(received.state, address, op);
+    const state = received.fromAnotherProcess ? { ...received.state } : shape.judge(received.state, address, op);
     const invocation = { ...received, state };
     const entered = { ...state };
     const ctx: OperationContext = {
-      address, frond, operation: op, args: [], state, invocation, crosses: true,
+      address, frond, operation: op, args: [], state, invocation, toAnotherProcess: true,
     };
     const addressed = (error: unknown): never => { throw error instanceof FougereError ? error.at(address, op) : error; };
     const answer = await runMiddlewares(middlewaresFor(address), ctx, () =>
@@ -152,7 +152,7 @@ export function createRemoteFacade(
 }
 
 /** What one remote answered `discover` with, once it has been reached. */
-interface Answered {
+interface RemoteAnswer {
   label: string;
   url: string;
   transport: Transport;
@@ -164,16 +164,16 @@ interface Answered {
  * arrives — so adding one here would answer a call with a transport to a facade that does not
  * exist. Two remotes claiming one name is refused, never silently arbitrated.
  */
-function claimFacades(
-  { label, url, transport, answer }: Answered,
+function registerRemoteFacades(
+  { label, url, transport, answer }: RemoteAnswer,
   byAddress: Map<string, Route>,
-  claimedBy: Map<string, string>,
+  remoteOfFacade: Map<string, string>,
 ): void {
   const card = assertIdentityCard(answer, `Remote '${label}' (${url})`);
 
   for (const frond of card.fronds) {
     for (const facade of frond.facades) {
-      const first = claimedBy.get(facade.name);
+      const first = remoteOfFacade.get(facade.name);
       if (first !== undefined && first !== label) {
         throw new FougereError({
           code: ErrorCode.INTERNAL_ERROR,
@@ -184,7 +184,7 @@ function claimFacades(
         });
       }
 
-      claimedBy.set(facade.name, label);
+      remoteOfFacade.set(facade.name, label);
       byAddress.set(facade.name, {
         frond: frond.name,
         transport,
@@ -197,14 +197,14 @@ function claimFacades(
 }
 
 /** What each remote stores, by entity name — what `schemaFor` answers for a row kept elsewhere. */
-function storedBy({ label, url, answer }: Answered, stored: Map<string, SchemaView>): void {
+function storedBy({ label, url, answer }: RemoteAnswer, stored: Map<string, SchemaView>): void {
   for (const frond of assertIdentityCard(answer, `Remote '${label}' (${url})`).fronds) {
     for (const entity of frond.entities) stored.set(entity.name, Card.fromDescriptor(entity.schema).toSchema());
   }
 }
 
 /** Who listens to what on each remote — the `listens` an op states on the card it serves. */
-function listenedBy({ label, url, answer }: Answered, byFact: Map<string, RemoteListener[]>): void {
+function listenedBy({ label, url, answer }: RemoteAnswer, byFact: Map<string, RemoteListener[]>): void {
   for (const frond of assertIdentityCard(answer, `Remote '${label}' (${url})`).fronds) {
     for (const facade of frond.facades) {
       for (const op of facade.ops) {

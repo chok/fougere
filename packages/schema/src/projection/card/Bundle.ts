@@ -19,20 +19,20 @@ export class Bundle {
 
   static fromSchemas(schemas: SchemaSet): Bundle {
     const definitions: Record<string, SchemaDescriptor> = {};
-    const claimedBy = new Map<string, string>();
+    const schemaOfKey = new Map<string, string>();
     const entries = Array.isArray(schemas)
       ? schemas.map((schema) => ({ name: Card.titleOf(schema), schema }))
       : Object.entries(schemas).map(([name, schema]) => ({ name, schema }));
 
     for (const entry of entries) {
       const key = lowerFirst(entry.name);
-      const previous = claimedBy.get(key);
+      const previous = schemaOfKey.get(key);
       if (previous !== undefined) {
         throw new SchemaError(
           `Two schemas are registered as '${key}' ('${previous}' and '${entry.name}'). Rename one.`,
         );
       }
-      claimedBy.set(key, entry.name);
+      schemaOfKey.set(key, entry.name);
       definitions[key] = Card.fromSchema(entry.schema, key).descriptor;
     }
 

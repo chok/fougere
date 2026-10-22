@@ -7,7 +7,7 @@ import { keeperFronds, keepingOf } from '../module/state/keeping.js';
 import { States } from '../module/state/States.js';
 import { DoorEvent } from '../dispatch/DoorEvent.js';
 import { dependencyCycles } from './dependencyCycles.js';
-import { lowerFirst, type SchemaView } from '@fougere/schema';
+import { type SchemaView } from '@fougere/schema';
 
 import type { HandlerEntry } from '../descriptor/HandlerEntry.js';
 import type { PresenterEntry } from '../descriptor/PresenterEntry.js';
@@ -18,22 +18,22 @@ import type { Fronds } from '../descriptor/Fronds.js';
 import type { FrondDescriptor } from '../descriptor/FrondDescriptor.js';
 import { installFrond, type Assembly } from './install.js';
 import { releasing, unpaired } from '../module/relation/relations.js';
-import { hostingFor } from '../module/relation/hostingFor.js';
+import { rowHostsFor } from '../module/relation/rowHostsFor.js';
 import { serveRelationReadings } from '../module/relation/readings.js';
 import { warnAboutRelations } from '../module/relation/warnAboutRelations.js';
-import type { Hosting } from '../module/relation/Hosting.js';
-import type { Journal } from '../module/relation/Journal.js';
+import type { RowHosts } from '../module/relation/RowHosts.js';
+import type { Journal } from '../wire/Journal.js';
 import type { RelationCheck } from '../module/relation/RelationCheck.js';
 import { refusalOf, type Diagnostic } from '../diagnostic.js';
 import type { App } from './App.js';
 import type { Extension } from './Extension.js';
 import type { CreateAppOptions } from './CreateAppOptions.js';
 import type { AppMiddleware } from '../wire/AppMiddleware.js';
-import { Carry } from '../builtin/Carry.js';
+import { LineBuffer } from '../builtin/LineBuffer.js';
 import { Logger } from '../builtin/Logger.js';
 import { operation, request } from '../slots.js';
 import type { LogRecord } from '../builtin/LogRecord.js';
-import LogLine, { CARRIES_LINE } from '../builtin/LogLine.js';
+import LogLine, { CARRIES_LINE, LOG_LINE } from '../builtin/LogLine.js';
 import { emitKeyOf, listens, type Emit } from '../wire/Emit.js';
 
 import { Config } from '../builtin/config.js';
@@ -68,19 +68,11 @@ import { LocalRoutePolicy } from '../dispatch/LocalRoutePolicy.js';
 import { OperationRoute } from '../dispatch/OperationRoute.js';
 import { remoteRoutes } from '../dispatch/remoteRoutes.js';
 import { RouteRegistry } from '../dispatch/RouteRegistry.js';
-import { callOperations, facadeOperations } from '../entry/facade.js';
-import { decoded } from '../dispatch/decoded.js';
-
-const LOG_LINE = lowerFirst(LogLine.name);
-
-/** The one wording for "nobody hosts this here", with both ways out. */
-const notLoaded = (entity: string) =>
-  `The frond that serves ${entity} is not in this process.\n` +
-  `  - Keep it in this process (only:), or\n` +
-  `  - give it an address: fronds: { <frond>: { remote: 'http://...' } }`;
+import { facadeOperations } from '../entry/facade.js';
+import { Membership, notLoaded, ownedBy } from './Membership.js';
 
 /** Two fronds cannot claim one name — said at boot, because nothing else says it. */
-function keyClaims(
+function refuseDuplicateKeys(
   fronds: { name: string; handlers: HandlerEntry[]; presenters: PresenterEntry[] }[],
   remotes: Record<string, string> | undefined,
   refused: Diagnostic[],
@@ -88,7 +80,7 @@ function keyClaims(
   const owner = new Map<string, string>();
   const fileOf = new Map<string, string>();
 
-  const claim = (key: string, frond: string, what: string, filePath: string) => {
+  const register = (key: string, frond: string, what: string, filePath: string) => {
     const first = owner.get(key);
     if (first !== undefined && first !== frond) {
       refused.push({
@@ -109,8 +101,8 @@ function keyClaims(
 
   for (const frond of fronds) {
     if (remotes && frond.name in remotes) continue;
-    for (const handler of frond.handlers) claim(facadeKeyOf(handler.address, handler.surface), frond.name, 'handler', handler.filePath);
-    for (const presenter of frond.presenters) claim(presenterKeyOf(presenter.entityName), frond.name, 'presenter', presenter.filePath);
+    for (const handler of frond.handlers) register(facadeKeyOf(handler.address, handler.surface), frond.name, 'handler', handler.filePath);
+    for (const presenter of frond.presenters) register(presenterKeyOf(presenter.entityName), frond.name, 'presenter', presenter.filePath);
   }
 }
 
@@ -123,20 +115,20 @@ function keyClaims(
 async function readFronds(
   options: CreateAppOptions,
   log: Logger,
-  keptIn: readonly FrondDescriptor[],
+  keeperFronds: readonly FrondDescriptor[],
 ): Promise<{ fronds: Fronds; operationModel: EffectiveOperationModel }> {
   const scanStart = performance.now();
   // An extension's fronds sit beside the app's own: it is installed like any other, and
   // its handlers resolve at call time — by which point the extension's `up` has put what
   // they ask for in the container.
   // So are the fronds a keeper of `state:` keeps its rows in, brought only where `state:` names it.
-  const brought = [...(options.extensions ?? []).flatMap((extension) => extension?.fronds ?? []), ...keptIn]
-    .map((frond) => ({ ...frond, brought: true as const }));
-  const fronds = hostedBy([...(options.fronds ?? []), ...brought]);
+  const fromExtensions = [...(options.extensions ?? []).flatMap((extension) => extension?.fronds ?? []), ...keeperFronds]
+    .map((frond) => ({ ...frond, fromExtension: true as const }));
+  const fronds = hostedBy([...(options.fronds ?? []), ...fromExtensions]);
   const diagnostics: Diagnostic[] = [];
   // An app that states nothing is a mistake — unless an extension brings fronds of its own. The
   // condition is the KEY, not the count: a statement that lists no frond is an ordinary answer.
-  if (!options.fronds && brought.length === 0) {
+  if (!options.fronds && fromExtensions.length === 0) {
     throw new Error(
       'createApp needs `fronds:`, the list of fronds this app runs. Pass one:\n'
       + '    createApp({ fronds: [blog] })\n'
@@ -188,21 +180,11 @@ async function readFronds(
  */
 function serveCoreRpc(
   app: App,
-  hosting: Hosting,
+  rowHosts: RowHosts,
   storageFor: (entity: string) => Storage | undefined,
 ): void {
   app.serveRpc('discover', (_invocation, surface) => identityCardOf(app, surface));
-  serveRelationReadings(app.serveRpc, hosting, storageFor);
-}
-
-function ownedBy<T>(fronds: Fronds, container: Container, entity: string, key: string): T | undefined {
-  const owner = fronds.owner(entity);
-  const scopeKey = `frond:${owner?.name}`;
-  if (!owner || !container.has(scopeKey)) return undefined;
-
-  const scope = container.resolve<Container>(scopeKey);
-
-  return scope.has(key) ? scope.resolve<T>(key) : undefined;
+  serveRelationReadings(app.serveRpc, rowHosts, storageFor);
 }
 
 /** What a call goes through in this process, before any frond is installed into it. */
@@ -300,142 +282,12 @@ function whatTheAppKnows(
   };
 }
 
-/** What every check of the boot asks about where a row lives, and who else might hold one. */
-/** What the readings below are built from — every one of them answers about a SERVED entity. */
-interface Serving {
-  container: Container;
-  fronds: Fronds;
-  remoteRouter: RemoteRouter | undefined;
-  dispatcher: Dispatcher;
-  localDispatcher: Dispatcher;
-  routeRegistry: RouteRegistry;
-  effectiveByKey: Map<string, EffectiveOperationsMap>;
-  log: Logger;
-}
-
-/**
- * What an app answers about what it serves — the membership rule and its neighbours.
- *
- * `facadeFor` is THE rule, stated once: every projection reads it and nothing else.
- */
-function readings(
-  { container, fronds, remoteRouter, dispatcher, localDispatcher, routeRegistry, effectiveByKey, log }: Serving,
-): Pick<App, 'resolve' | 'schemaFor' | 'facadeFor' | 'operationsFor' | 'presenterFor'> {
-  const resolve = <T>(name: string): T => {
-    try {
-      return container.resolve<T>(name);
-    } catch (err) {
-      if (isFacadeKey(name) && !remoteRouter) throw new Error(notLoaded(addressOf(name)));
-      throw err;
-    }
-  };
-
-  const schemaFor = async (entity: string): Promise<SchemaView> => {
-    const found = fronds.entity(entity);
-    if (found) return found.entityClass;
-    if (remoteRouter) {
-      // An address that stores nothing publishes ops and no shape. Saying so beats handing back
-      // an empty schema, which would validate every input it was given.
-      const stored = await remoteRouter.schemaOf(entity);
-      if (!stored) {
-        throw new Error(
-          `${entity} is not stored by this process or any remote, so it has no schema here. Call its operations instead.`,
-        );
-      }
-
-      return stored;
-    }
-    throw new Error(notLoaded(entity));
-  };
-
-  const facadeAt = (key: string, topology: boolean): Record<string, Function> | undefined => {
-    try {
-      return topology
-        ? resolve<Record<string, Function>>(key)
-        : container.resolve<Record<string, Function>>(key);
-    } catch {
-      return undefined;
-    }
-  };
-
-  /**
-   * What a door is handed for an address it may serve: the calls, not the facade code holds.
-   * The names are the routes this process registered; an address served elsewhere has none
-   * before it is reached, so its calls are named when they are made.
-   */
-  const callsAt = (address: string, surface: string | undefined, through: Dispatcher): Record<string, Function> => {
-    const names = routeRegistry.operationNames(address, surface);
-    if (names.length === 0) return callOperations(through, address, undefined, surface);
-    const effective = effectiveByKey.get(facadeKeyOf(address, surface));
-
-    return callOperations(through, address, names, surface, (operation, answer) => decoded(effective?.get(operation)?.output, answer));
-  };
-
-  /** Said once per pair, so a facade that registers in a loop says it once. */
-  const saidAbsent = new Set<string>();
-
-  /**
-   * A surface is declared in the frond that serves it. When that frond runs in another
-   * process, this one never asked for its facades, and answering 'no' is the only thing a
-   * synchronous rule can do — so it says so rather than registering nothing in silence.
-   */
-  const sayNoSurfaceAcross = (entity: string, surface: string): void => {
-    if (!remoteRouter || saidAbsent.has(`${surface}:${entity}`)) return;
-    saidAbsent.add(`${surface}:${entity}`);
-    log.warn(
-      `The surface '${surface}' of ${entity} is not served: its frond runs in another process. `
-      + 'The default operations answer instead.',
-    );
-  };
-
-  /** THE membership rule, stated once — every projection reads this and nothing else. */
-  const facadeFor = (address: string, surface?: string): Record<string, Function> | undefined => {
-    if (!surface) return facadeAt(facadeKeyOf(address), true) && callsAt(address, undefined, dispatcher);
-
-    const own = facadeAt(facadeKeyOf(address, surface), false) && callsAt(address, surface, localDispatcher);
-    if (!fronds.owner(address)) {
-      sayNoSurfaceAcross(address, surface);
-
-      return own;
-    }
-
-    const admitted = fronds.admits(surface, address);
-    if (admitted === false) return undefined;
-    if (own || admitted === undefined) return own;
-
-    const fallback = facadeAt(facadeKeyOf(address), false);
-
-    return fallback
-      ? callOperations(
-          localDispatcher,
-          address,
-          routeRegistry.operationNames(address, surface),
-          surface,
-        )
-      : undefined;
-  };
-
-  const operationsFor = (address: string, surface?: string): EffectiveOperationsMap | undefined => {
-    if (!surface) return effectiveByKey.get(facadeKeyOf(address));
-
-    const own = effectiveByKey.get(facadeKeyOf(address, surface));
-    const admitted = fronds.admits(surface, address);
-    if (admitted === false) return undefined;
-
-    return admitted ? (own ?? effectiveByKey.get(facadeKeyOf(address))) : own;
-  };
-
-  const presenterFor = (entity: string): unknown | undefined => ownedBy(fronds, container, entity, presenterKeyOf(entity));
-
-  return { resolve, schemaFor, facadeFor, operationsFor, presenterFor };
-}
-
 /**
  * Registered under the class name, for type-based DI. A logger holds no level — it reads
  * `setLogLevel`'s at each line — and a frond declaring `class X extends Logger` takes the key.
  */
-function registerBuiltins(container: Container, carry: Carry): void {
-  container.registerValue('Logger', new Logger('app', { carry, during: operation.current }));
+function registerBuiltins(container: Container, lineBuffer: LineBuffer): void {
+  container.registerValue('Logger', new Logger('app', { lineBuffer, during: operation.current }));
   container.register('Config', Config, { lifetime: 'singleton' });
 }
 
@@ -505,13 +357,13 @@ function answerRemotes(
 ): (name: string) => boolean {
   // Only for what another process may serve: an entity a frond hosts HERE and gives no handler
   // is served by nobody, and a stand-in for it had GraphQL project an entity with no operation.
-  const servedElsewhere = (address: string): boolean => {
+  const servedRemotely = (address: string): boolean => {
     const owner = fronds.owner(address);
 
     return owner === undefined || owner.name in (options.remotes ?? {});
   };
-  const answeredElsewhere = (name: string): boolean => isFacadeKey(name) && servedElsewhere(addressOf(name));
-  container.setFallback((name) => (answeredElsewhere(name) ? facadeOperations(dispatcher, addressOf(name)) : undefined));
+  const facadeServedRemotely = (name: string): boolean => isFacadeKey(name) && servedRemotely(addressOf(name));
+  container.setFallback((name) => (facadeServedRemotely(name) ? facadeOperations(dispatcher, addressOf(name)) : undefined));
 
   const remoteFacades = new Map<string, Record<string, Function>>();
   routeRegistry.addResolver(remoteRoutes((address) => {
@@ -523,7 +375,7 @@ function answerRemotes(
     return facade;
   }));
 
-  return answeredElsewhere;
+  return facadeServedRemotely;
 }
 
 /** Refused rather than replaced: two declarations of one name would make the answer depend on wiring order. */
@@ -552,16 +404,16 @@ function frondExtensions(fronds: Fronds): Extension[] {
  * every held line died on `'LogRing' is not registered` (`demos/observability`). A line keeps
  * `at`, when it was WRITTEN, which for a held boot line is not when it is handed over.
  */
-function announceLines(emissions: Emissions, container: Container, carry: Carry): (() => void) | undefined {
+function announceLines(emissions: Emissions, container: Container, lineBuffer: LineBuffer): (() => void) | undefined {
   if (!emissions.listensTo().includes(LOG_LINE)) {
-    carry.forget();
+    lineBuffer.drop();
 
     return undefined;
   }
 
   const emit = container.resolve<Emit<LogLine>>(emitKeyOf(LogLine.name));
 
-  return carry.to(({ at, ...line }: LogRecord) => void emit({ ...line, at: new Date(at) }));
+  return lineBuffer.to(({ at, ...line }: LogRecord) => void emit({ ...line, at: new Date(at) }));
 }
 
 /** Bootstrap a fougere application. */
@@ -569,25 +421,25 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
   const container = (options.createContainer ?? createContainer)();
   // The schema checked, then rows, then whatever the host took on — the order is not a host's to choose.
   const appLifecycle = new AppLifecycle().add(checking(options.pending), seeding(), presenters(), ...(options.extensions ?? []));
-  const carry = new Carry();
-  let built: App | undefined;
+  const lineBuffer = new LineBuffer();
+  let createdApp: App | undefined;
   let stopAnnouncing: (() => void) | undefined;
 
   /** What an extension took on last, then the container's own, then whoever handed a resource in. */
   const release = async (): Promise<void> => {
     stopAnnouncing?.();
-    carry.forget();
+    lineBuffer.drop();
 
     await closeAll([
-      ...(built ? [() => appLifecycle.down(built!)] : []),
+      ...(createdApp ? [() => appLifecycle.down(createdApp!)] : []),
       () => container.dispose(),
       () => options.onDispose?.(),
     ], 'refusal(s) while releasing the app');
   };
 
   try {
-    const log = new Logger('boot:app', { carry });
-    registerBuiltins(container, carry);
+    const log = new Logger('boot:app', { lineBuffer });
+    registerBuiltins(container, lineBuffer);
     log.debug('builtins registered (Logger, Config)');
 
     const declaredState = States.declared(options.state);
@@ -598,14 +450,14 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
       dispatching(options, log, fronds, () => journalOf());
 
     const refused: Diagnostic[] = [];
-    keyClaims(fronds, options.remotes, refused);
+    refuseDuplicateKeys(fronds, options.remotes, refused);
     refuseWhatDoesNotHold(refused);
 
     const { entityByName, frondOf, emissions } = whatTheAppKnows(fronds, container, options, refused, remoteRouter);
     const effectiveByKey = new Map<string, EffectiveOperationsMap>();
     const storageFor = <T = Record<string, unknown>>(entity: string): Storage<T> | undefined =>
       ownedBy<Storage<T>>(fronds, container, entity, storageKeyOf(entity));
-    const { hosting, journalOf } = hostingFor({
+    const { hosting, journalOf } = rowHostsFor({
       fronds, container, options, remoteRouter, entityByName, frondOf, storageOf: storageFor,
     });
 
@@ -616,8 +468,8 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     const keeping = await keepingOf(declaredState, storageFor, log);
     const assembly: Assembly = {
       container, routeRegistry, emissions, dispatcher, localDispatcher, effectiveByKey,
-      boundPorts, refused, relations, hosting, operationModel, entityByName, frondOf, contractsOf,
-      getMiddlewares, use, middlewaresOf: new Map(), doorMiddlewaresOf: new Map(), doorMiddlewaresAt, seamsOf: new Map(), log, options,
+      boundPorts, refused, relations, rowHosts: hosting, operationModel, entityByName, frondOf, contractsOf,
+      getMiddlewares, use, middlewaresOf: new Map(), doorMiddlewaresOf: new Map(), doorMiddlewaresAt, hostPortsOf: new Map(), log, options,
       state: appLifecycle.state(),
       extensions: appLifecycle.all(),
       plugged,
@@ -629,16 +481,18 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     refuseWhatDoesNotHold(refused);
     warnAboutUnboundPorts(options, boundPorts, log);
 
-    const { resolve, schemaFor, facadeFor, operationsFor, presenterFor } = readings({
+    const membership = new Membership({
       container, fronds, remoteRouter, dispatcher, localDispatcher, routeRegistry, effectiveByKey, log,
     });
+    const facadeFor = (address: string, surface?: string) => membership.facadeFor(address, surface);
+    const operationsFor = (address: string, surface?: string) => membership.operationsFor(address, surface);
 
     // A pipe order and an `Emit<T, A>` are read here, once every facade exists.
     emissions.register((facade) => facadeFor(addressOf(facade)));
     refuseWhatDoesNotHold(refused);
     markLineCarriers(emissions);
 
-    const answeredElsewhere = remoteRouter ? answerRemotes(assembly, remoteRouter, fronds) : () => false;
+    const facadeServedRemotely = remoteRouter ? answerRemotes(assembly, remoteRouter, fronds) : () => false;
 
     const app: App = {
       container,
@@ -648,8 +502,8 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
       remotes: Object.freeze({ ...options.remotes }),
       dispatch: (call) => dispatcher.dispatch(call),
       local: localDispatcher,
-      resolve,
-      schemaFor,
+      resolve: (name) => membership.resolve(name),
+      schemaFor: (entity) => membership.schemaFor(entity),
       facadeFor,
       operationsFor,
       listensTo: () => emissions.listensTo(),
@@ -663,7 +517,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
       },
       deliver: (fact, payload) => emissions.deliver(fact, payload),
       storageFor,
-      presenterFor,
+      presenterFor: (entity) => membership.presenterFor(entity),
       extensionPoints: () => [
         ...Registry.every().map(({ label, names }): Plugged => ({ point: label, by: 'name', answers: names })),
         ...plugged,
@@ -692,11 +546,11 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     container.registerValue('Releasing', releasing(hosting));
     serveCoreRpc(app, hosting, storageFor);
 
-    built = app;
+    createdApp = app;
     await appLifecycle.up(app);
-    refuseWhatDoesNotHold(unregistered(container, fronds, answeredElsewhere, resolveConventions(options.conventions)));
+    refuseWhatDoesNotHold(unregistered(container, fronds, facadeServedRemotely, resolveConventions(options.conventions)));
     refuseWhatDoesNotHold(dependencyCycles(container, fronds));
-    stopAnnouncing = announceLines(emissions, container, carry);
+    stopAnnouncing = announceLines(emissions, container, lineBuffer);
 
     return app;
   } catch (cause) {

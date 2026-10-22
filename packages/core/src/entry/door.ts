@@ -83,8 +83,8 @@ export function answerAt<Received, Decoded, Answer>(
     lifecycle.publish(DoorEvent.received(request));
 
     const carrier = keeping && door.carries && door.carrier ? door.carrier(received) : undefined;
-    const kept = keptBy(carrier === undefined ? [] : keeping!.declared.filter((one) => one.keeper.over === door.carries));
-    for (const [keeper, names] of kept) {
+    const namesByKeeper = byKeeper(carrier === undefined ? [] : keeping!.declared.filter((one) => one.keeper.over === door.carries));
+    for (const [keeper, names] of namesByKeeper) {
       const tokens = await keeper.read(carrier, names, keeping!.storageFor);
       for (const { name } of names) {
         request.keepable.add(name);
@@ -103,9 +103,9 @@ export function answerAt<Received, Decoded, Answer>(
       try {
         const decoded = await door.decode(received);
         lifecycle.publish(DoorEvent.decoded(request));
-        const answered = await door.run(decoded);
+        const answer = await door.run(decoded);
         // What the calls wrote leaves with an answer, never with a refusal: a failed op keeps nothing.
-        for (const [keeper, names] of kept) {
+        for (const [keeper, names] of namesByKeeper) {
           const written = await Promise.all(names.filter(({ name }) => request.written.has(name)).map(async ({ name, options }) => {
             const value = request.written.get(name);
 
@@ -114,7 +114,7 @@ export function answerAt<Received, Decoded, Answer>(
           if (written.length > 0) await keeper.write(carrier, written, keeping!.storageFor);
         }
 
-        return door.encode({ answered }, received, carrier);
+        return door.encode({ answered: answer }, received, carrier);
       } catch (failure) {
         return refused(failure);
       }
@@ -142,11 +142,11 @@ export function answerAt<Received, Decoded, Answer>(
 }
 
 /** The names a door carries, by the keeper that keeps them — names sharing one place are read and written once. */
-function keptBy(declared: readonly DeclaredState[]): Map<StateKeeper, DeclaredState[]> {
-  const kept = new Map<StateKeeper, DeclaredState[]>();
-  for (const one of declared) kept.set(one.keeper, [...(kept.get(one.keeper) ?? []), one]);
+function byKeeper(declared: readonly DeclaredState[]): Map<StateKeeper, DeclaredState[]> {
+  const byKeeper = new Map<StateKeeper, DeclaredState[]>();
+  for (const one of declared) byKeeper.set(one.keeper, [...(byKeeper.get(one.keeper) ?? []), one]);
 
-  return kept;
+  return byKeeper;
 }
 
 /** A failure in the vocabulary every door speaks — an accident framed as `INTERNAL_ERROR`. */

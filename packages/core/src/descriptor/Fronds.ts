@@ -9,7 +9,7 @@ export class Fronds extends Array<FrondDescriptor> {
   }
 
   /** The fronds an app hosts, scanned or stated. The only gate in — `Array.of` is taken. */
-  static hosting(fronds: readonly FrondDescriptor[]): Fronds {
+  static list(fronds: readonly FrondDescriptor[]): Fronds {
     const all = new Fronds();
     all.push(...fronds);
 

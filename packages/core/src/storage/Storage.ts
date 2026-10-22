@@ -153,19 +153,19 @@ export abstract class Storage<T = Record<string, unknown>> {
 
 /** Container key of an entity's storage — 'reading' → 'ReadingStorage'. */
 export function storageKeyOf(entity: string): string {
-  return `${upperFirst(entity)}${HELD}`;
+  return `${upperFirst(entity)}${STORAGE_SUFFIX}`;
 }
 
 /** The entity behind a storage key, or `undefined` when the key is not one. */
 export function entityOfStorageKey(key: string, known: (entity: string) => boolean): string | undefined {
-  if (key.length <= HELD.length || !key.endsWith(HELD)) return undefined;
-  const entity = lowerFirst(key.slice(0, -HELD.length));
+  if (key.length <= STORAGE_SUFFIX.length || !key.endsWith(STORAGE_SUFFIX)) return undefined;
+  const entity = lowerFirst(key.slice(0, -STORAGE_SUFFIX.length));
 
   return storageKeyOf(entity) === key && known(entity) ? entity : undefined;
 }
 
 /** What a holder keeps, said in the key it is registered under. */
-const HELD = 'Storage';
+const STORAGE_SUFFIX = 'Storage';
 
 /**
  * The container key of a frame — `[['Account', 'Ledger'], ['RateMirror']]` →

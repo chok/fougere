@@ -4,19 +4,19 @@ import type { Param } from './wire/Param.js';
 import type { TypeRef } from './wire/TypeRef.js';
 
 /** What a parameter is — a schema, a field of an entity (`[Post, 'id']`), a primitive, or `State`, the caller's kept state. */
-export type StatedType = SchemaView | readonly [SchemaView, string] | 'string' | 'number' | 'boolean' | 'State';
+export type StatementType = SchemaView | readonly [SchemaView, string] | 'string' | 'number' | 'boolean' | 'State';
 
 /** A parameter, required unless it says otherwise. */
-export type StatedParam = StatedType | { type: StatedType; optional: true };
+export type StatementParam = StatementType | { type: StatementType; optional: true };
 
 /**
  * An operation written by hand: what TypeScript erases of its method, stated, and nothing guessed.
  * `publish: { params: { id: [Post, 'id'] }, output: Post }` — `[Post]` answers several, and the kind
  * is told by the verb the name leads with, the way it is for every operation.
  */
-export interface StatedOperation {
+export interface StatementOperation {
   /** Every parameter, in the order the method takes them. */
-  params: Record<string, StatedParam>;
+  params: Record<string, StatementParam>;
   /** What the request body is judged against. */
   input?: SchemaView;
   /** What the operation answers — `[Post]` for several. */
@@ -24,10 +24,10 @@ export interface StatedOperation {
   description?: string;
 }
 
-export const isStatedOperation = (value: unknown): value is StatedOperation =>
+export const isStatementOperation = (value: unknown): value is StatementOperation =>
   typeof value === 'object' && value !== null && 'params' in value;
 
-function typeRefOf(type: StatedType): TypeRef {
+function typeRefOf(type: StatementType): TypeRef {
   if (typeof type === 'string') return { raw: type, name: type };
   if (!Array.isArray(type)) return { raw: (type as SchemaView).name, name: (type as SchemaView).name };
 
@@ -45,23 +45,23 @@ function typeRefOf(type: StatedType): TypeRef {
 }
 
 /** The contract the scan would have read off the method, from what the author stated. */
-export function contractOf(name: string, stated: StatedOperation): OperationContract {
-  const params: Param[] = Object.entries(stated.params).map(([param, declared]) => {
+export function contractOf(name: string, operation: StatementOperation): OperationContract {
+  const params: Param[] = Object.entries(operation.params).map(([param, declared]) => {
     const optional = typeof declared === 'object' && declared !== null && !Array.isArray(declared) && 'optional' in declared;
 
     return {
       name: param,
-      type: typeRefOf(optional ? (declared as { type: StatedType }).type : declared as StatedType),
+      type: typeRefOf(optional ? (declared as { type: StatementType }).type : declared as StatementType),
       ...(optional ? { optional: true } : {}),
     };
   });
-  const several = Array.isArray(stated.output);
-  const output = several ? (stated.output as readonly [SchemaView])[0] : stated.output as SchemaView | undefined;
+  const several = Array.isArray(operation.output);
+  const output = several ? (operation.output as readonly [SchemaView])[0] : operation.output as SchemaView | undefined;
 
   return {
-    signature: { name, params, ...(stated.description ? { description: stated.description } : {}) },
-    ...(stated.input ? { input: stated.input } : {}),
+    signature: { name, params, ...(operation.description ? { description: operation.description } : {}) },
+    ...(operation.input ? { input: operation.input } : {}),
     ...(output ? { output, cardinality: several ? 'many' : 'one' } : { cardinality: 'none' }),
-    ...(stated.description ? { description: stated.description } : {}),
+    ...(operation.description ? { description: operation.description } : {}),
   };
 }

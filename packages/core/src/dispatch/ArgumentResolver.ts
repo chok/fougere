@@ -28,7 +28,7 @@ export class ArgumentResolver {
           break;
         }
         case 'param': {
-          args.push(this.judged(binding.source, ArgumentResolver.param(binding.source, binding.optional, ctx, body)));
+          args.push(this.validatedByField(binding.source, ArgumentResolver.param(binding.source, binding.optional, ctx, body)));
           break;
         }
         case 'input': {
@@ -76,7 +76,7 @@ export class ArgumentResolver {
         case 'param':
           if (value === undefined && !binding.optional) throw refused(binding.source.name, 'Required');
 
-          return this.judged(binding.source, value);
+          return this.validatedByField(binding.source, value);
         case 'query':
           return value;
         default:
@@ -130,16 +130,16 @@ export class ArgumentResolver {
   }
 
   /** `age: Sample['age']` obeys what `Sample.age` declares, after the query string was read. */
-  private judged(source: ParamSource, value: unknown): unknown {
+  private validatedByField(source: ParamSource, value: unknown): unknown {
     if (value === undefined || !source.field) return value;
 
     const field = this.entities?.(source.field.entity)?.getFields()[source.field.name];
     if (!field) return value;
 
-    const verdict = FieldValueValidator.of(field).parse(value);
-    if ('message' in verdict) throw refused(source.name, verdict.message);
+    const parsed = FieldValueValidator.of(field).parse(value);
+    if ('message' in parsed) throw refused(source.name, parsed.message);
 
-    return verdict.value;
+    return parsed.value;
   }
 
   private static number(value: unknown): number | undefined {

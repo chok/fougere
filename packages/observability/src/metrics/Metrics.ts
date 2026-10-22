@@ -105,7 +105,7 @@ function topologyOf(app: App | undefined, seen: Set<string>): FrondPlacement[] {
   // frond every call reached over HTTP. Not a config-derived node either — it is named below
   // only once it has answered, like any other remote.
   const local = new Map((app?.fronds ?? [])
-    .filter((frond) => !frond.brought && !app?.remotes[frond.name])
+    .filter((frond) => !frond.fromExtension && !app?.remotes[frond.name])
     .map((frond) => [frond.name, frond] as const));
 
   const here: FrondPlacement[] = [...local.values()].map((frond) => ({

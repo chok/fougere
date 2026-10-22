@@ -24,7 +24,7 @@ const admin = { id: 'u2', email: 'admin@fern.dev' };
 const asWire = (runner: Transport): Transport => async (call, invocation) => {
   const sent = JSON.parse(JSON.stringify({ call, invocation }));
   try {
-    return JSON.parse(JSON.stringify(await runner(sent.call, { ...sent.invocation, crossed: true })));
+    return JSON.parse(JSON.stringify(await runner(sent.call, { ...sent.invocation, fromAnotherProcess: true })));
   } catch (err) {
     if (err instanceof FougereError) throw FougereError.fromJSON(JSON.parse(JSON.stringify(err.toJSON())));
     throw err;

@@ -209,8 +209,8 @@ function collectEntities(view: SourceView): EntityEntry[] {
 export function toTables(view: SourceView, resolve: (name: string) => string): TableDef[] {
   const entries = collectEntities(view);
   const tableNameOf = new Map<SchemaView, string>(entries.map((entry) => [entry.entityClass, resolve(entry.name)]));
-  const hosted = view.elsewhere
-    ? { here: new Set(entries.map((entry) => lowerFirst(entry.name))), elsewhere: new Set(view.elsewhere.map(lowerFirst)) }
+  const hosted = view.inOtherSources
+    ? { here: new Set(entries.map((entry) => lowerFirst(entry.name))), elsewhere: new Set(view.inOtherSources.map(lowerFirst)) }
     : undefined;
 
   return entries.map((entry) => toTable(resolve(entry.name), entry.entityClass, { resolve, tableNameOf, hosted }));

@@ -8,7 +8,7 @@
  * nothing is wrong with either half on its own.
  */
 import { describe, it, expect } from 'vitest';
-import { statementDrift, unansweredOperations } from '../src/boot/statement-drift.js';
+import { statementDrift, operationsWithoutMethod } from '../src/boot/statement-drift.js';
 import type { FrondDescriptor } from '../src/descriptor/FrondDescriptor.js';
 import type { HandlerEntry } from '../src/descriptor/HandlerEntry.js';
 
@@ -80,7 +80,7 @@ describe('a stated binding, against the signature it is about', () => {
 
 describe('an operation, against the class that should answer it', () => {
   it('refuses one whose method is not there', () => {
-    const [found, ...rest] = unansweredOperations(frondStating([]), handlerWith([]), ['publish', 'list']);
+    const [found, ...rest] = operationsWithoutMethod(frondStating([]), handlerWith([]), ['publish', 'list']);
 
     expect(rest).toHaveLength(0);
     expect(found).toMatchObject({
@@ -90,7 +90,7 @@ describe('an operation, against the class that should answer it', () => {
   });
 
   it('refuses rather than warns — unlike a drifted parameter, this op never answered', () => {
-    const [found] = unansweredOperations(frondStating([]), handlerWith([]), ['list']);
+    const [found] = operationsWithoutMethod(frondStating([]), handlerWith([]), ['list']);
 
     expect(found!.severity).toBe('blocking');
   });
@@ -100,6 +100,6 @@ describe('an operation, against the class that should answer it', () => {
     class Child extends Base {}
     const inherited = { ...handlerWith([]), ctor: Child } as unknown as HandlerEntry;
 
-    expect(unansweredOperations(frondStating([]), inherited, ['list'])).toEqual([]);
+    expect(operationsWithoutMethod(frondStating([]), inherited, ['list'])).toEqual([]);
   });
 });

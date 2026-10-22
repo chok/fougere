@@ -36,7 +36,7 @@ export interface FrondDescriptor extends Pick<FrondConfig, 'pipes' | 'surfaces' 
    * what the app SERVES: a report that lists it describes the instrumentation, not the
    * domain. Set by the boot, never by a declaration.
    */
-  brought?: true;
+  fromExtension?: true;
   /**
    * The frond this one inherits code from — its scope hangs off that one's, so a service, a
    * repository, a port or a middleware declared there answers here too. The same word the

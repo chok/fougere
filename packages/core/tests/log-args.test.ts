@@ -7,18 +7,18 @@
  * the terminal shows.
  */
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { Carry, Logger } from '../src/index.js';
+import { LineBuffer, Logger } from '../src/index.js';
 import type { LogRecord } from '../src/builtin/LogRecord.js';
 
 afterEach(() => { vi.restoreAllMocks(); });
 
 describe('a scalar handed to a logger', () => {
   const announced = () => {
-    const carry = new Carry();
+    const carry = new LineBuffer();
     const lines: LogRecord[] = [];
     carry.to((line) => lines.push(line));
 
-    return { log: new Logger('app', { carry }), lines };
+    return { log: new Logger('app', { lineBuffer: carry }), lines };
   };
 
   it('travels as an object, and an object travels as itself', () => {

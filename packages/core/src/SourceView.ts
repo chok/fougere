@@ -5,7 +5,7 @@ import type { EntityEntry } from './descriptor/EntityEntry.js';
 export interface SourceView {
   entities: ReadonlyMap<string, SchemaView>;
   /** The names another source holds — a reference to one gets a column and no key. Absent: all here. */
-  elsewhere?: readonly string[];
+  inOtherSources?: readonly string[];
 }
 
 /** What a source holds of these fronds — every entity, or the ones `holds` keeps and the rest named. */
@@ -18,6 +18,6 @@ export function sourceViewOf(
 
   return {
     entities: new Map([...all].filter(([name]) => holds(name))),
-    elsewhere: [...all.keys()].filter((name) => !holds(name)).sort(),
+    inOtherSources: [...all.keys()].filter((name) => !holds(name)).sort(),
   };
 }

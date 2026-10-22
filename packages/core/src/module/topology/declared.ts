@@ -17,7 +17,7 @@ interface Declaring {
 
 /** Read from the config and the scan, never from a call, so nothing has to answer for it. */
 export function declaredTopologyOf({ fronds, remotes }: Declaring): DeclaredTopology {
-  const hosted = fronds.filter((frond) => !frond.brought);
+  const hosted = fronds.filter((frond) => !frond.fromExtension);
 
   return { fronds: placements(hosted, remotes), edges: crossings(hosted) };
 }
@@ -30,10 +30,10 @@ function placements(hosted: readonly FrondDescriptor[], remotes: Readonly<Record
     .filter((frond) => !remotes[frond.name])
     .map((frond) => ({ frond: frond.name, placement: 'local' as const }));
 
-  const elsewhere = Object.entries(remotes)
+  const remote = Object.entries(remotes)
     .map(([frond, address]) => ({ frond, placement: 'remote' as const, at: hostOf(address) }));
 
-  return [...here, ...elsewhere];
+  return [...here, ...remote];
 }
 
 /**
@@ -44,7 +44,7 @@ function placements(hosted: readonly FrondDescriptor[], remotes: Readonly<Record
 export function servedBy(fronds: readonly FrondDescriptor[]): Map<string, string> {
   const index = new Map<string, string>();
   for (const frond of fronds) {
-    if (frond.brought) continue;
+    if (frond.fromExtension) continue;
     for (const handler of frond.handlers) {
       if (handler.surface) continue;
       index.set(facadeKeyOf(handler.address), frond.name);

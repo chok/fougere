@@ -2,7 +2,7 @@
 import { lowerFirst, Role, Shapes, type SchemaView } from '@fougere/schema';
 import type { Dependent } from './Dependent.js';
 import type { RelationCheck } from './RelationCheck.js';
-import type { Hosting } from './Hosting.js';
+import type { RowHosts } from './RowHosts.js';
 import type { Diagnostic } from '../../diagnostic.js';
 import type { Releasing } from './Release.js';
 import type { EntityEntry } from '../../descriptor/EntityEntry.js';
@@ -17,23 +17,23 @@ import type { EntityEntry } from '../../descriptor/EntityEntry.js';
  * unkeyed hop anywhere below and the guard takes the whole tree — the engine's own cascade then
  * finds nothing left to do, since the guard walks deepest first and the row goes last.
  */
-function keyed(namer: string, target: string, hosting: Hosting, seen = new Set<string>()): boolean {
-  const pair = hosting.hostedHere(namer)
-    && hosting.hostedHere(target)
-    && hosting.sourceOf(namer) === hosting.sourceOf(target)
-    && hosting.enforces(hosting.sourceOf(namer), 'relation');
+function keyed(namer: string, target: string, rowHosts: RowHosts, seen = new Set<string>()): boolean {
+  const pair = rowHosts.hostedHere(namer)
+    && rowHosts.hostedHere(target)
+    && rowHosts.sourceOf(namer) === rowHosts.sourceOf(target)
+    && rowHosts.enforces(rowHosts.sourceOf(namer), 'relation');
   if (!pair || seen.has(namer)) return pair;
   seen.add(namer);
 
-  return referencesTo(namer, hosting).every(({ entity }) => keyed(entity, namer, hosting, seen));
+  return referencesTo(namer, rowHosts).every(({ entity }) => keyed(entity, namer, rowHosts, seen));
 }
 
 /** Every field of every entity that names `target` — read over the whole app, both ways need it. */
-function referencesTo(target: string, hosting: Hosting): { entity: string; field: string; role: Role }[] {
-  return hosting.relations().incoming(target).map(({ from, label }) => ({
+function referencesTo(target: string, rowHosts: RowHosts): { entity: string; field: string; role: Role }[] {
+  return rowHosts.relations().incoming(target).map(({ from, label }) => ({
     entity: from,
     field: label,
-    role: Role.of(hosting.entities().get(from)!.getFields()[label]),
+    role: Role.of(rowHosts.entities().get(from)!.getFields()[label]),
   }));
 }
 
@@ -42,7 +42,7 @@ function referencesTo(target: string, hosting: Hosting): { entity: string; field
  *
  * Documented: [entities](https://fougere.dev/docs/schema/entities).
  */
-export function heldBy(entity: SchemaView, name: string, hosting: Hosting): RelationCheck[] {
+export function relationChecksOf(entity: SchemaView, name: string, rowHosts: RowHosts): RelationCheck[] {
   const checks: RelationCheck[] = [];
 
   for (const [field, declared] of Object.entries(entity.getFields())) {
@@ -50,16 +50,16 @@ export function heldBy(entity: SchemaView, name: string, hosting: Hosting): Rela
     if (!role.isReference() || !role.target?.name) continue;
 
     const target = lowerFirst(role.target.name);
-    if (keyed(name, target, hosting)) continue;
+    if (keyed(name, target, rowHosts)) continue;
 
     checks.push({
       field,
       target,
       missing: async (keys) => {
-        const storage = hosting.storageOf(target);
+        const storage = rowHosts.storageOf(target);
         // Nothing here holds those rows — the process that does answers the same reading,
         // so the question crosses rather than being given up on.
-        if (!storage) return hosting.peerOf(target)?.missing(target, keys) ?? [];
+        if (!storage) return rowHosts.peerOf(target)?.missing(target, keys) ?? [];
         const found = await storage.findByKeys(keys.map(String));
 
         return keys.filter((key) => !found.has(String(key)));
@@ -71,7 +71,7 @@ export function heldBy(entity: SchemaView, name: string, hosting: Hosting): Rela
 }
 
 /**
- * The rows that name this entity's, and what becomes of them — the dual of `heldBy`.
+ * The rows that name this entity's, and what becomes of them — the dual of `relationChecksOf`.
  *
  * Read over EVERY entity of the app, because a namer is declared wherever its own frond is,
  * and the target learns of it from nowhere else. What a key already holds is left out: the
@@ -79,9 +79,9 @@ export function heldBy(entity: SchemaView, name: string, hosting: Hosting): Rela
  *
  * Documented: [entities](https://fougere.dev/docs/schema/entities).
  */
-export function dependentsOf(target: string, hosting: Hosting): Dependent[] {
-  return referencesTo(target, hosting)
-    .filter(({ entity }) => !keyed(entity, target, hosting))
+export function dependentsOf(target: string, rowHosts: RowHosts): Dependent[] {
+  return referencesTo(target, rowHosts)
+    .filter(({ entity }) => !keyed(entity, target, rowHosts))
     .map(({ entity, field, role }) => ({ entity, field, onDelete: role.onDelete ?? 'restrict' }));
 }
 
@@ -118,18 +118,18 @@ export function refuseUnwritableNull(entity: SchemaView, name: string, filePath:
  * Asked once every frond is installed, since the target may belong to another one — and left
  * alone when it answers elsewhere, where its fields are declared and cannot be read here.
  */
-export function unpaired(entities: readonly EntityEntry[], hosting: Hosting): Diagnostic[] {
+export function unpaired(entities: readonly EntityEntry[], rowHosts: RowHosts): Diagnostic[] {
   const refused: Diagnostic[] = [];
 
   for (const entry of entities) {
     for (const [field, declared] of Object.entries(entry.entityClass.getFields())) {
       const role = Role.of(declared);
       const target = role.isCollection() ? role.target?.name : undefined;
-      if (!target || !hosting.hostedHere(lowerFirst(target))) continue;
+      if (!target || !rowHosts.hostedHere(lowerFirst(target))) continue;
 
-      const held = referencesTo(lowerFirst(entry.name), hosting)
+      const paired = referencesTo(lowerFirst(entry.name), rowHosts)
         .some((one) => one.entity === lowerFirst(target));
-      if (held) continue;
+      if (paired) continue;
 
       refused.push({
         severity: 'blocking',
@@ -146,26 +146,26 @@ export function unpaired(entities: readonly EntityEntry[], hosting: Hosting): Di
 }
 
 /** The checks nothing in this process can answer — asked once every frond has registered. */
-export function unheldAmong(checks: readonly RelationCheck[], hosting: Hosting): string[] {
+export function uncheckableRelations(checks: readonly RelationCheck[], rowHosts: RowHosts): string[] {
   return checks
-    .filter((check) => hosting.storageOf(check.target) === undefined)
+    .filter((check) => rowHosts.storageOf(check.target) === undefined)
     .map((check) => `${check.field} → ${check.target}`);
 }
 
 /**
- * What a release asks the boot, built once per app — the same `Hosting` the guard reads.
+ * What a release asks the boot, built once per app — the same `RowHosts` the guard reads.
  *
  * `dependentsOf` is answered per call rather than cached: a frond installed after this one
  * brings rows that name an entity already registered, and a table taken at boot would miss
  * exactly the crossings this exists for.
  */
-export function releasing(hosting: Hosting): Releasing {
+export function releasing(rowHosts: RowHosts): Releasing {
   return {
-    dependentsOf: (entity) => dependentsOf(entity, hosting),
-    rowsOf: (entity) => hosting.storageOf(entity),
-    schemaOf: (entity) => hosting.entities().get(entity),
-    peers: () => hosting.peers(),
-    journal: (entity) => hosting.journal(entity),
+    dependentsOf: (entity) => dependentsOf(entity, rowHosts),
+    rowsOf: (entity) => rowHosts.storageOf(entity),
+    schemaOf: (entity) => rowHosts.entities().get(entity),
+    peers: () => rowHosts.peers(),
+    journal: (entity) => rowHosts.journal(entity),
   };
 }
 
@@ -180,12 +180,12 @@ export function releasing(hosting: Hosting): Releasing {
  * Silent when a key holds every hop: the engine carries those out in one statement, and there
  * is no half-done state for anybody to finish.
  */
-export function unfinishable(hosting: Hosting): string[] {
-  if (hosting.journal('') !== undefined) return [];
+export function unfinishable(rowHosts: RowHosts): string[] {
+  if (rowHosts.journal('') !== undefined) return [];
 
   const found: string[] = [];
-  for (const [entity] of hosting.entities()) {
-    for (const dependent of dependentsOf(entity, hosting)) {
+  for (const [entity] of rowHosts.entities()) {
+    for (const dependent of dependentsOf(entity, rowHosts)) {
       if (dependent.onDelete === 'restrict') continue;
       found.push(`${dependent.entity}.${dependent.field} → ${entity} (${dependent.onDelete})`);
     }

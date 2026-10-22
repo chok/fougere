@@ -11,5 +11,5 @@ const ownCopy = (frond: FrondDescriptor): FrondDescriptor =>
 
 /** What the app hosts, each frond its own copy. */
 export function hostedBy(fronds: readonly FrondDescriptor[]): Fronds {
-  return Fronds.hosting(fronds.map(ownCopy));
+  return Fronds.list(fronds.map(ownCopy));
 }

@@ -33,7 +33,7 @@ describe('the ring', () => {
     const call = callTo('order', 'list');
 
     ring.record(DispatchEvent.received(call));
-    expect(ring.since(0).calls[0]).toMatchObject({ seq: 1, address: 'order', operation: 'list', verdict: 'running' });
+    expect(ring.since(0).calls[0]).toMatchObject({ seq: 1, address: 'order', operation: 'list', status: 'running' });
 
     ring.record(DispatchEvent.resolved(call, 'remote'));
     ring.record(DispatchEvent.completed(call, 'remote'));
@@ -41,7 +41,7 @@ describe('the ring', () => {
 
     const page = ring.since(0);
     expect(page.calls).toHaveLength(1);
-    expect(page.calls[0]).toMatchObject({ route: 'remote', verdict: 'ok' });
+    expect(page.calls[0]).toMatchObject({ route: 'remote', status: 'ok' });
     expect(page.calls[0]!.ms).toBeGreaterThanOrEqual(0);
     expect(page.cursor).toBe(1);
   });
@@ -56,7 +56,7 @@ describe('the ring', () => {
 
     const record = ring.since(0).calls[0]!;
     expect(record).toMatchObject({
-      verdict: 'failed',
+      status: 'failed',
       refusal: { code: 'NOT_FOUND', message: "No route serves 'order.nope'" },
     });
     // No route was ever resolved, so the field is absent rather than guessed.
@@ -177,7 +177,7 @@ describe('the extension', () => {
       address: 'order',
       operation: 'list',
       route: 'local',
-      verdict: 'ok',
+      status: 'ok',
     });
     expect(page.calls[0]).not.toHaveProperty('body');
   });

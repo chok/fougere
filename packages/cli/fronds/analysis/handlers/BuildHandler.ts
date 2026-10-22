@@ -1,7 +1,7 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname, join, relative, resolve } from 'node:path';
 import { compileProject, emitStatement } from '@fougere/compiler';
-import { BUILT, emitFacade, emitNames } from '@fougere/core/node';
+import { BUILD_DIRECTORY, emitFacade, emitNames } from '@fougere/core/node';
 import ProjectScan from '../services/ProjectScan.js';
 import type Build from '../entities/Build.js';
 
@@ -72,7 +72,7 @@ export default class BuildHandler {
     await writeFile(names, emitNames(scan));
 
     // And the project itself, transpiled, so a server starts it with Node and nothing else.
-    const built = await compileProject(scan.root, scan, resolve(scan.root, BUILT));
+    const built = await compileProject(scan.root, scan, resolve(scan.root, BUILD_DIRECTORY));
 
     return {
       out,

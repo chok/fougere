@@ -47,7 +47,7 @@ export function statementDrift(frond: FrondDescriptor, handler: HandlerEntry): D
  * its first call used to fail as `instance[method] is not a function` — a server error for what
  * is a typo in the declaration.
  */
-export function unansweredOperations(
+export function operationsWithoutMethod(
   frond: FrondDescriptor,
   handler: HandlerEntry,
   names: Iterable<string>,

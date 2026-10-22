@@ -71,7 +71,7 @@ export class HandlerFacade {
     }
 
     const received = Invocation.from(input);
-    const state = received.crossed ? { ...received.state } : this.facade.state.judge(received.state, address, op);
+    const state = received.fromAnotherProcess ? { ...received.state } : this.facade.state.judge(received.state, address, op);
     const invocation = received.withState(state);
     const entered = { ...state };
     const { className, method } = this.effectiveOperations.get(op)!.implementation;
@@ -111,10 +111,10 @@ export class HandlerFacade {
 
     const args = await this.argumentsOf(contract, validated);
     const { instance, method } = this.resolveImplementation(op);
-    const answered = await instance[method](...args);
+    const answer = await instance[method](...args);
 
     const view = this.viewOf(op);
-    const computed = written || view.closed || this.facade.steps.length === 0 ? answered : await this.stepped(answered, validated);
+    const computed = written || view.closed || this.facade.steps.length === 0 ? answer : await this.stepped(answer, validated);
 
     return view.project(computed);
   }
@@ -128,8 +128,8 @@ export class HandlerFacade {
   }
 
   /** The facade's steps over the answer, in order, each handed what the one before it answered. */
-  private async stepped(answered: unknown, invocation: InvocationContext): Promise<unknown> {
-    let value = answered;
+  private async stepped(answer: unknown, invocation: InvocationContext): Promise<unknown> {
+    let value = answer;
     for (const step of this.facade.steps) value = await step(value, invocation, this.arguments);
 
     return value;

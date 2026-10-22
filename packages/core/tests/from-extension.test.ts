@@ -51,7 +51,7 @@ describe('a frond an extension brought', () => {
     await using app = await built();
 
     expect(app.fronds.map((one) => one.name)).toContain('exporting');
-    expect(app.fronds.find((one) => one.name === 'exporting')?.brought).toBe(true);
+    expect(app.fronds.find((one) => one.name === 'exporting')?.fromExtension).toBe(true);
   });
 
   it('is left out of the identity card', async () => {

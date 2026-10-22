@@ -10,8 +10,8 @@ import { frondPackage, resolveConventions, type Conventions } from '../Conventio
 import { isFrondDescriptor } from '../descriptor/FrondDescriptor.js';
 import type { FrondDescriptor } from '../descriptor/FrondDescriptor.js';
 import { Fronds } from '../descriptor/Fronds.js';
-import { statesModule, type FrondsStated } from '../FrondsStated.js';
-import { statedFronds } from '../StatedFrond.js';
+import { statesModule, type FrondEntries } from '../FrondEntries.js';
+import { keyedFrondEntries } from '../KeyedFrondEntry.js';
 
 /** A frond that holds what a family shares serves nothing — which is what keeps it here. */
 function refuseServingParent(
@@ -58,7 +58,7 @@ function refuseParentEntities(
 
 /** What the tree says, against what this process actually holds. */
 export function nestingOf(
-  stated: FrondsStated | undefined,
+  entries: FrondEntries | undefined,
   fronds: Fronds,
   remotes: Record<string, string> | undefined,
   /** This process carries a subset of the project — `only:`, so an absent name is expected. */
@@ -67,9 +67,9 @@ export function nestingOf(
 ): { under: Map<string, string>; refused: Diagnostic[] } {
   const refused: Diagnostic[] = [];
   const under = new Map<string, string>();
-  if (stated === undefined) return { under, refused };
+  if (entries === undefined) return { under, refused };
 
-  const statements = statedFronds(stated);
+  const statements = keyedFrondEntries(entries);
   const here = new Map(fronds.map((frond) => [frond.name, frond]));
   const childrenOf = new Map<string, string[]>();
   const inherits = new Set<string>();
@@ -89,7 +89,7 @@ export function nestingOf(
       filePath: 'fougere.config.ts',
       subject: statement.path,
       message: `The frond '${statement.key}' extends '${statement.extends}', which extends `
-        + `'${statedFronds(stated).find((one) => one.key === statement.extends)?.extends}'. `
+        + `'${keyedFrondEntries(entries).find((one) => one.key === statement.extends)?.extends}'. `
         + 'A frond can extend only one level. Move what they share into the frond they both extend.',
     });
   }
@@ -100,7 +100,7 @@ export function nestingOf(
     const frond = here.get(parent);
     if (frond === undefined) continue;
 
-    const placed = stated[parent];
+    const placed = entries[parent];
     const address = typeof placed === 'string' ? placed : isFrondDescriptor(placed) ? undefined : placed?.remote;
     if (address !== undefined || (remotes && parent in remotes)) {
       refused.push({
@@ -126,8 +126,8 @@ export function nestingOf(
       // and a frond `only:` left out, since the config describes the PROJECT and the flag one
       // process. What is left is a name nothing carries — a typo, and the config is where it
       // was made, so that is where the message points.
-      const elsewhere = statement.value !== undefined || (remotes && statement.key in remotes);
-      if (!statesModule(statement.key) && !elsewhere && here.size > 0 && !narrowed) {
+      const placedRemotely = statement.value !== undefined || (remotes && statement.key in remotes);
+      if (!statesModule(statement.key) && !placedRemotely && here.size > 0 && !narrowed) {
         refused.push({
           severity: 'blocking',
           code: 'frond-unknown',
@@ -169,7 +169,7 @@ export function nestingOf(
 export function parentsFirst(fronds: Fronds, under: Map<string, string>): Fronds {
   if (under.size === 0) return fronds;
 
-  return Fronds.hosting([
+  return Fronds.list([
     ...fronds.filter((frond) => !under.has(frond.name)),
     ...fronds.filter((frond) => under.has(frond.name)),
   ]);
@@ -180,8 +180,8 @@ export function parentsFirst(fronds: Fronds, under: Map<string, string>): Fronds
  * `fougere explain` resolve the model off a scan, and a scan knows nothing of the tree.
  * Without it they report every inherited dependency as a crossing.
  */
-export function nested(fronds: Fronds, stated: FrondsStated | undefined): Fronds {
-  const { under } = nestingOf(stated, fronds, undefined, true);
+export function nested(fronds: Fronds, entries: FrondEntries | undefined): Fronds {
+  const { under } = nestingOf(entries, fronds, undefined, true);
   for (const frond of fronds) {
     const parent = under.get(frond.name);
     if (parent !== undefined) frond.extends = parent;

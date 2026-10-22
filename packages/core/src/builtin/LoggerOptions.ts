@@ -1,4 +1,4 @@
-import type { Carry } from './Carry.js';
+import type { LineBuffer } from './LineBuffer.js';
 
 export interface LoggerOptions {
   /** Logger name / prefix. */
@@ -8,7 +8,7 @@ export interface LoggerOptions {
    * logger without one writes to the console and nowhere else, which is what the boot's
    * first lines do and what an app declaring no destination does forever.
    */
-  carry?: Carry;
+  lineBuffer?: LineBuffer;
   /** The operation a line is written inside, asked at each line — the boot hands it over. */
   during?: () => string | undefined;
   /** Force color on/off. Auto-detected by default. */

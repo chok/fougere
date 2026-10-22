@@ -9,7 +9,7 @@ import { Hono } from 'hono';
 import { serve } from '@hono/node-server';
 import { AUTH, createApp, frond, type AuthRuntime } from '@fougere/core';
 import { createContainer } from '@fougere/container';
-import { statedModules } from '@fougere/core/node';
+import { configModules } from '@fougere/core/node';
 import { log } from '@fougere/log';
 import { createStorageFactory } from '@fougere/adapter-sql';
 import { db } from './db.js';
@@ -29,7 +29,7 @@ const app = await createApp({
   createContainer,
   storageFactory,
   // The config's module keys, the auth among them — imported here, since core resolves no specifier.
-  fronds: [frond('notes', { entities: [User, Note] }), ...(await statedModules(config.fronds)).fronds],
+  fronds: [frond('notes', { entities: [User, Note] }), ...(await configModules(config.fronds)).fronds],
   extensions: [log()],
 });
 

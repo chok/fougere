@@ -37,7 +37,7 @@ describe('the DDL of one source', () => {
     // `catalog` lives elsewhere: the column stays, the foreign key goes. Two databases
     // share no constraint — that is physics, not a limit of the framework.
     const tables = toTables(
-      { ...sourceViewOf(app.fronds.filter((f) => f.name !== 'catalog')), elsewhere: ['book'] },
+      { ...sourceViewOf(app.fronds.filter((f) => f.name !== 'catalog')), inOtherSources: ['book'] },
       (name) => `${name}s`,
     );
 
@@ -51,7 +51,7 @@ describe('the DDL of one source', () => {
     // The dangerous case: a bad registration looks EXACTLY like a cross-source target.
     // Silence would turn a typo into a silently dropped constraint.
     expect(() => toTables(
-      { ...sourceViewOf(app.fronds.filter((f) => f.name !== 'catalog')), elsewhere: [] },
+      { ...sourceViewOf(app.fronds.filter((f) => f.name !== 'catalog')), inOtherSources: [] },
       (name) => `${name}s`,
     )).toThrow(/ref\(Book\): no source holds Book/);
   });
@@ -218,7 +218,7 @@ describe('the same entity reached as two class objects', () => {
         { entities: [{ name: 'reader', entityClass: Reader }] },
         { entities: [{ name: 'visit', entityClass: Visit }] },
       ]),
-      elsewhere: [],
+      inOtherSources: [],
     }, (name) => `${name}s`);
 
     expect(fkOf(tables, 'visits', 'reader_id')).toEqual({ table: 'readers', column: 'id' });

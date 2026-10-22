@@ -62,13 +62,13 @@ function driftInDoors(
     if (missing.length > 0) drift.missingOps.push({ facade: name, ops: missing.sort() });
 
     for (const [op, output] of ops) {
-      const answered = there.get(op);
-      if (!output || !answered) continue;
+      const theirs = there.get(op);
+      if (!output || !theirs) continue;
 
       // `Card.diff` never guesses a rename — a field gone plus a field appeared lands in
       // `ambiguous`, and only a declaration settles it. Here nobody can declare one, so the
       // pair is reported as it is and a human reads it.
-      const moved = Card.fromDescriptor(output).diff(Card.fromDescriptor(answered));
+      const moved = Card.fromDescriptor(output).diff(Card.fromDescriptor(theirs));
       if (moved.changes.length > 0) drift.shapes.push({ facade: name, op, changes: moved.changes });
     }
   }

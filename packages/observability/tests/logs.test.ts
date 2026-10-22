@@ -5,7 +5,7 @@
 import { writtenStatement } from '@fougere/compiler';
 import { describe, it, expect, beforeAll, afterAll, afterEach, vi } from 'vitest';
 import { join } from 'node:path';
-import { Carry, createApp, Logger, setLogLevel } from '@fougere/core';
+import { LineBuffer, createApp, Logger, setLogLevel } from '@fougere/core';
 import type { App, LogRecord } from '@fougere/core';
 import { createContainer } from '@fougere/container';
 import { tracing, logs, currentSpan, type FinishedSpan, type SpanSink } from '../src/index.js';
@@ -28,16 +28,16 @@ afterEach(() => { while (undo.length) undo.pop()!(); takers.length = 0; vi.resto
 afterAll(async () => { await app?.dispose(); });
 
 /**
- * A logger and everything it writes, in order — through `Carry`, which is the same thing
+ * A logger and everything it writes, in order — through `LineBuffer`, which is the same thing
  * the boot holds its own lines in. A logger built with none announces nothing and keeps
  * nothing, which is why each test names its own.
  */
 function watched(name: string): { log: Logger; seen: LogRecord[] } {
   const seen: LogRecord[] = [];
-  const carry = new Carry();
+  const carry = new LineBuffer();
   undo.push(carry.to((line) => seen.push(line)));
 
-  return { log: new Logger(name, { carry }), seen };
+  return { log: new Logger(name, { lineBuffer: carry }), seen };
 }
 
 describe('the logger has a facade', () => {
@@ -86,11 +86,11 @@ describe('the logger has a facade', () => {
   });
 
   it('survives a destination that throws', () => {
-    const carry = new Carry();
+    const carry = new LineBuffer();
     undo.push(carry.to(() => { throw new Error('broken exporter'); }));
     const spy = vi.spyOn(console, 'info').mockImplementation(() => {});
 
-    expect(() => new Logger('app', { carry }).info('fine')).not.toThrow();
+    expect(() => new Logger('app', { lineBuffer: carry }).info('fine')).not.toThrow();
     expect(spy).toHaveBeenCalledOnce();
   });
 });
@@ -102,13 +102,13 @@ describe('a line carries the call it was written inside', () => {
 
     const exporter = logs({ service: 'catalog' });
     const sent: { traceId?: string }[] = [];
-    const carry = new Carry();
+    const carry = new LineBuffer();
     undo.push(carry.to((line) => { exporter.sink(line); }));
     vi.spyOn(console, 'info').mockImplementation(() => {});
 
     // A handler logging in the middle of its own operation. `app.use` cannot be undone,
     // so the middleware is installed once and gated — it must not leak into other tests.
-    const log = new Logger('handler', { carry });
+    const log = new Logger('handler', { lineBuffer: carry });
     let watching = true;
     undo.push(() => { watching = false; });
     app.use('product', async (_ctx, next) => {
@@ -129,14 +129,14 @@ describe('a line carries the call it was written inside', () => {
   it('leaves a boot line with no trace rather than a forged one', () => {
     const exporter = logs({ service: 'catalog' });
     const kept: { traceId: string | undefined }[] = [];
-    const carry = new Carry();
+    const carry = new LineBuffer();
     undo.push(carry.to((line) => {
       exporter.sink(line);
       kept.push({ traceId: currentSpan()?.traceId });
     }));
     vi.spyOn(console, 'info').mockImplementation(() => {});
 
-    new Logger('boot', { carry }).info('booting');
+    new Logger('boot', { lineBuffer: carry }).info('booting');
 
     expect(kept[0].traceId).toBeUndefined();
   });

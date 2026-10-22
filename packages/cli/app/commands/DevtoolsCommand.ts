@@ -75,9 +75,9 @@ function render(call: CallRecord & { source: string }, many: boolean): string {
     ? (ROUTE[call.route] ?? pc.dim)(pad(call.route, 9))
     : pc.red(pad('unrouted', 9));
   const took = pc.dim(lead(call.ms === undefined ? '' : `${call.ms}ms`, 7));
-  const verdict = call.verdict === 'failed'
+  const verdict = call.status === 'failed'
     ? pc.red(call.refusal?.code ?? 'failed')
-    : call.verdict === 'ok' ? pc.dim('ok') : pc.yellow('running');
+    : call.status === 'ok' ? pc.dim('ok') : pc.yellow('running');
 
   return [at, frond, address, route, took, verdict, call.trace ? pc.dim(call.trace.slice(3, 11)) : '']
     .filter(Boolean).join(' ');

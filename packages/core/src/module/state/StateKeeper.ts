@@ -3,13 +3,13 @@ import type { FrondDescriptor } from '../../descriptor/FrondDescriptor.js';
 import type { Storage } from '../../storage/Storage.js';
 
 /** One name a keeper keeps, and what `state:` told it. */
-export interface KeptName<Options = unknown> {
+export interface KeeperEntry<Options = unknown> {
   name: string;
   options: Options;
 }
 
 /** A name the request's calls wrote, signed — `undefined` forgets it. */
-export interface WrittenName<Options = unknown> extends KeptName<Options> {
+export interface WrittenName<Options = unknown> extends KeeperEntry<Options> {
   token: string | undefined;
 }
 
@@ -30,6 +30,6 @@ export interface StateKeeper<Carrier = unknown, Options = unknown> {
   readonly format: Format<Options>;
   /** What it keeps rows in — brought into the app only when `state:` names it. */
   readonly fronds?: readonly FrondDescriptor[];
-  read(carrier: Carrier, names: readonly KeptName<Options>[], storageFor: StorageFor): Promise<Map<string, string>> | Map<string, string>;
+  read(carrier: Carrier, names: readonly KeeperEntry<Options>[], storageFor: StorageFor): Promise<Map<string, string>> | Map<string, string>;
   write(carrier: Carrier, written: readonly WrittenName<Options>[], storageFor: StorageFor): Promise<void> | void;
 }

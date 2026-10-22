@@ -76,9 +76,9 @@ export function createHttpTransport(baseUrl: string, options: HttpTransportOptio
     // receiver choosing between a proof and a claim about the same thing.
     // `caller` is dropped on every hop: it names who signed THIS call, so carrying the
     // one this process was handed would make `shop → catalog → billing` read `shop`.
-    // It travels outside the envelope anyway, so a stale one would be unsigned too. `crossed`
+    // It travels outside the envelope anyway, so a stale one would be unsigned too. `fromAnotherProcess`
     // is the next receiver's to write, for the same reason.
-    const { caller: _established, crossed: _received, ...forwarded } = invocation;
+    const { caller: _established, fromAnotherProcess: _received, ...forwarded } = invocation;
     const sent = options.sign
       ? { ...forwarded, state: {}, identity: await options.sign({ ...call, ...invocation }) }
       : forwarded;

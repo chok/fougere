@@ -19,9 +19,9 @@ export function identityCardOf(app: App, surface?: string): IdentityCard {
     // What this app SERVES, never what instruments it. A frond an extension BROUGHT is a
     // subscriber — `@fougere/calls` and `@fougere/observability` each bring one — and it is
     // in every process that installed the extension, so two remotes then claimed the same
-    // facade and routing refused: `Two remotes serve 'export'`. `FrondDescriptor.brought` is
+    // facade and routing refused: `Two remotes serve 'export'`. `FrondDescriptor.fromExtension` is
     // the mark `calls`' panel and `rpc.topology` already read.
-    fronds: app.fronds.filter((frond) => !frond.brought).map((frond) => {
+    fronds: app.fronds.filter((frond) => !frond.fromExtension).map((frond) => {
       // What the frond answers to, and apart from it what it stores: an address is where a
       // call goes, an entity is the shape of a row, and a handler may carry none.
       const addresses = [...new Set(frond.handlers.map((handler) => handler.address))];

@@ -2,18 +2,18 @@ import type { Container } from '@fougere/container';
 import { directoryOf, resolveConventions, type Conventions } from '../Conventions.js';
 import type { Diagnostic } from '../diagnostic.js';
 import type { FrondDescriptor } from '../descriptor/FrondDescriptor.js';
-import { SEAMS } from './ports.js';
+import { HOST_PORTS } from './ports.js';
 
 /**
  * What a constructor asks for and nothing where it is built answers — refused at boot rather than
  * at its first call, once the extensions have risen, since `up` registers too. Read off what each
  * class DECLARES, in the scope of the frond that declares it. A seam is answered by the link that
- * wraps it, and a facade another process serves by the stand-in `answeredElsewhere` names.
+ * wraps it, and a facade another process serves by the stand-in `facadeServedRemotely` names.
  */
 export function unregistered(
   container: Container,
   fronds: readonly FrondDescriptor[],
-  answeredElsewhere: (name: string) => boolean,
+  facadeServedRemotely: (name: string) => boolean,
   conventions: Conventions = resolveConventions(),
 ): Diagnostic[] {
   const refused = new Map<string, Diagnostic>();
@@ -23,7 +23,7 @@ export function unregistered(
     const declared = [...frond.handlers, ...frond.providers, ...frond.presenters, ...frond.collectors, ...frond.middlewares];
     for (const { ctor, deps, filePath } of declared) {
       for (const missing of deps) {
-        if (scope.has(missing) || SEAMS.has(missing) || answeredElsewhere(missing)) continue;
+        if (scope.has(missing) || HOST_PORTS.has(missing) || facadeServedRemotely(missing)) continue;
         if (refused.has(`${ctor.name}→${missing}`)) continue;
         refused.set(`${ctor.name}→${missing}`, {
           severity: 'blocking',

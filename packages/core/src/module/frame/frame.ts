@@ -32,9 +32,9 @@ const pick = (row: Record<string, unknown>, keys: readonly string[]): Record<str
   Object.fromEntries(keys.map((key) => [key, row[key]]));
 
 /** Refused where it is used, naming the group that makes the inverse ambiguous. */
-function refuseAmbiguousUpsert(entity: string, gesture: string): never {
+function refuseAmbiguousUpsert(entity: string, operation: string): never {
   throw new Error(
-    `${entity}.${gesture}() cannot be undone inside Together: ${entity} has a unique field besides its key, `
+    `${entity}.${operation}() cannot be undone inside Together: ${entity} has a unique field besides its key, `
     + 'and this source has no transactions. Use create() or update() instead, or put the entities in one SQL source.',
   );
 }

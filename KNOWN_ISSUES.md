@@ -12,7 +12,7 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
   answer; a carrier is the other.
 - **A remote that never answered is a hole only `Emit<T, A>` refuses.** Asked at the first
   announcement and unreachable, its listeners are unknown: `Emit<T>` warns that the fact did not
-  reach it and goes on, `Emit<T, A>` refuses the announcement (`listenersElsewhere`,
+  reach it and goes on, `Emit<T, A>` refuses the announcement (`remoteListenersOf`,
   `module/fact/Emissions.ts`). Once reached, a remote that stops is a subscriber that fails — `ERR …
   unreachable`, the announcement goes on. Nothing is queued in either case: that is a carrier's.
 - **A `Pipe<T>` link in a frond the announcer did not read is not found.** The card states the
@@ -22,7 +22,7 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
 - **The declared topology and an op's `reach` count the listeners read from CODE, never those
   read off a card** — `declaredTopologyOf` (`module/topology/declared.ts`) and `reachOf`. A served frond
   reaching `mail` through its card draws no edge to it.
-- **A log line never crosses** — `listenersElsewhere` leaves `logLine` out, since delivering it
+- **A log line never crosses** — `remoteListenersOf` leaves `logLine` out, since delivering it
   is a call and a call writes lines. A destination in another process receives that process's
   lines only.
 
@@ -54,7 +54,7 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
   one key more → `extra: Unknown field`, 1 of 1 listener refused. Met on a Debezium envelope,
   whose top-level keys vary with the Debezium version.
 - **A `ref()` added to a table that already exists gets no foreign key, and the boot believes
-  it has one.** The additive pass has no `addForeignKey` (`diff/Change.ts`), and `heldBy` reads
+  it has one.** The additive pass has no `addForeignKey` (`diff/Change.ts`), and `relationChecksOf` reads
   what the source PROMISES, not what the live table holds, so it reads nothing either. Measured
   2026-09-14 on `site/.data/site.db`: the same dangling insert passes there and is refused on a
   fresh database. `onDelete` widens it rather than adding a second hole: `keyed` answers from
@@ -225,8 +225,8 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
   validated as a word of the package.
 - `graphql` dual ESM/CJS hazard in tests — use `schema.getTypeMap()`, not `printSchema()`
 - **A hop is drawn as CLIENT and SERVER only when the receiver says it crossed** —
-  `observability/src/otlp/OtlpExporter.ts`, `kindOf`. The sender knows it (`OperationContext.crosses`,
-  set by `boot/remote.ts`), the receiver only through `invocation.crossed`, which
+  `observability/src/otlp/OtlpExporter.ts`, `kindOf`. The sender knows it (`OperationContext.toAnotherProcess`,
+  set by `boot/remote.ts`), the receiver only through `invocation.fromAnotherProcess`, which
   `transport/http/src/server.ts` writes. A receiver written by hand — the bare socket of
   `observability/tests/trace.test.ts` — writes nothing, so its span stays `INTERNAL`. Measured
   2026-09-23.
@@ -266,10 +266,10 @@ One line each, kept because a past version of this file asserted the opposite.
 
 - **A dependency nothing answers refuses the BOOT, not the first call** — the boot reads what each
   class DECLARES against `has()` in the scope of its frond, after the ascent since `up` registers
-  too (`boot/unregistered.ts`, `dependency-unregistered`). A seam is answered by its link and a
+  too (`boot/unregistered.ts`, `dependency-unregistered`). A host port is answered by its link and a
   facade another process serves by its stand-in, so neither refuses. The rule is the boot's: the
   container answers `has()` and knows no policy about what a class may ask for. Pinned by `core/tests/unregistered.test.ts`. A neighbour's `AuthorRepository` used to
-  answer `'AuthorRepository' is not registered` at the first call; the check found a seam link
+  answer `'AuthorRepository' is not registered` at the first call; the check found a host port link
   registered under its own name, which nothing could ever resolve, and it no longer is.
 - **Classes that ask for each other refuse the BOOT too** — `boot/dependencyCycles.ts`,
   `dependency-cycle`, over `Container.dependencies()`: what the container was HANDED, since a port's
@@ -377,7 +377,7 @@ One line each, kept because a past version of this file asserted the opposite.
   (`schema/src/axis/boundary/Boundaries.ts`), pinned by `tests/boundary.test.ts`.
 - The façade hands on the value it PARSED (`dispatch/HandlerFacade.ts`, `validated`).
 - The `boundary` axis has ONE door, `Boundary.of` — alias and codecs resolved eagerly.
-- Two remotes serving one entity is REFUSED, naming both (`boot/remote.ts`, `claimedBy`).
+- Two remotes serving one entity is REFUSED, naming both (`boot/remote.ts`, `remoteOfFacade`).
 - A split receiver ESTABLISHES its caller (`core/src/identity.ts`): `serve()` refuses to start
   beyond loopback with no `verify`. Do not reintroduce a link secret.
 - An operation's input contract is read from PROVENANCE, and two candidates REFUSE rather than

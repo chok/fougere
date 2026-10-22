@@ -35,12 +35,12 @@ export function basesOf(
 
 /** The ancestors a provider answers under, nearest first, up to the last one that answers. */
 function portsOf(provider: ProviderEntry, answers: (name: string) => boolean): string[] {
-  const crossed: string[] = [];
+  const bases: string[] = [];
   for (let base = Object.getPrototypeOf(provider.ctor) as { name?: string } | null; base?.name; base = Object.getPrototypeOf(base) as { name?: string } | null) {
     if (provider.deps.includes(base.name)) return [base.name];
-    crossed.push(base.name);
+    bases.push(base.name);
   }
-  const last = crossed.findLastIndex(answers);
+  const last = bases.findLastIndex(answers);
 
-  return crossed.slice(0, last + 1);
+  return bases.slice(0, last + 1);
 }

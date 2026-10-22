@@ -114,28 +114,28 @@ export function verify(app: { fronds: readonly FrondDescriptor[] }): Misplaced[]
     const declared = OperationOverrides.of(frond);
     for (const handler of frond.handlers) {
       for (const [opName, op] of handler.operations) {
-        const stated = declared.get(handler.address, opName)?.binding ?? [];
+        const declaredBinding = declared.get(handler.address, opName)?.binding ?? [];
         for (const param of op.signature?.params ?? []) {
-          if (stated.some((entry) => entry.name === param.name)) continue;
+          if (declaredBinding.some((entry) => entry.name === param.name)) continue;
           // Same key the scan writes and the binding plan looks up — `toLowerCase()`
           // here missed a two-word type in BOTH directions: neither confirmed the
           // collector was local nor found it elsewhere, so the rule reported nothing.
           const wanted = lowerFirst(param.type.name);
           if (own.has(wanted)) continue;
-          const elsewhere = collectorFronds.get(wanted);
+          const inOtherFronds = collectorFronds.get(wanted);
           // No collector anywhere for that type may be an ordinary input parameter.
           // Only a collector that exists in the wrong place makes that interpretation
           // provably false.
-          if (!elsewhere) continue;
+          if (!inOtherFronds) continue;
           violations.push({
             code: 'collector-in-another-frond',
             severity: 'warning',
             frond: frond.name,
             subject: `${handler.ctor.name}.${opName}(${param.name})`,
             filePath: handler.filePath,
-            dependsOn: { key: collectorKeyOf(wanted), frond: elsewhere, kind: 'collector' },
+            dependsOn: { key: collectorKeyOf(wanted), frond: inOtherFronds, kind: 'collector' },
             message:
-              `${handler.ctor.name}.${opName} takes ${param.name} from the request, but the frond '${elsewhere}' has a `
+              `${handler.ctor.name}.${opName} takes ${param.name} from the request, but the frond '${inOtherFronds}' has a `
               + `${param.type.name} collector that '${frond.name}' cannot see.\n`
               + `  - To use that collector: move it into '${frond.name}'.\n`
               + `  - To keep the request: declare it in ${frond.name}/frond.config.ts:\n`

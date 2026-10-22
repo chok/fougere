@@ -1,7 +1,7 @@
 /** What Fougere does with a filesystem, minus the scan — that is `@fougere/compiler`. */
 export { setModuleLoader, getModuleLoader, type ModuleLoader } from './loader.js';
-export { BUILT, configFileIn, statementFileIn, loadConfig, loadCascadedConfig, projectRootOf, remotesOf } from './FougereConfig.js';
-export { statedModules } from './StatedModules.js';
+export { BUILD_DIRECTORY, configFileIn, statementFileIn, loadConfig, loadCascadedConfig, projectRootOf, remotesOf } from './FougereConfig.js';
+export { configModules } from './ConfigModules.js';
 export { defineFrond, frondConfigFileIn, loadFrondConfig } from './FrondConfig.js';
 
 // Making a key and binding a name to it happen once, at a deployment, on a machine with

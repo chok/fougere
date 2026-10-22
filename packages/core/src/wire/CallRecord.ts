@@ -17,6 +17,6 @@ export interface CallRecord {
   startedAt: number;
   /** Known at `settled`. */
   ms?: number;
-  verdict: 'running' | 'ok' | 'failed';
+  status: 'running' | 'ok' | 'failed';
   refusal?: { code?: string; message: string };
 }

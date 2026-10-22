@@ -39,7 +39,7 @@ pnpm -C demos/nuxt-blog dev        # Nuxt app (:3000), consumes it via remotes
 pnpm -C demos/schema-ecommerce dev # Apollo Server on :4000
 pnpm -C demos/container-basics dev
 pnpm -C demos/core-scanner dev
-pnpm -C demos/ports-swap dev        # one handler: two PSPs, the refusal, a chain, and a seam
+pnpm -C demos/ports-swap dev        # one handler: two PSPs, the refusal, a chain, and a host port
 pnpm -C demos/transport-chain dev  # one handler, six behaviours — the links that carry its calls
 pnpm -C demos/config-reload dev     # one boot, a real SIGHUP, a drain — and what a re-read cannot change
 pnpm -C demos/mirror-catalog dev    # two passes over a source that only answers ?page=&since=
@@ -93,12 +93,12 @@ packages/
     src/module/          a SUBJECT the kernel wires but does not know — `fact/` (the emission, and
                          the `fact`/`pipe` binding sources), `collector/` (its binding source and its
                          installation), `presenter/` (an answer step), `relation/` (refs and onDelete
-                         under the guard, `Hosting`, the three readings it serves across processes),
+                         under the guard, `RowHosts`, the three readings it serves across processes),
                          `frame/` (Together), `topology/` (the
                          declared half). The kernel is cut by PHASE, a module by SUBJECT;
                          `arch:cycles` reads each `module/<x>` as a family, so two modules reading
                          each other fail CI. A module plugs into two primitives: a BINDING SOURCE
-                         (`BindingSources`, `wire/BindingSourceType.ts` — claim a parameter, resolve
+                         (`BindingSources`, `wire/BindingSourceType.ts` — bind a parameter, resolve
                          it, judge a value code wrote), asked before the request's own parts, and an
                          ANSWER STEP (`dispatch/AnswerStep.ts`, run over an answer before the view
                          projects it). What a subject puts ON THE WIRE stays in `wire/`, `storage/`
@@ -306,7 +306,7 @@ host re-reading the project in the same process says so — `fougere dev` reload
 `Registry.reloading`, where an answer replaces the one it had; the packages it does not re-run keep
 theirs. Measured 2026-10-18: `--watch` re-registers each `vocabulary/` file with a new function, Nuxt
 and Vite restart in a fresh context and re-register nothing. A registry is ONE form of an extension
-point — answered by NAME; the other is answered by TYPE (a port, a seam, a middleware), read off the
+point — answered by NAME; the other is answered by TYPE (a port, a host port, a middleware), read off the
 class hierarchy at boot. `resolve` throws and lists what the process answers; `find` returns
 `undefined` for a caller that has its own words for the absence.
 
@@ -314,7 +314,7 @@ class hierarchy at boot. `resolve` throws and lists what the process answers; `f
 entity's storage and forwards all thirteen gestures. From TWO on it is an aggregate: no
 default repository for any member, no forwarded gesture, and `ownersOf` refuses two
 aggregates over one entity. `Crud` on an owned entity is refused at boot
-(`refuseCrudOnOwned`). `Storage<E>` is reached only by a class BUILT ON E (`builtOn`,
+(`refuseCrudOnOwned`). `Storage<E>` is reached only by a class BUILT ON E (`entitiesOfPrefab`,
 `core/src/boot/ownership.ts`) — a repository, or a prefab over that entity: naming
 `Storage<BookCard>` is what `Mirror(BookCard)` earns. A handler, a presenter, a collector
 and a plain service are pointed at `<E>Repository`, and the aggregate check runs BEFORE the
@@ -334,20 +334,20 @@ what is left. A call arriving after the door closed gets `SERVICE_UNAVAILABLE`. 
 **An extension brings fronds** — `Extension.fronds`, read by `createApp` BEFORE the ascent
 and folded in beside `fronds:`. It is the only way an optional package can
 accept a fact: a subscription is a signature, and `up` receives an app that already exists.
-The boot marks what it took as `FrondDescriptor.brought`, which is how a report says what
+The boot marks what it took as `FrondDescriptor.fromExtension`, which is how a report says what
 the app SERVES rather than what instruments it — read by `calls`' panel, by `rpc.topology`,
 and by the identity card (`boot/card.ts`). The card because such a frond stands in EVERY
 process that installed the extension: two of them answered `export` on `rpc.discover` and
 the remote router refused, `Two remotes serve 'export'`, which left a third process able to
 reach neither. `@fougere/calls` brings `KeepHandler`, `@fougere/observability`
-`ExportHandler`. Pinned by `tests/brought.test.ts`.
+`ExportHandler`. Pinned by `tests/from-extension.test.ts`.
 
 **A call's `state` is declared by the extensions, and judged where it ENTERED** —
 `Extension.state`, `{ user: json(User) }`, gathered by `AppLifecycle.state()` into a `StateShape`
 (`core/src/wire/StateShape.ts`) once the fronds are read, so a frond's own `extensions/` declares
 too, and an extension replaced by name declares nothing. Both facades judge it — the local one
 (`dispatch/HandlerFacade.ts`) and the one that sends a call away (`boot/remote.ts`) — unless the
-invocation is `crossed`, which only the transport receiver writes and a caller may not send
+invocation is `fromAnotherProcess`, which only the transport receiver writes and a caller may not send
 (`transport/http/src/server.ts`, `SENT`). After the middlewares, what they WROTE is judged, since
 that is where it entered. A receiver declares nothing: the envelope proves which process wrote the
 state, and judging it again made every receiver know declarations that are not its own — the blog
@@ -363,7 +363,7 @@ reading a date INSIDE `json(Entity)` and `list()`. An extension is recognized by
 keys share. Pinned by `core/tests/state.test.ts` and `defaults/tests/gradient.test.ts`.
 
 **The auth is a frond, written in place** — `fronds: { auth: betterAuth({ … }) }`. The config
-file imports the package, so the entry holds the frond itself (`FrondStated` admits a
+file imports the package, so the entry holds the frond itself (`FrondEntry` admits a
 `FrondDescriptor`, recognized by `isFrondDescriptor`, and its key must be its name), and the
 frond carries its extension (`FrondDeclaration.extensions`) — engine, `AUTH`, `user`/`session` —
 which rises only where the frond is served. `only:` leaves it out like any frond, so `fougere
@@ -391,7 +391,7 @@ outside core: `presenters()` (`module/presenter/presenters.ts`) is itself an ext
 which is why `install.ts` names no presenter — measured 2026-10-18 by moving it into a package of its
 own in a throwaway worktree, where the same app answered with and without it. `app.extensionPoints()`
 reads what answers each point — every `Registry` by name, then per frond the chain of each port and
-seam, the middlewares in order, the extensions stepping over each address — and `fougere points`
+host port, the middlewares in order, the extensions stepping over each address — and `fougere points`
 prints it, booting the app with the schema check and the seeds left out. Pinned by
 `core/tests/extension-doors.test.ts`, `core/tests/extension-points.test.ts`, `cli/tests/points.test.ts`.
 
@@ -686,7 +686,7 @@ are built from. `.fougere/` is the framework's working directory, not user vocab
 Pinned by `tests/conventions.test.ts`.
 
 **`fronds:` says what an app is MADE OF, and `extends:` says one thing only** —
-`FrondsStated` (`core/src/FrondsStated.ts`), judged by `boot/nesting.ts`. It is the INHERITOR
+`FrondEntries` (`core/src/FrondEntries.ts`), judged by `boot/nesting.ts`. It is the INHERITOR
 that names what it inherits from, and by a scalar: a name then lives in one place, so moving a
 frond is one edit and removing it leaves nothing dangling, where a parent listing its own put
 every name twice. It is also the form `tsconfig`, Maven and Kubernetes all chose for
@@ -697,7 +697,7 @@ frond a family inherits from needs NO entry of its own, so what it may not be is
 NAMES rather than of the entries. A child resolves what its parent declared, because its scope hangs off its parent's: `installFrond` starts from
 `container.resolve('frond:' + under)` and `ScopeContainer.resolve` walks up on its own, so
 providers, `<E>Repository`, presenters and port keys are inherited with no mechanism at all.
-Middlewares and seams are not — neither is a container key — so both are CARRIED lists,
+Middlewares and host ports are not — neither is a container key — so both are CARRIED lists,
 composed outside the child's own. Nesting says nothing about placement and nothing about the
 right to CALL: two fronds still reach each other through a façade or an announced fact, and
 `verify()` exempts an ancestor and no one else. What keeps that safe is the refusal: a frond a
@@ -791,11 +791,11 @@ destination brought by an extension is handed a line whose `at: created()` was n
 stamped. A logger a package CONSTRUCTS carries nothing: `new Logger(service)` printed and
 announced nothing, which is why `observability` resolves the app's and names a child.
 
-A `Carry` is also what a TEST watches a logger through — `observability/tests/logs.test.ts`
+A `LineBuffer` is also what a TEST watches a logger through — `observability/tests/logs.test.ts`
 held the last `onLog` call sites and now names its own carry, which is the same door the
 boot uses.
 
-The lines are HELD until an emission exists, in a `Carry` held PER BOOT — a process-wide
+The lines are HELD until an emission exists, in a `LineBuffer` held PER BOOT — a process-wide
 slot sent a second app's lines to the first app's door, and only the first of three
 printed. They are handed over AFTER the ascent, because handing them over RESOLVES the
 destination and what a brought one depends on is registered by its own extension's `up`:
@@ -807,7 +807,7 @@ and `demos/log-destinations`.
 
 **What a call writes is `@fougere/log`'s, and it rises in every process** — `log()` is an
 EXTENSION, so `fronds: { '@fougere/log': {} }` is mounted by every boot that reads the config
-(`statedModules` is not narrowed by `only:`), and `up` installs `callLines`: two lines a call,
+(`configModules` is not narrowed by `only:`), and `up` installs `callLines`: two lines a call,
 under the frond that answers, `← <caller>` when a signed call came from another process. A path
 (`'@fougere/log': './lines.jsonl'`) brings the file destination as well. It used to be core's
 `loggerMiddleware`, installed by `observability` alone, so an app that did not trace wrote nothing
@@ -836,7 +836,7 @@ extends Payment` answers both keys with `CardPayment` never declared. An `abstra
 never a candidate — the scan reads the keyword TypeScript erases (`scan/Abstract.ts`) and
 carries it as `ProviderEntry.abstract`; a concrete one in between is a second candidate and
 refuses. A wrapper stops at the class it asks for. A BUILTIN takes a wrapper too: the chain
-ends on what the scope already answered, set aside under `heldKeyOf` (`boot/ports.ts`), so
+ends on what the scope already answered, set aside under `ownKeyOf` (`boot/ports.ts`), so
 `RedactingLogger(inner: Logger)` keeps the frond's logger — its carry and its `during`.
 Pinned by `tests/ports.test.ts` and `compiler/tests/abstract-port.test.ts`.
 
@@ -850,10 +850,10 @@ one — `ports: { Payment: ['Retrying', 'Stripe'] }` states the chain from the O
 and the last name is what actually charges. Pinned by `tests/ports.test.ts`. A builtin is a port too: `class AuditLogger extends Logger` takes the `Logger` key
 for that frond. Pinned by `tests/ports.test.ts`.
 
-**A SEAM is a port whose realization is handed in** — `SEAMS` (`boot/ports.ts`), `Storage`
+**A HOST PORT is a port whose realization is handed in** — `HOST_PORTS` (`boot/ports.ts`), `Storage`
 today. `storageFactory` builds one per entity and no class declares it, so a class extending
-one can only stand IN FRONT of it: `seamChains` refuses a subclass that does not ask for the
-seam, since nothing else it could be. It is applied where the realization is BUILT
+one can only stand IN FRONT of it: `hostPortChains` refuses a subclass that does not ask for the
+host port, since nothing else it could be. It is applied where the realization is BUILT
 (`install.ts`) rather than under a container key — nothing resolves `Storage`, and
 `<Entity>Storage` is what a handler asks for.
 
@@ -864,17 +864,17 @@ gradient promises the USER CODE is identical. Nesting cannot do that, because a 
 inherits from is REFUSED a placement of its own (`frond-parent-remote`) and refused handlers
 (`frond-parent-serves`) — with no façade, nothing can call it and nothing can move it, so it
 stands in every process that holds one of its children. Its links are carried down
-(`Assembly.seamsOf`) and composed outside the child's own, the same shape the middlewares
-needed, since a seam has no container key either. A link that must reach fronds of no common
+(`Assembly.hostPortsOf`) and composed outside the child's own, the same shape the middlewares
+needed, since a host port has no container key either. A link that must reach fronds of no common
 parent is still a FROND that is everywhere, which `Extension.fronds` answers.
 
 The other two candidates were MEASURED and refused, 2026-09-11, because each already has its
 mechanism: an outgoing remote call runs `runMiddlewares` before the transport
-(`boot/remote.ts`, `createRemoteFacade`) — what is missing there is not a seam but a scope,
+(`boot/remote.ts`, `createRemoteFacade`) — what is missing there is not a host port but a scope,
 since a frond's middleware covers the addresses its handlers SERVE and not the ones they
 CALL, which is a different subject with no name yet. And `HttpRouter` is never held by the
 boot at all: the host builds it, hands it to `registerRoutes`, and already holds both
-`router.use(middleware)` and the routes array — a seam would be a fourth way to say it. Both
+`router.use(middleware)` and the routes array — a host port would be a fourth way to say it. Both
 ways in are written down, with `Storage`'s, in `site/content/docs/4.business/10.ports.md`
 and `7.storage.md`: `remoteTransport:` swaps a transport whole, `app.use` wraps the outgoing
 call, `router.use` and the routes array reach the HTTP side.
@@ -889,7 +889,7 @@ refuse every realization at once, and a `WeakMap` beside the instance is not fou
 link reads the value the door already parsed. A bare `Storage` in a signature binds because
 `depKeyOf` (`compiler/src/scan/scanner.ts`) stops reading `Record` as a subject — it is the
 default of `Storage<T = Record<string, unknown>>`, which the checker fills in, and the key
-was `RecordStorage`. Pinned by `tests/seam.test.ts`.
+was `RecordStorage`. Pinned by `tests/host-port.test.ts`.
 
 **Sources** — a place rows live, and the five gestures it owns: `storageFactory` (required),
 `pending?`, `migrate?`, `transacted?`, `close?` (`core/src/source.ts`). `pending` is `migrate`'s
@@ -928,14 +928,14 @@ too. SQL states `sqlEnforces`; a Map states nothing, and the boot names the enti
 rather than refusing them. Pinned by `core/tests/enforced.test.ts`.
 
 **A `ref()` is held by a key, read by the guard, or named at boot** — `module/relation/relations.ts`,
-`heldBy`. `relation` is the second member of `Constraint`, and the PAIR decides, never the
+`relationChecksOf`. `relation` is the second member of `Constraint`, and the PAIR decides, never the
 engine: SQL keeps a foreign key over rows it can see, so a key holds only when the target is
 hosted here, in the SAME source, and that source keeps relations. Anything else becomes a
 `RelationCheck` that `RelationGuard` (`module/relation/`) reads before a write, under the `StorageGuard`
 that parsed it — one read per relation and per page —
 and a target nothing in this process answers is named once, after every frond installed. Not a
 transaction: the read and the write sit in two engines by construction, so a target deleted
-between them passes. `Hosting` reaches the target through its OWNING frond, because a scope
+between them passes. `RowHosts` reaches the target through its OWNING frond, because a scope
 sees its parent and never its siblings, and the frame and the surface build their guard from
 the same answer as the frond's storage. Pinned by `core/tests/relations.test.ts` and
 `demos/together-frame`, case 5. What a placement may not change BESIDE a deletion is
@@ -1050,9 +1050,9 @@ the same observer as the calls, and makes a refusal public by `toPublicError` be
 it. The door's `name` is the package's word and core never switches on it, the way `Protocols`
 knows no protocol. Pinned by `core/tests/door.test.ts`, with a door of no real kind. The call
 envelope is two doors over one wire (`transport/http/src/server.ts`): `peerDoor` marks a call
-`crossed`, since the sending process judged it, and takes the state `verify` establishes;
+`fromAnotherProcess`, since the sending process judged it, and takes the state `verify` establishes;
 `pageDoor` takes the state the host resolved and refuses `args`. A page's call used to come out of
-`handleRpc` marked `crossed` too, so the receiver skipped judging the state of a caller outside the
+`handleRpc` marked `fromAnotherProcess` too, so the receiver skipped judging the state of a caller outside the
 topology. Measured 2026-10-19: the cycle adds 83 ns to a request nobody watches, 217 ns watched.
 Pinned by `transport/http/tests/doors.test.ts`.
 `graphqlDoor` (`adapter/graphql/src/door.ts`) reads the document inside the cycle and runs the
@@ -1190,8 +1190,8 @@ nothing else. A prefab DECLARES (`Crud.__ops`, runtime), the scan DERIVES from s
 `frond.config.ts` STATES and wins over both. Config also creates an op neither producer
 found — the answer for a method inherited from an installed base class. `description` is the
 method's own doc sentence, read from the AST (`compiler/src/scan/handler-parser.ts`, `docSentenceOf`).
-A `fronds.ts` written by hand states a method's contract as a `StatedOperation`
-(`core/src/StatedOperation.ts`) — `{ params: { id: [Post, 'id'] }, output: Post }`, read by `frond()`
+A `fronds.ts` written by hand states a method's contract as a `StatementOperation`
+(`core/src/StatementOperation.ts`) — `{ params: { id: [Post, 'id'] }, output: Post }`, read by `frond()`
 into the signature the boot binds from. Nothing is guessed: what the file does not list is not served,
 because the boot cannot tell a method left out from one TypeScript kept `private`. `fougere check` reads
 the sources and names it (`operation-unstated`, `handler-unstated`). Pinned by

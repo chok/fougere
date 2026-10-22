@@ -230,7 +230,7 @@ export function tracing(takers: readonly SpanSink[], options: TracingOptions = {
         callerFrond,
         frond: ctx.frond,
         kind: 'operation',
-        crossing: ctx.crosses ? 'sent' : ctx.invocation?.crossed ? 'received' : undefined,
+        crossing: ctx.toAnotherProcess ? 'sent' : ctx.invocation?.fromAnotherProcess ? 'received' : undefined,
         address: ctx.address,
         operation: ctx.operation,
         startedAt,

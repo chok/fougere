@@ -7,8 +7,8 @@ import { Invocation } from '../../wire/Invocation.js';
 import { RPC_ADDRESS } from '../../wire/RpcAnswer.js';
 import type { Transport } from '../../wire/Transport.js';
 import type { Constraint } from '../../Constraint.js';
-import type { Hosting } from './Hosting.js';
-import { JOURNAL, type Journal } from './Journal.js';
+import type { RowHosts } from './RowHosts.js';
+import { JOURNAL, type Journal } from '../../wire/Journal.js';
 import type { Peer } from './Peer.js';
 import { peerOver } from './peerOver.js';
 import { relationGraph } from './relationGraph.js';
@@ -50,13 +50,13 @@ function peerBehind(entity: string, router: Routing): Peer {
   };
 }
 
-export function hostingFor(
+export function rowHostsFor(
   { fronds, container, options, remoteRouter, entityByName, frondOf, storageOf }: Hosted,
-): { hosting: Hosting; journalOf: () => Journal | undefined } {
+): { hosting: RowHosts; journalOf: () => Journal | undefined } {
   // What carries a release writes none: an instrumentation frond's own rows are kept while a
   // release happens, and journalling them would begin one inside the one being written down.
   const carriesRelease = new Set(
-    fronds.filter((one) => one.brought).flatMap((one) => one.entities.map((entity) => entity.name)),
+    fronds.filter((one) => one.fromExtension).flatMap((one) => one.entities.map((entity) => entity.name)),
   );
 
   /**
@@ -66,7 +66,7 @@ export function hostingFor(
    */
   const journalOf = (): Journal | undefined => {
     for (const frond of fronds) {
-      if (!frond.brought) continue;
+      if (!frond.fromExtension) continue;
       const scope = container.resolve<Container>(`frond:${frond.name}`);
       if (scope.has(JOURNAL)) return scope.resolve<Journal>(JOURNAL);
     }
@@ -76,7 +76,7 @@ export function hostingFor(
 
   let relations: Graph | undefined;
 
-  const hosting: Hosting = {
+  const rowHosts: RowHosts = {
     hostedHere: (entity) => !(options.remotes && (frondOf.get(entity) ?? '') in options.remotes),
     sourceOf: (name) => options.sourceOf?.(name) ?? 'default',
     enforces: (source, constraint) => options.enforces?.(source, constraint) ?? false,
@@ -93,5 +93,5 @@ export function hostingFor(
     peerOf: (entity) => (remoteRouter ? peerBehind(entity, remoteRouter) : undefined),
   };
 
-  return { hosting, journalOf };
+  return { hosting: rowHosts, journalOf };
 }

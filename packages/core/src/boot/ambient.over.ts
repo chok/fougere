@@ -14,14 +14,14 @@ export function ambientOver(AsyncLocalStorage: AsyncContext): Ambient {
     degraded: false,
 
     slot<T>(name: string): Slot<T> {
-      const held = slots.get(name);
-      if (held) return held as Slot<T>;
+      const existing = slots.get(name);
+      if (existing) return existing as Slot<T>;
 
       const storage = new AsyncLocalStorage<T>();
-      const made: Slot<T> = { current: () => storage.getStore(), within: (value, fn) => storage.run(value, fn) };
-      slots.set(name, made as Slot<unknown>);
+      const slot: Slot<T> = { current: () => storage.getStore(), within: (value, fn) => storage.run(value, fn) };
+      slots.set(name, slot as Slot<unknown>);
 
-      return made;
+      return slot;
     },
 
     enterFrame<R>(key: string, fn: () => Promise<R>): Promise<R> {

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { statesModule, mergeStated } from '../src/FrondsStated.js';
-import { statedFronds } from '../src/StatedFrond.js';
+import { statesModule, mergeFrondEntries } from '../src/FrondEntries.js';
+import { keyedFrondEntries } from '../src/KeyedFrondEntry.js';
 import { remotesOf } from '../src/FougereConfig.js';
 
 describe('statesModule', () => {
@@ -13,9 +13,9 @@ describe('statesModule', () => {
   });
 });
 
-describe('statedFronds', () => {
+describe('keyedFrondEntries', () => {
   it('reads the cases off the shape of an entry', () => {
-    expect(statedFronds({
+    expect(keyedFrondEntries({
       billing: {},
       cart: { extends: 'billing' },
       blog: 'http://localhost:4100',
@@ -29,18 +29,18 @@ describe('statedFronds', () => {
   });
 
   it('says the same thing in the long form', () => {
-    expect(statedFronds({ blog: { remote: 'http://localhost:4100' } }))
+    expect(keyedFrondEntries({ blog: { remote: 'http://localhost:4100' } }))
       .toEqual([{ key: 'blog', path: 'blog', value: 'http://localhost:4100' }]);
   });
 
   it('answers a frond before the ones inheriting from it, whatever the order written', () => {
-    const fronds = statedFronds({ cart: { extends: 'billing' }, billing: {}, invoice: { extends: 'billing' } });
+    const fronds = keyedFrondEntries({ cart: { extends: 'billing' }, billing: {}, invoice: { extends: 'billing' } });
 
     expect(fronds.map((one) => one.key)).toEqual(['billing', 'cart', 'invoice']);
   });
 
   it('answers nothing for a config that states nothing', () => {
-    expect(statedFronds(undefined)).toEqual([]);
+    expect(keyedFrondEntries(undefined)).toEqual([]);
   });
 });
 

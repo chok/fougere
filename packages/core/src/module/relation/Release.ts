@@ -1,7 +1,7 @@
 /** What a delete does to the rows that name it, when no foreign key does it instead. */
 import { FieldSet, type SchemaView } from '@fougere/schema';
 import type { Dependent } from './Dependent.js';
-import type { Journal } from './Journal.js';
+import type { Journal } from '../../wire/Journal.js';
 import { ErrorCode } from '../../wire/ErrorCode.js';
 import { FougereError } from '../../wire/FougereError.js';
 
@@ -91,11 +91,11 @@ async function walk(
   // dependents, and declaration order would otherwise let a cascade beside a `restrict` win.
   // Depth needs no such pass — a level acts only once the level below it came back.
   for (const dependent of dependents.filter((one) => one.onDelete === 'restrict')) {
-    await refuseHeld(entity, dependent, keys, world);
+    await refuseRestricted(entity, dependent, keys, world);
   }
 
   for (const dependent of dependents.filter((one) => one.onDelete !== 'restrict')) {
-    await carryOut(entity, dependent, keys, world, seen, trail);
+    await releaseLevel(entity, dependent, keys, world, seen, trail);
   }
 }
 
@@ -115,7 +115,7 @@ function keyOf(world: Releasing, entity: string): string {
 }
 
 /** What names these rows and states `restrict` stops the whole release, before anything moves. */
-async function refuseHeld(
+async function refuseRestricted(
   entity: string,
   dependent: Dependent,
   keys: readonly unknown[],
@@ -141,7 +141,7 @@ async function refuseHeld(
  * that holds them walks its own tree from there. The trail grows by one mark per level, so a
  * deeper ask is never mistaken for the bounce of a shallower one.
  */
-async function carryOut(
+async function releaseLevel(
   entity: string,
   dependent: Dependent,
   keys: readonly unknown[],

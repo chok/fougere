@@ -52,7 +52,7 @@ describe('the fronds', () => {
   it('leaves out a frond an extension brought', async () => {
     const fronds = crossFrond;
     const declared = declaredTopologyOf({
-      fronds: [...fronds, { ...fronds[0]!, name: 'ring', brought: true }],
+      fronds: [...fronds, { ...fronds[0]!, name: 'ring', fromExtension: true }],
       remotes: {},
     });
 

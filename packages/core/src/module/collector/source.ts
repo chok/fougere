@@ -17,7 +17,7 @@ function collectorIn(scope: Container | undefined, typeName: string): CollectorR
  * looked up as `authoruser` missed `authorUser` and fell through to the request input.
  */
 export const collector: BindingSourceType<'collector'> = {
-  claim(param, collectorTypeNames) {
+  bind(param, collectorTypeNames) {
     const typeName = lowerFirst(param.type.name);
 
     return collectorTypeNames.has(typeName) ? { kind: 'collector', typeName } : undefined;

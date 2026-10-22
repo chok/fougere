@@ -18,36 +18,36 @@ import type { Diagnostic } from '../diagnostic.js';
  *
  * Documented: [ports](https://fougere.dev/docs/business/ports).
  */
-export const SEAMS = new Set(['Storage']);
+export const HOST_PORTS = new Set(['Storage']);
 
 /** Where a chain of wrappers finds what the scope already answered under its port — a builtin's own instance. */
-export const heldKeyOf = (port: string): string => `held:${port}`;
+export const ownKeyOf = (port: string): string => `held:${port}`;
 
 /**
  * What stands in front of each seam, outermost first — the same reading `portBindings`
  * does, with no realization to find.
  */
-export function seamChains(
+export function hostPortChains(
   providers: ProviderEntry[],
   chosen: Record<string, string | readonly string[]> | undefined,
   refused: Diagnostic[],
 ): Map<string, ProviderEntry[]> {
   const wrappers = new Map<string, ProviderEntry[]>();
   for (const provider of providers) {
-    const seam = (Object.getPrototypeOf(provider.ctor) as { name?: string } | null)?.name;
-    if (!seam || !SEAMS.has(seam)) continue;
-    if (!provider.deps.includes(seam)) {
+    const hostPort = (Object.getPrototypeOf(provider.ctor) as { name?: string } | null)?.name;
+    if (!hostPort || !HOST_PORTS.has(hostPort)) continue;
+    if (!provider.deps.includes(hostPort)) {
       refused.push({
         severity: 'blocking',
         code: 'seam-not-wrapped',
         filePath: provider.filePath,
         subject: nameOf(provider),
-        message: `${nameOf(provider)} extends ${seam} but takes no ${seam}. To wrap it, take it: `
-          + `constructor(private inner: ${seam}). To keep rows somewhere new, register a source type instead (Sources.register).`,
+        message: `${nameOf(provider)} extends ${hostPort} but takes no ${hostPort}. To wrap it, take it: `
+          + `constructor(private inner: ${hostPort}). To keep rows somewhere new, register a source type instead (Sources.register).`,
       });
       continue;
     }
-    wrappers.set(seam, [...(wrappers.get(seam) ?? []), provider]);
+    wrappers.set(hostPort, [...(wrappers.get(hostPort) ?? []), provider]);
   }
 
   const bound = new Map<string, ProviderEntry[]>();
@@ -58,7 +58,7 @@ export function seamChains(
 
 /** Put the declared chain in front of an instance the framework holds, and hand back the outermost. */
 export function wrapping<T extends object>(
-  seam: string,
+  hostPort: string,
   links: readonly ProviderEntry[],
   inner: T,
   resolve: (name: string) => unknown,
@@ -67,8 +67,8 @@ export function wrapping<T extends object>(
   // From the INSIDE out, so each link is handed the one it stands in front of — the same
   // order `install.ts` registers a port's chain in, for the same reason.
   for (const link of [...links].reverse()) {
-    const made = link.ctor as unknown as new (...args: unknown[]) => T;
-    current = new made(...link.deps.map((dep) => (dep === seam ? current : resolve(dep))));
+    const Link = link.ctor as unknown as new (...args: unknown[]) => T;
+    current = new Link(...link.deps.map((dep) => (dep === hostPort ? current : resolve(dep))));
   }
 
   return current;
@@ -98,9 +98,9 @@ export function portBindings(
     const wraps = (one: ProviderEntry) => one.deps.includes(port);
     const wrappers = all.filter(wraps);
     const impls = all.filter((one) => !wraps(one));
-    const stated = chosen?.[port];
+    const declared = chosen?.[port];
 
-    bound.set(port, chain(port, impls, wrappers, stated, refused));
+    bound.set(port, chain(port, impls, wrappers, declared, refused));
   }
 
   return bound;
@@ -110,10 +110,10 @@ function chain(
   port: string,
   impls: ProviderEntry[],
   wrappers: ProviderEntry[],
-  stated: string | readonly string[] | undefined,
+  declared: string | readonly string[] | undefined,
   refused: Diagnostic[],
 ): ProviderEntry[] {
-  if (stated !== undefined) return statedChain(port, [...wrappers, ...impls], stated, refused);
+  if (declared !== undefined) return declaredChain(port, [...wrappers, ...impls], declared, refused);
 
   refuseUndecided(port, impls, wrappers, refused);
 
@@ -125,13 +125,13 @@ function chain(
  * answers. What a deployment wraps its realization with is the same kind of decision as which
  * realization it uses, so it is the same key.
  */
-function statedChain(
+function declaredChain(
   port: string,
   all: ProviderEntry[],
-  stated: string | readonly string[],
+  declared: string | readonly string[],
   refused: Diagnostic[],
 ): ProviderEntry[] {
-  const order = typeof stated === 'string' ? [stated] : stated;
+  const order = typeof declared === 'string' ? [declared] : declared;
 
   return order.flatMap((name) => {
     const pick = all.find((one) => nameOf(one) === name);

@@ -27,7 +27,7 @@ export interface RpcCall {
 
 /**
  * The door a process calls another through. The caller is a peer: its state is established by
- * `verify` when it signed, and the call is marked `crossed` so the receiver does not judge again
+ * `verify` when it signed, and the call is marked `fromAnotherProcess` so the receiver does not judge again
  * what the sender's own boundary already judged.
  */
 export function peerDoor(runner: Transport, options: ReceiveOptions = {}): Door<unknown, RpcCall, RpcResponse> {
@@ -70,7 +70,7 @@ export function peerDoor(runner: Transport, options: ReceiveOptions = {}): Door<
           trace: sent.trace,
           ...(sent.runAt === undefined ? {} : { runAt: sent.runAt }),
           ...(caller ? { caller } : {}),
-          crossed: true,
+          fromAnotherProcess: true,
         },
       };
     },
@@ -137,13 +137,13 @@ export function handleRpc(runner: Transport, raw: unknown, options: ReceiveOptio
 }
 
 /**
- * The members a caller may send. `caller` and `crossed` are written by the receiver and never claimed, and
+ * The members a caller may send. `caller` and `fromAnotherProcess` are written by the receiver and never claimed, and
  * a key outside the list is refused by name: `body` used to be dropped, and the call then ran
  * with no input and no validation.
  */
 const SENT = {
   params: true, query: true, input: true, args: true, state: true, trace: true, identity: true, runAt: true, caller: false,
-  crossed: false,
+  fromAnotherProcess: false,
 } satisfies Record<keyof InvocationContext, boolean>;
 
 /** Where a refusal of the envelope itself says which JSON-RPC code it is, rather than an app's. */

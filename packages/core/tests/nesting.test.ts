@@ -17,7 +17,7 @@ import type { FrondDescriptor } from '../src/descriptor/FrondDescriptor.js';
 const family = { cart: { extends: 'shop' } };
 
 const hosted = async (only?: string[]): Promise<Fronds> =>
-  Fronds.hosting(only ? nested.filter((frond) => only.includes(frond.name)) : nested);
+  Fronds.list(only ? nested.filter((frond) => only.includes(frond.name)) : nested);
 
 const codesOf = (refused: { code: string }[]): string[] => refused.map((one) => one.code);
 

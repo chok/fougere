@@ -1,7 +1,7 @@
 import { createLocalRunner, envLevel, identityFromEnv, serves, setLogLevel } from '@fougere/core';
 import { prefixOf } from '@fougere/adapter-rest';
 import { restAnswer } from '@fougere/app/web';
-import { ALIASES, BUILT, loadConfig, registerFrondAliases, remotesOf, statementFileIn } from '@fougere/core/node';
+import { ALIASES, BUILD_DIRECTORY, loadConfig, registerFrondAliases, remotesOf, statementFileIn } from '@fougere/core/node';
 import { readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
@@ -138,9 +138,9 @@ export default class ServeCommand {
 
   /** The project `fougere build` wrote, booted by Node: `@fronds/<name>` resolves through the table it left. */
   protected async hosting(root: string, frond: string): Promise<Hosting | undefined> {
-    const built = resolve(root, BUILT);
+    const built = resolve(root, BUILD_DIRECTORY);
     if (!statementFileIn(built)) {
-      this.ui.error(`Nothing built in ${BUILT}/. Run \`fougere build\` first — or \`fougere dev ${frond}\` to run the sources.`);
+      this.ui.error(`Nothing built in ${BUILD_DIRECTORY}/. Run \`fougere build\` first — or \`fougere dev ${frond}\` to run the sources.`);
 
       return undefined;
     }
