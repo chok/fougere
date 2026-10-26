@@ -1,13 +1,14 @@
 {
   "name": "@fougere/adapter-file",
   "version": "0.26.0-alpha.0",
-  "description": "Rows as files \u2014 one JSON per row, in a directory per entity.",
+  "description": "Rows as files \u2014 one JSON or YAML file per row, in a directory per entity.",
   "keywords": [
     "fougere",
     "typescript",
     "storage",
     "filesystem",
-    "json"
+    "json",
+    "yaml"
   ],
   "license": "MIT",
   "repository": {
@@ -39,7 +40,8 @@
   },
   "dependencies": {
     "@fougere/core": "workspace:*",
-    "@fougere/schema": "workspace:*"
+    "@fougere/schema": "workspace:*",
+    "yaml": "^2.9.0"
   },
   "publishConfig": {
     "access": "public"

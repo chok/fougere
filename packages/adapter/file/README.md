@@ -1,6 +1,6 @@
 # @fougere/adapter-file
 
-> One JSON per row, a directory per entity
+> One file per row, a directory per entity — JSON or YAML
 
 ```ts
 // fougere.config.ts
@@ -18,6 +18,19 @@ export default defineFougere({
 `Snapshot` now reads and writes under `./rows/snapshot/<key>.json`; everything else stays in
 `main`. The storage a handler receives is unchanged — where rows live is a fact about the app,
 not about the code that uses them.
+
+## JSON or YAML
+
+A row is read in the format its extension names — `.json`, `.yaml` or `.yml` — so a directory
+written by hand in YAML answers like one this source wrote. A row already on disk is rewritten
+in its own format; a new one in `format`, `json` when unsaid:
+
+```ts
+archive: { type: 'file', path: './rows', format: 'yaml', entities: ['Snapshot'] },
+```
+
+One key in two formats — `s1.json` beside `s1.yaml` — is two answers to one row, and is
+refused naming both files.
 
 ## What it costs, before you find out
 
@@ -47,7 +60,7 @@ emits a constraint, so a `ref()` across sources costs nothing.
 
 ## Writing your own source
 
-This package is 90 lines, half of them filesystem guards. `storageOver` (`@fougere/core`)
+This package is 135 lines, most of them filesystem guards and the two formats. `storageOver` (`@fougere/core`)
 derives the thirteen gestures of the storage port from four, so a new source supplies where
 rows are and nothing else:
 

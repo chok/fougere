@@ -981,7 +981,7 @@ whoever owns the gesture, so a run covers the whole thing. Pinned by `workflow/t
 
 **The thirteen gestures derive from four** — `core/src/storage/store.ts`, `storageOver(open)` over a
 `Store` (`get`/`has`/`set`/`delete`/`all`/`client`). `adapter/memory` is 25 lines and
-`adapter/file` 90. `transacted` is deliberately not in the frame: a unit of work belongs to
+`adapter/file` 135, two formats included. `transacted` is deliberately not in the frame: a unit of work belongs to
 an engine that has one. `all()` reading everything is what bounds a file source.
 
 **Prefab ops** — `Crud(Post)` gives the five typed CRUD ops. `Crud(Post, { list: PostCard })`
