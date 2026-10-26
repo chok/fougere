@@ -126,6 +126,7 @@ packages/
     rest/              @fougere/adapter-rest      REST projection
     duckdb/            @fougere/adapter-duckdb    one SQL query across `sources:`
     memory/            @fougere/adapter-memory    rows in a Map — and the boot's fallback
+    env/               @fougere/adapter-env       the process environment, read as values — never written
     file/              @fougere/adapter-file      one JSON per row, a directory per entity
 
   app/                                        the front-end

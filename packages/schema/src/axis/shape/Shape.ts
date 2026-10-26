@@ -171,23 +171,36 @@ export class Shapes {
   }
 
   /**
-   * A value that came in as text — a form control, a command-line flag — read as the shape
-   * declares it. What does not read that way stays as it came, for the judge to refuse by name.
-   * `fromText({ type: 'integer' }, '12')` → `12`, and `fromText({ type: 'integer' }, 'abc')` → `'abc'`
+   * A value that came in as text — a form control, a command-line flag, a variable of the
+   * environment — read as the shape declares it. What does not read that way stays as it came,
+   * for the judge to refuse by name.
+   * `fromText({ type: 'integer' }, '12')` → `12`, `fromText({ type: 'boolean' }, '0')` → `false`,
+   * `fromText({ type: 'array' }, '["a"]')` → `['a']`, and `fromText({ type: 'integer' }, 'abc')` → `'abc'`
    */
   static fromText(shape: Shape | undefined, value: unknown): unknown {
     const type = this.of(shape).base?.type;
+    if (typeof value !== 'string' || value.trim() === '') return value;
 
-    if (
-      (type !== 'number' && type !== 'integer') ||
-      typeof value !== 'string' ||
-      value === ''
-    )
-      return value;
+    if (type === 'number' || type === 'integer') {
+      const number = Number(value);
 
-    const number = Number(value);
+      return Number.isFinite(number) ? number : value;
+    }
+    if (type === 'boolean') return Shapes.BOOLEANS[value] ?? value;
+    if (type === 'object' || type === 'array') return Shapes.json(value);
 
-    return Number.isFinite(number) ? number : value;
+    return value;
+  }
+
+  /** The words a boolean is written in as text. */
+  private static readonly BOOLEANS: Readonly<Record<string, boolean>> = { true: true, false: false, 1: true, 0: false };
+
+  private static json(text: string): unknown {
+    try {
+      return JSON.parse(text);
+    } catch {
+      return text;
+    }
   }
 
   /**

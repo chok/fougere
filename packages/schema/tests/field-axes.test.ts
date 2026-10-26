@@ -271,6 +271,15 @@ describe('Shapes.fromText — what a form or a flag hands back is text', () => {
     expect(Shapes.fromText({ type: 'integer' }, '')).toBe('');
   });
 
+  it('reads a boolean in its four words, and JSON where the shape is an object or a list', () => {
+    expect(Shapes.fromText({ type: 'boolean' }, 'true')).toBe(true);
+    expect(Shapes.fromText({ type: 'boolean' }, '0')).toBe(false);
+    expect(Shapes.fromText({ type: 'boolean' }, 'yes')).toBe('yes');
+    expect(Shapes.fromText({ type: 'array' }, '["a",1]')).toEqual(['a', 1]);
+    expect(Shapes.fromText({ type: 'object' }, '{"a":1}')).toEqual({ a: 1 });
+    expect(Shapes.fromText({ type: 'object' }, '{a')).toBe('{a');
+  });
+
   it('touches nothing the shape does not declare a number', () => {
     expect(Shapes.fromText({ type: 'string' }, '12')).toBe('12');
     expect(Shapes.fromText({ type: 'integer' }, 12)).toBe(12);

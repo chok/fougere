@@ -1,4 +1,4 @@
-import { FieldValueValidator, InputRefusal, type SchemaView } from '@fougere/schema';
+import { FieldValueValidator, InputRefusal, Shapes, type SchemaView, type Shape } from '@fougere/schema';
 import type { InvocationContext } from '../wire/InvocationContext.js';
 import type { BindingPlan } from '../wire/binding.js';
 import { ErrorCode } from '../wire/ErrorCode.js';
@@ -123,11 +123,14 @@ export class ArgumentResolver {
     }
     if (value === null || coerce === undefined) return value;
 
-    const coerced = coerce === 'number' ? ArgumentResolver.number(value) : ArgumentResolver.boolean(value);
-    if (coerced === undefined) throw refused(name, `Expected a ${coerce}, got ${JSON.stringify(value)}`);
+    const coerced = Shapes.fromText(ArgumentResolver.SHAPES[coerce], value);
+    if (typeof coerced !== coerce) throw refused(name, `Expected a ${coerce}, got ${JSON.stringify(value)}`);
 
     return coerced;
   }
+
+  /** What a parameter typed `number` or `boolean` is read as, when it arrives as text. */
+  private static readonly SHAPES = { number: { type: 'number' }, boolean: { type: 'boolean' } } as const satisfies Record<string, Shape>;
 
   /** `age: Sample['age']` obeys what `Sample.age` declares, after the query string was read. */
   private validatedByField(source: ParamSource, value: unknown): unknown {
@@ -142,20 +145,6 @@ export class ArgumentResolver {
     return parsed.value;
   }
 
-  private static number(value: unknown): number | undefined {
-    if (typeof value === 'number') return Number.isNaN(value) ? undefined : value;
-    if (typeof value !== 'string' || value.trim() === '') return undefined;
-    const parsed = Number(value);
-
-    return Number.isNaN(parsed) ? undefined : parsed;
-  }
-
-  private static boolean(value: unknown): boolean | undefined {
-    if (value === true || value === 'true' || value === '1') return true;
-    if (value === false || value === 'false' || value === '0') return false;
-
-    return undefined;
-  }
 }
 
 function refused(name: string, message: string): FougereError {
