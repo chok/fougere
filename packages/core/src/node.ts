@@ -1,6 +1,6 @@
 /** What Fougere does with a filesystem, minus the scan — that is `@fougere/compiler`. */
 export { setModuleLoader, getModuleLoader, type ModuleLoader } from './loader.js';
-export { BUILD_DIRECTORY, configFileIn, statementFileIn, loadConfig, loadCascadedConfig, projectRootOf, remotesOf } from './FougereConfig.js';
+export { BUILD_DIRECTORY, configFileIn, statementFileIn, loadConfig, loadNearestConfig, configFileNear, projectRootOf, remotesOf } from './FougereConfig.js';
 export { configModules } from './ConfigModules.js';
 export { defineFrond, frondConfigFileIn, loadFrondConfig } from './FrondConfig.js';
 

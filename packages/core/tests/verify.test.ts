@@ -79,7 +79,7 @@ describe('verify — cross-frond dependency', () => {
 
   it('leaves builtins alone — they are registered in the root, not in a frond', () => {
     const app = {
-      fronds: [frond('blog', { handlers: [handler(PostHandler, 'post', ['Logger', 'Config'])] })],
+      fronds: [frond('blog', { handlers: [handler(PostHandler, 'post', ['Logger'])] })],
     };
 
     expect(verify(app)).toEqual([]);

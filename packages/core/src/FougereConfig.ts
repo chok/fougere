@@ -6,7 +6,7 @@ import type { SourceConfig } from './SourceConfig.js';
 import type { PortChoice } from './PortChoice.js';
 import { getModuleLoader } from './loader.js';
 import type { ProtocolConfig } from './Protocol.js';
-import { mergeFrondEntries, statesModule, type FrondEntries } from './FrondEntries.js';
+import { statesModule, type FrondEntries } from './FrondEntries.js';
 import { keyedFrondEntries } from './KeyedFrondEntry.js';
 import { DEFAULT_CONVENTIONS } from './Conventions.js';
 import type { StateEntry } from './FougereStates.js';
@@ -105,26 +105,20 @@ export function remotesOf(config: FougereConfig): Record<string, string> {
   return addresses;
 }
 
-// ── Merging ──────────────────────────────────────
-
 /**
- * Override a config with another, the invariant of every cascade level: scalar keys replace, but
- * the one that says what this app is made of MERGES — an override adds or redirects a frond
- * without erasing the others.
+ * The config an app reads: the nearest file, from `dir` up. Its host's own options override it,
+ * and nothing else does — a workspace's file and an app's are never folded into one.
  */
-function mergeGlobal(base: FougereConfig, override: Partial<FougereConfig>): FougereConfig {
-  const merged: FougereConfig = { ...base, ...override };
-  if (base.fronds || override.fronds) {
-    merged.fronds = mergeFrondEntries(base.fronds ?? {}, override.fronds ?? {});
-  }
+export async function loadNearestConfig(dir: string): Promise<FougereConfig> {
+  const file = configFileNear(dir);
 
-  return merged;
+  return file === undefined ? {} : loadConfig(dirname(file));
 }
 
-/** Load config along the workspace→app frontier. */
-export async function loadCascadedConfig(workspaceRoot: string, appRoot: string): Promise<FougereConfig> {
-  const base = await loadConfig(workspaceRoot);
-  if (resolve(workspaceRoot) === resolve(appRoot)) return base;
-
-  return mergeGlobal(base, await loadConfig(appRoot));
+/** The nearest config file, from `dir` up — what an app reads. */
+export function configFileNear(dir: string): string | undefined {
+  for (let at = resolve(dir); ; at = dirname(at)) {
+    const file = configFileIn(at);
+    if (file !== undefined || dirname(at) === at) return file;
+  }
 }

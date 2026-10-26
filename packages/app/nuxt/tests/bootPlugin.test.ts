@@ -50,7 +50,7 @@ describe('generateBootPlugin — sources pass through', () => {
       [],
       undefined,
       '/w',
-      [],
+      undefined,
       null,
     );
 
@@ -234,18 +234,17 @@ describe('extensionsOf', () => {
     it('is handed over as the config file wrote it, since its options may hold a class', () => {
       const out = generateBootPlugin(
         { sources: { main: {} } } as unknown as FougereConfig, [], '/app/boot', [], undefined, undefined,
-        ['/app/fougere.config.ts', '/workspace/fougere.config.ts']);
+        '/app/fougere.config.ts');
 
-      expect(out).toContain("import config_0 from '/app/fougere.config';");
-      expect(out).toContain("import config_1 from '/workspace/fougere.config';");
-      expect(out).toContain('fronds: (config_0.fronds ?? config_1.fronds) }');
+      expect(out).toContain("import config from '/app/fougere.config';");
+      expect(out).toContain('fronds: config.fronds }');
     });
 
     it('is handed over even when the app declares no storage', () => {
       const out = generateBootPlugin(
-        {} as FougereConfig, [], '/app/boot', [], undefined, undefined, ['/app/fougere.config.ts']);
+        {} as FougereConfig, [], '/app/boot', [], undefined, undefined, '/app/fougere.config.ts');
 
-      expect(out).toContain('fronds: (config_0.fronds) }');
+      expect(out).toContain('fronds: config.fronds }');
     });
   });
 });

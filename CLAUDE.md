@@ -82,7 +82,7 @@ packages/
     src/wire/            what travels, and the values a call is made of: Call, Invocation, RouteAddress, Emit,
                          CallLog, the operation contract, its signature and binding plan, errors, middleware
     src/prefab/          what a user declares: Crud, Presenter, Collector, Repository, Mirror
-    src/builtin/         what every app has without asking: the logger, the config service
+    src/builtin/         what every app has without asking: the logger
     src/crypto/          one port, two realizations — node and webcrypto
     src/entry/           the three ways in, in two files: facade.ts holds the facade and its dynamic
                          form, transport.ts the transport

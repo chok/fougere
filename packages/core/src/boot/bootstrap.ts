@@ -37,7 +37,6 @@ import type { LogRecord } from '../builtin/LogRecord.js';
 import LogLine, { CARRIES_LINE, LOG_LINE } from '../builtin/LogLine.js';
 import { emitKeyOf, listens, type Emit } from '../wire/Emit.js';
 
-import { Config } from '../builtin/config.js';
 import { createRemoteRouter, createRemoteFacade, type RemoteRouter } from './remote.js';
 
 import { Emissions } from '../module/fact/Emissions.js';
@@ -289,7 +288,6 @@ function whatTheAppKnows(
  */
 function registerBuiltins(container: Container, lineBuffer: LineBuffer): void {
   container.registerValue('Logger', new Logger('app', { lineBuffer, during: operation.current }));
-  container.register('Config', Config, { lifetime: 'singleton' });
 }
 
 /** `remotes:` IS the topology statement: the frond's code may sit here, it runs elsewhere. */
@@ -441,7 +439,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
   try {
     const log = new Logger('boot:app', { lineBuffer });
     registerBuiltins(container, lineBuffer);
-    log.debug('builtins registered (Logger, Config)');
+    log.debug('builtins registered (Logger)');
 
     const declaredState = States.declared(options.state);
     const { fronds, operationModel } = await readFronds(options, log, keeperFronds(declaredState));

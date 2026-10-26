@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { statesModule, mergeFrondEntries } from '../src/FrondEntries.js';
+import { statesModule } from '../src/FrondEntries.js';
 import { keyedFrondEntries } from '../src/KeyedFrondEntry.js';
 import { remotesOf } from '../src/FougereConfig.js';
 

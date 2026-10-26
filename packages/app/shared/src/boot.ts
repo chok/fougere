@@ -3,7 +3,7 @@ import { resolve, sep } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { applyConfig, createApp, Logger, migrating } from '@fougere/core';
 import { resolveConventions } from '@fougere/core';
-import { frondAliases, loadCascadedConfig, remotesOf, setModuleLoader, configModules } from '@fougere/core/node';
+import { frondAliases, loadNearestConfig, remotesOf, setModuleLoader, configModules } from '@fougere/core/node';
 
 import type { App, CreateAppOptions, FougereConfig, Transport } from '@fougere/core';
 import { layerOf, remoteTransport, statementOf, type ResolvedStorage, type Statement } from '@fougere/defaults';
@@ -88,12 +88,8 @@ async function readConfig(): Promise<FougereConfig> {
   // The config names the scope the aliases are built from, so reading it must not need them.
   // Nothing in `fougere.config.ts` may import `@fronds/*`.
   await installLoader();
-  // Config cascades along the workspace→app frontier: the workspace root (via
-  // FOUGERE_ROOT, where `remotes`/shared db live) is the base, the app (cwd)
-  // overrides. Same boundary the fronds cascade along. No `root` → both equal.
-  const configRoot = process.cwd();
-
-  return loadCascadedConfig(process.env.FOUGERE_ROOT ?? configRoot, configRoot);
+  // The nearest file, up from where the app runs — the app's own when it writes one.
+  return loadNearestConfig(process.cwd());
 }
 
 /**

@@ -592,6 +592,9 @@ importers:
 
   demos/emit-fleet:
     dependencies:
+      '@fougere/adapter-env':
+        specifier: workspace:*
+        version: link:../../packages/adapter/env
       '@fougere/compiler':
         specifier: workspace:*
         version: link:../../packages/compiler
@@ -781,6 +784,9 @@ importers:
 
   demos/mirror-catalog:
     dependencies:
+      '@fougere/adapter-env':
+        specifier: workspace:*
+        version: link:../../packages/adapter/env
       '@fougere/adapter-sql':
         specifier: workspace:*
         version: link:../../packages/adapter/sql

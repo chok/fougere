@@ -1,6 +1,7 @@
 import type { Emit, Fact } from '@fougere/core';
 import type Reading from '@fronds/fleet/entities/Reading.js';
 import type Recalibrate from '@fronds/fleet/entities/Recalibrate.js';
+import type Node from '../entities/Node.js';
 
 /**
  * A device. It announces its readings and listens for orders, and it names no hub.
@@ -11,7 +12,7 @@ import type Recalibrate from '@fronds/fleet/entities/Recalibrate.js';
 export default class SensorHandler {
   private offset = 0;
 
-  constructor(private reading: Emit<Reading>) {}
+  constructor(private reading: Emit<Reading>, private node: Node) {}
 
   /** Take a measurement and announce it. */
   async recordReading(node: string): Promise<void> {
@@ -21,7 +22,7 @@ export default class SensorHandler {
 
   /** Apply a recalibration — if it is for us. The filter is data, not addressing. */
   async apply(fact: Fact<Recalibrate>): Promise<void> {
-    const me = process.env.NODE_ID ?? 'sensor-?';
+    const me = this.node.id;
     if (fact.node && fact.node !== me) {
       console.log(`\x1b[2m  [${me}] recalibration for ${fact.node} — not mine\x1b[0m`);
 

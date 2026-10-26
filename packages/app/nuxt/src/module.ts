@@ -14,7 +14,7 @@ import type { Nuxt } from '@nuxt/schema';
 import { Fronds, orderSeeds, serves, type ScanResult } from '@fougere/core';
 import { prefixOf } from '@fougere/app';
 import { frondPackage, resolveConventions, keyedFrondEntries, statesModule, type Conventions } from '@fougere/core';
-import { emitFacade, emitNames, frondAliases, frondNamesOf, REMOTES, configFileIn, statementFileIn, statementIn, setModuleLoader, loadCascadedConfig, projectRootOf, remotesOf } from '@fougere/core/node';
+import { emitFacade, emitNames, frondAliases, frondNamesOf, REMOTES, statementFileIn, statementIn, setModuleLoader, loadNearestConfig, configFileNear, projectRootOf, remotesOf } from '@fougere/core/node';
 import { declaresStorage } from '@fougere/defaults';
 import type { SeedEntry, FougereConfig } from '@fougere/core';
 import { createJiti } from 'jiti';
@@ -124,9 +124,8 @@ const module = defineNuxtModule<FougereModuleOptions>({
     };
     installLoader();
 
-    // ── 0b. Load fougere.config.ts along the workspace→app cascade (scanRoot is
-    //        the workspace when the app declares `root`); module options override. ──
-    const fileConfig = await loadCascadedConfig(scanRoot, rootDir);
+    // ── 0b. Load the nearest fougere.config.ts, up from the app; module options override. ──
+    const fileConfig = await loadNearestConfig(rootDir);
     const optionsOverride = Object.fromEntries(
       Object.entries(options).filter(([, v]) => v !== undefined),
     ) as Partial<FougereConfig>;
@@ -357,10 +356,11 @@ const module = defineNuxtModule<FougereModuleOptions>({
     // Planted by the plugin when the scan found them; a stated `fronds.ts` carries its own.
     const { ordered, cycle } = frondsFile ? { ordered: [], cycle: [] } : orderSeeds(fronds);
     const allSeeds = [...ordered, ...cycle];
+    const configFile = configFileNear(rootDir);
     const bootTpl = addTemplate({
       filename: 'fougere-boot.ts',
       write: true,
-      getContents: () => generateBootPlugin(config, allSeeds, runtimeResolve('server/utils/boot'), extensionsOf(options), statedPath, scanRoot, config.fronds || config.sources ? configFilesOf(rootDir, scanRoot) : [], nuxt.options.dev ? scanRoot : null),
+      getContents: () => generateBootPlugin(config, allSeeds, runtimeResolve('server/utils/boot'), extensionsOf(options), statedPath, scanRoot, config.fronds || config.sources ? configFile : undefined, nuxt.options.dev ? scanRoot : null),
     });
     addServerPlugin(bootTpl.dst);
 
@@ -388,10 +388,6 @@ function carried(config: FougereConfig): Partial<FougereConfig> {
   } as Partial<FougereConfig>;
 }
 
-/** The cascade's config files, the app's first — the order `loadCascadedConfig` reads them in. */
-function configFilesOf(rootDir: string, scanRoot: string): string[] {
-  return [...new Set([rootDir, scanRoot])].flatMap((dir) => configFileIn(dir) ?? []);
-}
 
 /**
  * The entity names a SYNCED remote brought in — `fougere sync` writes the classes under
@@ -452,11 +448,11 @@ export function generateBootPlugin(
    */
   root?: string,
   /**
-   * The config files `fronds:` may come from, the app's first. A module key's options may hold
-   * a class — `user: User` for `@fougere/auth-better` — which the config's JSON cannot carry,
-   * so the plugin imports the file and hands its `fronds` over as written.
+   * The config file `fronds:` comes from. A module key's options may hold a class — `user: User`
+   * for `@fougere/auth-better` — which the config's JSON cannot carry, so the plugin imports the
+   * file and hands its `fronds` over as written.
    */
-  configFiles: readonly string[] = [],
+  configFile?: string,
   /**
    * Where a relative source path counts from at runtime — `root` in dev, and `null` for a build:
    * a build runs elsewhere (`/app` in an image, where `/repo/site` does not exist), and its
@@ -478,9 +474,8 @@ export function generateBootPlugin(
   // 500. Measured both ways on demos/nuxt-blog, in-process.
   // The namespace too: a statement exports `vocabulary` only when the project has terms.
   if (statedPath) lines.push(`import fronds, * as statement from '${statedPath.replace(/\.(m?)[jt]sx?$/, '')}';`);
-  configFiles.forEach((file, i) => lines.push(`import config_${i} from '${file.replace(/\.(m?)[jt]sx?$/, '')}';`));
-  const stated = configFiles.length > 0 ? `(${configFiles.map((_, i) => `config_${i}.fronds`).join(' ?? ')})` : undefined;
-  const configArg = stated ? `{ ...${JSON.stringify(carried(config))}, fronds: ${stated} }` : JSON.stringify(carried(config));
+  if (configFile) lines.push(`import config from '${configFile.replace(/\.(m?)[jt]sx?$/, '')}';`);
+  const configArg = configFile ? `{ ...${JSON.stringify(carried(config))}, fronds: config.fronds }` : JSON.stringify(carried(config));
 
   // A module key is imported by the BUNDLE, like a seed: nothing resolves a specifier once the
   // app is built, and the loader core falls back to looks from its own directory.

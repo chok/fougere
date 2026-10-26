@@ -9,7 +9,8 @@
  */
 import { connect, type Socket } from 'node:net';
 import { createApp, createLocalRunner } from '@fougere/core';
-import { statementOf } from '@fougere/defaults';
+import { layerOf, resolveStorage, statementOf } from '@fougere/defaults';
+import '@fougere/adapter-env';
 import { frondAliases, setModuleLoader } from '@fougere/core/node';
 import type { App } from '@fougere/core';
 import { createContainer } from '@fougere/container';
@@ -31,6 +32,8 @@ async function main() {
   const app: App = await createApp({
     ...(await statementOf(import.meta.dirname, { only: ['fleet', 'node'] })),
     createContainer,
+    // Which device this is, read from NODE_ID as the `Node` value the handler asks for.
+    ...layerOf(resolveStorage({ env: { type: 'env', values: ['Node'] } })),
     // Upward, on the very socket the device opened. A NAT lets nothing in; it lets this out.
     onEmit: (fact, payload) => { live?.write(`${JSON.stringify({ fact, payload })}\n`); },
   });

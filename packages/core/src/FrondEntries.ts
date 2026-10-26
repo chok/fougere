@@ -53,22 +53,3 @@ export interface FrondAttributes {
 export function statesModule(key: string): boolean {
   return key.includes('/') || key.startsWith('.');
 }
-
-/**
- * Two levels of the cascade, folded. An entry merges by attribute, so an app naming a frond's
- * address keeps the `extends` the workspace gave it — and an app naming a different `extends`
- * replaces it, silently, the way every scalar key of this config replaces.
- */
-export function mergeFrondEntries(base: FrondEntries, override: FrondEntries): FrondEntries {
-  const merged: Record<string, FrondEntry> = { ...base } as Record<string, FrondEntry>;
-  for (const [key, value] of Object.entries(override)) {
-    if (value === undefined) continue;
-
-    const mine = merged[key];
-    merged[key] = typeof value === 'string' || typeof mine === 'string' || mine === undefined
-      ? value
-      : { ...mine, ...value };
-  }
-
-  return merged;
-}

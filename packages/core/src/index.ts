@@ -135,7 +135,6 @@ export type { Rendered } from './builtin/Rendered.js';
 export { default as LogLine, CARRIES_LINE, LOG_LINE } from './builtin/LogLine.js';
 // What a re-read config changes in a running process — and what it cannot.
 export { applyConfig } from './boot/apply.js';
-export { Config } from './builtin/config.js';
 export type { ListOptions } from './storage/ListOptions.js';
 export type { ListResult } from './storage/ListResult.js';
 export type { StorageFactory } from './storage/StorageFactory.js';

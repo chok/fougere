@@ -38,7 +38,6 @@ describe('createApp', () => {
   it('registers builtins', async () => {
     await using app = await createApp({ fronds, createContainer, storageFactory: () => fakeStorage() });
     expect(app.container.has('Logger')).toBe(true);
-    expect(app.container.has('Config')).toBe(true);
   });
 
   it('discovers fronds', async () => {

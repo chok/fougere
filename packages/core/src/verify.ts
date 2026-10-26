@@ -86,7 +86,7 @@ export function verify(app: { fronds: readonly FrondDescriptor[] }): Misplaced[]
     for (const subject of injectablesOf(frond)) {
       for (const dep of subject.deps) {
         const declared = index.get(dep);
-        // Not in the index at all = a builtin (Logger, Config), a
+        // Not in the index at all = a builtin (Logger), a
         // façade key, or an unresolved name. None is a boundary crossing, and
         // an unresolved dependency is the container's complaint, not this rule's.
         if (!declared || declared.frond === frond.name) continue;
