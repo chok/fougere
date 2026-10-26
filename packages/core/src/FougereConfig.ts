@@ -37,7 +37,7 @@ export interface FougereConfig {
   protocols?: ProtocolConfig;
   /**
    * How each name of the caller's state is kept between requests — `{ cart: { cookie: { maxAge:
-   * 604800 } } }` — named here, the way to keep it fromExtension by an import (`@fougere/state-cookie`).
+   * 604800 } } }` — named here, the way to keep it brought by an import (`@fougere/state-cookie`).
    */
   state?: Record<string, StateEntry>;
 }
