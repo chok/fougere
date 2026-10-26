@@ -21,7 +21,7 @@
     "@fougere/cli": "latest",
     "@fougere/testing": "latest",
     "@types/node": "^22.19.15",
-    "typescript": "^5.9.3",
+    "typescript": "^6.0.3",
     "vitest": "^4.1.0"
   }
 }
