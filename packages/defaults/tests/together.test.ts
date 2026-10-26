@@ -32,7 +32,7 @@ async function boot(split: boolean) {
   const storage = storageFrom(split
     ? {
       main: { source: createSqliteSource({ path: join(dir, 'app.db') }) },
-      accounting: { source: createSqliteSource({ path: join(dir, 'accounting.db') }), entities: ['Ledger'] },
+      accounting: { source: createSqliteSource({ path: join(dir, 'accounting.db') }), rows: ['Ledger'] },
     }
     : { main: { source: createSqliteSource({ path: join(dir, 'app.db') }) } });
 

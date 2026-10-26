@@ -27,7 +27,7 @@ export interface CreateAppOptions {
    * questions that decide whether `Together<[…]>` gets the engine's own unwind or replays inverses
    * itself.
    */
-  sourceOf?: (entityName: string) => string;
+  sourceOf?: (entityName: string) => string | undefined;
   transacts?: (source: string) => boolean;
   transacted?: <R>(source: string, fn: (storageFactory: StorageFactory) => Promise<R>) => Promise<R>;
   /**

@@ -196,7 +196,7 @@ async function world(placement: Placement): Promise<World> {
   const storage = storageFrom(placement.split
     ? {
       main: { source: createSqliteSource({ path: join(dir, 'app.db') }) },
-      archive: { source: createSqliteSource({ path: join(dir, 'archive.db') }), entities: ['Article'] },
+      archive: { source: createSqliteSource({ path: join(dir, 'archive.db') }), rows: ['Article'] },
     }
     : { main: { source: createSqliteSource({ path: join(dir, 'app.db') }) } });
   const layer = layerOf(storage);

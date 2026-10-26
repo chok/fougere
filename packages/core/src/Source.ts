@@ -42,6 +42,8 @@ export interface Source {
 /** A source type: what its entry admits, and how a place is opened from one. */
 export interface SourceType<Entry = any> {
   readonly format: Format<Entry>;
+  /** Nothing is written there — which is why it never holds the rest. */
+  readonly readOnly?: true;
   open(entry: Entry): Source;
 }
 

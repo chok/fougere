@@ -10,7 +10,7 @@ import '@fougere/adapter-file';
 export default defineFougere({
   sources: {
     main: { type: 'sqlite', path: '.data/app.db' },
-    archive: { type: 'file', path: './rows', entities: ['Snapshot'] },
+    archive: { type: 'file', path: './rows', rows: ['Snapshot'] },
   },
 });
 ```
@@ -26,7 +26,7 @@ written by hand in YAML answers like one this source wrote. A row already on dis
 in its own format; a new one in `format`, `json` when unsaid:
 
 ```ts
-archive: { type: 'file', path: './rows', format: 'yaml', entities: ['Snapshot'] },
+archive: { type: 'file', path: './rows', format: 'yaml', rows: ['Snapshot'] },
 ```
 
 One key in two formats — `s1.json` beside `s1.yaml` — is two answers to one row, and is

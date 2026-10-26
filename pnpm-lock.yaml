@@ -1695,6 +1695,9 @@ importers:
       '@fougere/adapter-sql':
         specifier: workspace:*
         version: link:../sql
+      '@fougere/core':
+        specifier: workspace:*
+        version: link:../../core
       '@fougere/schema':
         specifier: workspace:*
         version: link:../../schema

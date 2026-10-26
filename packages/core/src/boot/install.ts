@@ -283,7 +283,12 @@ function registerStorages(
   const release = releasing(assembly.rowHosts);
   for (const entity of frond.entities) {
     const key = storageKeyOf(entity.name);
-    const source = options.sourceOf?.(entity.name) ?? 'default';
+    const placed = options.sourceOf?.(entity.name);
+    if (options.sourceOf && placed === undefined) {
+      refused.push(sourceMissing(frond, entity));
+      continue;
+    }
+    const source = placed ?? 'default';
     if (declares(entity.entityClass, 'unique') && options.enforces?.(source, 'unique') === false) {
       unenforced.push(`${entity.name} in '${source}'`);
     }
@@ -335,6 +340,19 @@ function registerStorages(
       `${unenforced.join(', ')}: unique, but this source does not enforce it, so two writes at the same moment can both pass.`,
     );
   }
+}
+
+/** The sources list where rows live, and none names this entity nor holds the rest. */
+function sourceMissing(frond: FrondDescriptor, entity: FrondDescriptor['entities'][number]): Diagnostic {
+  return {
+    severity: 'blocking',
+    code: 'source-missing',
+    frond: frond.name,
+    subject: entity.name,
+    filePath: entity.filePath,
+    message: `${entity.name} lives in no source: every entry of sources: lists its rows, so none holds the rest. `
+      + `Add '${entity.name}' to the rows: of one, or give one source no rows: list.`,
+  };
 }
 
 /**

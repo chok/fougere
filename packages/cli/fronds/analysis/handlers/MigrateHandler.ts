@@ -177,7 +177,7 @@ function versionsOf(steps: readonly { version: string }[]): string[] {
 }
 
 /** The part of a step whose entities live on one engine. */
-function onSource(step: SetDiff, source: string, sourceOf: (entity: string) => string): SetDiff {
+function onSource(step: SetDiff, source: string, sourceOf: (entity: string) => string | undefined): SetDiff {
   return {
     ...step,
     entities: Object.fromEntries(Object.entries(step.entities).filter(([entity]) => sourceOf(entity) === source)),

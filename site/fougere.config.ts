@@ -11,7 +11,7 @@ export default defineFougere({
   sources: {
     main: { type: 'sqlite', path: '.data/site.db' },
     // Posts are files in git: written locally, committed, and read by the static build.
-    posts: { type: 'file', path: 'posts', entities: ['Post'] },
+    posts: { type: 'file', path: 'posts', rows: ['Post'] },
   },
   fronds: {
     // A frond like any other: `only:` or an address decides which process starts its engine.

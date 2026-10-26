@@ -60,13 +60,13 @@ describe('generateBootPlugin — sources pass through', () => {
   it('carries a second source through — where a row lives is not the host\u2019s business either', () => {
     const out = generateBootPlugin(
       {
-        sources: { main: {}, archive: { type: 'sqlite', path: '.data/archive.db', entities: ['Book'] } },
+        sources: { main: {}, archive: { type: 'sqlite', path: '.data/archive.db', rows: ['Book'] } },
       } as unknown as FougereConfig,
       [],
       '@fougere/nuxt/fougereApp',
     );
 
-    expect(out).toContain('resolveStorage({"main":{},"archive":{"type":"sqlite","path":".data/archive.db","entities":["Book"]}})');
+    expect(out).toContain('resolveStorage({"main":{},"archive":{"type":"sqlite","path":".data/archive.db","rows":["Book"]}})');
   });
 
   /**

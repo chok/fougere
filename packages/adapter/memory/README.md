@@ -10,7 +10,7 @@ and the engine is not.
 import '@fougere/adapter-memory';
 
 export default defineFougere({
-  sources: { cache: { type: 'memory', entities: ['Draft'] } },
+  sources: { cache: { type: 'memory', rows: ['Draft'] } },
 });
 ```
 

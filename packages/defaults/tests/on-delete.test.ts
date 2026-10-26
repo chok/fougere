@@ -87,7 +87,7 @@ async function bench({ together = false, split = false, apart = false }: Placeme
   const storage = storageFrom(split
     ? {
       main: { source: createSqliteSource({ path: join(dir, 'app.db') }) },
-      archive: { source: createSqliteSource({ path: join(dir, 'archive.db') }), entities: ['Comment'] },
+      archive: { source: createSqliteSource({ path: join(dir, 'archive.db') }), rows: ['Comment'] },
     }
     : { main: { source: createSqliteSource({ path: join(dir, 'app.db') }) } });
 

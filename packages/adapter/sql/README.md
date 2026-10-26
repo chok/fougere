@@ -20,7 +20,7 @@ import '@fougere/adapter-sql';
 export default defineFougere({
   sources: {
     main: { type: 'sqlite', path: '.data/app.db' },
-    legacy: { type: 'pg', url: process.env.LEGACY, entities: ['Book'] },
+    legacy: { type: 'pg', url: process.env.LEGACY, rows: ['Book'] },
   },
 });
 ```

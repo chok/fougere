@@ -26,7 +26,7 @@ export interface FrameWorld {
   frondOf: Map<string, string>;
   hostedHere: (frond: string) => boolean;
   storageFactory?: StorageFactory;
-  sourceOf?: (entityName: string) => string;
+  sourceOf?: (entityName: string) => string | undefined;
   /** Whether that source hands one out — asked before the frame is built, not at the call. */
   transacts?: (source: string) => boolean;
   transacted?: <R>(source: string, fn: (storageFactory: StorageFactory) => Promise<R>) => Promise<R>;

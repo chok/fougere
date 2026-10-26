@@ -24,8 +24,8 @@ describe('no source declared', () => {
 });
 
 describe('the default source', () => {
-  it('is the one entry listing no entities, and two of them refuse naming both', () => {
+  it('is the one writable entry listing no rows, and two of them refuse naming both', () => {
     expect(() => resolveStorage({ main: { type: 'memory' }, other: { type: 'memory' } } as never))
-      .toThrow(/'main' and 'other' list no entities/);
+      .toThrow(/'main' and 'other' list no rows/);
   });
 });

@@ -25,7 +25,7 @@ export interface Hosted {
   options: {
     remotes?: Record<string, string>;
     remoteTransport?: (url: string) => Transport;
-    sourceOf?: (entityName: string) => string;
+    sourceOf?: (entityName: string) => string | undefined;
     enforces?: (source: string, constraint: Constraint) => boolean;
   };
   remoteRouter: Routing | undefined;

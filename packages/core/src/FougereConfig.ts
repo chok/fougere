@@ -13,8 +13,8 @@ import type { StateEntry } from './FougereStates.js';
 
 export interface FougereConfig {
   /**
-   * Where rows live — a name, a type and what it admits, and the entities it holds. The one entry
-   * listing no entities is the default source; none at all keeps the rows in memory.
+   * Where entities live — a name, a type and what it admits, then `rows:` and `values:`. The one
+   * writable entry with no `rows:` is the default source; no source holding rows keeps them in memory.
    */
   sources?: Record<string, SourceConfig>;
   /**

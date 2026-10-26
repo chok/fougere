@@ -70,7 +70,7 @@ describe('resolveStorage with a second source', () => {
     try {
       const storage = resolveStorage({
         main: { type: 'sqlite', path: join(dir, 'main.db') },
-        archive: { type: 'sqlite', path: join(dir, 'archive.db'), entities: ['Book'] },
+        archive: { type: 'sqlite', path: join(dir, 'archive.db'), rows: ['Book'] },
       });
       await storage.migrate!(app as never);
 
@@ -98,8 +98,8 @@ describe('resolveStorage with a second source', () => {
   it('refuses an entity two sources claim, naming both', () => {
     expect(() => resolveStorage({
       main: { type: 'sqlite', path: ':memory:' },
-      archive: { type: 'sqlite', path: ':memory:', entities: ['Book'] },
-      cold: { type: 'sqlite', path: ':memory:', entities: ['Book'] },
+      archive: { type: 'sqlite', path: ':memory:', rows: ['Book'] },
+      cold: { type: 'sqlite', path: ':memory:', rows: ['Book'] },
     })).toThrow(/is listed in both 'archive' and 'cold'/);
   });
 
@@ -107,14 +107,14 @@ describe('resolveStorage with a second source', () => {
     // The format lives in `adapter/sql`, the only one that knows what a pg entry needs.
     expect(() => resolveStorage({
       main: { type: 'sqlite', path: ':memory:' },
-      legacy: { type: 'pg', entities: ['Book'] } as never,
+      legacy: { type: 'pg', rows: ['Book'] } as never,
     })).toThrow(/sources\.legacy.*url/);
   });
 
   it('refuses a type nothing answers, listing what does', () => {
     expect(() => resolveStorage({
       main: { type: 'sqlite', path: ':memory:' },
-      archive: { type: 'redis', entities: ['Book'] } as never,
+      archive: { type: 'redis', rows: ['Book'] } as never,
     })).toThrow(/sources\.archive\.type: Unknown source type 'redis'.*sqlite/s);
   });
 
@@ -136,7 +136,7 @@ describe('storageFrom — an engine the caller built', () => {
     );
     const storage = storageFrom({
       main: { source: createSqliteSource({ path: ':memory:' }) },
-      archive: { source: archive, entities: ['Book'] },
+      archive: { source: archive, rows: ['Book'] },
     });
 
     await storage.migrate!(app as never);
@@ -158,7 +158,7 @@ describe('storageFrom — an engine the caller built', () => {
     const nothing = { storageFactory: (() => ({})) as never, name: 'nothing' };
     const split = storageFrom({
       main: { source: nothing },
-      archive: { source: createSqliteSource({ path: ':memory:' }), entities: ['Book'] },
+      archive: { source: createSqliteSource({ path: ':memory:' }), rows: ['Book'] },
     });
 
     expect(split.transacts!('archive')).toBe(true);
@@ -166,7 +166,7 @@ describe('storageFrom — an engine the caller built', () => {
 
     const other = storageFrom({
       main: { source: createSqliteSource({ path: ':memory:' }) },
-      cold: { source: nothing, entities: ['Book'] },
+      cold: { source: nothing, rows: ['Book'] },
     });
 
     expect(other.transacts!('main')).toBe(true);
@@ -180,18 +180,59 @@ describe('storageFrom — an engine the caller built', () => {
     const nothing = { storageFactory: (() => ({})) as never, name: 'nothing' };
     const split = storageFrom({
       main: { source: nothing },
-      archive: { source: createSqliteSource({ path: ':memory:' }), entities: ['Book'] },
+      archive: { source: createSqliteSource({ path: ':memory:' }), rows: ['Book'] },
     });
 
     expect(split.enforces!('archive', 'unique')).toBe(true);
     expect(split.enforces!('main', 'unique')).toBe(false);
   });
 
+  it('never takes a source nothing is written to for the one holding the rest', () => {
+    // `env` lists no rows either, and only its being read-only tells it from `main`.
+    const nothing = { storageFactory: (() => ({})) as never, name: 'nothing' };
+    const storage = storageFrom({
+      main: { source: createSqliteSource({ path: ':memory:' }), values: ['Catalog'] },
+      env: { source: nothing, values: ['Meili'], readOnly: true },
+    });
+
+    expect(storage.sourceOf!('book')).toBe('main');
+  });
+
+  it('refuses two writable sources listing no rows, naming both', () => {
+    expect(() => storageFrom({
+      main: { source: createSqliteSource({ path: ':memory:' }) },
+      cold: { source: createSqliteSource({ path: ':memory:' }) },
+    })).toThrow(/'main' and 'cold' list no rows/);
+  });
+
+  it('holds no rest when every source lists its rows', () => {
+    const storage = storageFrom({
+      archive: { source: createSqliteSource({ path: ':memory:' }), rows: ['Book'] },
+    });
+
+    expect(storage.sourceOf!('book')).toBe('archive');
+    expect(storage.sourceOf!('reader')).toBeUndefined();
+  });
+
+  it('keeps rows in memory when no source holds any', () => {
+    const nothing = { storageFactory: (() => ({})) as never, name: 'nothing' };
+    const storage = storageFrom({ env: { source: nothing, values: ['Meili'], readOnly: true } });
+
+    expect(storage.sourceOf!('book')).toBe('memory');
+  });
+
+  it('refuses an entity held as rows in one source and as a value in another', () => {
+    expect(() => storageFrom({
+      main: { source: createSqliteSource({ path: ':memory:' }), values: ['Book'] },
+      archive: { source: createSqliteSource({ path: ':memory:' }), rows: ['Book'] },
+    })).toThrow(/'Book' is listed in the rows: of 'archive' and the values: of 'main'/);
+  });
+
   it('refuses the same double claim, whoever built the engines', () => {
     const twice = () => storageFrom({
       main: { source: createSqliteSource({ path: ':memory:' }) },
-      archive: { source: createSqliteSource({ path: ':memory:' }), entities: ['Book'] },
-      cold: { source: createSqliteSource({ path: ':memory:' }), entities: ['Book'] },
+      archive: { source: createSqliteSource({ path: ':memory:' }), rows: ['Book'] },
+      cold: { source: createSqliteSource({ path: ':memory:' }), rows: ['Book'] },
     });
     expect(twice).toThrow(/is listed in both 'archive' and 'cold'/);
   });

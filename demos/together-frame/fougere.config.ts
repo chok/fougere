@@ -22,7 +22,7 @@ import { defineFougere } from '@fougere/core';
 export default defineFougere({
   sources: {
     main: { type: 'sqlite', path: '.data/app.db' },
-    // accounting: { type: 'sqlite', path: '.data/accounting.db', entities: ['Ledger'] },
-    // rates: { type: 'file', path: '.data/rates', entities: ['RateCard'] },
+    // accounting: { type: 'sqlite', path: '.data/accounting.db', rows: ['Ledger'] },
+    // rates: { type: 'file', path: '.data/rates', rows: ['RateCard'] },
   },
 });

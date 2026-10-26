@@ -2,6 +2,7 @@
 import { DuckDBInstance } from '@duckdb/node-api';
 import { lowerFirst, type Entity, type SchemaView } from '@fougere/schema';
 import { toTable, toTableName, toSnakeCase, codecsOf } from '@fougere/adapter-sql';
+import { Sources } from '@fougere/core';
 
 
 /** An entry of `sources:` as this reader sees it — what its own adapter declared, nothing added. */
@@ -9,7 +10,7 @@ export interface SourceEntry {
   type: string;
   path?: string;
   url?: string;
-  entities?: string[];
+  rows?: string[];
 }
 
 export interface ConnectOptions {
@@ -47,12 +48,12 @@ const attachedAs = (source: string): string => `source_${source}`;
 export async function connectSources(options: ConnectOptions): Promise<Reads> {
   const resolve = options.tableName ?? toTableName;
 
-  // Where each named entity lives; anything unnamed is in the one source listing none.
+  // Where each named entity lives; anything unnamed is in the one writable source listing no rows.
   const home = new Map<string, string>();
   let fallback: string | undefined;
   for (const [alias, entry] of Object.entries(options.sources)) {
-    if (entry.entities === undefined) fallback = alias;
-    for (const entity of entry.entities ?? []) home.set(lowerFirst(entity), alias);
+    if (entry.rows === undefined && !Sources.find(entry.type)?.readOnly) fallback = alias;
+    for (const entity of entry.rows ?? []) home.set(lowerFirst(entity), alias);
   }
 
   // Only what this scope reads is attached — the declaration IS the environment.

@@ -1,7 +1,10 @@
 import { type Source } from '@fougere/core';
 
-/** One source: what realizes it, and the entities that live there — none listed on the default one. */
+/** One source: what realizes it, and the entities it holds — no `rows` on the default one. */
 export interface SourceEntities {
   source: Source;
-  entities?: string[];
+  rows?: string[];
+  values?: string[];
+  /** Nothing is written there, so it never holds the rest. */
+  readOnly?: true;
 }
