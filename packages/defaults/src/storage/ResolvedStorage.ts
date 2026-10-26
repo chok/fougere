@@ -2,7 +2,7 @@ import type { App } from '@fougere/core';
 import { lowerFirst } from '@fougere/core/contract';
 import { existsSync } from 'node:fs';
 import { isAbsolute, resolve } from 'node:path';
-import { Logger, Sources, sourceViewOf, type Constraint, type Source, type SourceConfig } from '@fougere/core';
+import { FougereValue, FOUGERE_VALUE, Logger, Sources, sourceViewOf, type Constraint, type Source, type SourceConfig, type SourceView, type ValueSources } from '@fougere/core';
 import { createMemorySource } from '@fougere/adapter-memory';
 import type { SourceEntities } from './SourceEntities.js';
 
@@ -33,6 +33,8 @@ export interface ResolvedStorage {
   migrate?: (app: App) => Promise<string | void>;
   /** What `migrate` would create, READ — the dual the boot checks and never writes past. */
   pending?: (app: App) => Promise<string[]>;
+  /** The entities held as one value each, and where each is read — absent when `values:` lists none. */
+  values?: ValueSources;
   /** Close every engine this opened — the dual of opening them, declared by whoever did. */
   close?: () => Promise<void>;
   /** Raw synchronous handle, when the engine exposes one. */
@@ -130,6 +132,51 @@ function refuseRowsAndValues(sources: Record<string, SourceEntities>): void {
   }
 }
 
+/** Where each entity listed in `values:` is read. Two sources for one value is not built yet. */
+function valuesHomeOf(sources: Record<string, SourceEntities>): Map<string, string> {
+  const home = new Map<string, string>();
+  for (const [name, placement] of Object.entries(sources)) {
+    for (const entity of placement.values ?? []) {
+      const key = lowerFirst(entity);
+      const claimed = home.get(key);
+      if (claimed) {
+        throw new Error(`sources: '${entity}' is listed in the values: of both '${claimed}' and '${name}'. Keep it in one.`);
+      }
+      home.set(key, name);
+    }
+  }
+
+  return home;
+}
+
+/** A value read where its source keeps it — its own place, or the `FougereValue` row named after it. */
+function valueSourcesOf(home: Map<string, string>, engineOf: (source: string) => Source): ValueSources {
+  const rows = new Map<string, ReturnType<Source['storageFactory']>>();
+  const valuesIn = (source: string) => {
+    if (!rows.has(source)) rows.set(source, engineOf(source).storageFactory(FougereValue, FOUGERE_VALUE));
+
+    return rows.get(source)!;
+  };
+
+  return {
+    sourceOf: (entityName) => home.get(lowerFirst(entityName)),
+    read: async (entityName, entity) => {
+      const source = home.get(lowerFirst(entityName))!;
+      const engine = engineOf(source);
+      if (engine.value) return engine.value(entity, entityName);
+      const row = await valuesIn(source).findById(entityName) as { value?: Record<string, unknown> } | null;
+
+      return row?.value;
+    },
+    where: (entityName, entity, field) => {
+      const source = home.get(lowerFirst(entityName))!;
+      const at = engineOf(source).valueAt?.(entity, entityName, field) ?? `the ${FOUGERE_VALUE} row '${entityName}'`;
+
+      return `sources.${source}, ${at}`;
+    },
+  };
+}
+
 /** The same routing `resolveStorage` performs, over engines the CALLER built. */
 export function storageFrom(sources: Record<string, SourceEntities>): ResolvedStorage {
   refuseRowsAndValues(sources);
@@ -169,6 +216,16 @@ export function storageFrom(sources: Record<string, SourceEntities>): ResolvedSt
     return engine;
   };
   const named = (): string[] => [...(DEFAULT ? [DEFAULT] : []), ...engines.keys()];
+  const valuesHome = valuesHomeOf(sources);
+  // What a source holds, as one pass sees it: its rows, and the row each of its values is kept in
+  // when the source keeps them as rows rather than in a place of its own.
+  const viewOf = (fronds: Parameters<typeof sourceViewOf>[0], source: string, holds: (name: string) => boolean): SourceView => {
+    const view = sourceViewOf(fronds, (name) => holds(name) && !valuesHome.has(lowerFirst(name)));
+    const engine = engineOf(source);
+    if (!engine || engine.value || ![...valuesHome.values()].includes(source)) return view;
+
+    return { ...view, entities: new Map([...view.entities, [FOUGERE_VALUE, FougereValue]]) };
+  };
 
   return {
     storageFactory: (entity: any, name: string) => engineFor(name).storageFactory(entity, name),
@@ -194,9 +251,9 @@ export function storageFrom(sources: Record<string, SourceEntities>): ResolvedSt
     // which is what makes a cross-source `ref()` a miss rather than a constraint against a
     // stranger. What a pass DOES is the source's own: it knows its engine, this does not.
     migrate: async (app) => {
-      const said = [await base?.migrate?.(sourceViewOf(app.fronds, (name) => !home.has(lowerFirst(name))))];
+      const said = DEFAULT ? [await base?.migrate?.(viewOf(app.fronds, DEFAULT, (name) => !home.has(lowerFirst(name))))] : [];
       for (const [name, engine] of engines) {
-        said.push(await engine.migrate?.(sourceViewOf(app.fronds, (e) => home.get(lowerFirst(e)) === name)));
+        said.push(await engine.migrate?.(viewOf(app.fronds, name, (e) => home.get(lowerFirst(e)) === name)));
       }
       const reports = said.filter((report): report is string => Boolean(report));
 
@@ -205,14 +262,15 @@ export function storageFrom(sources: Record<string, SourceEntities>): ResolvedSt
     // The same partition `migrate` writes through, read — so what the boot refuses is exactly
     // what the command would create. A named source says its name; the default one needs none.
     pending: async (app) => {
-      const lines = [...(await base?.pending?.(sourceViewOf(app.fronds, (name) => !home.has(lowerFirst(name)))) ?? [])];
+      const lines = DEFAULT ? [...(await base?.pending?.(viewOf(app.fronds, DEFAULT, (name) => !home.has(lowerFirst(name)))) ?? [])] : [];
       for (const [name, engine] of engines) {
-        const behind = await engine.pending?.(sourceViewOf(app.fronds, (e) => home.get(lowerFirst(e)) === name)) ?? [];
+        const behind = await engine.pending?.(viewOf(app.fronds, name, (e) => home.get(lowerFirst(e)) === name)) ?? [];
         lines.push(...behind.map((line) => `${name}: ${line}`));
       }
 
       return lines;
     },
+    ...(valuesHome.size > 0 && { values: valueSourcesOf(valuesHome, (source) => engineOf(source)!) }),
     // Every source, the default one last: a named source may hold what the default refers
     // to, and closing in reverse of opening is the rule everywhere else.
     close: async () => {
@@ -237,5 +295,6 @@ export function layerOf(storage: ResolvedStorage) {
     enforces: storage.enforces,
     transacted: storage.transacted as never,
     pending: storage.pending,
+    values: storage.values,
   };
 }

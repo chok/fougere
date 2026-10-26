@@ -28,6 +28,7 @@ import type { Diagnostic } from '../diagnostic.js';
 import { HandlerFacade } from '../dispatch/HandlerFacade.js';
 import { targetOf } from '../prefab/prefab.js';
 import { ownersOf, sharedNames, storageInUserCode, crudOnOwned } from './ownership.js';
+import { refuseValuesAsRows } from '../module/value/refusals.js';
 import { refuseArityDrift } from './arity.js';
 import { StorageGuard } from '../dispatch/StorageGuard.js';
 import { DoorMiddleware } from '../prefab/DoorMiddleware.js';
@@ -282,6 +283,8 @@ function registerStorages(
   const unenforced: string[] = [];
   const release = releasing(assembly.rowHosts);
   for (const entity of frond.entities) {
+    // Held as one value: injected by `valuing` once the schema is checked, never rows.
+    if (options.values?.sourceOf(entity.name) !== undefined) continue;
     const key = storageKeyOf(entity.name);
     const placed = options.sourceOf?.(entity.name);
     if (options.sourceOf && placed === undefined) {
@@ -567,12 +570,15 @@ function noteRemoteFrond(frond: FrondDescriptor, { operationModel, effectiveByKe
  * Who owns what, and the rule that makes owning mean something — refused before anything is
  * registered, so a bad line is named here rather than by the container.
  */
-function ownershipOf(frond: FrondDescriptor, { entityByName, refused }: Assembly): Map<string, string> {
+function ownershipOf(frond: FrondDescriptor, assembly: Assembly): Map<string, string> {
+  const { entityByName, refused } = assembly;
   sharedNames(frond, refused);
   refuseArityDrift(frond, refused);
   const owners = ownersOf(frond.providers, frond.name, refused);
-  storageInUserCode(frond, owners, (entity) => entityByName.has(entity), refused);
+  const valued = (entity: string) => assembly.options.values?.sourceOf(entity) !== undefined;
+  storageInUserCode(frond, owners, (entity) => entityByName.has(entity) && !valued(entity), refused);
   crudOnOwned(frond, owners, refused);
+  refuseValuesAsRows(frond, valued, new Set(entityByName.keys()), refused);
 
   return owners;
 }

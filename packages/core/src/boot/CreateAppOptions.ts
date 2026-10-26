@@ -1,4 +1,5 @@
 import type { Term } from '@fougere/registry';
+import type { ValueSources } from '../module/value/ValueSources.js';
 import type { Container } from '@fougere/container';
 import type { ProtocolConfig } from '../Protocol.js';
 import type { FrondDescriptor } from '../descriptor/FrondDescriptor.js';
@@ -29,6 +30,8 @@ export interface CreateAppOptions {
    */
   sourceOf?: (entityName: string) => string | undefined;
   transacts?: (source: string) => boolean;
+  /** The entities `sources:` holds as one value each, and how each is read. */
+  values?: ValueSources;
   transacted?: <R>(source: string, fn: (storageFactory: StorageFactory) => Promise<R>) => Promise<R>;
   /**
    * What the declaration asks of the sources and they do not hold yet — `Source.pending`, handed

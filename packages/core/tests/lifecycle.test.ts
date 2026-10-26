@@ -29,7 +29,7 @@ describe('Lifecycle', () => {
     });
 
     expect(log).toEqual(['schema up', 'seeds up']);
-    expect(app.extensions()).toEqual(['schema', 'seeds', 'presenters']);
+    expect(app.extensions()).toEqual(['schema', 'values', 'seeds', 'presenters']);
 
     await app.dispose();
     // Reverse of construction, the container's own rule read one level out.
@@ -182,7 +182,7 @@ describe('Lifecycle', () => {
       ],
     });
 
-    expect(app.extensions()).toEqual(['schema', 'seeds', 'presenters']);
+    expect(app.extensions()).toEqual(['schema', 'values', 'seeds', 'presenters']);
     expect(ran).toEqual(['migrate', 'seeds']);
   });
 
@@ -255,7 +255,7 @@ describe('the conventional ascent', () => {
       extensions: [migrating(() => { ran.push('migrated'); })],
     });
 
-    expect(app.extensions()).toEqual(['schema', 'seeds', 'presenters']);
+    expect(app.extensions()).toEqual(['schema', 'values', 'seeds', 'presenters']);
     expect(ran).toEqual(['migrated']);
   });
 
@@ -270,7 +270,7 @@ describe('the conventional ascent', () => {
       extensions: [{ name: 'host', up: () => { ran.push('host'); } }],
     });
 
-    expect(app.extensions()).toEqual(['schema', 'seeds', 'presenters', 'host']);
+    expect(app.extensions()).toEqual(['schema', 'values', 'seeds', 'presenters', 'host']);
     expect(ran).toEqual(['host']);
     expect(checking(undefined).up).toBeUndefined();
   });

@@ -37,6 +37,13 @@ export interface Source {
   close?(): Promise<void>;
   /** What distinguishes it when a query is reported. */
   name?: string;
+  /**
+   * An entity listed in `values:`, as this source holds it. Absent, the value is the row of
+   * `FougereValue` keyed by its name — a source holding rows holds values with no code of its own.
+   */
+  value?(entity: SchemaView, name: string): Promise<Record<string, unknown> | undefined>;
+  /** Where that value is changed — a file, a variable; with a field, the place of that field. */
+  valueAt?(entity: SchemaView, name: string, field?: string): string;
 }
 
 /** A source type: what its entry admits, and how a place is opened from one. */

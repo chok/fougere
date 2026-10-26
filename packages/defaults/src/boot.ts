@@ -1,4 +1,5 @@
 import { Logger, applyConfig, createApp, type App, type CreateAppOptions, type Extension, type FougereConfig, type FrondDescriptor, type Transport } from '@fougere/core';
+import { layerOf, type ResolvedStorage } from './storage/ResolvedStorage.js';
 import { getModuleLoader, loadConfig, MODULES, remotesOf, configModules, statementFileIn, statementIn, type ModuleLoader, type Statement } from '@fougere/core/node';
 import { join, resolve, sep } from 'node:path';
 import { existsSync } from 'node:fs';
@@ -34,14 +35,8 @@ interface BootOptions {
   remoteTransport?: (url: string) => Transport;
   /** Carries an announced fact out of this process. */
   onEmit?: CreateAppOptions['onEmit'];
-  /** The data layer, built from the config — a factory, and the two halves it owes the boot. */
-  storage?: (config: FougereConfig) => {
-    storageFactory: CreateAppOptions['storageFactory'];
-    /** What the schema lacks, read — the boot refuses on it and never writes. */
-    pending?: (app: App) => Promise<string[]>;
-    /** Closes what the factory opened — `boot()` called it, so `boot()` releases it. */
-    close?: () => Promise<void>;
-  };
+  /** The data layer, built from the config — `boot()` called the factory, so `boot()` closes it. */
+  storage?: (config: FougereConfig) => ResolvedStorage;
   /**
    * What this app takes on beyond its fronds. Appended after the framework's own, so a
    * host adds to the ascent — or replaces a member of it by declaring the same name.
@@ -85,7 +80,9 @@ export async function boot(options: BootOptions): Promise<App> {
     fronds: hosted,
     vocabulary: statement.vocabulary,
     createContainer: options.createContainer,
-    storageFactory: layer?.storageFactory,
+    // The whole layer, never a few of its members: naming two of them left the routing, the
+    // transactions and the values behind on the boot `fougere serve` runs.
+    ...(layer && layerOf(layer)),
     // The tree's string leaves say the same thing `remotes:` does, and this boot read
     // neither of them from the file until now — a project stating its topology got a
     // process that believed every frond was local.
@@ -106,9 +103,6 @@ export async function boot(options: BootOptions): Promise<App> {
     // boot() called the factory, so boot() owns closing what it opened. Not an extension:
     // it was opened before the container existed, so it closes after the container goes.
     onDispose: layer?.close,
-    // Read, never written: the boot refuses a database behind the entities, and writing it
-    // is `fougere migrate --apply`.
-    pending: layer?.pending,
     extensions: [...stated.extensions, ...(options.extensions ?? [])],
     onEmit: options.onEmit,
     remoteTransport: options.remoteTransport,

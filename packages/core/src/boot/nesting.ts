@@ -35,23 +35,28 @@ function refuseServingParent(
   return true;
 }
 
-/** Rows belong to a frond something can call — the family case is not traced, so it is refused. */
+/**
+ * Rows belong to a frond something can call — the family case is not traced, so it is refused. A
+ * value is not rows: it is what a family shares, and the frond it inherits from is where it lives.
+ */
 function refuseParentEntities(
   parent: FrondDescriptor,
   children: string[],
   refused: Diagnostic[],
   conventions: Conventions,
+  valued: (entity: string) => boolean,
 ): void {
-  if (parent.entities.length === 0) return;
+  const rows = parent.entities.filter((entity) => !valued(entity.name));
+  if (rows.length === 0) return;
 
   refused.push({
     severity: 'blocking',
     code: 'frond-parent-entities',
-    filePath: parent.entities[0]!.filePath,
+    filePath: rows[0]!.filePath,
     frond: parent.name,
     subject: parent.name,
     message: `The frond '${parent.name}' is extended by ${children.map((one) => `'${one}'`).join(', ')}, so it cannot have entities `
-      + `(${parent.entities.map((entity) => entity.name).join(', ')}). Move them into one of them, `
+      + `(${rows.map((entity) => entity.name).join(', ')}). Move them into one of them, `
       + `and import them from there: import X from '${frondPackage(children[0]!, conventions)}/${conventions.dirs.entities}/X.js'.`,
   });
 }
@@ -64,6 +69,8 @@ export function nestingOf(
   /** This process carries a subset of the project — `only:`, so an absent name is expected. */
   narrowed = false,
   conventions: Conventions = resolveConventions(),
+  /** Held as one value, which a frond a family inherits from may keep. */
+  valued: (entity: string) => boolean = () => false,
 ): { under: Map<string, string>; refused: Diagnostic[] } {
   const refused: Diagnostic[] = [];
   const under = new Map<string, string>();
@@ -114,7 +121,7 @@ export function nestingOf(
       });
     }
 
-    if (!refuseServingParent(frond, children, refused)) refuseParentEntities(frond, children, refused, conventions);
+    if (!refuseServingParent(frond, children, refused)) refuseParentEntities(frond, children, refused, conventions, valued);
   }
 
   for (const statement of statements) {

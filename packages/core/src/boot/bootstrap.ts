@@ -14,6 +14,7 @@ import type { PresenterEntry } from '../descriptor/PresenterEntry.js';
 import { hostedBy } from './hosted.js';
 import { termRefusals } from './terms.js';
 import { nestingOf, parentsFirst } from './nesting.js';
+import { valuing } from '../module/value/valuing.js';
 import type { Fronds } from '../descriptor/Fronds.js';
 import type { FrondDescriptor } from '../descriptor/FrondDescriptor.js';
 import { installFrond, type Assembly } from './install.js';
@@ -137,7 +138,7 @@ async function readFronds(
   }
 
   const conventions = resolveConventions(options.conventions);
-  const { under, refused } = nestingOf(options.under, fronds, options.remotes, options.narrowed, conventions);
+  const { under, refused } = nestingOf(options.under, fronds, options.remotes, options.narrowed, conventions, (name) => options.values?.sourceOf(name) !== undefined);
   const refusal = refusalOf(refused, 'thing(s) the frond tree does not allow');
   if (refusal) throw refusal;
 
@@ -420,7 +421,7 @@ function announceLines(emissions: Emissions, container: Container, lineBuffer: L
 export async function createApp(options: CreateAppOptions): Promise<App> {
   const container = (options.createContainer ?? createContainer)();
   // The schema checked, then rows, then whatever the host took on — the order is not a host's to choose.
-  const appLifecycle = new AppLifecycle().add(checking(options.pending), seeding(), presenters(), ...(options.extensions ?? []));
+  const appLifecycle = new AppLifecycle().add(checking(options.pending), valuing(options.values), seeding(), presenters(), ...(options.extensions ?? []));
   const lineBuffer = new LineBuffer();
   let createdApp: App | undefined;
   let stopAnnouncing: (() => void) | undefined;
