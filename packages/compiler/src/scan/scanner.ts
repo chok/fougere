@@ -214,19 +214,25 @@ async function toProvider(filePath: string): Promise<ProviderEntry> {
   const deps = await depsOf(filePath);
 
   const stated = await implementsOf(filePath);
+  const ports = stated.filter((one) => one.isClass);
 
-  // A port is answered by EXTENDING it: the boot reads the prototype chain, and `implements`
-  // leaves none. Said here rather than refused, because implementing a class is legal — only
-  // the author knows whether a port was meant. Warned, so `createApp` prints it too.
-  for (const { name: base } of stated.filter((one) => one.isClass)) {
+  // A class that implements a port AND asks for it stands in front of it — a link. Implementing
+  // one without asking for it is legal TypeScript and answers nothing, so it is said rather than
+  // refused: only the author knows whether a port was meant.
+  for (const { name: port, partial } of ports.filter((one) => !deps.includes(one.name))) {
     record({
       severity: 'warning',
       code: 'port-implemented-not-extended',
       filePath,
       subject: name,
-      message: `${name} implements ${base}, so it is not used for ${base}. Write \`class ${name} extends ${base}\`.`,
+      message: partial
+        ? `${name} implements Partial<${port}> but takes no ${port}, so it stands in front of nothing. `
+          + `To wrap it, take it: constructor(private inner: ${port}).`
+        : `${name} implements ${port}, so it is not used for ${port}. Write \`class ${name} extends ${port}\`, `
+          + `or take it — constructor(private inner: ${port}) — to stand in front of it.`,
     });
   }
+  const links = ports.filter((one) => deps.includes(one.name)).map((one) => one.name);
 
   // A repository inherits its constructor from `Repository(…)`, so the file declares none
   // and the scan reads no parameter. The mixin knows what it was built for and says so at
@@ -247,7 +253,14 @@ async function toProvider(filePath: string): Promise<ProviderEntry> {
   // `name` beside `ctor`, and it IS the registration key — what `depKeyOf` returns, since
   // it reads the type as written. It used to be asked of `ctor.name` at boot, which held
   // until a bundler lowered a static field and renamed the declaration doing it.
-  return { name, ctor, deps, filePath, ...(await parseAbstract(filePath) ? { abstract: true as const } : {}) };
+  return {
+    name,
+    ctor,
+    deps,
+    filePath,
+    ...(await parseAbstract(filePath) ? { abstract: true as const } : {}),
+    ...(links.length > 0 ? { implements: links } : {}),
+  };
 }
 
 /**

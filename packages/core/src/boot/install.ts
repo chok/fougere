@@ -33,7 +33,7 @@ import { refuseArityDrift } from './arity.js';
 import { StorageGuard } from '../dispatch/StorageGuard.js';
 import { DoorMiddleware } from '../prefab/DoorMiddleware.js';
 import type { DoorAround } from '../entry/door.js';
-import { ownKeyOf, portBindings, hostPortChains, wrapping, HOST_PORTS } from './ports.js';
+import { linkOf, ownKeyOf, portBindings, hostPortChains, wrapping, HOST_PORTS } from './ports.js';
 import { contractsKeyOf, facadeKeyOf } from '../wire/Facade.js';
 import { inheritsCrud, subjectOf } from '../prefab/CrudConstructor.js';
 import { repositoryKeyOf } from '../prefab/RepositoryConstructor.js';
@@ -413,16 +413,17 @@ function registerProviders(
     for (const wrapper of wrappers.slice(1).reverse()) {
       const deps = ownLogger(nameOf(wrapper), wrapper.deps).map((dep) => (dep === port ? inner : dep));
       inner = nameOf(wrapper);
-      scope.replace(inner, wrapper.ctor, { deps, ...lifetimeOf(wrapper.ctor) });
+      scope.replace(inner, linkOf(wrapper, port), { deps, ...lifetimeOf(wrapper.ctor) });
     }
     const outermost = chain[0]!;
     const outermostOptions = {
       deps: ownLogger(nameOf(outermost), outermost.deps).map((dep) => (dep === port ? inner : dep)),
       ...lifetimeOf(outermost.ctor),
     };
-    if (wrappers.length > 0) scope.replace(nameOf(outermost), outermost.ctor, outermostOptions);
-    if (scope.has(port)) scope.replace(port, outermost.ctor, outermostOptions);
-    else scope.register(port, outermost.ctor, outermostOptions);
+    const Outermost = linkOf(outermost, port);
+    if (wrappers.length > 0) scope.replace(nameOf(outermost), Outermost, outermostOptions);
+    if (scope.has(port)) scope.replace(port, Outermost, outermostOptions);
+    else scope.register(port, Outermost, outermostOptions);
     boundPorts.add(port);
     frondLog.debug(`port ${port} → ${chain.map((one) => one.ctor.name).join(' → ')}`);
     plugged.push({ point: port, by: 'type', frond: frond.name, answers: chain.map(nameOf) });

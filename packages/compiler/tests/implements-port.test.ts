@@ -22,7 +22,8 @@ describe('a class implemented where it should be extended', () => {
 
     const found = diagnostics.filter((d) => d.code === 'port-implemented-not-extended');
 
-    expect(found).toHaveLength(1);
+    expect(found.map((d) => d.subject).sort()).toEqual(['LonePayment', 'StripePayment']);
+    found.sort((a, b) => b.subject.localeCompare(a.subject));
     expect(found[0].severity).toBe('warning');
     expect(found[0].subject).toBe('StripePayment');
     expect(found[0].message).toContain('StripePayment implements Payment, so it is not used for Payment');
@@ -38,6 +39,24 @@ describe('a class implemented where it should be extended', () => {
   it('serves the frond anyway — the class is still a provider', async () => {
     const { fronds } = await scanProject(project);
 
-    expect(fronds[0].providers.map((p) => p.name).sort()).toEqual(['Clock', 'Payment', 'StripePayment']);
+    expect(fronds[0].providers.map((p) => p.name).sort()).toEqual(['AuditPayment', 'Clock', 'LonePayment', 'Payment', 'StripePayment']);
+  });
+});
+
+describe('a class that implements part of a port', () => {
+  it('is a link when it asks for the port, carried as what it implements', async () => {
+    const { fronds, diagnostics } = await scanProject(project);
+    const audit = fronds[0].providers.find((p) => p.name === 'AuditPayment')!;
+
+    expect(audit.implements).toEqual(['Payment']);
+    expect(diagnostics.map((d) => d.subject)).not.toContain('AuditPayment');
+  });
+
+  it('is said when it asks for nothing, naming the inner to take', async () => {
+    const { diagnostics } = await scanProject(project);
+    const lone = diagnostics.find((d) => d.subject === 'LonePayment')!;
+
+    expect(lone.message).toContain('LonePayment implements Partial<Payment> but takes no Payment');
+    expect(lone.message).toContain('constructor(private inner: Payment)');
   });
 });

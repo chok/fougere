@@ -15,4 +15,9 @@ export interface ProviderEntry extends Subject {
    * nothing may instantiate — never a candidate for the ports above it.
    */
   abstract?: true;
+  /**
+   * The ports it says it stands in front of — `implements Partial<Payment>` — erased at runtime like
+   * `abstract`, so only the source can say it. With the port among its `deps`, it is a link.
+   */
+  implements?: string[];
 }

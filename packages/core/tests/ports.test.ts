@@ -10,9 +10,10 @@ import one from './fixtures-ports/fronds.js';
 import two from './fixtures-ports-two/fronds.js';
 import wrapped from './fixtures-ports-wrapped/fronds.js';
 import overridden from './fixtures-logger-override/fronds.js';
-import wrappedLogger from './fixtures-logger-wrapped/fronds.js';
+import wrappedLogger, { masked } from './fixtures-logger-wrapped/fronds.js';
 import { billing, CardPayment, Payment, RetryingCardPayment, StripePayment } from './fixtures-ports-deep/fronds.js';
 import repository from './fixtures-repository/fronds.js';
+import * as declared from './fixtures-ports-implements/fronds.js';
 import { memory } from './memory.js';
 import { describe, it, expect, vi } from 'vitest';
 import { createContainer, type Container } from '@fougere/container';
@@ -203,3 +204,52 @@ describe('a port answered by a chain', () => {
     );
   });
 });
+
+describe('a link that implements the port rather than extending it', () => {
+  const call = async (root: FrondDescriptor[], op: string, ports?: Record<string, string | readonly string[]>) => {
+    await using app = await createApp({ fronds: root, createContainer, ...(ports ? { ports } : {}) });
+
+    return createLocalRunner(app)({ address: 'checkout', op }, Invocation.empty);
+  };
+
+  it('stands in front of the realization, declared by its clause alone', async () => {
+    expect(await call(declared.one, 'pay')).toBe('audited(stripe charged 4990)');
+  });
+
+  it('hands what it does not write to the inner it was given', async () => {
+    expect(await call(declared.one, 'refund')).toBe('stripe refunded 4990');
+  });
+
+  it('is ordered by `ports:` like any link, outside in', async () => {
+    expect(await call(declared.two, 'pay', { Payment: ['CapPayment', 'AuditPayment', 'StripePayment'] }))
+      .toBe('capped(audited(stripe charged 1000))');
+    await expect(call(declared.two, 'pay')).rejects.toThrow(/both wrap Payment/);
+  });
+
+  it('is nothing for the port without the clause, however it is shaped', async () => {
+    expect(await call(declared.undeclared, 'pay')).toBe('stripe charged 4990');
+  });
+});
+
+describe('a logger link that implements the logger', () => {
+  it('writes what it changes, and loses nothing it leaves out — every other method is the real logger', async () => {
+    await using app = await createApp({ fronds: masked, createContainer });
+    const said: string[] = [];
+    const info = vi.spyOn(console, 'info').mockImplementation((...args) => { said.push(args.join(' ')); });
+    const warn = vi.spyOn(console, 'warn').mockImplementation((...args) => { said.push(args.join(' ')); });
+
+    await createLocalRunner(app)({ address: 'report', op: 'run' }, Invocation.empty);
+    const logger = app.resolve<Container>('frond:ops').resolve<{ warn(m: string): void; child(n: string): { warn(m: string): void } }>('Logger');
+    logger.warn('left as it was');
+    logger.child('job').warn('from a child');
+    info.mockRestore();
+    warn.mockRestore();
+
+    expect(said).toEqual(expect.arrayContaining([
+      expect.stringMatching(/\[app:ops\].* report ran with token=\*\*\*$/),
+      expect.stringMatching(/\[app:ops\].* left as it was$/),
+      expect.stringMatching(/\[app:ops:job\].* from a child$/),
+    ]));
+  });
+});
+

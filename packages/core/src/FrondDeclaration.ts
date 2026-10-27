@@ -172,6 +172,7 @@ export function frond(name: string, declared: FrondDeclaration = {}): FrondDescr
     deps: depsOf(p),
     filePath: fileOf(ctorOf(p)),
     ...(typeof p !== 'function' && p.abstract ? { abstract: true as const } : {}),
+    ...(typeof p !== 'function' && p.implements?.length ? { implements: p.implements } : {}),
   }));
 
   const seeds: SeedEntry[] = (declared.seeds ?? []).map((s) => ({

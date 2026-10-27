@@ -33,8 +33,17 @@ export function basesOf(
   return bases;
 }
 
-/** The ancestors a provider answers under, nearest first, up to the last one that answers. */
+/**
+ * The ancestors a provider answers under, nearest first, up to the last one that answers — and the
+ * ports it says it implements and asks for, which no prototype carries.
+ */
 function portsOf(provider: ProviderEntry, answers: (name: string) => boolean): string[] {
+  const declared = (provider.implements ?? []).filter((port) => provider.deps.includes(port));
+
+  return [...declared, ...ancestorsOf(provider, answers).filter((port) => !declared.includes(port))];
+}
+
+function ancestorsOf(provider: ProviderEntry, answers: (name: string) => boolean): string[] {
   const bases: string[] = [];
   for (let base = Object.getPrototypeOf(provider.ctor) as { name?: string } | null; base?.name; base = Object.getPrototypeOf(base) as { name?: string } | null) {
     if (provider.deps.includes(base.name)) return [base.name];

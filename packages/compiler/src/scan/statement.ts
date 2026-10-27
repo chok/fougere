@@ -161,6 +161,7 @@ function frondOf(frond: FrondDescriptor, imports: Imports): string {
       // and a handler asking for `Communes` met a provider registered as `_Communes`.
       `name: ${JSON.stringify(nameOf(p))}`,
       p.abstract ? 'abstract: true' : '',
+      p.implements?.length ? `implements: ${JSON.stringify(p.implements)}` : '',
     )))}`);
   }
   if (frond.middlewares.length) {

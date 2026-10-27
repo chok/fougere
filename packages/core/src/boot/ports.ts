@@ -34,7 +34,8 @@ export function hostPortChains(
 ): Map<string, ProviderEntry[]> {
   const wrappers = new Map<string, ProviderEntry[]>();
   for (const provider of providers) {
-    const hostPort = (Object.getPrototypeOf(provider.ctor) as { name?: string } | null)?.name;
+    const implemented = provider.implements?.find((port) => HOST_PORTS.has(port));
+    const hostPort = implemented ?? (Object.getPrototypeOf(provider.ctor) as { name?: string } | null)?.name;
     if (!hostPort || !HOST_PORTS.has(hostPort)) continue;
     if (!provider.deps.includes(hostPort)) {
       refused.push({
@@ -67,7 +68,7 @@ export function wrapping<T extends object>(
   // From the INSIDE out, so each link is handed the one it stands in front of — the same
   // order `install.ts` registers a port's chain in, for the same reason.
   for (const link of [...links].reverse()) {
-    const Link = link.ctor as unknown as new (...args: unknown[]) => T;
+    const Link = linkOf(link, hostPort) as unknown as new (...args: unknown[]) => T;
     current = new Link(...link.deps.map((dep) => (dep === hostPort ? current : resolve(dep))));
   }
 
@@ -75,11 +76,45 @@ export function wrapping<T extends object>(
 }
 
 /**
+ * The class a link is built from. One that `implements Partial<Port>` writes only what it changes,
+ * so the rest of the port is handed to the `inner` it was given — once, as it is built, and only
+ * what it does not define itself. One that extends the port inherits the rest already.
+ */
+export function linkOf(link: ProviderEntry, port: string): ProviderEntry['ctor'] {
+  const at = link.deps.indexOf(port);
+  if (!link.implements?.includes(port) || at < 0) return link.ctor;
+
+  const Link = link.ctor as unknown as new (...args: unknown[]) => object;
+  const Forwarding = class extends Link {
+    constructor(...args: unknown[]) {
+      super(...args);
+      forward(this, args[at]);
+    }
+  };
+  Object.defineProperty(Forwarding, 'name', { value: Link.name });
+
+  return Forwarding as unknown as ProviderEntry['ctor'];
+}
+
+/** Every method of `inner` the link does not define, called on `inner`. */
+function forward(link: object, inner: unknown): void {
+  if (!inner || typeof inner !== 'object') return;
+  for (let level = Object.getPrototypeOf(inner); level && level !== Object.prototype; level = Object.getPrototypeOf(level)) {
+    for (const name of Object.getOwnPropertyNames(level)) {
+      if (name === 'constructor' || name in link) continue;
+      const method = (inner as Record<string, unknown>)[name];
+      if (typeof method !== 'function') continue;
+      Object.defineProperty(link, name, { value: (method as (...args: unknown[]) => unknown).bind(inner), configurable: true });
+    }
+  }
+}
+
+/**
  * A port is a class something already answers under, and what answers it may be a CHAIN:
  * the realization, wrapped by whoever stands in front of it.
  *
- * A wrapper is recognized by its FORM — it extends the port AND asks for it. Nothing
- * declares it, the way nothing declares a realization.
+ * A wrapper DECLARES the port — it extends it, or `implements Partial<Port>` — AND asks for it.
+ * Nothing more declares it, the way nothing declares a realization.
  *
  * Returns, per port, the chain from the OUTSIDE IN: the last entry is the realization,
  * every one before it wraps what follows.
@@ -142,7 +177,7 @@ function declaredChain(
       code: 'port-not-extended',
       filePath: all[0]?.filePath ?? 'fougere.config.ts',
       subject: `ports: { ${port}: '${name}' }`,
-      message: `No class ${name} extends ${port}. These do: ${all.map(nameOf).join(', ')}.`,
+      message: `No class ${name} extends or implements ${port}. These do: ${all.map(nameOf).join(', ')}.`,
     });
 
     return [];

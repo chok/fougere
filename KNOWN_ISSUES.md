@@ -75,15 +75,15 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
   `const <Class>_base` is lost. `@fougere/log` states its frond rather than being scanned,
   which is the right form for a published package anyway — so this is a trap for a frond
   inside a workspace package, not a blocker.
-- **A `Logger` wrapper loses what it does not override, in silence** — `builtin/Logger.ts`. A
-  wrapper extends `Logger` and asks for `inner`, but its own base is built by `super()` with
-  nothing: no carry, no `during`, the default name. Every method it does not override runs on that
-  empty base — `debug` prints and reaches no destination, `child()` hands back a bare logger that
-  skips the wrapper's own code (`RedactingLogger.child('x').info('token=abc')` is not masked).
-  Measured 2026-10-01. Two halves, closed separately: a REQUIRED first constructor argument makes
-  `super(inner)` the only form that compiles and the base shares the real logger's state, so
-  nothing is lost; a single `write(line)` every level and every child funnels through is what makes
-  nothing BYPASS the wrapper. `OwnLoggers` already avoids `child()` on a replaced logger.
+- **A `Logger` wrapper that EXTENDS `Logger` loses what it does not override, in silence** —
+  `builtin/Logger.ts`. Its own base is built by `super()` with nothing: no carry, no `during`, the
+  default name, and every method it does not override runs on that empty base. A wrapper written
+  `implements Partial<Logger>` with `inner` loses nothing — what it leaves out is the real logger's,
+  forwarded as it is built (`linkOf`, `boot/ports.ts`; pinned by `core/tests/ports.test.ts`). What
+  remains for both forms: `child()` hands back the real logger's child, which skips the wrapper's own
+  code (`masked.child('x').info('token=abc')` is not masked). A single `write(line)` every level and
+  every child funnels through is what would make nothing bypass the wrapper. Measured 2026-10-01,
+  narrowed 2026-10-27.
 - **`conventions:` restates the directory NAMES and the import scope, nothing else** —
   `Conventions` (`core/src/Conventions.ts`). What a file is recognized BY stays fixed: a
   middleware extends `Middleware`, an extension `up`/`down`/`state`, and an address is the class

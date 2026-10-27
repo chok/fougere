@@ -19,14 +19,21 @@ export async function parseImplements(filePath: string, projectRoot?: string): P
     if (clause.token !== ts.SyntaxKind.ImplementsKeyword) continue;
 
     for (const base of clause.types) {
-      if (!ts.isIdentifier(base.expression)) continue;
+      // `implements Partial<Payment>` names the port inside `Partial`: a link writes only what it changes.
+      const partial = ts.isIdentifier(base.expression) && base.expression.text === 'Partial';
+      const argument = partial ? base.typeArguments?.[0] : undefined;
+      const named = argument && ts.isTypeReferenceNode(argument) && ts.isIdentifier(argument.typeName)
+        ? argument.typeName
+        : base.expression;
+      if (!ts.isIdentifier(named)) continue;
 
-      let symbol = checker.getSymbolAtLocation(base.expression);
+      let symbol = checker.getSymbolAtLocation(named);
       if (symbol && symbol.flags & ts.SymbolFlags.Alias) symbol = checker.getAliasedSymbol(symbol);
 
       found.push({
-        name: base.expression.text,
+        name: named.text,
         isClass: symbol?.declarations?.some((one) => ts.isClassDeclaration(one)) ?? false,
+        partial,
       });
     }
   }
@@ -38,4 +45,6 @@ export async function parseImplements(filePath: string, projectRoot?: string): P
 export interface Implemented {
   name: string;
   isClass: boolean;
+  /** Written `implements Partial<X>`: what it leaves out is X's, handed over to `inner`. */
+  partial: boolean;
 }
