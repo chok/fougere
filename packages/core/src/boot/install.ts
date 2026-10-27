@@ -37,7 +37,7 @@ import type { DoorAround } from '../entry/door.js';
 import { linkOf, ownKeyOf, portBindings, hostPortChains, wrapping, HOST_PORTS } from './ports.js';
 import { contractsKeyOf, facadeKeyOf } from '../wire/Facade.js';
 import { extendsRepository, subjectOf } from '../prefab/RepositoryOps.js';
-import { repositoryKeyOf } from '../prefab/Repository.js';
+import { repositoryKeyOf, seatOf } from '../prefab/Repository.js';
 import { storageKeyOf } from '../storage/Storage.js';
 import { declares } from '../Source.js';
 import { relationChecksOf, refuseUnwritableNull, releasing } from '../module/relation/relations.js';
@@ -395,6 +395,7 @@ function registerProviders(
     if (links.has(provider)) continue;
     scope.register(nameOf(provider), provider.ctor, { deps: ownLogger(nameOf(provider), provider.deps), ...lifetimeOf(provider.ctor) });
   }
+  registerRepositories(frond, scope, refused, ownLogger);
   for (const [seam, links] of hostPorts) {
     boundPorts.add(seam);
     frondLog.debug(`seam ${seam} → ${links.map((one) => one.ctor.name).join(' → ')} → the realization`);
@@ -442,6 +443,38 @@ function registerProviders(
   }
 
   return hostPorts;
+}
+
+/**
+ * A service built on ONE entity — `class PostQueries extends Repository<Post>` — answers `Repository<Post>`
+ * as well as its own name, the way `StripePayment` answers `Payment`: extending is being the thing, and
+ * the default repository steps aside. Two refuse, naming both.
+ */
+function registerRepositories(frond: FrondDescriptor, scope: Container, refused: Diagnostic[], ownLogger: OwnLogger): void {
+  const byKey = new Map<string, ProviderEntry[]>();
+  for (const provider of frond.providers) {
+    const seat = seatOf(provider.ctor);
+    if (seat.length !== 1) continue;
+    const key = repositoryKeyOf(seat[0]!.name);
+    if (key === nameOf(provider)) continue;
+    byKey.set(key, [...(byKey.get(key) ?? []), provider]);
+  }
+  for (const [key, providers] of byKey) {
+    if (providers.length > 1) {
+      refused.push({
+        severity: 'blocking',
+        code: 'repository-twice',
+        frond: frond.name,
+        subject: key,
+        filePath: providers[1]!.filePath,
+        message: `${providers.map(nameOf).join(' and ')} both extend the repository ${key} answers, and one key has one `
+          + 'answer. Keep one; the other may ask for it.',
+      });
+      continue;
+    }
+    const provider = providers[0]!;
+    scope.register(key, provider.ctor, { deps: ownLogger(nameOf(provider), provider.deps), ...lifetimeOf(provider.ctor) });
+  }
 }
 
 /**
