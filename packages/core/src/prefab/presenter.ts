@@ -1,7 +1,7 @@
 /**
  * `Present<Entity>` — enriches an entity's output with computed fields.
  *
- * Documented: [presenters](https://fougere.dev/docs/business/presenters).
+ * Documented: [presenters](https://fougere.dev/docs/business/collect-and-present#present--fields-computed-over-the-page).
  */
 
 import { upperFirst, type Entity } from '@fougere/schema';
