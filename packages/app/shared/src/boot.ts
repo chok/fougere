@@ -88,6 +88,7 @@ async function readConfig(): Promise<FougereConfig> {
   // The config names the scope the aliases are built from, so reading it must not need them.
   // Nothing in `fougere.config.ts` may import `@fronds/*`.
   await installLoader();
+
   // The nearest file, up from where the app runs — the app's own when it writes one.
   return loadNearestConfig(process.cwd());
 }
