@@ -1,4 +1,5 @@
 import { createAppRunner, callValueOf, type App, type FrondCall, type InvocationContext } from '@fougere/core';
+import { nobodyWhenUnserved, SESSION_CALL, type SessionView } from './session.js';
 
 type EntityClass = { name: string };
 
@@ -21,4 +22,13 @@ export async function invokeOn<T = unknown>(
   const explicit = typeof opOrInput === 'string' ? input : opOrInput;
 
   return (await createAppRunner(app)(call, { ...invocation, state: explicit?.state ?? state })) as T;
+}
+
+/** The session of the request a server renders, asked of the auth frond as a page would ask it. */
+export async function sessionOn(app: App, state: Record<string, unknown>): Promise<SessionView> {
+  try {
+    return { user: (await invokeOn(app, SESSION_CALL, undefined, undefined, state)) as SessionView['user'] ?? null };
+  } catch (failure) {
+    return nobodyWhenUnserved(failure);
+  }
 }

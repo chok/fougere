@@ -233,4 +233,3 @@ export { errorsByField, formFieldsOf, openingOf, payloadOf, tableColumnsOf } fro
 export type { SchemaView } from '@fougere/schema';
 export { type FormField } from './FormField.js';
 export { type TableColumn } from './TableColumn.js';
-export { sessionViewOf, type SessionView } from './session.js';

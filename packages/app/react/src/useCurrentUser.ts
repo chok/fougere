@@ -1,7 +1,7 @@
 'use client';
 /** The session. */
 import { createContext, createElement, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
-import type { SessionView } from '@fougere/app/client';
+import { fetcher, sessionOf, type SessionView } from '@fougere/app/client';
 
 const SessionContext = createContext<SessionView | null>(null);
 
@@ -14,8 +14,7 @@ export function useCurrentUser<TUser = Record<string, unknown>>() {
   const [session, setSession] = useState<SessionView>(hydrated ?? { user: null });
 
   const refresh = useCallback(async (): Promise<void> => {
-    const response = await fetch('/_fougere/session');
-    setSession((await response.json()) as SessionView);
+    setSession(await sessionOf(fetcher));
   }, []);
 
   useEffect(() => {

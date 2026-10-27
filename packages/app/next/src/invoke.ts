@@ -2,7 +2,7 @@
  * The server dual of the couple, in Next — for server components, server actions and route
  * handlers.
  */
-import { invokeOn, useFougereApp, sessionViewOf, stateFor, type SessionView } from '@fougere/app';
+import { invokeOn, sessionOn, useFougereApp, stateFor, type SessionView } from '@fougere/app';
 import type { FrondCall, InvocationContext } from '@fougere/core';
 
 type EntityClass = { name: string };
@@ -22,7 +22,7 @@ export async function invoke<T = unknown>(
 
 /** The session a layout may hand to `<FougereSession>` so the page arrives knowing its user. */
 export async function getSession(): Promise<SessionView> {
-  return sessionViewOf(await requestState());
+  return sessionOn(await useFougereApp(), await requestState());
 }
 
 async function requestState(): Promise<Record<string, unknown>> {

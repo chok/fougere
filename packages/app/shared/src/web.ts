@@ -18,11 +18,9 @@ import { GRAPHQL_PATH, graphqlSurfaceOf, type GraphQLDocument } from './graphql.
 import { matchRoute, tableOf } from './RouteMatch.js';
 import { useFougereApp, useFougereConfig } from './boot.js';
 import { jsonBodyOf } from './jsonBody.js';
-import { sessionViewOf } from './session.js';
 import { stateFor } from './state.js';
 
 const CALL_PATH = '/_fougere/call';
-const SESSION_PATH = '/_fougere/session';
 
 export interface AnswerOptions {
   /** Who the caller is, when the host resolved it itself — read off the headers otherwise. */
@@ -39,7 +37,6 @@ export async function answer(app: App, request: Request, options: AnswerOptions 
   const state = () => options.state ?? stateFor(request.headers, app);
 
   if (method === 'POST' && pathname.startsWith(CALL_PATH)) return call(app, request, await state());
-  if (method === 'GET' && pathname === SESSION_PATH) return Response.json(sessionViewOf(await state()));
   if (method === 'POST' && (pathname === GRAPHQL_PATH || graphqlSurfaceOf(pathname))) return graphql(app, request, await state());
 
   return rest(app, request, state);

@@ -8,8 +8,24 @@
  */
 import { afterAll, beforeAll, describe, it, expect } from 'vitest';
 import { createServer, type IncomingMessage, type Server } from 'node:http';
+import { entity, json, primary, text } from '@fougere/schema';
+import { Collector, frond, type InvocationContext } from '@fougere/core';
 import { fougere } from '../src/express.js';
 import { configureFougere, useFougereApp } from '../src/boot.js';
+
+class Member extends entity({ id: primary(), name: text() }) {}
+class MemberCollector extends Collector(Member) {
+  async collect(context: InvocationContext) { return context.state.user; }
+}
+class CallerHandler {
+  async who(member?: unknown) { return member ?? null; }
+}
+/** What an auth package declares a signed-in call carries — `betterAuth()` does the same. */
+const desk = frond('desk', {
+  extensions: [{ name: 'members', state: { user: json(Member) } }],
+  collectors: [MemberCollector],
+  handlers: [{ ctor: CallerHandler, operations: { who: { params: { member: { type: Member, optional: true } }, output: Member } } }],
+});
 
 let server: Server;
 let base: string;
@@ -18,7 +34,7 @@ let base: string;
 let before: (req: IncomingMessage & Record<string, unknown>) => void = () => {};
 
 beforeAll(async () => {
-  configureFougere({ fronds: [], storage: { storageFactory: () => ({}) as never } });
+  configureFougere({ fronds: [desk], storage: { storageFactory: () => ({}) as never } });
   await useFougereApp();
   server = createServer((req, res) => {
     before(req as never);
@@ -47,24 +63,24 @@ describe('what the middleware declines', () => {
 });
 
 describe('who the caller is', () => {
-  it('answers the view for the state the app resolved', async () => {
-    before = (req) => { req.user = { id: 'u1', name: 'Ada', passwordHash: 'secret' }; };
-    const response = await fetch(`${base}/_fougere/session`);
+  const who = async () => (await (await fetch(`${base}/_fougere/call`, {
+    method: 'POST',
+    body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'caller.who', params: {} }),
+  })).json() as { result: unknown }).result;
 
-    expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({ user: { id: 'u1', name: 'Ada' } });
+  it('is what an auth middleware put on the request', async () => {
+    before = (req) => { req.user = { id: 'u1', name: 'Ada' }; };
+    expect(await who()).toEqual({ id: 'u1', name: 'Ada' });
   });
 
   it('reads `req.fougereState` when the app fills it', async () => {
-    before = (req) => { req.fougereState = { user: { id: 'u2' } }; };
-
-    expect(await (await fetch(`${base}/_fougere/session`)).json()).toEqual({ user: { id: 'u2' } });
+    before = (req) => { req.fougereState = { user: { id: 'u2', name: 'Grace' } }; };
+    expect(await who()).toEqual({ id: 'u2', name: 'Grace' });
   });
 
-  it('answers nobody when nothing ran before it, and never takes identity from the payload', async () => {
+  it('is nobody when nothing ran before the middleware', async () => {
     before = () => {};
-
-    expect(await (await fetch(`${base}/_fougere/session`)).json()).toEqual({ user: null });
+    expect(await who()).toBeNull();
   });
 });
 

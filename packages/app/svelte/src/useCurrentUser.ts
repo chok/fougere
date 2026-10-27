@@ -1,6 +1,6 @@
 /** The session. */
 import { writable, derived, type Readable } from 'svelte/store';
-import type { SessionView } from '@fougere/app/client';
+import { fetcher, sessionOf, type SessionView } from '@fougere/app/client';
 
 const session = writable<SessionView>({ user: null });
 let fetched = false;
@@ -12,9 +12,9 @@ export function hydrateSession(view: SessionView): void {
 }
 
 export async function refreshSession(): Promise<void> {
-  const response = await fetch('/_fougere/session');
+  const view = await sessionOf(fetcher);
   fetched = true;
-  session.set((await response.json()) as SessionView);
+  session.set(view);
 }
 
 export function useCurrentUser<TUser = Record<string, unknown>>() {

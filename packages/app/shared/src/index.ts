@@ -13,7 +13,7 @@ export { authOf, useFougereAuth } from './auth.js';
 export { tableOf } from './RouteMatch.js';
 export { prefixOf } from '@fougere/adapter-rest';
 
-export { invokeOn } from './invoke.js';
+export { invokeOn, sessionOn } from './invoke.js';
 
 export { errorsByField, formFieldsOf, openingOf, payloadOf, tableColumnsOf } from './FormEntity.js';
 export type { SchemaView } from '@fougere/schema';
@@ -22,7 +22,7 @@ export { type FormField, type FormReference } from './FormField.js';
 export { Choices, type Choice, type Offer } from './Choices.js';
 export { type TableColumn } from './TableColumn.js';
 
-export { sessionViewOf, type SessionView } from './session.js';
+export { SESSION_CALL, sessionOf, type SessionView } from './session.js';
 
 export { stateFor } from './state.js';
 

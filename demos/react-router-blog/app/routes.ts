@@ -19,6 +19,5 @@ export default [
 
   route('_fougere/call', 'routes/fougere.call.ts'),
   route('_fougere/call/*', 'routes/fougere.call-surface.ts'),
-  route('_fougere/session', 'routes/fougere.session.ts'),
   route('api/*', 'routes/fougere.rest.ts'),
 ] satisfies RouteConfig;

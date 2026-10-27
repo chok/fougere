@@ -44,4 +44,4 @@ export { type FormField, type FormReference } from '../FormField.js';
 export { type FormOptions } from '../FormOptions.js';
 export { Choices, type Choice, type Offer } from '../Choices.js';
 export { type TableColumn } from '../TableColumn.js';
-export { sessionViewOf, type SessionView } from '../session.js';
+export { SESSION_CALL, sessionOf, type SessionView } from '../session.js';

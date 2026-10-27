@@ -1,16 +1,25 @@
-/**
- * The session view — the one place that turns the server-resolved request context (filled by the
- * auth middleware) into what the client is allowed to see.
- */
+/** Who is signed in, as a page reads it — asked of the auth frond, which answers `session.get`. */
+import { ErrorCode, FougereError, type FrondCall } from '@fougere/core/contract';
+import { invocationOf, sendCall } from './Designation.js';
+import type { Fetcher } from './Fetcher.js';
 
 export interface SessionView {
   user: Record<string, unknown> | null;
 }
 
-export function sessionViewOf(context: Record<string, unknown>): SessionView {
-  const raw = context.user as Record<string, unknown> | undefined;
-  if (!raw) return { user: null };
-  const { passwordHash: _passwordHash, ...user } = raw;
+export const SESSION_CALL: FrondCall = { address: 'session', op: 'get' };
 
-  return { user };
+/** Nobody is signed in where no frond answers who is — an app with no auth has no user. */
+export function nobodyWhenUnserved(failure: unknown): SessionView {
+  if (failure instanceof FougereError && failure.code === ErrorCode.NOT_FOUND) return { user: null };
+  throw failure;
+}
+
+/** The session, asked through the envelope a page calls everything else through. */
+export async function sessionOf(fetcher: Fetcher): Promise<SessionView> {
+  try {
+    return { user: (await sendCall(fetcher, SESSION_CALL, invocationOf())) as SessionView['user'] ?? null };
+  } catch (failure) {
+    return nobodyWhenUnserved(failure);
+  }
 }

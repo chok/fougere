@@ -244,7 +244,6 @@ const module = defineNuxtModule<FougereModuleOptions>({
     // `/_fougere/call/public` serves the surface named `public`, the way `generateRoutes(app, { surface })` does for REST.
     addServerHandler({ route: '/_fougere/call', method: 'post', handler: answering });
     addServerHandler({ route: '/_fougere/call/**', method: 'post', handler: answering });
-    addServerHandler({ route: '/_fougere/session', method: 'get', handler: answering });
     // Session hydration — the page ships with its user, no round-trip
     addPlugin({ src: runtimeResolve('plugins/session.server'), mode: 'server' });
     if (serves(config.protocols, 'rest')) addServerHandler({ route: `${prefixOf(config.protocols)}/**`, handler: answering });
@@ -265,11 +264,6 @@ const module = defineNuxtModule<FougereModuleOptions>({
     addServerHandler({
       route: '/auth/**',
       handler: runtimeResolve('server/auth/routes/auth/[...]'),
-    });
-    addServerHandler({
-      route: '/api/me',
-      method: 'get',
-      handler: runtimeResolve('server/auth/routes/api/me.get'),
     });
 
     // ── 6. What this app hosts ───

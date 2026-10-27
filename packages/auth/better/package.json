@@ -42,7 +42,9 @@
     "better-auth": "^1.6.11"
   },
   "devDependencies": {
+    "@fougere/adapter-memory": "workspace:*",
     "@fougere/adapter-sql": "workspace:*",
+    "@fougere/container": "workspace:*",
     "vitest": "^4.1.0"
   },
   "publishConfig": {

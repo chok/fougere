@@ -6,6 +6,7 @@ import { AuthUser } from './entity/AuthUser.js';
 import { AuthVerification } from './entity/AuthVerification.js';
 import { authEntities } from './entity/authEntities.js';
 import { fougereAdapter, type StorageMap } from './adapter.js';
+import { sessionOf } from './session.js';
 import { translateCredential, translatePlugins, translateSocial, type FougereProviders } from './FougereProviders.js';
 
 export { AuthUser } from './entity/AuthUser.js';
@@ -43,9 +44,12 @@ export function betterAuth(opts: BetterAuthOptions): FrondDescriptor {
   const brought = Object.values(models).filter((schema) => schema !== opts.user);
   const providers = opts.providers ?? {};
   const basePath = opts.basePath ?? '/auth';
+  const session = sessionOf(user);
 
   return frond('auth', {
     entities: brought,
+    collectors: [session.collector],
+    handlers: [session.handler],
     extensions: [{
       name: 'auth',
       state: { user: json(user as typeof Schema), session: json((models.session as typeof Schema).omit('token')) },

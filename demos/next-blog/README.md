@@ -35,7 +35,6 @@ better-auth and tRPC mount theirs:
 
 ```
 app/_fougere/call/[[...surface]]/route.ts   export { POST } from '@fougere/next/route';
-app/_fougere/session/route.ts               export { GET } from '@fougere/next/route';
 app/api/[...fougere]/route.ts               export { GET, POST, PUT, PATCH, DELETE } from '@fougere/next/route';
 ```
 

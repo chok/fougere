@@ -45,7 +45,6 @@ read when its page goes. React does it in an effect teardown, Vue in
 GET  /api/health              → {"ok":true,"from":"the app, not fougere"}  200
 GET  /api/blog/posts          → {"items":[…]}                              200
 POST /_fougere/call           → {"jsonrpc":"2.0","id":1,"result":[…]}      200
-GET  /_fougere/session        → {"user":null}                              200
 DELETE /api/blog/posts        → Method DELETE not allowed — try GET, POST  405
 POST /api/blog/posts {status} → VALIDATION_FAILED — status: Read-only      400
 / · /drafts · /new                                                         200

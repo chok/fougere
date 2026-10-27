@@ -13,7 +13,6 @@ export {
   configureFougere,
   useFougereApp,
   useFougereAuth,
-  sessionViewOf,
   stateFor,
   type FougereServerConfig,
   type SessionView,
