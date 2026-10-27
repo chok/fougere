@@ -1,1 +1,1 @@
-export { POST } from '@fougere/next/call';
+export { POST } from '@fougere/next/route';

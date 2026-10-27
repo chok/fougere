@@ -5,7 +5,8 @@
 import '@fougere/adapter-graphql';
 import { describe, expect, it } from 'vitest';
 import { executeOn } from '@fougere/adapter-graphql';
-import { configureFougere, serveRest, serveRpc, useFougereApp } from '@fougere/app';
+import { configureFougere, useFougereApp } from '@fougere/app';
+import { answered, called } from './web.js';
 import { frond } from '@fougere/core';
 import { entity, primary, text } from '@fougere/schema';
 
@@ -32,14 +33,13 @@ const app = await useFougereApp();
 
 describe('an accidental error, at every door', () => {
   it('reads Internal error on JSON-RPC', async () => {
-    const answer = await serveRpc(app, { path: '/_fougere/call', body: { jsonrpc: '2.0', id: 1, method: 'note.boom', params: {} }, state: {} });
+    const answer = (await called(app, 'note.boom')).body;
     expect(JSON.stringify(answer)).not.toContain(SECRET);
     expect(answer).toMatchObject({ error: { message: 'Internal error' } });
   });
 
   it('reads Internal error on REST', async () => {
-    const answer = await serveRest(app, { method: 'POST', path: '/api/desk/notes/boom', query: {}, state: {} });
-    expect(answer).toMatchObject({ kind: 'error', status: 500, body: { message: 'Internal error' } });
+    expect(await answered(app, 'POST', '/api/desk/notes/boom')).toMatchObject({ status: 500, body: { message: 'Internal error' } });
   });
 
   it('reads Internal error on GraphQL', async () => {

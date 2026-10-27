@@ -34,9 +34,9 @@ Three files, one line each — Next has no module API, so routes are mounted the
 better-auth and tRPC mount theirs:
 
 ```
-app/_fougere/call/[[...surface]]/route.ts   export { POST } from '@fougere/next/call';
-app/_fougere/session/route.ts               export { GET } from '@fougere/next/session';
-app/api/[...fougere]/route.ts               export { GET, POST, PUT, PATCH, DELETE } from '@fougere/next/rest';
+app/_fougere/call/[[...surface]]/route.ts   export { POST } from '@fougere/next/route';
+app/_fougere/session/route.ts               export { GET } from '@fougere/next/route';
+app/api/[...fougere]/route.ts               export { GET, POST, PUT, PATCH, DELETE } from '@fougere/next/route';
 ```
 
 plus `serverExternalPackages` in `next.config.mjs`, because the scan reads frond

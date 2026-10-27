@@ -53,9 +53,9 @@
     "@fougere/adapter-rest": "workspace:*",
     "@fougere/transport-http": "workspace:*",
     "jiti": "^2.6.1",
-    "@fougere/http": "workspace:*",
     "@fougere/container": "workspace:*",
-    "@fougere/adapter-memory": "workspace:*"
+    "@fougere/adapter-memory": "workspace:*",
+    "srvx": "^1.0.5"
   },
   "devDependencies": {
     "@fougere/compiler": "workspace:*",

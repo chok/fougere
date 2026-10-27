@@ -15,13 +15,13 @@ which knows what a host is.
 ```ts
 // src/routes/api.$.ts — the whole REST integration
 import { createFileRoute } from '@tanstack/react-router';
-import { rest } from '@fougere/app/web';
+import { fougere } from '@fougere/app/web';
 
 export const Route = createFileRoute('/api/$')({
   server: {
     handlers: {
-      GET: ({ request }) => rest(request),
-      POST: ({ request }) => rest(request),
+      GET: ({ request }) => fougere(request),
+      POST: ({ request }) => fougere(request),
       // …
     },
   },

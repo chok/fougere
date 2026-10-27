@@ -1,36 +1,43 @@
-/** The facades as Express middlewares — the form an Express app expects. */
-import { HttpError, readExpressBody } from '@fougere/http';
-import { GRAPHQL_PATH, graphqlSurfaceOf, type GraphQLDocument } from './graphql.js';
-import { maxBodyBytes } from '@fougere/core';
-import { rpcParseError, serveRest, serveRpc } from './Outcome.js';
-import { serveGraphQL } from './graphql.js';
-import { sessionViewOf } from './session.js';
-import { useFougereApp, useFougereConfig } from './boot.js';
-import { prefixOf } from '@fougere/adapter-rest';
+/** The app as an Express middleware — the form an Express app expects. */
+import { NodeRequest, sendNodeResponse } from 'srvx/node';
+import { answer } from './web.js';
+import { useFougereApp } from './boot.js';
 
-/** What a middleware reads off an Express request. Structural, not imported. */
+/** What the middleware reads off an Express request. Structural, not imported. */
 interface ExpressRequest {
   method: string;
-  path?: string;
   originalUrl?: string;
   url?: string;
-  query?: Record<string, unknown>;
-  headers?: Record<string, unknown>;
+  protocol?: string;
+  headers: Record<string, string | string[] | undefined>;
   body?: unknown;
   /** Filled by an auth middleware that ran before us, if any. */
   fougereState?: Record<string, unknown>;
   user?: unknown;
 }
 
-interface ExpressResponse {
-  status(code: number): ExpressResponse;
-  set(field: string, value: unknown): ExpressResponse;
-  json(body: unknown): unknown;
-  send(body: unknown): unknown;
-}
-
 type Next = (err?: unknown) => void;
 export type ExpressMiddleware = (req: any, res: any, next: Next) => void;
+
+/**
+ * Every door of the app. What each one SERVES is still the app's declaration — mounting is not
+ * publishing — and a request none of them answers goes on to the app's own routes.
+ */
+export function fougere(): ExpressMiddleware {
+  return (req, res, next) => {
+    const request = requestOf(req, res);
+
+    void (async () => {
+      try {
+        const answered = await answer(await useFougereApp(), request, { state: stateOf(req) });
+        if (!answered) return next();
+        await sendNodeResponse(res, answered);
+      } catch (err) {
+        next(err);
+      }
+    })();
+  };
+}
 
 /** Who the caller is, from what ran before. */
 function stateOf(req: ExpressRequest): Record<string, unknown> {
@@ -39,150 +46,21 @@ function stateOf(req: ExpressRequest): Record<string, unknown> {
   return req.user ? { user: req.user } : {};
 }
 
-function headersOf(req: ExpressRequest): Headers {
+/** A body a parser already read is gone from the stream, so it is handed over as what it parsed. */
+function requestOf(req: ExpressRequest, res: unknown): Request {
+  const method = req.method.toUpperCase();
+  if (req.body === undefined || method === 'GET' || method === 'HEAD') return new NodeRequest({ req: req as never, res: res as never });
+
   const headers = new Headers();
-  for (const [name, value] of Object.entries(req.headers ?? {})) {
-    if (typeof value === 'string') headers.set(name, value);
-    else if (Array.isArray(value)) for (const one of value) headers.append(name, String(one));
+  for (const [name, value] of Object.entries(req.headers)) {
+    if (value !== undefined) headers.set(name, Array.isArray(value) ? value.join(', ') : value);
   }
+  headers.set('content-type', 'application/json');
+  headers.delete('content-length');
 
-  return headers;
-}
-
-function pathOf(req: ExpressRequest): string {
-  return req.path ?? String(req.originalUrl ?? req.url ?? '').split('?')[0]!;
-}
-
-function queryOf(req: ExpressRequest): Record<string, string> {
-  return Object.fromEntries(
-    Object.entries(req.query ?? {}).map(([key, value]) => [
-      key,
-      String(Array.isArray(value) ? value[0] : value),
-    ]),
-  );
-}
-
-/** Turn a thrown failure into Express's own error pipeline, unless it is a refusal we own. */
-function fail(res: ExpressResponse, next: Next, err: unknown): void {
-  if (err instanceof HttpError) {
-    const { status, data } = err.result();
-    res.status(status).json(data);
-
-    return;
-  }
-  next(err);
-}
-
-/** The call envelope, at `/_fougere/call` — the facade the browser primitives use. */
-export function call(mountPath = '/_fougere/call'): ExpressMiddleware {
-  return (req, res, next) => {
-    const path = pathOf(req);
-    if (req.method !== 'POST' || !path.startsWith(mountPath)) return next();
-
-    void (async () => {
-      try {
-        const app = await useFougereApp();
-        let body: unknown;
-        try {
-          body = await readExpressBody(req, maxBodyBytes());
-        } catch (refused) {
-          if (refused instanceof HttpError && refused.status === 413) throw refused;
-          res.status(200).json(rpcParseError());
-
-          return;
-        }
-        const response = new Headers();
-        const answered = await serveRpc(app, { path, body, state: stateOf(req), carrier: { request: headersOf(req), response } });
-        const cookies = response.getSetCookie();
-        if (cookies.length > 0) res.set('set-cookie', cookies);
-        res.status(200).json(answered);
-      } catch (err) {
-        fail(res, next, err);
-      }
-    })();
-  };
-}
-
-/** The session view, at `/_fougere/session`. */
-export function session(mountPath = '/_fougere/session'): ExpressMiddleware {
-  return (req, res, next) => {
-    if (req.method !== 'GET' || pathOf(req) !== mountPath) return next();
-    res.status(200).json(sessionViewOf(stateOf(req)));
-  };
-}
-
-/** The REST projection, where `protocols.rest.prefix` mounts it — `/api` unless it says otherwise. */
-export function rest(): ExpressMiddleware {
-  return (req, res, next) => {
-    const path = pathOf(req);
-
-    void (async () => {
-      try {
-        const { protocols } = await useFougereConfig();
-        if (!path.startsWith(`${prefixOf(protocols)}/`)) return next();
-
-        const app = await useFougereApp();
-        const outcome = await serveRest(app, {
-          method: req.method,
-          path,
-          query: queryOf(req),
-          headers: headersOf(req),
-          body: () => readExpressBody(req, maxBodyBytes()),
-          state: stateOf(req),
-        });
-
-        // Not ours — Express's own passthrough, which is what `pass` always meant.
-        if (outcome.kind === 'pass') return next();
-
-        for (const [key, value] of Object.entries(outcome.headers ?? {})) res.set(key, value);
-        if (outcome.kind === 'ok' && outcome.raw) res.status(outcome.status).send(outcome.body);
-        else res.status(outcome.status).json(outcome.body);
-      } catch (err) {
-        fail(res, next, err);
-      }
-    })();
-  };
-}
-
-/** GraphQL, at `/graphql` by default. Declines when the app declares no such adapter. */
-export function graphql(mountPath = GRAPHQL_PATH): ExpressMiddleware {
-  return (req, res, next) => {
-    const path = pathOf(req);
-    const surface = graphqlSurfaceOf(path, mountPath);
-    if (req.method !== 'POST' || (path !== mountPath && !surface)) return next();
-
-    void (async () => {
-      try {
-        const app = await useFougereApp();
-        const outcome = await serveGraphQL(app, {
-          document: async () => (await readExpressBody(req, maxBodyBytes())) as GraphQLDocument | undefined,
-          surface,
-          state: stateOf(req),
-          headers: headersOf(req),
-        });
-        if (outcome.kind === 'pass') return next();
-        for (const [key, value] of Object.entries(outcome.kind === 'ok' ? outcome.headers ?? {} : {})) res.set(key, value);
-        res.status(outcome.status).json(outcome.body);
-      } catch (err) {
-        fail(res, next, err);
-      }
-    })();
-  };
-}
-
-/** Every facade, for an app that wants all of them. What each one SERVES is still the
- *  app's declaration — mounting is not publishing. */
-export function fougere(): ExpressMiddleware {
-  const facades = [call(), session(), rest(), graphql()];
-
-  return (req, res, next) => {
-    let index = 0;
-    const step = (err?: unknown) => {
-      if (err) return next(err);
-      const facade = facades[index++];
-      if (!facade) return next();
-      facade(req, res, step);
-    };
-    step();
-  };
+  return new Request(`${req.protocol ?? 'http'}://${headers.get('host') ?? 'localhost'}${req.originalUrl ?? req.url}`, {
+    method,
+    headers,
+    body: JSON.stringify(req.body),
+  });
 }

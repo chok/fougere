@@ -6,7 +6,7 @@
 import { afterAll, describe, expect, it } from 'vitest';
 import { join } from 'node:path';
 import { describedAt, openApiOf } from '@fougere/adapter-rest';
-import { serveRest } from '@fougere/app';
+import { answered } from './web.js';
 import { testApp } from '../src/index.js';
 
 const app = await testApp({ root: join(import.meta.dirname, 'fixtures'), fronds: ['press'] });
@@ -61,16 +61,16 @@ describe('what REST publishes', () => {
 
   it('serves the document, and a page only when ui names one', async () => {
     const bare = publishing({});
-    const json = await serveRest(bare, { method: 'GET', path: '/api/openapi.json', query: {}, state: {} });
+    const json = await answered(bare, 'GET', '/api/openapi.json');
 
-    expect(json).toMatchObject({ kind: 'ok', status: 200, body: { openapi: '3.1.0' } });
+    expect(json).toMatchObject({ status: 200, body: { openapi: '3.1.0' } });
     expect(describedAt(bare, 'GET', '/api/docs')).toBeUndefined();
   });
 
   it('reads the document with Swagger UI by default, every file pinned by its hash', async () => {
-    const page = await serveRest(publishing({ ui: true }), { method: 'GET', path: '/api/docs', query: {}, state: {} }) as { body: string };
+    const page = await answered(publishing({ ui: true }), 'GET', '/api/docs') as { body: string };
 
-    expect(page).toMatchObject({ kind: 'ok', raw: true, headers: { 'content-type': 'text/html; charset=utf-8' } });
+    expect(page).toMatchObject({ status: 200, headers: { 'content-type': 'text/html; charset=utf-8' } });
     expect(page.body).toContain('SwaggerUIBundle({ url: "/api/openapi.json"');
     expect(page.body.match(/integrity="sha384-/g)).toHaveLength(2);
   });

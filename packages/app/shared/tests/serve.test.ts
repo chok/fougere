@@ -11,7 +11,7 @@ import '@fougere/adapter-graphql';
 import { describe, it, expect } from 'vitest';
 import { entity, primary, text } from '@fougere/schema';
 import { answerAt } from '@fougere/core';
-import { serveRest, serveRpc, surfaceOf } from '../src/Outcome.js';
+import { answer, surfaceOf } from '../src/web.js';
 
 class Post extends entity({ id: primary(), title: text() }) {}
 
@@ -38,6 +38,7 @@ function appOf(protocols: Record<string, object> = { rest: {} }) {
     }],
     resolve: () => undefined as never,
     answer: answerAt,
+    listens: () => false,
     facadeFor: (name: string) => (name === 'post' ? facade : undefined),
     operationsFor: (name: string) => (name === 'post'
       ? new Map(Object.keys(facade).map((op) => [
@@ -49,8 +50,12 @@ function appOf(protocols: Record<string, object> = { rest: {} }) {
 }
 
 const app = appOf();
-const request = (method: string, path: string) =>
-  serveRest(app, { method, path: `/api/${path}`, query: {}, state: {} });
+const asked = (method: string, path: string) => new Request(`http://localhost${path}`, { method });
+const request = (method: string, path: string) => answer(app, asked(method, `/api/${path}`), { state: {} });
+const graphqlOf = (protocols: Record<string, object>, document?: object) => answer(appOf(protocols), new Request('http://localhost/graphql', {
+  method: 'POST',
+  ...(document && { headers: { 'content-type': 'application/json' }, body: JSON.stringify(document) }),
+}), { state: {} });
 
 describe('surfaceOf', () => {
   it('names no audience on the bare facade', () => {
@@ -69,82 +74,70 @@ describe('surfaceOf', () => {
 describe('the app decides which protocols it serves', () => {
   it('serves nothing when the app names no protocol — the route file is not the decision', async () => {
     const closed = appOf({});
-    const outcome = await serveRest(closed, { method: 'GET', path: '/api/blog/posts', query: {}, state: {} });
-    expect(outcome).toEqual({ kind: 'pass' });
+    expect(await answer(closed, asked('GET', '/api/blog/posts'), { state: {} })).toBeUndefined();
   });
 
   it('serves nothing when it declares another adapter but not rest', async () => {
     const closed = appOf({ graphql: {} });
-    expect(await serveRest(closed, { method: 'GET', path: '/api/blog/posts', query: {}, state: {} }))
-      .toEqual({ kind: 'pass' });
+    expect(await answer(closed, asked('GET', '/api/blog/posts'), { state: {} })).toBeUndefined();
   });
 
   it('declines rather than refuses, so the host keeps routing the request', async () => {
-    // `pass`, never a 404: the app that mounted the facade may serve `/api/...` itself,
+    // `undefined`, never a 404: the app that mounted the facade may serve `/api/...` itself,
     // and an undeclared adapter must not take that path away from it.
-    const closed = appOf({});
-    const outcome = await serveRest(closed, { method: 'DELETE', path: '/api/blog/posts', query: {}, state: {} });
-    expect(outcome).toEqual({ kind: 'pass' });
+    expect(await answer(appOf({}), asked('DELETE', '/api/blog/posts'), { state: {} })).toBeUndefined();
   });
 
   it('consults the table once declared — the same request, a different answer', async () => {
-    const closed = { method: 'DELETE', path: '/api/blog/posts', query: {}, state: {} };
-
     // Undeclared: the facade never looks. Declared: it looks, and refuses the verb.
-    expect(await serveRest(appOf({}), closed)).toEqual({ kind: 'pass' });
-    expect(await serveRest(appOf(), closed)).toMatchObject({ kind: 'error', status: 405 });
+    expect(await answer(appOf({}), asked('DELETE', '/api/blog/posts'), { state: {} })).toBeUndefined();
+    expect((await answer(appOf(), asked('DELETE', '/api/blog/posts'), { state: {} }))?.status).toBe(405);
   });
 });
 
-describe('serveRest — what it declines', () => {
+describe('REST — what it declines', () => {
   it('passes on a path too short to name an entity, so the app keeps its own /api routes', async () => {
-    expect(await request('GET', 'health')).toEqual({ kind: 'pass' });
+    expect(await request('GET', 'health')).toBeUndefined();
   });
 
   it('passes on a path no frond serves', async () => {
-    expect(await request('GET', 'blog/nope')).toEqual({ kind: 'pass' });
+    expect(await request('GET', 'blog/nope')).toBeUndefined();
   });
 
   it('refuses a verb the table does not serve, and says which ones it does', async () => {
-    expect(await request('DELETE', 'blog/posts')).toMatchObject({
-      kind: 'error',
-      status: 405,
-      body: { allow: ['GET', 'POST'] },
-      headers: { allow: 'GET, POST' },
-    });
+    const refused = (await request('DELETE', 'blog/posts'))!;
+
+    expect(refused.status).toBe(405);
+    expect(refused.headers.get('allow')).toBe('GET, POST');
+    expect(await refused.json()).toMatchObject({ allow: ['GET', 'POST'] });
   });
 });
 
 describe('the GraphQL facade obeys the same declaration', () => {
   it('serves nothing when the app declares no graphql adapter', async () => {
-    const { serveGraphQL } = await import('../src/graphql.js');
-    const outcome = await serveGraphQL(appOf({ rest: {} }), { document: async () => ({ query: '{ __typename }' }), state: {} });
-    expect(outcome).toEqual({ kind: 'pass' });
+    expect(await graphqlOf({ rest: {} }, { query: '{ __typename }' })).toBeUndefined();
   });
 
   it('refuses a request with no query once declared', async () => {
-    const { serveGraphQL } = await import('../src/graphql.js');
-    const outcome = await serveGraphQL(appOf({ graphql: {} }), { document: async () => undefined, state: {} });
-    expect(outcome).toMatchObject({ kind: 'error', status: 400 });
+    expect((await graphqlOf({ graphql: {} }))?.status).toBe(400);
   });
 
   it('checks the declaration before the query — an undeclared adapter says nothing at all', async () => {
-    const { serveGraphQL } = await import('../src/graphql.js');
-    // No query AND no adapter: the answer is `pass`, not a 400. A facade that is not
+    // No query AND no adapter: the answer is `undefined`, not a 400. A facade that is not
     // served does not get to complain about what was sent to it.
-    expect(await serveGraphQL(appOf({}), { document: async () => undefined, state: {} })).toEqual({ kind: 'pass' });
+    expect(await graphqlOf({})).toBeUndefined();
   });
 });
 
 describe('the call envelope a page knocks on', () => {
   it('refuses `args` — a page sends a request, and a peer hands over the arguments', async () => {
-    const answer = await serveRpc(app, {
-      path: '/_fougere/call',
-      body: { jsonrpc: '2.0', id: 1, method: 'post.update', params: { args: ['1', { title: 'x' }, { id: 'admin' }] } },
-      state: {},
-    }) as { error: { data: { code: string; message: string } } };
+    const answered = await answer(app, new Request('http://localhost/_fougere/call', {
+      method: 'POST',
+      body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'post.update', params: { args: ['1', { title: 'x' }, { id: 'admin' }] } }),
+    }), { state: {} });
+    const body = await answered!.json() as { error: { data: { code: string; message: string } } };
 
-    expect(answer.error.data).toMatchObject({ code: 'BAD_REQUEST', message: expect.stringMatching(/not `args` \(only fronds send `args`\)/) });
+    expect(body.error.data).toMatchObject({ code: 'BAD_REQUEST', message: expect.stringMatching(/not `args` \(only fronds send `args`\)/) });
   });
 });
 

@@ -3,6 +3,7 @@ import { readdirSync, existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { join, dirname, resolve } from 'node:path';
 import type { Plugin } from 'vite';
+import { NodeRequest, sendNodeResponse } from 'srvx/node';
 import { RUNTIME_PACKAGES } from '@fougere/core/node';
 import { type Conventions, DEFAULT_CONVENTIONS } from '@fougere/core';
 import { frondAliases, projectRootOf } from '@fougere/core/node';
@@ -56,10 +57,7 @@ function serveDoors() {
     void (async () => {
       try {
         const web = await import('@fougere/app/web');
-        const response = await web.fougere(await requestOf(req));
-        res.statusCode = response.status;
-        response.headers.forEach((value, key) => res.setHeader(key, value));
-        res.end(Buffer.from(await response.arrayBuffer()));
+        await sendNodeResponse(res, await web.fougere(new NodeRequest({ req, res })));
       } catch (error) {
         res.statusCode = 500;
         res.setHeader('content-type', 'application/json');
@@ -67,19 +65,6 @@ function serveDoors() {
       }
     })();
   };
-}
-
-async function requestOf(req: IncomingMessage): Promise<Request> {
-  const chunks: Buffer[] = [];
-  for await (const chunk of req) chunks.push(chunk as Buffer);
-  const headers = new Headers(Object.entries(req.headers)
-    .filter((entry): entry is [string, string] => typeof entry[1] === 'string'));
-
-  return new Request(`http://${req.headers.host ?? 'localhost'}${req.url}`, {
-    method: req.method,
-    headers,
-    ...(chunks.length ? { body: Buffer.concat(chunks) } : {}),
-  });
 }
 
 /**

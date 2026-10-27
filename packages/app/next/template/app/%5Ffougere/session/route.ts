@@ -1,1 +1,1 @@
-export { GET } from '@fougere/next/session';
+export { GET } from '@fougere/next/route';

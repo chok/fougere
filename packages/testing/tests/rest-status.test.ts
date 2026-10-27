@@ -1,12 +1,12 @@
 /**
  * REST is served by two edges: `registerRoutes` on an `HttpRouter` (Express, Fastify, Hono) and
- * `serveRest` behind the web hosts (Nuxt, Next, Vite). They used to decide a status apart — 201
+ * `answer` behind the web hosts (Nuxt, Next, Vite). They used to decide a status apart — 201
  * against 200, 204 against 200, two 404 bodies — and now both answer through `answer`.
  */
 import { afterAll, describe, expect, it } from 'vitest';
 import { join } from 'node:path';
 import { generateRoutes, registerRoutes } from '@fougere/adapter-rest';
-import { serveRest } from '@fougere/app';
+import { answered } from './web.js';
 import { testApp } from '../src/index.js';
 
 const app = await testApp({ root: join(import.meta.dirname, 'fixtures'), fronds: ['press'] });
@@ -48,8 +48,8 @@ async function viaRouter(op: string, call: Call = {}): Promise<Answered> {
 }
 
 async function viaWeb(op: string, call: Call = {}): Promise<Answered> {
-  const answer = await serveRest(app, { method: routeOf(op).method, path: pathOf(op, call), query: {}, body: async () => call.input, state: {} });
-  if (answer.kind === 'pass') throw new Error(`serveRest passed on ${op}`);
+  const answer = await answered(app, routeOf(op).method, pathOf(op, call), { body: call.input });
+  if (!answer) throw new Error(`REST answered nothing on ${op}`);
 
   return { status: answer.status, body: answer.body };
 }
@@ -84,7 +84,7 @@ describe('the two REST edges agree', () => {
   it('on a refused input', async () => {
     const { router, web } = await bothEdges('create', { input: { ...article, title: 'x' } });
     expect([router.status, web.status]).toEqual([400, 400]);
-    expect(web.body).toEqual(router.body);
+    expect(web.body).toEqual(JSON.parse(JSON.stringify(router.body)));
   });
 });
 
@@ -92,7 +92,7 @@ describe('the two REST edges answer one status set, read off the contract', () =
   it('on findById of a missing row: 404, in one body shape', async () => {
     const { router, web } = await bothEdges('findById', { id: 'missing' });
     expect([router.status, web.status]).toEqual([404, 404]);
-    expect(web.body).toEqual(router.body);
+    expect(web.body).toEqual(JSON.parse(JSON.stringify(router.body)));
     expect(router.body).toMatchObject({ code: 'NOT_FOUND' });
   });
 
@@ -116,7 +116,7 @@ describe('the two REST edges answer one status set, read off the contract', () =
   it('on list: the same envelope on both, so the page facts survive JSON', async () => {
     await created();
     const { router, web } = await bothEdges('list');
-    expect(web.body).toEqual(router.body);
+    expect(web.body).toEqual(JSON.parse(JSON.stringify(router.body)));
     expect(router.body).toMatchObject({ items: expect.any(Array) });
   });
 });

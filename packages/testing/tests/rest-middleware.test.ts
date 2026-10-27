@@ -5,7 +5,8 @@
  */
 import { describe, expect, it } from 'vitest';
 import { openApiOf, RestMiddleware, type ResponseResult, type RestRequest, type RestResponse } from '@fougere/adapter-rest';
-import { configureFougere, serveRest, serveRpc, tableOf, useFougereApp } from '@fougere/app';
+import { configureFougere, tableOf, useFougereApp } from '@fougere/app';
+import { answered, called } from './web.js';
 import { createContainer } from '@fougere/container';
 import { createApp, ErrorCode, FougereError, frond } from '@fougere/core';
 import { entity, primary, text } from '@fougere/schema';
@@ -61,46 +62,34 @@ const app = await useFougereApp();
 
 describe('a REST middleware', () => {
   it('decorates the answer, a refusal included', async () => {
-    const found = await serveRest(app, { method: 'GET', path: '/api/desk/notes/n1/find', query: {}, state: {} });
-    const refused = await serveRest(app, {
-      method: 'POST', path: '/api/desk/notes/write/x', query: {}, state: {},
-      headers: new Headers({ 'content-length': '5000' }), body: async () => ({ title: 'x' }),
-    });
+    const found = await answered(app, 'GET', '/api/desk/notes/n1/find');
+    const refused = await answered(app, 'POST', '/api/desk/notes/write/x', { headers: { 'content-length': '5000' }, body: { title: 'x' } });
 
-    expect(found).toMatchObject({ kind: 'ok', status: 200, headers: { 'x-frond': 'desk' } });
-    expect(refused).toMatchObject({ kind: 'error', status: 413, headers: { 'x-frond': 'desk' } });
+    expect(found).toMatchObject({ status: 200, headers: { 'x-frond': 'desk' } });
+    expect(refused).toMatchObject({ status: 413, headers: { 'x-frond': 'desk' } });
   });
 
   it('refuses on the headers before the body is read', async () => {
     let read = false;
-    const answer = await serveRest(app, {
-      method: 'POST', path: '/api/desk/notes/write/x', query: {}, state: {},
-      headers: new Headers({ 'content-length': '5000' }),
-      body: async () => { read = true; return { title: 'x' }; },
-    });
+    const stream = new ReadableStream<Uint8Array>({ pull(controller) { read = true; controller.close(); } }, { highWaterMark: 0 });
+    const answer = await answered(app, 'POST', '/api/desk/notes/write/x', { headers: { 'content-length': '5000' }, stream });
 
     expect(answer).toMatchObject({ status: 413, body: { code: 'PAYLOAD_TOO_LARGE', message: 'Notes stop at 1000 bytes.' } });
     expect(read).toBe(false);
   });
 
   it('stands at its door only: the same op through JSON-RPC never meets it', async () => {
-    const answer = await serveRpc(app, {
-      path: '/_fougere/call',
-      body: { jsonrpc: '2.0', id: 1, method: 'note.write', params: { params: { title: 'x' } } },
-      state: {},
-    });
+    const answer = (await called(app, 'note.write', { params: { title: 'x' } })).body;
 
     expect(answer).toMatchObject({ result: { title: 'x' } });
   });
 
   it('stands around one handler\'s op by name, and may answer in its place', async () => {
-    const moved = await serveRest(app, { method: 'GET', path: '/api/desk/notes/old/find', query: {}, state: {} });
-    const written = await serveRest(app, {
-      method: 'POST', path: '/api/desk/notes/write/x', query: {}, state: {}, body: async () => undefined,
-    });
+    const moved = await answered(app, 'GET', '/api/desk/notes/old/find');
+    const written = await answered(app, 'POST', '/api/desk/notes/write/x');
 
-    expect(moved).toMatchObject({ kind: 'ok', status: 301, headers: { location: '/api/desk/notes/n1/find', 'x-frond': 'desk' } });
-    expect(written).toMatchObject({ kind: 'ok', status: 201, body: { title: 'x' } });
+    expect(moved).toMatchObject({ status: 301, headers: { location: '/api/desk/notes/n1/find', 'x-frond': 'desk' } });
+    expect(written).toMatchObject({ status: 201, body: { title: 'x' } });
   });
 
   it('refuses the boot for a method naming no operation of its handler', async () => {

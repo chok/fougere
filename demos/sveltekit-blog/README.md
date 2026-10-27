@@ -18,8 +18,8 @@ something genuinely its own.
 
 ```ts
 // src/routes/_fougere/call/+server.ts
-import { call } from '@fougere/app/web';
-export const POST = ({ request }: { request: Request }) => call(request);
+import { fougere } from '@fougere/app/web';
+export const POST = ({ request }: { request: Request }) => fougere(request);
 ```
 
 No underscore escape either — SvelteKit routes a `_fougere` directory literally.

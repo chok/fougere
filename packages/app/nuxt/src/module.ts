@@ -239,46 +239,19 @@ const module = defineNuxtModule<FougereModuleOptions>({
     ]);
 
     // ── 3. Server: call envelope endpoint + catch-all route + shared utils ────
-    addServerHandler({
-      route: '/_fougere/call',
-      method: 'post',
-      handler: runtimeResolve('server/routes/call.post'),
-    });
-    // The same facade, per audience: `/_fougere/call/public` serves the surface named
-    // `public`, the way `generateRoutes(app, { surface })` does for REST. The handler
-    // reads the segment (see `surfaceOf`).
-    addServerHandler({
-      route: '/_fougere/call/**',
-      method: 'post',
-      handler: runtimeResolve('server/routes/call.post'),
-    });
-    addServerHandler({
-      route: '/_fougere/session',
-      method: 'get',
-      handler: runtimeResolve('server/routes/session.get'),
-    });
+    // One handler answers every route: it reads the path, and a route it does not serve is a 404 that says why.
+    const answering = runtimeResolve('server/answer');
+    // `/_fougere/call/public` serves the surface named `public`, the way `generateRoutes(app, { surface })` does for REST.
+    addServerHandler({ route: '/_fougere/call', method: 'post', handler: answering });
+    addServerHandler({ route: '/_fougere/call/**', method: 'post', handler: answering });
+    addServerHandler({ route: '/_fougere/session', method: 'get', handler: answering });
     // Session hydration — the page ships with its user, no round-trip
     addPlugin({ src: runtimeResolve('plugins/session.server'), mode: 'server' });
-    if (serves(config.protocols, 'rest')) {
-      addServerHandler({
-        route: `${prefixOf(config.protocols)}/**`,
-        handler: runtimeResolve('server/api/crud'),
-      });
-    }
-    // What `protocols: { graphql: {} }` publishes — Express mounted it, and here it was
-    // ignored without a word.
+    if (serves(config.protocols, 'rest')) addServerHandler({ route: `${prefixOf(config.protocols)}/**`, handler: answering });
+    // What `protocols: { graphql: {} }` publishes, at `/graphql` and per audience at `/graphql/public`.
     if (serves(config.protocols, 'graphql')) {
-      addServerHandler({
-        route: '/graphql',
-        method: 'post',
-        handler: runtimeResolve('server/routes/graphql.post'),
-      });
-      // Per audience, as the envelope is: `/graphql/public` serves the surface `public`.
-      addServerHandler({
-        route: '/graphql/**',
-        method: 'post',
-        handler: runtimeResolve('server/routes/graphql.post'),
-      });
+      addServerHandler({ route: '/graphql', method: 'post', handler: answering });
+      addServerHandler({ route: '/graphql/**', method: 'post', handler: answering });
     }
     addServerImportsDir(runtimeResolve('server/utils'));
 

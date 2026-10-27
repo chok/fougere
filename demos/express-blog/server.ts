@@ -12,7 +12,7 @@
  * would answer even if registered after.
  */
 import express from 'express';
-import { call, session, rest, graphql } from '@fougere/app/express';
+import { fougere } from '@fougere/app/express';
 import { useFougereApp, invokeOn, reloadFougere } from '@fougere/app';
 import Post from './fronds/blog/entities/Post.ts';
 
@@ -28,8 +28,7 @@ app.get('/', async (_req, res) => {
   // A server-side read, named the way every other host names it: class + verb.
   // `invokeOn` takes the app explicitly because Express has no ambient request —
   // which is exactly why this host needs no `invoke` of its own.
-  const fougere = await useFougereApp();
-  const posts = await invokeOn<Post[]>(fougere, Post, 'list', undefined, {});
+  const posts = await invokeOn<Post[]>(await useFougereApp(), Post, 'list', undefined, {});
   res.type('html').send(`<!doctype html>
 <meta charset="utf-8"><title>fougere · express</title>
 <body style="font-family:system-ui;max-width:720px;margin:2rem auto;line-height:1.55">
@@ -43,22 +42,13 @@ that has never heard of Express.</p>
 </body>`);
 });
 
-// ── adding fougere: one middleware per facade ────────
+// ── adding fougere: one middleware ────────────────────
 //
-// `fougere()` mounts all three in one line, and this demo deliberately does not use
-// it. On an app that already exists, the facades are not one decision: the envelope and
-// the session serve YOUR pages, while REST is a public API for anyone with the URL.
-// Taking them together would hand out a surface nobody asked for — which is the very
-// thing this shape exists to avoid.
-app.use(call());
-app.use(session());
-
-// Wanted here, so it is stated here. Comment it out and `/api/blog/posts` simply
-// stops existing, while the pages above keep working.
-app.use(rest());
-
-// Mounted, and it serves nothing until `protocols: { graphql: {} }` says so.
-app.use(graphql());
+// Mounting is not publishing. The envelope and the session serve YOUR pages, while REST is a
+// public API for anyone with the URL — so what is served is said once, in `fougere.config.ts`:
+// drop `rest` from `protocols:` and `/api/blog/posts` simply stops existing, while the pages
+// above keep working. GraphQL is answered the day `protocols: { graphql: {} }` says so.
+app.use(fougere());
 
 // ── turning the ring, without stopping the server ──
 //

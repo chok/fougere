@@ -2,10 +2,9 @@
  * `protocols.rest.prefix` is the one place REST is mounted. A door that mounts itself reads it
  * without booting; a host that routes by file is told when its file sits elsewhere.
  */
-import { afterEach, describe, it, expect, vi } from 'vitest';
-import { rest as restMiddleware } from '../src/express.js';
-import { fougere } from '../src/web.js';
-import { configureFougere } from '../src/boot.js';
+import { afterEach, describe, it, expect } from 'vitest';
+import { answer, fougere } from '../src/web.js';
+import { configureFougere, useFougereApp } from '../src/boot.js';
 
 const prefixed = (prefix: string) =>
   configureFougere({ config: { protocols: { rest: { prefix } } }, fronds: [], storage: { storageFactory: () => ({}) as never } });
@@ -13,12 +12,10 @@ const prefixed = (prefix: string) =>
 afterEach(() => configureFougere({}));
 
 describe('the prefix the config states', () => {
-  it('is where the Express door starts answering, and what it leaves to the app', async () => {
+  it('is where REST starts answering, and what it leaves to the app', async () => {
     prefixed('/v1');
-    const next = vi.fn();
 
-    restMiddleware()({ method: 'GET', path: '/api/blog/posts', url: '/api/blog/posts', query: {} } as never, {} as never, next);
-    await vi.waitFor(() => expect(next).toHaveBeenCalledOnce());
+    expect(await answer(await useFougereApp(), new Request('http://localhost/api/blog/posts'))).toBeUndefined();
   });
 
   it('names the route file a file-routed host left under the old prefix', async () => {

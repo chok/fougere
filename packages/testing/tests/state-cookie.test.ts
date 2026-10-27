@@ -5,7 +5,8 @@
  */
 import '@fougere/state-cookie';
 import { describe, expect, it } from 'vitest';
-import { configureFougere, serveRest, serveRpc, useFougereApp } from '@fougere/app';
+import { configureFougere, useFougereApp } from '@fougere/app';
+import { answered, called } from './web.js';
 import { frond, type State } from '@fougere/core';
 
 process.env.FOUGERE_STATE_KEY = 'a key for the test, long enough to sign with';
@@ -27,16 +28,12 @@ configureFougere({
 });
 const app = await useFougereApp();
 
-const call = (path: string, cookie?: string) => serveRest(app, {
-  method: 'POST', path, query: {}, state: {},
-  headers: new Headers(cookie ? { cookie } : {}),
-  body: async () => undefined,
-});
+const call = async (path: string, cookie?: string) => (await answered(app, 'POST', path, { headers: cookie ? { cookie } : {} }))!;
 
 describe('a state kept in a cookie', () => {
   it('leaves signed with the answer, and comes back as the value it was', async () => {
     const opened = await call('/api/shop/carts/open');
-    const line = (opened as { headers: Record<string, string[]> }).headers['set-cookie']![0]!;
+    const line = opened.cookies[0]!;
 
     expect(line).toMatch(/^cart=[\w-]+\.[\w-]+; Path=\/; SameSite=Lax; HttpOnly; Max-Age=3600$/);
     expect(await call('/api/shop/carts/current', line.split(';')[0])).toMatchObject({ body: { cart: 'c42' } });
@@ -44,7 +41,7 @@ describe('a state kept in a cookie', () => {
 
   it('reads a cookie the caller changed as absent', async () => {
     const opened = await call('/api/shop/carts/open');
-    const [, signature] = (opened as { headers: Record<string, string[]> }).headers['set-cookie']![0]!.split(';')[0]!.split('=')[1]!.split('.');
+    const [, signature] = opened.cookies[0]!.split(';')[0]!.split('=')[1]!.split('.');
     const forged = `cart=${Buffer.from(JSON.stringify('c99')).toString('base64url')}.${signature}`;
 
     expect(await call('/api/shop/carts/current', forged)).toMatchObject({ body: { cart: null } });
@@ -52,15 +49,9 @@ describe('a state kept in a cookie', () => {
 
   it('travels the same through the envelope a page calls, where the host writes the line', async () => {
     const page = async (method: string, cookie?: string) => {
-      const response = new Headers();
-      const answered = await serveRpc(app, {
-        path: '/_fougere/call',
-        body: { jsonrpc: '2.0', id: 1, method, params: {} },
-        state: {},
-        carrier: { request: new Headers(cookie ? { cookie } : {}), response },
-      });
+      const answer = await called(app, method, {}, cookie ? { cookie } : {});
 
-      return { answered, cookies: response.getSetCookie() };
+      return { answered: answer.body, cookies: answer.cookies };
     };
 
     const opened = await page('cart.open');

@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { createLocalRunner, type App } from '@fougere/core';
 import { Invocation } from '@fougere/core/contract';
-import { serveRest, serveRpc, tableOf } from '@fougere/app';
+import { tableOf } from '@fougere/app';
+import { answer } from '@fougere/app/web';
 import { lowerFirst, type SchemaView } from '@fougere/schema';
 import { listQuery, findQuery, mutationFor, at } from './gql.js';
 import { sampleInput } from './sample.js';
@@ -171,14 +172,12 @@ function facadesOf(app: App, entity: SchemaView, name: string, surface?: string)
     local: (op, call) => run({ address: name, op }, invocation(call)),
 
     rpc: async (op, call) => {
-      const answer = await serveRpc(app, {
-        path: '',
-        body: { jsonrpc: '2.0', id: 1, method: `${name}.${op}`, params: invocation(call) },
-        state,
-      }) as { result?: unknown; error?: { message: string } };
-      if (answer.error) throw new Error(answer.error.message);
+      const sent = { jsonrpc: '2.0', id: 1, method: `${name}.${op}`, params: invocation(call) };
+      const response = await answer(app, new Request('http://localhost/_fougere/call', { method: 'POST', body: JSON.stringify(sent) }), { state });
+      const answered = await response!.json() as { result?: unknown; error?: { message: string } };
+      if (answered.error) throw new Error(answered.error.message);
 
-      return answer.result;
+      return answered.result;
     },
 
     rest: async (op, call) => {
@@ -188,10 +187,13 @@ function facadesOf(app: App, entity: SchemaView, name: string, surface?: string)
       if (!row) throw new Error(`[checkDoors] REST serves no ${name}.${op}`);
       const path = row.segments.map((segment) => (segment.startsWith(':') ? call?.id ?? '' : segment)).join('/');
 
-      const answer = await serveRest(app, { method: row.route.method, path, query: {}, body: async () => call?.input, state });
-      if (answer.kind !== 'ok') throw new Error(`[checkDoors] REST answered ${answer.kind} on ${name}.${op}`);
+      const response = await answer(app, new Request(`http://localhost/${path}`, {
+        method: row.route.method,
+        ...(call?.input !== undefined && { headers: { 'content-type': 'application/json' }, body: JSON.stringify(call.input) }),
+      }), { state });
+      if (!response || response.status >= 400) throw new Error(`[checkDoors] REST answered ${response?.status ?? 'nothing'} on ${name}.${op}`);
 
-      return answer.body;
+      return response.status === 204 ? undefined : response.json();
     },
 
     graphql: async (op, call) => {

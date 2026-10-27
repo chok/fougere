@@ -14,7 +14,8 @@ import { describe, it, expect } from 'vitest';
 import { join } from 'node:path';
 import { createLocalRunner } from '@fougere/core';
 import { Invocation } from '@fougere/core/contract';
-import { serveRest, serveRpc, tableOf } from '@fougere/app';
+import { tableOf } from '@fougere/app';
+import { answered, called } from './web.js';
 import { testApp } from '../src/index.js';
 
 const root = join(import.meta.dirname, 'fixtures-exposed');
@@ -40,11 +41,7 @@ describe('an entity withdrawn from the public contract', () => {
     await using app = await testApp({ root });
 
     const local = await createLocalRunner(app)({ address: 'secret', op: 'list' }, Invocation.empty);
-    const overRpc = await serveRpc(app, {
-      path: '',
-      body: { jsonrpc: '2.0', id: 1, method: 'secret.list', params: Invocation.empty },
-      state: {},
-    }) as { result?: unknown; error?: unknown };
+    const overRpc = (await called(app, 'secret.list', Invocation.empty)).body as { result?: unknown; error?: unknown };
 
     // Both answer. Whether that is right is a decision; that the three facades disagree
     // is a fact, and this is where it is written down.
@@ -56,9 +53,7 @@ describe('an entity withdrawn from the public contract', () => {
   it('makes REST answer nothing where RPC answers rows', async () => {
     await using app = await testApp({ root });
 
-    const rest = await serveRest(app, { method: 'GET', path: 'vault/secrets', query: {}, state: {} });
-
-    // `pass` is the facade saying "not mine" — a host would fall through to a 404.
-    expect(rest.kind).toBe('pass');
+    // `undefined` is the app saying "not mine" — a host would fall through to a 404.
+    expect(await answered(app, 'GET', '/vault/secrets')).toBeUndefined();
   });
 });

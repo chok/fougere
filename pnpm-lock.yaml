@@ -1977,9 +1977,6 @@ importers:
       '@fougere/defaults':
         specifier: workspace:*
         version: link:../../defaults
-      '@fougere/http':
-        specifier: workspace:*
-        version: link:../../http
       '@fougere/schema':
         specifier: workspace:*
         version: link:../../schema
@@ -1989,6 +1986,9 @@ importers:
       jiti:
         specifier: ^2.6.1
         version: 2.7.0
+      srvx:
+        specifier: ^1.0.5
+        version: 1.0.5
     devDependencies:
       '@fougere/adapter-graphql':
         specifier: workspace:*
@@ -2033,6 +2033,9 @@ importers:
       jiti:
         specifier: ^2.7.0
         version: 2.7.0
+      srvx:
+        specifier: ^1.0.5
+        version: 1.0.5
       terser:
         specifier: ^5.44.0
         version: 5.46.1

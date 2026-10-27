@@ -25,17 +25,9 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
-    "./call": {
-      "types": "./dist/routes/call.d.ts",
-      "import": "./dist/routes/call.js"
-    },
-    "./rest": {
-      "types": "./dist/routes/rest.d.ts",
-      "import": "./dist/routes/rest.js"
-    },
-    "./session": {
-      "types": "./dist/routes/session.d.ts",
-      "import": "./dist/routes/session.js"
+    "./route": {
+      "types": "./dist/route.d.ts",
+      "import": "./dist/route.js"
     },
     "./config": {
       "types": "./dist/config.d.ts",

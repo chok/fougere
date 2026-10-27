@@ -11,7 +11,8 @@
 import { createServer } from 'node:http';
 import { createLocalRunner, type Page } from '@fougere/core';
 import { Invocation } from '@fougere/core/contract';
-import { formFieldsOf, payloadOf, serveRpc } from '@fougere/app';
+import { formFieldsOf, payloadOf } from '@fougere/app';
+import { answer } from '@fougere/app/web';
 import { testApp } from '@fougere/testing';
 import Product from './fronds/catalog/entities/Product.js';
 
@@ -77,6 +78,12 @@ async function bodyOf(request: AsyncIterable<unknown>): Promise<unknown> {
   return JSON.parse(Buffer.concat(chunks).toString());
 }
 
+async function called(body: unknown): Promise<string> {
+  const answered = await answer(app, new Request('http://localhost/_fougere/call', { method: 'POST', body: JSON.stringify(body) }), { state: {} });
+
+  return answered!.text();
+}
+
 createServer(async (request, response) => {
   if (request.url === '/' ) {
     response.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
@@ -85,9 +92,8 @@ createServer(async (request, response) => {
     return;
   }
   if (request.method === 'POST' && request.url === '/_fougere/call') {
-    const answer = await serveRpc(app, { path: '', body: await bodyOf(request), state: {} });
     response.writeHead(200, { 'content-type': 'application/json' });
-    response.end(JSON.stringify(answer));
+    response.end(await called(await bodyOf(request)));
 
     return;
   }
@@ -95,10 +101,8 @@ createServer(async (request, response) => {
   // l'entité, puis la même porte. `/_fougere/call` reste strict pour un client JSON.
   if (request.method === 'POST' && request.url === '/form/product') {
     const input = payloadOf(Product, await bodyOf(request) as Record<string, unknown>);
-    const answer = await serveRpc(app, { path: '', body: { jsonrpc: '2.0', id: 1, method: 'product.create',
-      params: { params: {}, query: {}, input, state: {} } }, state: {} });
     response.writeHead(200, { 'content-type': 'application/json' });
-    response.end(JSON.stringify(answer));
+    response.end(await called({ jsonrpc: '2.0', id: 1, method: 'product.create', params: { params: {}, query: {}, input, state: {} } }));
 
     return;
   }

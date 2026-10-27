@@ -94,8 +94,8 @@ export async function boot(options: BootOptions): Promise<App> {
     ports: config.ports,
     conventions: config.conventions,
     // Read from the config for the same reason `ports` is, one line up: it is a fact the
-    // project states, not one the caller passes. Absent here, `serveRest` and
-    // `serveGraphQL` both answered `pass` on an app whose config declared them — the
+    // project states, not one the caller passes. Absent here, REST and
+    // GraphQL both answered nothing on an app whose config declared them — the
     // hosts got it right through their own boot (`app/shared/src/boot.ts`), and this
     // path, the conventional one, served nothing.
     protocols: config.protocols,

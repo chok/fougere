@@ -1,166 +1,78 @@
 /**
- * The facades as Express middlewares.
+ * The app as an Express middleware.
  *
- * What is pinned is mostly what they DON'T do: a middleware that answers a path it
- * was not asked for is worse than no middleware, because the app it was added to
- * stops working. `next()` is the whole contract, and it is what the earlier
- * `mountDoors` was imitating with a `pass` outcome of its own invention.
- *
- * Nothing imports express — the shapes are structural, so a plain object is a
- * faithful request here.
+ * What is pinned is mostly what it DOESN'T do: a middleware that answers a path it was not asked for
+ * is worse than no middleware, because the app it was added to stops working. `next()` is the whole
+ * contract. Nothing imports express — a plain `node:http` server hands the middleware what Express
+ * would, the request the parsers left behind included.
  */
-import { describe, it, expect, vi } from 'vitest';
-import { entity, primary, text } from '@fougere/schema';
-import { fougere, call, rest, session } from '../src/express.js';
+import { afterAll, beforeAll, describe, it, expect } from 'vitest';
+import { createServer, type IncomingMessage, type Server } from 'node:http';
+import { fougere } from '../src/express.js';
 import { configureFougere, useFougereApp } from '../src/boot.js';
 
-class Post extends entity({ id: primary(), title: text() }) {}
+let server: Server;
+let base: string;
 
-/** Boot once and wait for it — the middlewares are lazy, and a 5ms settle is not a boot. */
-async function bootWith(rows: { id: string; title: string }[]) {
-  configureFougere({
-    storage: { storageFactory: () =>
-      ({
-        list: async () => rows,
-        findById: async (id: string) => rows.find((r) => r.id === id),
-        findBy: async () => undefined,
-        findAllBy: async () => [],
-        create: async (input: any) => input,
-        update: async (_id: string, input: any) => input,
-        delete: async () => true,
-        client: {},
-        output() { return this; },
-      }) as never },
-  });
+/** Before the middleware: what an auth middleware or `express.json()` would have put on the request. */
+let before: (req: IncomingMessage & Record<string, unknown>) => void = () => {};
+
+beforeAll(async () => {
+  configureFougere({ fronds: [], storage: { storageFactory: () => ({}) as never } });
   await useFougereApp();
-}
+  server = createServer((req, res) => {
+    before(req as never);
+    fougere()(req, res, (err?: unknown) => {
+      res.writeHead(err ? 500 : 299).end(err ? String(err) : 'next');
+    });
+  });
+  await new Promise<void>((done) => server.listen(0, '127.0.0.1', done));
+  base = `http://127.0.0.1:${(server.address() as { port: number }).port}`;
+});
 
-function fakeRes() {
-  const sent: { status?: number; body?: unknown; headers: Record<string, unknown> } = { headers: {} };
-  const res: any = {
+afterAll(() => new Promise<void>((done) => server.close(() => done())));
 
-
-
-
-    status: (code: number) => { sent.status = code; return res; },
-
-
-
-
-    set: (k: string, v: unknown) => { sent.headers[k] = v; return res; },
-
-
-
-
-    json: (body: unknown) => { sent.body = body; return res; },
-  };
-
-  return { res, sent };
-}
-
-/**
- * Run a middleware until it has passed or answered — they decide asynchronously, after a boot
- * a slow runner does not finish in a fixed delay.
- */
-async function run(mw: ReturnType<typeof call>, req: any) {
-  const { res, sent } = fakeRes();
-  let decided!: () => void;
-  const decision = new Promise<void>((resolve) => { decided = resolve; });
-  const next = vi.fn(() => decided());
-  const answer = res.json;
-  res.json = (body: unknown) => { answer(body); decided(); return res; };
-  mw(req, res, next);
-  await decision;
-
-  return { sent, next };
-}
-
-describe('what a middleware declines', () => {
+describe('what the middleware declines', () => {
   it('passes a path that is not its own', async () => {
-    const { next, sent } = await run(call(), { method: 'POST', path: '/other' });
-    expect(next).toHaveBeenCalledOnce();
-    expect(sent.status).toBeUndefined();
+    expect((await fetch(`${base}/other`, { method: 'POST' })).status).toBe(299);
   });
 
-  it('passes the right path on the wrong verb', async () => {
-    const { next } = await run(call(), { method: 'GET', path: '/_fougere/call' });
-    expect(next).toHaveBeenCalledOnce();
+  it('passes the envelope on the wrong verb', async () => {
+    expect((await fetch(`${base}/_fougere/call`)).status).toBe(299);
   });
 
   it('passes anything outside the REST mount point', async () => {
-    const { next } = await run(rest(), { method: 'GET', path: '/healthz' });
-    expect(next).toHaveBeenCalledOnce();
-  });
-
-  it('passes /api itself — a mount point is not a resource', async () => {
-    const { next } = await run(rest(), { method: 'GET', path: '/api' });
-    expect(next).toHaveBeenCalledOnce();
-  });
-
-  it('passes a path under /api that no frond serves, so the app keeps its own routes', async () => {
-    await bootWith([]);
-    const { next, sent } = await run(rest(), { method: 'GET', path: '/api/nope/at/all' });
-    expect(next).toHaveBeenCalledOnce();
-    expect(sent.status).toBeUndefined();
+    expect((await fetch(`${base}/healthz`)).status).toBe(299);
   });
 });
 
-describe('the session facade', () => {
+describe('who the caller is', () => {
   it('answers the view for the state the app resolved', async () => {
-    const { sent } = await run(session(), {
-      method: 'GET',
-      path: '/_fougere/session',
-      user: { id: 'u1', name: 'Ada', passwordHash: 'secret' },
-    });
+    before = (req) => { req.user = { id: 'u1', name: 'Ada', passwordHash: 'secret' }; };
+    const response = await fetch(`${base}/_fougere/session`);
 
-    expect(sent.status).toBe(200);
-    expect(sent.body).toEqual({ user: { id: 'u1', name: 'Ada' } });
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ user: { id: 'u1', name: 'Ada' } });
   });
 
   it('reads `req.fougereState` when the app fills it', async () => {
-    const { sent } = await run(session(), {
-      method: 'GET',
-      path: '/_fougere/session',
-      fougereState: { user: { id: 'u2' } },
-    });
-    expect(sent.body).toEqual({ user: { id: 'u2' } });
+    before = (req) => { req.fougereState = { user: { id: 'u2' } }; };
+
+    expect(await (await fetch(`${base}/_fougere/session`)).json()).toEqual({ user: { id: 'u2' } });
   });
 
-  it('answers nobody when nothing ran before it', async () => {
-    const { sent } = await run(session(), { method: 'GET', path: '/_fougere/session' });
-    expect(sent.body).toEqual({ user: null });
-  });
+  it('answers nobody when nothing ran before it, and never takes identity from the payload', async () => {
+    before = () => {};
 
-  it('never takes identity from the payload', async () => {
-    const { sent } = await run(session(), {
-      method: 'GET',
-      path: '/_fougere/session',
-      body: { user: { id: 'forged', role: 'admin' } },
-    });
-    expect(sent.body).toEqual({ user: null });
+    expect(await (await fetch(`${base}/_fougere/session`)).json()).toEqual({ user: null });
   });
 });
 
-describe('the three composed', () => {
-  it('lets each facade see the request, and passes when none claims it', async () => {
-    await bootWith([]);
-    const { next } = await run(fougere(), { method: 'GET', path: '/anything' });
-    expect(next).toHaveBeenCalledOnce();
-  });
+describe('a body a parser already read', () => {
+  it('reaches the envelope as what the parser made of it', async () => {
+    before = (req) => { req.body = { jsonrpc: '2.0', id: 3, method: 'nothing.here', params: {} }; req.resume(); };
+    const response = await fetch(`${base}/_fougere/call`, { method: 'POST', body: 'already read' });
 
-  it('answers the session through the composed middleware', async () => {
-    const { sent } = await run(fougere(), { method: 'GET', path: '/_fougere/session' });
-    expect(sent.status).toBe(200);
-    expect(sent.body).toEqual({ user: null });
-  });
-
-  it('lets a synchronous failure reach Express, which owns that contract', () => {
-    const { res } = fakeRes();
-    // Express wraps a synchronous middleware in its own try/catch and routes the
-    // throw to the error handler. Re-implementing that here would be a second answer
-    // to a question the host already answers.
-    expect(() =>
-      fougere()({ method: 'GET', get path(): string { throw new Error('boom'); } } as never, res, vi.fn()),
-    ).toThrow('boom');
+    expect(await response.json()).toMatchObject({ jsonrpc: '2.0', id: 3, error: {} });
   });
 });

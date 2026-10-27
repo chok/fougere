@@ -8,7 +8,7 @@ import { describe, it, expect } from 'vitest';
 import { join } from 'node:path';
 import { generateRoutes } from '@fougere/adapter-rest';
 import { schemaOf } from '@fougere/adapter-graphql';
-import { serveRpc } from '@fougere/app';
+import { called } from './web.js';
 import { createLocalRunner } from '@fougere/core';
 import { Invocation } from '@fougere/core/contract';
 import { testApp } from '../src/index.js';
@@ -28,11 +28,7 @@ describe('an op an announcement calls', () => {
 
   it('is refused to a page, and still reached by the announcement', async () => {
     await using app = await testApp({ root });
-    const refused = await serveRpc(app, {
-      path: '/_fougere/call',
-      body: { jsonrpc: '2.0', id: 1, method: 'indexed.reindex', params: { input: { id: 'p1', title: 'Forged' } } },
-      state: {},
-    }) as { error: { data: { code: string } } };
+    const refused = (await called(app, 'indexed.reindex', { input: { id: 'p1', title: 'Forged' } })).body as { error: { data: { code: string } } };
 
     const run = createLocalRunner(app);
     const post = await run({ address: 'post', op: 'create' }, { ...Invocation.empty, input: { title: 'A title' } }) as { id: string };

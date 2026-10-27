@@ -4,7 +4,8 @@
  */
 import '@fougere/state-session';
 import { describe, expect, it } from 'vitest';
-import { configureFougere, serveRest, useFougereApp } from '@fougere/app';
+import { configureFougere, useFougereApp } from '@fougere/app';
+import { answered } from './web.js';
 import { frond, type State } from '@fougere/core';
 
 process.env.FOUGERE_STATE_KEY = 'a key for the test, long enough to sign with';
@@ -32,13 +33,9 @@ configureFougere({
 const app = await useFougereApp();
 
 const call = async (path: string, cookies: string[] = []) => {
-  const answered = await serveRest(app, {
-    method: 'POST', path, query: {}, state: {},
-    headers: new Headers(cookies.length > 0 ? { cookie: cookies.join('; ') } : {}),
-    body: async () => undefined,
-  }) as { body: unknown; headers?: Record<string, string[]> };
+  const answer = (await answered(app, 'POST', path, { headers: cookies.length > 0 ? { cookie: cookies.join('; ') } : {} }))!;
 
-  return { body: answered.body, lines: answered.headers?.['set-cookie'] ?? [] };
+  return { body: answer.body, lines: answer.cookies };
 };
 const pairsOf = (lines: string[]) => lines.map((line) => line.split(';')[0]!);
 

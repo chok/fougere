@@ -13,7 +13,7 @@ export { authOf, useFougereAuth } from './auth.js';
 export { tableOf } from './RouteMatch.js';
 export { prefixOf } from '@fougere/adapter-rest';
 
-export { invokeOn, refusedRpc, rpcParseError, serveRest, serveRpc, surfaceOf } from './Outcome.js';
+export { invokeOn } from './invoke.js';
 
 export { errorsByField, formFieldsOf, openingOf, payloadOf, tableColumnsOf } from './FormEntity.js';
 export type { SchemaView } from '@fougere/schema';
@@ -28,7 +28,7 @@ export { stateFor } from './state.js';
 
 export { jsonBodyOf } from './jsonBody.js';
 
-export { graphqlSurfaceOf, serveGraphQL, type GraphQLDocument, type GraphQLRequest } from './graphql.js';
+export { graphqlSurfaceOf, type GraphQLDocument } from './graphql.js';
 
 // Re-exported where every host already looks for it; it lives in its own adapter now.
 export { createMemoryStorage } from '@fougere/adapter-memory';
