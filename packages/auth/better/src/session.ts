@@ -6,7 +6,7 @@ import type { Entity } from '@fougere/schema';
  * asks for its user the way it asks for anything else, and the user's own boundary decides what of
  * it travels.
  */
-export function sessionOf(user: Entity) {
+export function sessionOperation(user: Entity) {
   class SessionCollector extends Collector(user) {
     async collect(context: InvocationContext) {
       return context.state.user;

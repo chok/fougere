@@ -131,7 +131,8 @@ packages/
     file/              @fougere/adapter-file      one JSON per row, a directory per entity
 
   app/                                        the front-end
-    shared/            @fougere/app           useQuery/useCommand/useFormFor, framework-free
+    shared/            @fougere/app           useQuery/useCommand/useFormFor, framework-free, and `answer`,
+                                                the one function a host hands a request
     oclif/             @fougere/oclif         a frond's operations as a terminal — one command per op
     nuxt/ next/ react/ svelte/ vite/          @fougere/nuxt, /next, /react, /svelte, /vite
     admin/             @fougere/admin         React Admin derived at runtime from the identity card
@@ -1170,6 +1171,23 @@ on every host, where three read `{}` — and writes the status read off the cont
 answering `true`, `404` for a missing row — and a page as `{ items, total, hasMore, endCursor }`.
 Pinned by `adapter/rest/tests/door.test.ts`, `testing/tests/rest-status.test.ts` and
 `transport/http/tests/beside.test.ts`.
+
+**A host hands a `Request` to ONE function** — `answer(app, request)` (`app/shared/src/answer.ts`,
+`@fougere/app/answer`) reads the door off the path — the envelope, REST, GraphQL over `POST` and
+`GET` — and answers `undefined` when none is the request's, so the engine's own routes keep
+answering. `fougere(request)` (`web.ts`) is the same for a host holding only the request: it boots,
+and a request no door answers is a 404 that says why. Six translations used to read a request into
+the doors — Web, Express, h3, `@fougere/http`'s router and its three adapters, `fougere serve`'s
+receiver, Vite — each writing the four doors again, and `DoorRequest` was a second copy of `Request`.
+Express and Vite reach it through srvx's `NodeRequest`, Nuxt through `toWebRequest`, and a host that
+resolved the caller itself hands `{ state }`. The module loads no boot, which is what lets a Worker
+import it. Fougere ships no router: an engine is one, and its middleware stands around the app.
+Measured 2026-10-27 on an app behind six mounts: srvx's `Request` costs 5–7 % against Fastify reading
+natively, where a call costs ~22 µs off the engine on a `GET`. The peer envelope stays read off the
+Node stream (`transport/http/src/serve/RunningReceiver.ts`): through a `Request` the same call answered
+29 % less. Who is signed in is not a door but the auth frond's op, `session.get`. Pinned by
+`app/shared/tests/serve.test.ts`, `app/shared/tests/express.test.ts` and
+`testing/tests/graphql-get.test.ts`.
 
 **A REST path is read off the signature, never off the op's name** — `derivePath`
 (`adapter/rest/src/routes/RouteDefinition.ts`) over the binding plan. A primitive typed by an
