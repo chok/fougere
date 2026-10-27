@@ -44,9 +44,6 @@ export interface FougereViteOptions {
   serve?: boolean;
 }
 
-/** What the browser primitives call, and the web handler that answers each. */
-const DOORS = { '/_fougere/call': 'call', '/_fougere/session': 'session' } as const;
-
 /**
  * The call envelope, answered by the dev server itself: a Vite app has no server of its own, and
  * the browser calls its own origin. The app boots at the first call, from `fougere.config.ts`, so
@@ -54,14 +51,12 @@ const DOORS = { '/_fougere/call': 'call', '/_fougere/session': 'session' } as co
  */
 function serveDoors() {
   return (req: IncomingMessage, res: ServerResponse, next: () => void): void => {
-    const path = (req.url ?? '').split('?')[0] as keyof typeof DOORS;
-    const door = DOORS[path];
-    if (!door) return next();
+    if (!(req.url ?? '').startsWith('/_fougere/')) return next();
 
     void (async () => {
       try {
         const web = await import('@fougere/app/web');
-        const response = await web[door](await requestOf(req));
+        const response = await web.fougere(await requestOf(req));
         res.statusCode = response.status;
         response.headers.forEach((value, key) => res.setHeader(key, value));
         res.end(Buffer.from(await response.arrayBuffer()));

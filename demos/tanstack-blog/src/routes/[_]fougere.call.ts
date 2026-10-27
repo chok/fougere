@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { call } from '@fougere/app/web';
+import { fougere } from '@fougere/app/web';
 
 /**
  * The call envelope.
@@ -10,12 +10,12 @@ import { call } from '@fougere/app/web';
  * one wire path — `/_fougere/call`, which is what the browser client knows.
  *
  * The handler takes a standard Web `Request`, so there is nothing to translate:
- * `call` is the facade itself, shared with Next.
+ * `fougere` is the app's answer itself, shared with Next.
  */
 export const Route = createFileRoute('/_fougere/call')({
   server: {
     handlers: {
-      POST: ({ request }) => call(request),
+      POST: ({ request }) => fougere(request),
     },
   },
 });

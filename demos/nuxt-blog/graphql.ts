@@ -24,12 +24,12 @@
  */
 import { Hono } from 'hono';
 import { serve } from '@hono/node-server';
-import { graphql } from '@fougere/app/web';
+import { fougere } from '@fougere/app/web';
 
 // Hono hands a standard Web `Request`, so the facade goes in unchanged — the same
 // reason the TanStack, React Router and SvelteKit demos need no adapter package.
 const hono = new Hono();
-hono.post('/graphql', (c) => graphql(c.req.raw));
+hono.post('/graphql', (c) => fougere(c.req.raw));
 
 const port = 4000;
 serve({ fetch: hono.fetch, port });

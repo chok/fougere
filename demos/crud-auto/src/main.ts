@@ -10,7 +10,7 @@
  */
 import { Hono } from 'hono';
 import { serve } from '@hono/node-server';
-import { rest, graphql } from '@fougere/app/web';
+import { fougere } from '@fougere/app/web';
 import { extendFougere, useFougereApp } from '@fougere/app';
 import { generateRoutes } from '@fougere/adapter-rest';
 
@@ -20,8 +20,7 @@ const app = await useFougereApp();
 // --- One server, both facades ---------------------------
 
 const hono = new Hono();
-hono.all('/api/*', (c) => rest(c.req.raw));
-hono.post('/graphql', (c) => graphql(c.req.raw));
+hono.all('*', (c) => fougere(c.req.raw));
 
 // The printed table below is the only reason this is called directly. `as never` is
 // the same cast `@fougere/app/rest.ts:47` already carries: core's `App` and
@@ -43,7 +42,7 @@ console.log(`
   REST:     ${url}/api/{frond}/{plural}
 
   Same handlers, one server, zero duplication — and zero wiring: adapters in
-  fougere.config.ts says what is served, the two lines above only mount the facades.
+  fougere.config.ts says what is served, the one line above only mounts the app.
 
   --- GraphQL -----------------------------------------
 

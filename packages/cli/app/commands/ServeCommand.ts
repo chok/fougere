@@ -1,6 +1,6 @@
 import { createLocalRunner, envLevel, identityFromEnv, serves, setLogLevel } from '@fougere/core';
 import { prefixOf } from '@fougere/adapter-rest';
-import { restAnswer } from '@fougere/app/web';
+import { answer as webAnswer } from '@fougere/app/web';
 import { ALIASES, BUILD_DIRECTORY, loadConfig, registerFrondAliases, remotesOf, statementFileIn } from '@fougere/core/node';
 import { readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
@@ -81,7 +81,7 @@ export default class ServeCommand {
     const { verify, requireIdentity } = await identityFromEnv();
     // The REST door of the frond this process hosts, beside the call envelope: a frond moved
     // here takes its door with it, and the process it left no longer answers for it.
-    const beside = (request: Request) => restAnswer(hosted, request);
+    const beside = (request: Request) => webAnswer(hosted, request);
     const answer: ReceiveOptions['answer'] = (door, received) => hosted.answer(door, received);
     const { port: bound } = await serve((call, inv) => current(call, inv), { port, verify, requireIdentity, beside, answer });
     this.ui.step(`frond ${frond} served — POST http://127.0.0.1:${bound}/_fougere/call`);

@@ -12,7 +12,7 @@ import { bootApp } from '@fougere/defaults';
 import { frondAliases, setModuleLoader, loadConfig, remotesOf } from '@fougere/core/node';
 import { prefixOf } from '@fougere/adapter-rest';
 import { serve } from '@fougere/transport-http';
-import { restAnswer } from '@fougere/app/web';
+import { answer } from '@fougere/app/web';
 import { calls } from '@fougere/calls';
 import { observability } from '@fougere/observability';
 
@@ -51,7 +51,7 @@ const app = await bootApp(process.cwd(), {
 });
 
 // Its REST door comes with it: split, `/api/blog/…` is answered here and no longer by Nuxt.
-const beside = (request: Request) => restAnswer(app, request);
+const beside = (request: Request) => answer(app, request);
 const { port } = await serve(createLocalRunner(app), {
   port: Number(declaredPort), host: hostname, beside, answer: (door, received) => app.answer(door, received),
 });

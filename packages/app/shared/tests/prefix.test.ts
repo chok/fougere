@@ -4,7 +4,7 @@
  */
 import { afterEach, describe, it, expect, vi } from 'vitest';
 import { rest as restMiddleware } from '../src/express.js';
-import { rest } from '../src/web.js';
+import { fougere } from '../src/web.js';
 import { configureFougere } from '../src/boot.js';
 
 const prefixed = (prefix: string) =>
@@ -24,7 +24,7 @@ describe('the prefix the config states', () => {
   it('names the route file a file-routed host left under the old prefix', async () => {
     prefixed('/v1');
 
-    const response = await rest(new Request('http://localhost/api/blog/posts'));
+    const response = await fougere(new Request('http://localhost/api/blog/posts'));
 
     expect(response.status).toBe(404);
     expect((await response.json() as { message: string }).message).toContain('is not under the REST prefix /v1');

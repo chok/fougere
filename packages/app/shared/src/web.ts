@@ -1,14 +1,76 @@
-/** The three facades as Web-standard handlers: `Request` in, `Response` out. */
-import { serveRest, serveRpc, rpcParseError, useFougereApp, useFougereConfig, serveGraphQL } from './index.js';
-import { graphqlSurfaceOf, type GraphQLDocument } from './graphql.js';
+/** Every door an app opens on HTTP, answered from a Web-standard `Request`. */
+import { serveRest, serveRpc, refusedRpc, rpcParseError, useFougereApp, useFougereConfig, serveGraphQL } from './index.js';
+import { GRAPHQL_PATH, graphqlSurfaceOf, type GraphQLDocument } from './graphql.js';
 import { prefixOf } from '@fougere/adapter-rest';
-import { FougereError, maxBodyBytes, readWithin, type App } from '@fougere/core';
+import { BootRefusal, FougereError, maxBodyBytes, readWithin, type App } from '@fougere/core';
 import { jsonBodyOf } from './jsonBody.js';
 import { sessionViewOf } from './session.js';
 import { stateFor } from './state.js';
 
-/** The call envelope. */
-export async function call(request: Request): Promise<Response> {
+const CALL_PATH = '/_fougere/call';
+const SESSION_PATH = '/_fougere/session';
+
+/**
+ * What the app answers to this request — `undefined` when no door of it is the request's, so a host
+ * serving other things beside it answers the rest.
+ */
+export async function answer(app: App, request: Request): Promise<Response | undefined> {
+  const { pathname } = new URL(request.url);
+  const method = request.method.toUpperCase();
+
+  if (method === 'POST' && pathname.startsWith(CALL_PATH)) return call(app, request, pathname);
+  if (method === 'GET' && pathname === SESSION_PATH) return Response.json(sessionViewOf(await stateFor(request.headers, app)));
+  if (method === 'POST' && (pathname === GRAPHQL_PATH || graphqlSurfaceOf(pathname))) return graphql(app, request, pathname);
+
+  return rest(app, request);
+}
+
+/**
+ * The app's answer, for a host that routes by FILE and hands every request of a route here: the app
+ * boots at the first one, and a request no door answers is a 404 that says why.
+ */
+export async function fougere(request: Request): Promise<Response> {
+  const app = await useFougereApp().catch((failure: unknown) => {
+    if (failure instanceof BootRefusal) return failure;
+    throw failure;
+  });
+  if (app instanceof BootRefusal) return refused(app, request);
+
+  return (await answer(app, request)) ?? notFound(request);
+}
+
+/** Every call while the boot is refused, framed like a refused op; anything else is a 503. */
+async function refused(refusal: BootRefusal, request: Request): Promise<Response> {
+  console.error(refusal.message);
+  const disclosed = process.env.NODE_ENV !== 'production';
+  if (!new URL(request.url).pathname.startsWith(CALL_PATH)) {
+    return Response.json({ message: disclosed ? refusal.message : 'The app refused to start.' }, { status: 503 });
+  }
+
+  return Response.json(await refusedRpc(refusal, await request.json().catch(() => ({})), disclosed));
+}
+
+/**
+ * A host that routes by FILE mounts a door where the file sits, and a config cannot move a file.
+ * Saying so is what keeps a stale route file from reading as an app with no routes.
+ */
+async function notFound(request: Request): Promise<Response> {
+  const { pathname } = new URL(request.url);
+  if (pathname === GRAPHQL_PATH || graphqlSurfaceOf(pathname)) {
+    return Response.json({ message: 'GraphQL is not served by this app' }, { status: 404 });
+  }
+  const prefix = prefixOf((await useFougereConfig()).protocols);
+  if (!pathname.startsWith('/_fougere/') && !pathname.startsWith(`${prefix}/`)) {
+    return Response.json({
+      message: `${pathname} is not under the REST prefix ${prefix}. Move the route file that hands it here `
+        + `under ${prefix}, or change protocols.rest.prefix.`,
+    }, { status: 404 });
+  }
+
+  return Response.json({ message: `No route for ${request.method.toUpperCase()} ${pathname}` }, { status: 404 });
+}
+
+async function call(app: App, request: Request, pathname: string): Promise<Response> {
   let body: unknown;
   try {
     body = JSON.parse(await readWithin(request.body, maxBodyBytes(), request.headers.get('content-length')));
@@ -18,48 +80,21 @@ export async function call(request: Request): Promise<Response> {
     return Response.json(rpcParseError());
   }
 
-  const app = await useFougereApp();
   const response = new Headers();
   const answered = await serveRpc(app, {
-    path: new URL(request.url).pathname,
+    path: pathname,
     body,
-    state: await stateFor(request.headers),
+    state: await stateFor(request.headers, app),
     carrier: { request: request.headers, response },
   });
 
   return Response.json(answered, { headers: response });
 }
 
-/** The REST projection, where `protocols.rest.prefix` mounts it — `/api` unless it says otherwise. */
-export async function rest(request: Request): Promise<Response> {
+async function rest(app: App, request: Request): Promise<Response | undefined> {
   const url = new URL(request.url);
-  const method = request.method.toUpperCase();
-
-  // A host that routes by FILE mounts this where the file sits, and a config cannot move a file.
-  // Saying so is what keeps a stale route file from reading as an app with no routes.
-  const prefix = prefixOf((await useFougereConfig()).protocols);
-  if (!url.pathname.startsWith(`${prefix}/`)) {
-    return Response.json({
-      message: `${url.pathname} is not under the REST prefix ${prefix}. Move the route file that calls rest() `
-        + `under ${prefix}, or change protocols.rest.prefix.`,
-    }, { status: 404 });
-  }
-
-  const answered = await restAnswer(await useFougereApp(), request);
-
-  return answered ?? Response.json({ message: `No route for ${method} ${url.pathname}` }, { status: 404 });
-}
-
-/**
- * The REST answer of an app to a request — `undefined` when no route of it matches, so whoever
- * serves the app beside other things (`fougere serve`, beside the call envelope) answers the rest.
- */
-export async function restAnswer(app: App, request: Request): Promise<Response | undefined> {
-  const url = new URL(request.url);
-  const method = request.method.toUpperCase();
-
   const outcome = await serveRest(app, {
-    method,
+    method: request.method.toUpperCase(),
     path: url.pathname,
     query: Object.fromEntries(url.searchParams),
     headers: request.headers,
@@ -76,6 +111,19 @@ export async function restAnswer(app: App, request: Request): Promise<Response |
   return Response.json(outcome.body, { status: outcome.status, headers });
 }
 
+async function graphql(app: App, request: Request, pathname: string): Promise<Response | undefined> {
+  const outcome = await serveGraphQL(app, {
+    document: async () => (await jsonBodyOf(request)) as GraphQLDocument | undefined,
+    surface: graphqlSurfaceOf(pathname),
+    state: await stateFor(request.headers, app),
+    headers: request.headers,
+  });
+
+  if (outcome.kind === 'pass') return undefined;
+
+  return Response.json(outcome.body, { status: outcome.status, headers: headersOf(outcome.headers) });
+}
+
 /** A header named twice — `set-cookie` — is appended, never joined. */
 function headersOf(written: Record<string, string | string[]> = {}): Headers {
   const headers = new Headers();
@@ -84,27 +132,4 @@ function headersOf(written: Record<string, string | string[]> = {}): Headers {
   }
 
   return headers;
-}
-
-/** The session view over the wire, for a client refreshing after login or logout. */
-export async function session(request: Request): Promise<Response> {
-  return Response.json(sessionViewOf(await stateFor(request.headers)));
-}
-
-/** GraphQL, at whatever path the host mounted it — `/graphql` by convention. */
-export async function graphql(request: Request): Promise<Response> {
-  const app = await useFougereApp();
-
-  const outcome = await serveGraphQL(app, {
-    document: async () => (await jsonBodyOf(request)) as GraphQLDocument | undefined,
-    surface: graphqlSurfaceOf(new URL(request.url).pathname),
-    state: await stateFor(request.headers),
-    headers: request.headers,
-  });
-
-  if (outcome.kind === 'pass') {
-    return Response.json({ message: 'GraphQL is not served by this app' }, { status: 404 });
-  }
-
-  return Response.json(outcome.body, { status: outcome.status, headers: headersOf(outcome.headers) });
 }
