@@ -8,7 +8,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { entity, primary, text } from '@fougere/schema';
-import { Collector, frond } from '@fougere/core';
+import { Collect, frond } from '@fougere/core';
 import { configureFougere, useFougereApp } from '../src/boot.js';
 
 class Post extends entity({ id: primary(), title: text() }) {}
@@ -77,7 +77,7 @@ describe('a host that states what it hosts', () => {
     // and that key is lowerFirst. Stated as `User`, the set held `User` while every
     // lookup asked for `user`: a handler taking one fell through to the request input,
     // and the boot refused a contract it had everything to resolve.
-    class CurrentUser extends Collector(User) {
+    class CurrentUser extends Collect<User> {
       collect() { return undefined; }
     }
     class Reader {
@@ -87,7 +87,7 @@ describe('a host that states what it hosts', () => {
     configureFougere({
       fronds: [frond('blog', {
         entities: [Post, User],
-        collectors: [CurrentUser],
+        collectors: [{ ctor: CurrentUser, collects: User }],
         handlers: [{
           ctor: Reader,
           operations: {

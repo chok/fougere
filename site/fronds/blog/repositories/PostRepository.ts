@@ -7,7 +7,7 @@ import Post from '../entities/Post.js';
  * Each of these was `storage.list()` followed by a filter in JavaScript, inside the
  * calculation it fed: the whole table read to answer about a handful of rows.
  */
-export default class PostRepository extends Repository(Post) {
+export default class PostRepository extends Repository<Post> {
   /** The public index: published only, newest first. */
   published(): Promise<Post[]> {
     return this.list({ where: { status: 'published' }, orderBy: 'publishedAt', order: 'desc' });

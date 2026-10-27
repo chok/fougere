@@ -38,8 +38,8 @@ export function workflow({ sweepMs = SWEEP_MS }: WorkflowOptions = {}): Extensio
     fronds: [frond('workflow', {
       entities: [Run, Later],
       providers: [
-        { ctor: RunRepository, deps: ['RunStorage'] },
-        { ctor: LaterRepository, deps: ['LaterStorage'] },
+        { ctor: RunRepository, repository: Run },
+        { ctor: LaterRepository, repository: Later },
         // Under core's own key, which is how an optional package answers a reading core declares.
         { ctor: RunJournal, deps: ['RunRepository', 'LaterRepository'], name: JOURNAL },
       ],

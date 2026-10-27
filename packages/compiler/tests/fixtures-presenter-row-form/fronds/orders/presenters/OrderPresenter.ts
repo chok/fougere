@@ -1,11 +1,11 @@
 import Order from '../entities/Order.js';
-import { Presenter } from '@fougere/core';
+import { Present } from '@fougere/core';
 
 /**
  * One method in each form. `label` is the shape that compiles and dies at the first
  * call — it asks for a row where the executor hands the page.
  */
-export default class OrderPresenter extends Presenter(Order) {
+export default class OrderPresenter extends Present<Order> {
   label(order: Order): string {
     return String(order.holder);
   }

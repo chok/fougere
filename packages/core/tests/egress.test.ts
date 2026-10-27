@@ -8,7 +8,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { entity, primary, text, writeOnly } from '@fougere/schema';
 import { createContainer } from '@fougere/container';
-import { createApp, createLocalRunner, Crud, frond } from '../src/index.js';
+import { createApp, createLocalRunner, Repository, frond } from '../src/index.js';
 import { op } from './contract.js';
 import type { StorageFactory } from '../src/index.js';
 import { PresenterExecutor } from '../src/module/presenter/PresenterExecutor.js';
@@ -22,10 +22,10 @@ class Secret extends entity({
   passwordHash: writeOnly(text()),
 }) {}
 
-class SecretHandler extends Crud(Secret) {
+class SecretHandler extends Repository<Secret> {
   /** A handler legitimately reads the hash — it just must not leak it. */
   async audit() {
-    const { items: all } = await super.list();
+    const all = await super.list();
 
     return { checked: all.length, computedByHand: 'kept' };
   }
@@ -33,7 +33,7 @@ class SecretHandler extends Crud(Secret) {
 
 const vault = frond('vault', {
   entities: [Secret],
-  handlers: [{ ctor: SecretHandler, operations: { audit: op({ cardinality: 'one' }) } }],
+  handlers: [{ ctor: SecretHandler, repository: Secret, operations: { audit: op({ cardinality: 'one' }) } }],
   operationsOverrides: { 'secret.audit': { kind: 'query' } },
 });
 

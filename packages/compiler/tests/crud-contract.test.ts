@@ -75,9 +75,10 @@ export default class Note extends entity({
 }) {}
 `);
   writeFileSync(join(frond, 'handlers', 'NoteHandler.js'), `
-import { Crud } from ${JSON.stringify(coreDist)};
+import { Repository } from ${JSON.stringify(coreDist)};
 import Note from '../entities/Note.js';
-export default class NoteHandler extends Crud(Note) {}
+/** @extends {Repository<Note>} */
+export default class NoteHandler extends Repository {}
 `);
   // What an install puts there: the statement the scan writes imports `frond` from the package.
   mkdirSync(join(root, 'node_modules', '@fougere'), { recursive: true });
@@ -160,7 +161,7 @@ describe('as an installed app — the scan finds nothing, the façade validates 
 
     const created = await run({ address: 'note', op: 'create' }, call({ title: 'hello' }));
 
-    expect(storage.create).toHaveBeenCalledWith({ title: 'hello' });
+    expect(storage.create).toHaveBeenCalledWith({ title: 'hello' }, undefined);
     expect(created).toMatchObject({ title: 'hello' });
     await app.dispose();
   });
@@ -170,7 +171,7 @@ describe('as an installed app — the scan finds nothing, the façade validates 
 
     await run({ address: 'note', op: 'update' }, { ...call({ title: 'renamed' }), params: { id: 'note-1' } });
 
-    expect(storage.update).toHaveBeenCalledWith('note-1', { title: 'renamed' });
+    expect(storage.update).toHaveBeenCalledWith('note-1', { title: 'renamed' }, undefined);
     await app.dispose();
   });
 });

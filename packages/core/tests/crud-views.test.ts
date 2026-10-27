@@ -1,10 +1,10 @@
 /**
- * A prefab op emits the view named for IT.
+ * An op emits the view it answers.
  *
- * `Crud(E, Output)` scopes the injected storage, so it restricts the whole handler —
- * an op needing the full row breaks. `Crud(E, { list: Card })` is a declaration
- * instead: the storage keeps handing full rows (validates can read every field), and the
- * façade projects each op's result onto the view that op declared.
+ * A handler extending the view (`Repository<NoteCard>`) reads through it, so an op needing the full
+ * row breaks. An op answering a view is a question of its own instead — `cards()` — while the storage
+ * keeps handing full rows (validators read every field), and the façade projects that op's result
+ * onto the view it declared.
  */
 import fronds from './fixtures-crud-views/fronds.js';
 import { describe, it, expect, vi } from 'vitest';
@@ -44,7 +44,7 @@ describe('a view named for one op', () => {
   it('projects that op onto its view — the index ships cards', async () => {
     const { app, run } = await boot();
 
-    const { items: rows } = await run({ address: 'note', op: 'list' }, call()) as { items: Record<string, unknown>[] };
+    const { items: rows } = await run({ address: 'note', op: 'cards' }, call()) as { items: Record<string, unknown>[] };
 
     expect(Object.keys(rows[0]!).sort()).toEqual(['id', 'title']);
     await app.dispose();
@@ -62,7 +62,7 @@ describe('a view named for one op', () => {
   it('does not scope the storage — a validator still reads the fields the view omits', async () => {
     const { app, storage } = await boot();
 
-    // The handler-wide form calls .output(view) ; the per-op form must not.
+    // A handler extending the view calls .output(view) ; an op answering one must not.
     expect(storage.output).not.toHaveBeenCalled();
     await app.dispose();
   });
@@ -86,7 +86,7 @@ describe('a computed field meets the same boundary', () => {
   it('stays out of an op that named its view — the author stated the list', async () => {
     const { app, run } = await boot();
 
-    const { items: rows } = await run({ address: 'note', op: 'list' }, call()) as { items: Record<string, unknown>[] };
+    const { items: rows } = await run({ address: 'note', op: 'cards' }, call()) as { items: Record<string, unknown>[] };
 
     expect(Object.keys(rows[0]!).sort()).toEqual(['id', 'title']);
     expect(rows[0]).not.toHaveProperty('excerpt');

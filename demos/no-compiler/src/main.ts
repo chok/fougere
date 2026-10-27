@@ -1,7 +1,7 @@
 /**
  * An app whose fronds are written by hand, booted by Node alone.
  *
- * `fronds.ts` names each class. `Crud(Book)` says its five operations and `Presenter(Book)` its
+ * `fronds.ts` names each class. `Crud(Book)` says its five operations and `Present<Book>` its
  * computed field, so nothing else needs writing. No scan reads the sources, `@fougere/compiler`
  * is not a dependency, and Node runs the `.ts` files by erasing their types.
  */

@@ -5,7 +5,7 @@ import PostHandler from './fronds/blog/handlers/PostHandler.js';
 import CurrentUserCollector from './fronds/identity/collectors/CurrentUserCollector.js';
 import User from './fronds/identity/entities/User.js';
 
-export const identity = frond('identity', { entities: [User], collectors: [CurrentUserCollector] });
+export const identity = frond('identity', { entities: [User], collectors: [{ ctor: CurrentUserCollector, collects: User }] });
 
 export default [
   frond('blog', {

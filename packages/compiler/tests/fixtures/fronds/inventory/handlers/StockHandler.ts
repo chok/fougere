@@ -1,5 +1,5 @@
 import { entity, primary, text, number } from '@fougere/schema';
-import { Crud } from '@fougere/core';
+import { Repository } from '@fougere/core';
 import type { Page } from '@fougere/core';
 import Item from '../entities/Item.js';
 
@@ -14,7 +14,7 @@ export class StockSearchOutput extends entity({
 }) {}
 
 /** Handler that overrides list + adds a custom op. Tests child-wins merge. */
-export default class StockHandler extends Crud(Item) {
+export default class StockHandler extends Repository<Item> {
   async list(): Promise<Page<Item>> { return { items: [] }; }
 
   async searchStock(input: StockSearchInput): Promise<StockSearchOutput[]> {

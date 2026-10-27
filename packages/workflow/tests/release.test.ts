@@ -9,16 +9,13 @@
 import { describe, it, expect, vi } from 'vitest';
 import { createContainer } from '@fougere/container';
 import { entity, primary, ref, text, type SchemaView } from '@fougere/schema';
-import {
-  createApp, createLocalRunner, Crud, frond, Invocation, storageOver,
-  type App, type Storage, type Store,
-} from '@fougere/core';
+import { createApp, createLocalRunner, Repository, frond, Invocation, storageOver, type App, type Storage, type Store } from '@fougere/core';
 import { workflow } from '../src/index.js';
 
 class User extends entity({ id: primary(text()), name: text() }) {}
 class Post extends entity({ id: primary(text()), title: text(), authorId: ref(User, { onDelete: 'cascade' }) }) {}
-class UserHandler extends Crud(User) {}
-class PostHandler extends Crud(Post) {}
+class UserHandler extends Repository<User> {}
+class PostHandler extends Repository<Post> {}
 
 const store = (): Store => {
   const kept = new Map<string, Record<string, unknown>>();
@@ -64,8 +61,8 @@ async function booting(breakAt?: (id: string) => boolean): Promise<World> {
       });
     },
     fronds: [
-      frond('people', { entities: [User], handlers: [UserHandler] }),
-      frond('blog', { entities: [Post], handlers: [PostHandler] }),
+      frond('people', { entities: [User], handlers: [{ ctor: UserHandler, repository: User }] }),
+      frond('blog', { entities: [Post], handlers: [{ ctor: PostHandler, repository: Post }] }),
     ],
     // No beat: the test drives the sweep, so nothing races it.
     extensions: [workflow({ sweepMs: 0 })],

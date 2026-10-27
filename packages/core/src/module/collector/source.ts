@@ -12,7 +12,7 @@ function collectorIn(scope: Container | undefined, typeName: string): CollectorR
 }
 
 /**
- * A parameter whose TYPE has a collector in the frond — `user: User` beside a `Collector(User)`.
+ * A parameter whose TYPE has a collector in the frond — `user: User` beside a `Collect<User>`.
  * The set is keyed `lowerFirst`, the way the scan spells it, never `toLowerCase()`: `AuthorUser`
  * looked up as `authoruser` missed `authorUser` and fell through to the request input.
  */

@@ -10,7 +10,7 @@ import User from './fixtures-collector-split/fronds/identity/entities/User.js';
 import CurrentUserCollector from './fixtures-collector-split/fronds/identity/collectors/CurrentUserCollector.js';
 
 const family = [
-  frond('shared', { collectors: [CurrentUserCollector] }),
+  frond('shared', { collectors: [{ ctor: CurrentUserCollector, collects: User }] }),
   frond('blog', {
     entities: [Post, User],
     handlers: [{ ctor: PostHandler, operations: { whoOptional: op({ params: [typed('user', 'User', { optional: true })], cardinality: 'none' }) } }],

@@ -1,9 +1,9 @@
-import type { Fields } from '@fougere/schema';
+import { Page } from '../wire/Page.js';
+import { upperFirst, type Fields } from '@fougere/schema';
 import type { Container } from '@fougere/container';
 import { runMiddlewares } from '../wire/AppMiddleware.js';
 import { type OperationContext } from '../wire/OperationContext.js';
-import { inheritsCrud, subjectOf } from '../prefab/CrudConstructor.js';
-import { repositoryKeyOf } from '../prefab/RepositoryConstructor.js';
+import { isRepository, seatOf } from '../prefab/Repository.js';
 import type { OperationContract } from '../wire/OperationContract.js';
 import type { OperationsMap } from '../wire/OperationsMap.js';
 import type { EffectiveOperation } from '../EffectiveOperation.js';
@@ -35,10 +35,10 @@ export class HandlerFacade {
     private readonly scope: Container,
     private readonly facade: Facade,
   ) {
-    this.refuseCrudWithoutRepository(handler);
+    this.refuseUnseated(handler);
     this.arguments = new ArgumentResolver(scope, facade.entities);
 
-    scope.register(this.handlerKey, handler.ctor, { deps: this.depsOf(handler) });
+    scope.register(this.handlerKey, handler.ctor, { deps: this.depsOf(handler), lifetime: 'singleton' });
 
     this.effectiveOperations = facade.operations;
     this.contracts = new Map(
@@ -50,7 +50,7 @@ export class HandlerFacade {
     for (const [name, operation] of facade.operations) {
       if (this.isBaseImplementation(operation)) continue;
       const implementation = this.implementationHandler(name);
-      this.refuseCrudWithoutRepository(implementation);
+      this.refuseUnseated(implementation);
       const key = `${this.handlerKey}:implementation:${operation.implementation.className}`;
       if (!this.implementationKeys.has(operation.implementation.className)) {
         scope.register(key, implementation.ctor, { deps: this.depsOf(implementation) });
@@ -111,7 +111,10 @@ export class HandlerFacade {
 
     const args = await this.argumentsOf(contract, validated);
     const { instance, method } = this.resolveImplementation(op);
-    const answer = await instance[method](...args);
+    // A page crosses as an envelope: the array `Storage.list` answers keeps `total` as a property,
+    // which JSON drops, so an op answering one is read as the page it is.
+    const returned = await instance[method](...args);
+    const answer = contract.cardinality === 'page' && Array.isArray(returned) ? Page.of(returned) : returned;
 
     const view = this.viewOf(op);
     const computed = written || view.closed || this.facade.steps.length === 0 ? answer : await this.stepped(answer, validated);
@@ -135,27 +138,28 @@ export class HandlerFacade {
     return value;
   }
 
+  /**
+   * Its own class name: a class of its frond asking for `PostHandler` is handed this instance, and one
+   * of another frond is refused at boot, pointed at `Facade<PostHandler>` — the bare handler skips the
+   * validation, the middlewares and the placement, and would break the day the frond moved.
+   */
   private get handlerKey(): string {
-    return `_handler:${this.facade.key}`;
+    return this.handler.name;
   }
 
   private depsOf(handler: HandlerEntry): string[] {
-    const { deps } = handler;
-    if (deps.length > 0) return this.facade.ownLogger(handler.ctor.name, deps);
-
-    return inheritsCrud(handler.ctor)
-      ? [repositoryKeyOf(subjectOf(handler.ctor, handler.address))]
-      : [];
+    return handler.deps.length > 0 ? this.facade.ownLogger(handler.ctor.name, handler.deps) : [];
   }
 
-  /** A custom Crud constructor must explicitly receive its repository. */
-  private refuseCrudWithoutRepository(handler: HandlerEntry): void {
-    const repoTypeName = repositoryKeyOf(subjectOf(handler.ctor, handler.address));
-    if (!inheritsCrud(handler.ctor) || handler.deps.length === 0 || handler.deps.includes(repoTypeName)) return;
+  /**
+   * A class extending `Repository` the boot has nothing to seat on: TypeScript erases `<Post>`, and
+   * nothing said it — it would reach no rows, at its first call.
+   */
+  private refuseUnseated(handler: HandlerEntry): void {
+    if (!isRepository(handler.ctor) || seatOf(handler.ctor).length > 0) return;
     throw new Error(
-      `${handler.ctor.name} extends Crud and has a constructor, so the constructor must take the repository `
-      + `and pass it to super():\n`
-      + `    constructor(repo: ${repoTypeName}, …) { super(repo); }`,
+      `${handler.ctor.name} extends Repository, and nothing says which entity: TypeScript erases its type argument. `
+      + `A frond written by hand states it — { ctor: ${handler.ctor.name}, repository: ${upperFirst(handler.address)} }.`,
     );
   }
 

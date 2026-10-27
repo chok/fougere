@@ -1,4 +1,4 @@
-import { Crud, type Emit, type LogLine, type Repository } from '@fougere/core';
+import { Repository, type Emit, type LogLine } from '@fougere/core';
 import Order from '../entities/Order.js';
 
 /**
@@ -7,9 +7,9 @@ import Order from '../entities/Order.js';
  * `Emit<LogLine>` names a SUBJECT and no destination. Where the line goes is decided in
  * `main.ts`, and nothing here changes if it goes somewhere else.
  */
-export default class OrderHandler extends Crud(Order) {
+export default class OrderHandler extends Repository<Order> {
   constructor(repo: Repository<Order>, private log: Emit<LogLine>) {
-    super(repo);
+    super();
   }
 
   /** Place an order. */

@@ -1,11 +1,11 @@
-import { Crud, FougereError, ErrorCode } from '@fougere/core';
+import { Repository, FougereError, ErrorCode } from '@fougere/core';
 import Post from '../entities/Post.js';
 import type PostCard from '../entities/PostCard.js';
 import PostRepository from '../repositories/PostRepository.js';
 
-export default class PostHandler extends Crud(Post) {
+export default class PostHandler extends Repository<Post> {
   constructor(private posts: PostRepository) {
-    super(posts);
+    super();
   }
 
   /** The draft→published transition. */

@@ -20,7 +20,11 @@ export function schemaRef(
   const derived = derivationOf(schema, imports);
   if (derived) return derived;
 
+  // A loader handing each importer its own copy of a module gives the scan a second `Author` — the
+  // handler's — where the statement imports one: the entity it already imported answers by name.
   const name = (schema as { name?: string }).name;
+  const imported = name ? imports.classNamed(name) : undefined;
+  if (imported) return imports.aliasOf(imported)!;
   if (name && name !== ANONYMOUS_SCHEMA_NAME) return imports.named(schema as Live, declaredIn, name);
 
   const card = Card.fromSchema(schema);

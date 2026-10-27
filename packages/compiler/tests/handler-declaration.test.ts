@@ -82,10 +82,10 @@ describe('what a handler declares besides itself', () => {
     try {
       const frond = frondOf(root, 'ListingHandler');
       writeFileSync(frond.handlers[0].filePath, [
-        `import { Crud } from '@fougere/core';`,
+        `import { Repository } from '@fougere/core';`,
         `import Listing from '../entities/Listing.js';`,
         ``,
-        `export default class ListingHandler extends Crud(Listing) {}`,
+        `export default class ListingHandler extends Repository<Listing> {}`,
         ``,
       ].join('\n'));
 

@@ -1,4 +1,4 @@
-import { Crud } from '@fougere/core';
+import { Repository } from '@fougere/core';
 import Note from '../entities/Note.js';
 
 /**
@@ -9,4 +9,4 @@ import Note from '../entities/Note.js';
  * `<projectRoot>/packages/core/src`, which only exists inside this monorepo).
  * So the scan finds zero operations here, exactly as in a real project.
  */
-export default class NoteHandler extends Crud(Note) {}
+export default class NoteHandler extends Repository<Note> {}

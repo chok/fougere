@@ -1,4 +1,4 @@
-import { Crud, FougereError, ErrorCode, Page } from '@fougere/core';
+import { FougereError, ErrorCode, Page } from '@fougere/core';
 import Post from '../entities/Post.js';
 import PostRepository from '../repositories/PostRepository.js';
 import User from '@fronds/user/entities/User.js';
@@ -11,21 +11,19 @@ export class BySlugInput extends Post.pick('slug') {}
 /** Public card — what the blog index shows, no body. */
 export class PostCard extends Post.pick('id', 'slug', 'title', 'summary', 'authorName', 'publishedAt') {}
 
-export default class PostHandler extends Crud(Post, { list: PostCard }) {
-  // A Crud handler that declares a constructor stops getting its storage injected, so it
-  // takes it and hands it to super() — the boot refuses the signature otherwise. ONE
-  // dependency: a repository forwards every gesture the port has, so the five CRUD ops
-  // and `published()` come out of the same object.
-  constructor(private posts: PostRepository) {
-    super(posts);
-  }
+/**
+ * It writes every op it serves — the five included, each with its own rule — so it extends no
+ * repository: what it would inherit, it redefines. It asks for the one it reads through.
+ */
+export default class PostHandler {
+  constructor(private posts: PostRepository) {}
 
-  /** Public reading: published only, newest first, card shape — no body on the index. */
+  /**
+   * Public reading: published only, newest first. It answers the card — a view, so what leaves is
+   * the card's fields and the body stays home, with no copy written here.
+   */
   async list(): Promise<Page<PostCard>> {
-    const published = await this.posts.published();
-
-    return Page.of(published.map(({ id, slug, title, summary, authorName, publishedAt }) =>
-      ({ id, slug, title, summary, authorName, publishedAt })));
+    return Page.of(await this.posts.published());
   }
 
   /** Public reading: one published post, full body, designated by slug. */

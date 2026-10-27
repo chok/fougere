@@ -1,7 +1,7 @@
 import type { FrondDescriptor } from './descriptor/FrondDescriptor.js';
 import type { Diagnostic } from './diagnostic.js';
 import { lowerFirst } from '@fougere/schema';
-import { repositoryKeyOf } from './prefab/RepositoryConstructor.js';
+import { repositoryKeyOf } from './prefab/Repository.js';
 import { storageKeyOf } from './storage/Storage.js';
 import { presenterKeyOf } from './prefab/presenter.js';
 import { collectorKeyOf } from './prefab/collector.js';

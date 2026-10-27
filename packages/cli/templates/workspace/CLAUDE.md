@@ -54,8 +54,9 @@ import Product from '../entities/Product.js';
 constructor(private products: Repository<Product>) {}
 ```
 
-If the handler extends `Crud(Product)`, its inherited `this.storage` is already backed by that
-repository; do not add a constructor. The repository forwards the guarded storage gestures:
+If the handler extends `Repository<Product>`, it IS that repository — `this.findById(id)`, `super.list()` —
+and serves its five operations; do not ask for it in a constructor. The repository forwards the guarded
+storage gestures:
 
 ```
 list(options?)        every row — `options.where` filters, plus paging and sorting
@@ -68,7 +69,7 @@ create / update / delete
 Read a relation with `findAllBy`. Never read a whole table to filter it in memory.
 
 When a query deserves a domain name, add `repositories/ProductRepository.ts` with
-`class ProductRepository extends Repository(Product)`, put the query there, and inject
+`class ProductRepository extends Repository<Product>`, put the query there, and inject
 `ProductRepository`. A repository is registered as a provider and remains the only route to storage.
 
 ## Checking your work

@@ -6,7 +6,7 @@ import BookPresenter from './fronds/library/presenters/BookPresenter.ts';
 export default [
   frond('library', {
     entities: [Book],
-    handlers: [BookHandler],
-    presenters: [BookPresenter],
+    handlers: [{ ctor: BookHandler, repository: Book }],
+    presenters: [{ ctor: BookPresenter, presents: Book }],
   }),
 ];

@@ -8,12 +8,12 @@ import LedgerHandler from './fronds/bank/handlers/LedgerHandler.js';
 
 export default [frond('bank', {
   entities: [Account, Ledger],
-  providers: [{ ctor: AccountRepository, deps: ['AccountStorage', 'LedgerStorage'] }],
+  providers: [{ ctor: AccountRepository, repository: [Account, Ledger] }],
   handlers: [{
       ctor: AccountHandler,
       deps: ['AccountRepository'],
       operations: {
         withdraw: op({ args: [param('id')], output: Account, cardinality: 'maybe', description: 'Take money out, and journal it.' }),
       },
-    }, LedgerHandler],
+    }, { ctor: LedgerHandler, repository: Ledger }],
 })];

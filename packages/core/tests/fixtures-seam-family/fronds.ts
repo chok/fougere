@@ -9,7 +9,7 @@ export default [
   frond('ledger', { providers: [{ ctor: Stamping, deps: ['Storage'] }] }),
   frond('warehouse', {
     entities: [Crate],
-    providers: [{ ctor: CrateRepository, deps: ['CrateStorage'] }],
+    providers: [{ ctor: CrateRepository, repository: Crate }],
     handlers: [{
       ctor: CrateHandler,
       deps: ['CrateRepository'],

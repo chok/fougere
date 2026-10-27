@@ -3,9 +3,9 @@ import Card from '../entities/Card.js';
 import type { RankedStorage } from '../storage.js';
 
 /** The constructor names the realization; the key it asks for is still `Card`'s storage. */
-export default class CardRepository extends Repository(Card) {
+export default class CardRepository extends Repository<Card> {
   constructor(private index: RankedStorage<Card>) {
-    super(index);
+    super();
   }
 
   ranked(query: string) {

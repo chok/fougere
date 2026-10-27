@@ -1,4 +1,4 @@
-import { Crud } from '@fougere/core';
+import { Repository } from '@fougere/core';
 import Order from '../entities/Order.js';
 
-export default class OrderHandler extends Crud(Order) {}
+export default class OrderHandler extends Repository<Order> {}

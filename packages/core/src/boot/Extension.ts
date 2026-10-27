@@ -26,10 +26,17 @@ export interface Extension {
    * is refused at the facade, and one declared twice refuses the boot.
    */
   state?: Readonly<Record<string, Field>>;
+  up?(app: App): void | Promise<void>;
+  down?(app: App): void | Promise<void>;
+}
+
+/**
+ * What a module of the kernel plugs in through beside `up` and `down` — `presenters()` is one. Not a
+ * package's door: a package stands in front of a port with a link, the way a frond does.
+ */
+export interface ModuleExtension extends Extension {
   /** Puts what it brings into a frond's scope, as that frond is installed — before any facade is built. */
   install?(frond: FrondDescriptor, at: { scope: Container; container: Container; ownLogger: OwnLogger; log: Logger }): void;
   /** What runs over a handler's answer before its view projects it. */
   steps?(handler: HandlerEntry, frond: FrondDescriptor, scope: Container): readonly AnswerStep[];
-  up?(app: App): void | Promise<void>;
-  down?(app: App): void | Promise<void>;
 }

@@ -31,9 +31,11 @@ export type { Signature } from '../wire/Signature.js';
 export { awaitKeyOf, emitKeyOf } from '../wire/Emit.js';
 export { addressOf } from '../wire/Facade.js';
 export { storageKeyOf } from '../storage/Storage.js';
-export { getPresenterFields } from '../prefab/presenter.js';
+export { getPresenterFields, isPresent } from '../prefab/presenter.js';
+export { isCollect } from '../prefab/collector.js';
+export { builtOn } from '../prefab/prefab.js';
 export { targetOf, viewsOf, outputOf } from '../prefab/prefab.js';
-export { ownedBy, repositoryKeyOf } from '../prefab/RepositoryConstructor.js';
+export { isRepository, ownedBy, repositoryKeyOf, seated, seatOf, seatsOf } from '../prefab/Repository.js';
 
 // The surfaces a handler answers on — a directory names one, and so does `frond.config.ts`.
 export { servedSurfaces } from './surface.js';

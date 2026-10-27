@@ -6,7 +6,7 @@
 import { describe, it, expect } from 'vitest';
 import { createContainer } from '@fougere/container';
 import { entity, primary, text } from '@fougere/schema';
-import { createApp, Crud, frond, type FrondDeclaration } from '../src/index.js';
+import { createApp, Repository, frond, type FrondDeclaration } from '../src/index.js';
 import { memory } from './memory.js';
 
 class Post extends entity({ id: primary(), title: text() }) {}
@@ -17,21 +17,15 @@ class Clock {
   }
 }
 
-class ClockedHandler extends Crud(Post) {
-  constructor(
-    posts: never,
-    readonly clock: Clock,
-  ) {
-    super(posts);
+class ClockedHandler extends Repository<Post> {
+  constructor(readonly clock: Clock) {
+    super();
   }
 }
 
-class DefaultedHandler extends Crud(Post) {
-  constructor(
-    posts: never,
-    readonly clock = new Clock(),
-  ) {
-    super(posts);
+class DefaultedHandler extends Repository<Post> {
+  constructor(readonly clock = new Clock()) {
+    super();
   }
 }
 
@@ -44,21 +38,21 @@ const boot = (handlers: FrondDeclaration['handlers']) =>
 
 describe('a constructor asking for more than it is declared', () => {
   it('refuses the boot, naming the class and what was declared', async () => {
-    await expect(boot([{ ctor: ClockedHandler, deps: ['PostRepository'] }]))
-      .rejects.toThrow(/\[constructor-arity\] ClockedHandler[\s\S]*takes 2 parameter\(s\), but only 1 is typed \(PostRepository\)/);
+    await expect(boot([{ ctor: ClockedHandler, repository: Post, deps: [] }]))
+      .rejects.toThrow(/\[constructor-arity\] ClockedHandler[\s\S]*takes 1 parameter\(s\), but only 0 are typed \(none\)/);
   });
 
   it('boots once every parameter is declared', async () => {
-    await using app = await boot([{ ctor: ClockedHandler, deps: ['PostRepository', 'Clock'] }]);
+    await using app = await boot([{ ctor: ClockedHandler, repository: Post, deps: ['Clock'] }]);
 
     expect(app.fronds.map((one) => one.name)).toContain('blog');
   });
 
   it('reads an inherited constructor and a defaulted parameter as nothing to ask for', async () => {
-    class InheritedHandler extends Crud(Post) {}
+    class InheritedHandler extends Repository<Post> {}
 
-    await using inherited = await boot([InheritedHandler]);
-    await using defaulted = await boot([{ ctor: DefaultedHandler, deps: ['PostRepository'] }]);
+    await using inherited = await boot([{ ctor: InheritedHandler, repository: Post }]);
+    await using defaulted = await boot([{ ctor: DefaultedHandler, repository: Post, deps: [] }]);
 
     expect(inherited.fronds).toHaveLength(1);
     expect(defaulted.fronds).toHaveLength(1);

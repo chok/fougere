@@ -304,9 +304,9 @@ function effectiveOutput(
   name: string,
   contract: OperationContract,
 ): { schema?: SchemaView; closed: boolean } {
-  const perOperation = (handler.ctor as { __opOutputs?: Record<string, SchemaView> }).__opOutputs?.[name];
-  if (perOperation) return { schema: perOperation, closed: true };
-  if (contract.output) return { schema: contract.output, closed: false };
+  // An op answering a VIEW — a derivation not anchored, `PostCard` — named what leaves: closed. One
+  // answering the entity leaves it open, so a computed field rides along.
+  if (contract.output) return { schema: contract.output, closed: isView(contract.output) };
   const handlerWide = handler.outputOverride
     ?? (handler.ctor as { __output?: SchemaView }).__output;
   if (handlerWide) return { schema: handlerWide, closed: false };
@@ -398,3 +398,10 @@ function mergedBinding(derived: BindingPlan | undefined, declared: BindingPlan):
 
   return [...derived.map((entry) => byName.get(entry.name) ?? entry), ...declared.filter((entry) => !named.has(entry.name))];
 }
+
+function isView(schema: SchemaView): boolean {
+  const { derivation, anchored } = schema as unknown as { derivation?: unknown; anchored?: boolean };
+
+  return derivation !== undefined && !anchored;
+}
+

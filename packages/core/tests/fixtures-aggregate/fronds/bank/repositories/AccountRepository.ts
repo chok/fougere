@@ -6,7 +6,7 @@ import Ledger from '../entities/Ledger.js';
  * The aggregate. `balance` and the sum of `amount` are one fact, so both entities are
  * owned here and the rule that ties them is ordinary TypeScript inside `withdraw`.
  */
-export default class AccountRepository extends Repository(Account, Ledger) {
+export default class AccountRepository extends Repository<Account, Ledger> {
   async withdraw(id: string, amount: number) {
     const [accounts, ledger] = this.storages;
     const account = await accounts.findById(id);

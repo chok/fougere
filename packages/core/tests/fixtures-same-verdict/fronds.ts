@@ -7,6 +7,7 @@ export default [frond('press', {
   entities: [Article],
   handlers: [{
     ctor: ArticleHandler,
+    repository: Article,
     operations: {
       create: op({ args: [input()], input: NewArticle, output: Article, cardinality: 'one', description: 'Publish an article.' }),
     },

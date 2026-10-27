@@ -77,8 +77,12 @@ export function refusalsWithCollected(
   binding: BindingPlan,
   collectorsByType: Map<string, CollectorEntry[]>,
 ): ErrorCode[] | undefined {
-  const collected = binding.flatMap(({ source, optional }) => (source.kind === 'collector' && !optional
-    ? (collectorsByType.get(source.typeName) ?? []).flatMap((collector) => collector.refuses ?? [])
+  // `missing()` refuses only a parameter written without `?`; `collect()` runs for every one.
+  const collected = binding.flatMap(({ source, optional }) => (source.kind === 'collector'
+    ? (collectorsByType.get(source.typeName) ?? []).flatMap((collector) => [
+      ...(optional ? [] : collector.refuses ?? []),
+      ...collector.collecting ?? [],
+    ])
     : []));
   if (collected.length === 0) return errors ? [...errors] : undefined;
 

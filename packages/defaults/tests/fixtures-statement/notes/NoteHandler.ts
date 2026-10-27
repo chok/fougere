@@ -1,4 +1,4 @@
-import { Crud } from '@fougere/core';
+import { Repository } from '@fougere/core';
 import Note from './Note.js';
 
-export default class NoteHandler extends Crud(Note) {}
+export default class NoteHandler extends Repository<Note> {}

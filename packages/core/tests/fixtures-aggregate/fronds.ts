@@ -7,7 +7,7 @@ import AccountRepository from './fronds/bank/repositories/AccountRepository.js';
 
 export default [frond('bank', {
   entities: [Account, Ledger],
-  providers: [{ ctor: AccountRepository, deps: ['AccountStorage', 'LedgerStorage'] }],
+  providers: [{ ctor: AccountRepository, repository: [Account, Ledger] }],
   handlers: [{
       ctor: AccountHandler,
       deps: ['AccountRepository'],

@@ -6,14 +6,14 @@
 import { describe, it, expect } from 'vitest';
 import { createContainer } from '@fougere/container';
 import { bool, entity, json, optional, primary, text } from '@fougere/schema';
-import { Collector, createApp, createLocalRunner, ErrorCode, FougereError, frond, type InvocationContext } from '../src/index.js';
+import { Collect, createApp, createLocalRunner, ErrorCode, FougereError, frond, type InvocationContext } from '../src/index.js';
 import { Invocation } from '../src/wire/Invocation.js';
 import { collected, input, op } from './contract.js';
 
 class Visitor extends entity({ id: primary(text()), name: text() }) {}
 class Note extends entity({ title: text() }) {}
 
-class VisitorCollector extends Collector(Visitor) {
+class VisitorCollector extends Collect<Visitor> {
   async collect(ctx: InvocationContext) { return ctx.state.visitor as Visitor | undefined; }
   missing(ctx: InvocationContext): never {
     throw new FougereError({
@@ -24,7 +24,7 @@ class VisitorCollector extends Collector(Visitor) {
 }
 
 class Guest extends entity({ id: primary(text()) }) {}
-class GuestCollector extends Collector(Guest) {
+class GuestCollector extends Collect<Guest> {
   async collect() { return undefined; }
 }
 
@@ -37,7 +37,7 @@ class DeskHandler {
 
 const desk = frond('desk', {
   entities: [Visitor, Note, Guest],
-  collectors: [VisitorCollector, GuestCollector],
+  collectors: [{ ctor: VisitorCollector, collects: Visitor }, { ctor: GuestCollector, collects: Guest }],
   handlers: [{
     ctor: DeskHandler,
     operations: {

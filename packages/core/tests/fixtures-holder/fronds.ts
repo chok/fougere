@@ -7,7 +7,7 @@ import PartnerCatalog from './fronds/catalog/services/PartnerCatalog.js';
 
 export default [frond('catalog', {
   entities: [BookCard],
-  providers: [FileStorage, { ctor: PartnerCatalog, deps: ['BookCardStorage'] }],
+  providers: [FileStorage, { ctor: PartnerCatalog, repository: BookCard }],
   handlers: [{
     ctor: BookCardHandler,
     deps: ['BookCardRepository', 'FileStorage'],

@@ -1,3 +1,4 @@
+import { seatOf } from '../prefab/Repository.js';
 import type { Diagnostic } from '../diagnostic.js';
 import type { FrondDescriptor } from '../descriptor/FrondDescriptor.js';
 
@@ -25,7 +26,11 @@ export function refuseArityDrift(frond: FrondDescriptor, refused: Diagnostic[]):
     ...frond.middlewares,
   ];
 
-  for (const { ctor, deps, filePath } of constructed) {
+  for (const { ctor: built, deps: given, filePath } of constructed) {
+    // A seated class takes its rows after what it was written to take: the sentence counts the latter.
+    const handed = seatOf(built).length;
+    const ctor = { name: built.name, length: built.length - handed };
+    const deps = given.slice(0, given.length - handed);
     if (ctor.length <= deps.length) continue;
 
     refused.push({

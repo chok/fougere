@@ -10,7 +10,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { createContainer } from '../../container/dist/index.js';
-import { createApp, createLocalRunner, Crud, frond, Invocation, storageOver } from '../dist/index.js';
+import { createApp, createLocalRunner, frond, Invocation, Repository, storageOver } from '../dist/index.js';
 import { entity, primary, text } from '../../schema/dist/index.js';
 
 const store = () => {
@@ -37,8 +37,9 @@ const booting = (handlers, providers = [Clock]) => createApp({
 
 describe('an app written in JavaScript', () => {
   it('boots from frond() alone — no scan, no compiler', async () => {
-    class NoteHandler extends Crud(Note) {}
-    await using app = await booting([NoteHandler]);
+    // JavaScript has no `<Note>` to write: the statement says what it extends the repository of.
+    class NoteHandler extends Repository {}
+    await using app = await booting([{ ctor: NoteHandler, repository: Note }]);
 
     const run = createLocalRunner(app);
     const written = await run({ address: 'note', op: 'create' }, { ...Invocation.empty, input: { body: 'Hello' } });
@@ -48,14 +49,15 @@ describe('an app written in JavaScript', () => {
   });
 
   it('injects what the declaration names', async () => {
-    class NoteHandler extends Crud(Note) {
-      constructor(notes, clock) { super(notes); this.clock = clock; }
+    class NoteHandler extends Repository {
+      constructor(clock) { super(); this.clock = clock; }
       async readStamp() { return this.clock.now(); }
     }
 
     await using app = await booting([{
       ctor: NoteHandler,
-      deps: ['NoteRepository', 'Clock'],
+      repository: Note,
+      deps: ['Clock'],
       operations: { readStamp: { binding: [] } },
     }]);
 
@@ -63,18 +65,18 @@ describe('an app written in JavaScript', () => {
   });
 
   it('refuses a constructor asking for more than it is declared', async () => {
-    class NoteHandler extends Crud(Note) {
-      constructor(notes, clock) { super(notes); this.clock = clock; }
+    class NoteHandler extends Repository {
+      constructor(clock) { super(); this.clock = clock; }
     }
 
-    await expect(booting([{ ctor: NoteHandler, deps: ['NoteRepository'] }]))
+    await expect(booting([{ ctor: NoteHandler, repository: Note, deps: [] }]))
       .rejects.toThrow(/constructor-arity/);
   });
 
   it('refuses an operation with no method under its name', async () => {
-    class NoteHandler extends Crud(Note) {}
+    class NoteHandler extends Repository {}
 
-    await expect(booting([{ ctor: NoteHandler, deps: [], operations: { publish: { binding: [] } } }]))
+    await expect(booting([{ ctor: NoteHandler, repository: Note, deps: [], operations: { publish: { binding: [] } } }]))
       .rejects.toThrow(/operation-without-method/);
   });
 });

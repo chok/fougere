@@ -1,4 +1,4 @@
-import { Collector } from '@fougere/core';
+import { Collect } from '@fougere/core';
 import type { InvocationContext } from '@fougere/core';
 import User from '../entities/User.js';
 
@@ -10,7 +10,7 @@ import User from '../entities/User.js';
  * It reads identity off the invocation state, so a reader can never become an
  * admin by asking.
  */
-export default class CurrentUserCollector extends Collector(User) {
+export default class CurrentUserCollector extends Collect<User> {
   async collect(ctx: InvocationContext) {
     return ctx.state.user as User | undefined;
   }

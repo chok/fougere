@@ -5,7 +5,7 @@ import RateCard from '../entities/RateCard.js';
 export const upstream: { pages: { code: string; rate: number }[][] } = { pages: [] };
 
 /** A copy that writes through the port, which is what lets a frame cover it. */
-export default class RateMirror extends Mirror(RateCard) {
+export default class RateMirror extends Mirror<RateCard> {
   async *pull(): AsyncIterable<Partial<RateCard>[]> {
     for (const page of upstream.pages) yield page;
   }

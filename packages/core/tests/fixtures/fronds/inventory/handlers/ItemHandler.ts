@@ -1,5 +1,5 @@
-import { Crud } from '../../../../../src/prefab/CrudConstructor.js';
+import { Repository } from '../../../../../src/prefab/Repository.js';
 import Item from '../entities/Item.js';
 
-/** Handler that extends Crud(Item) — tests heritage clause parsing. */
-export default class ItemHandler extends Crud(Item) {}
+/** Handler that extends Repository<Item> — tests heritage clause parsing. */
+export default class ItemHandler extends Repository<Item> {}

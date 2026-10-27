@@ -1,4 +1,4 @@
-import { Crud, FougereError, ErrorCode, Page } from '@fougere/core';
+import { Repository, FougereError, ErrorCode, type ListResult } from '@fougere/core';
 import Post from '../entities/Post.js';
 
 /**
@@ -7,17 +7,17 @@ import Post from '../entities/Post.js';
  * point of the demo: the same handler answers the envelope, REST and GraphQL, in
  * this process or behind JSON-RPC, under Nuxt or under Next.
  */
-export default class PostHandler extends Crud(Post) {
+export default class PostHandler extends Repository<Post> {
   /** Public reading: only published posts exist for the outside world. */
-  async list(): Promise<Page<Post>> {
-    const { items: all } = await super.list();
+  async list(): Promise<ListResult<Post>> {
+    const all = await super.list();
 
-    return Page.of(all.filter((post) => post.status === 'published'));
+    return all.filter((post) => post.status === 'published');
   }
 
   /** Everything, drafts included — what an author's own dashboard shows. */
   async listDrafts(): Promise<Post[]> {
-    const { items: all } = await super.list();
+    const all = await super.list();
 
     return all.filter((post) => post.status === 'draft');
   }

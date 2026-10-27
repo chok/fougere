@@ -1,9 +1,9 @@
 import { lowerFirst, upperFirst } from '@fougere/schema';
 import { nameOf, type FrondDescriptor } from '../descriptor/FrondDescriptor.js';
 import { type ProviderEntry } from '../descriptor/ProviderEntry.js';
-import { inheritsCrud } from '../prefab/CrudConstructor.js';
+import { extendsRepository } from '../prefab/RepositoryOps.js';
 import { targetOf } from '../prefab/prefab.js';
-import { ownedBy } from '../prefab/RepositoryConstructor.js';
+import { ownedBy, seatOf } from '../prefab/Repository.js';
 import { entityOfStorageKey, membersOfTogetherKey } from '../storage/Storage.js';
 import type { Diagnostic } from '../diagnostic.js';
 
@@ -121,7 +121,7 @@ function refuseStorageReached(
   known: (entity: string) => boolean,
   refused: Diagnostic[],
 ): void {
-  const allowed = decl.kind === 'provider' ? entitiesOfPrefab(decl.ctor) : [];
+  const allowed = decl.kind === 'provider' || seatOf(decl.ctor).length > 0 ? entitiesOfPrefab(decl.ctor) : [];
 
   for (const dep of decl.deps) {
     const framed = membersOfTogetherKey(dep);
@@ -200,8 +200,12 @@ export function crudOnOwned(
   refused: Diagnostic[],
 ): void {
   for (const handler of frond.handlers) {
-    const owner = owners.get(handler.address);
-    if (!owner || handler.deps.length > 0 || !inheritsCrud(handler.ctor)) continue;
+    // What it extends the repository of — seated by the boot — or, for a prefab, its address.
+    const built = seatOf(handler.ctor).map((entity) => lowerFirst(entity.name));
+    const subject = built.find((entity) => owners.has(entity))
+      ?? (built.length === 0 && handler.deps.length === 0 && extendsRepository(handler.ctor) ? handler.address : undefined);
+    const owner = subject && owners.get(subject);
+    if (!subject || !owner || owners.get(subject) === handler.ctor.name) continue;
 
     refused.push({
       severity: 'blocking',
@@ -209,8 +213,8 @@ export function crudOnOwned(
       filePath: handler.filePath,
       frond: frond.name,
       subject: handler.ctor.name,
-      message: `${handler.ctor.name} extends Crud, but ${handler.address} belongs to ${owner}. Drop Crud `
-        + `and ask for it: constructor(private ${handler.address}: ${owner}) {}.`,
+      message: `${handler.ctor.name} extends Repository<${upperFirst(subject)}>, but ${subject} belongs to ${owner}. `
+        + `Drop it and ask for the owner: constructor(private ${subject}: ${owner}) {}.`,
     });
   }
 }

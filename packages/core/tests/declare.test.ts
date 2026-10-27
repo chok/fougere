@@ -13,10 +13,10 @@
 import { describe, it, expect } from 'vitest';
 import { createContainer } from '@fougere/container';
 import { entity, primary, text, optional } from '@fougere/schema';
-import { createApp, frond, Crud, Call, RouteAddress, Invocation } from '../src/index.js';
+import { createApp, frond, Repository, Call, RouteAddress, Invocation } from '../src/index.js';
 
 class Post extends entity({ id: primary(), title: text(), body: optional(text()) }) {}
-class PostHandler extends Crud(Post) {}
+class PostHandler extends Repository<Post> {}
 
 const rows = [{ id: '1', title: 'hello', input: 'world' }];
 
@@ -29,7 +29,7 @@ const storageFactory = () => ({
 const appOf = () => createApp({
   createContainer,
   storageFactory,
-  fronds: [frond('blog', { entities: [Post], handlers: [PostHandler] })],
+  fronds: [frond('blog', { entities: [Post], handlers: [{ ctor: PostHandler, repository: Post }] })],
 });
 
 describe('a frond the app states', () => {
@@ -55,12 +55,13 @@ describe('a frond the app states', () => {
   });
 
   it('derives every name the scan would have derived', () => {
-    const d = frond('blog', { entities: [Post], handlers: [PostHandler] });
+    const d = frond('blog', { entities: [Post], handlers: [{ ctor: PostHandler, repository: Post }] });
 
     // `Post` is stored as `post`, `PostHandler` answers at `post` — the suffix rule the
     // scanner applies to a file it found, applied to a class it was handed.
     expect(d.entities[0]).toMatchObject({ name: 'post', entityClass: Post });
-    expect(d.handlers[0]).toMatchObject({ name: 'PostHandler', address: 'post', ctor: PostHandler });
+    expect(d.handlers[0]).toMatchObject({ name: 'PostHandler', address: 'post' });
+    expect(d.handlers[0]!.ctor.prototype).toBeInstanceOf(PostHandler);
     expect(d.source.package, 'the conventional import scope').toBe('@fronds/blog');
   });
 
@@ -78,7 +79,7 @@ describe('a frond the app states', () => {
   });
 
   it('comes out of a boot as it went in, so a second boot reads the statement and not the first answer', async () => {
-    const family = [frond('ledger'), frond('shop', { entities: [Post], handlers: [PostHandler] })];
+    const family = [frond('ledger'), frond('shop', { entities: [Post], handlers: [{ ctor: PostHandler, repository: Post }] })];
 
     await (await createApp({ createContainer, storageFactory, fronds: family, under: { shop: { extends: 'ledger' } } })).dispose();
     await using second = await createApp({ createContainer, storageFactory, fronds: family });

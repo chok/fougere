@@ -37,7 +37,7 @@ export default class PostHandler {
   async publish(id: Post['id']) { … }
 }`;
 
-const derivationSnippet = `class PostHandler extends Crud(Post)  // five CRUD operations
+const derivationSnippet = `class PostHandler extends Repository<Post>  // five CRUD operations
 POST /api/blog/posts                  // the API, validated
 useFormFor(Post)                      // the form, validated first
 posts (title, body, …)                // the table

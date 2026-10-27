@@ -4,7 +4,7 @@
 import { describe, it, expect } from 'vitest';
 import { createContainer } from '@fougere/container';
 import { entity, primary, text } from '@fougere/schema';
-import { createApp, frond, Middleware, Presenter, type AppNext, type OperationContext } from '../src/index.js';
+import { createApp, frond, Middleware, Present, type AppNext, type OperationContext } from '../src/index.js';
 import { op } from './contract.js';
 
 class Post extends entity({ id: primary(), title: text() }) {}
@@ -16,7 +16,7 @@ class Audit extends Middleware {
   async around<T>(_context: OperationContext, next: AppNext<T>): Promise<T> { return next(); }
 }
 
-class PostPresenter extends Presenter(Post) {
+class PostPresenter extends Present<Post> {
   async shout(rows: { title: string }[]) { return rows.map((row) => row.title.toUpperCase()); }
 }
 
@@ -34,7 +34,7 @@ describe('app.extensionPoints()', () => {
         entities: [Post],
         providers: [Payment, StripePayment],
         middlewares: [Audit],
-        presenters: [PostPresenter],
+        presenters: [{ ctor: PostPresenter, presents: Post }],
         handlers: [{ ctor: PostHandler, deps: ['Payment'], operations: { list: op({ cardinality: 'many', output: Post }) } }],
       })],
     });

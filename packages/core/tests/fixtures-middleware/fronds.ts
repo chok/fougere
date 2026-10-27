@@ -21,6 +21,6 @@ export default [
     entities: [Note],
     providers: [Trail],
     middlewares: [{ ctor: Audit, deps: ['Trail'] }],
-    handlers: [NoteHandler],
+    handlers: [{ ctor: NoteHandler, repository: Note }],
   }),
 ];

@@ -1,4 +1,4 @@
-import { Crud } from '@fougere/core';
+import { Repository } from '@fougere/core';
 import Product from '../entities/Product.js';
 
 /**
@@ -8,4 +8,4 @@ import Product from '../entities/Product.js';
  * `product:list`, `product:create`, `product:find-by-id`. The topic `product` forms itself
  * from the address — no table, no registration.
  */
-export default class ProductHandler extends Crud(Product) {}
+export default class ProductHandler extends Repository<Product> {}

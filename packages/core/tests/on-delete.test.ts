@@ -10,10 +10,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { createContainer, type Container } from '@fougere/container';
 import { entity, optional, primary, ref, text, type SchemaView } from '@fougere/schema';
-import {
-  createApp, createLocalRunner, Crud, frond, Invocation, storageOver, togetherKeyOf,
-  type Storage, type Store,
-} from '../src/index.js';
+import { createApp, createLocalRunner, Repository, frond, Invocation, storageOver, togetherKeyOf, type Storage, type Store } from '../src/index.js';
 
 class User extends entity({ id: primary(text()), name: text() }) {}
 class Post extends entity({
@@ -160,9 +157,9 @@ describe('restrict — the row stays until nothing names it', () => {
   });
 
   it('refuses through the facade, not only the storage', async () => {
-    class UserHandler extends Crud(User) {}
+    class UserHandler extends Repository<User> {}
     const world = await populated(await booting({
-      fronds: [frond('app', { entities: [User, Post, Comment], handlers: [UserHandler] })],
+      fronds: [frond('app', { entities: [User, Post, Comment], handlers: [{ ctor: UserHandler, repository: User }] })],
     }));
     const call = createLocalRunner(world.app);
 
@@ -405,12 +402,12 @@ describe('the rows live in another process', () => {
 
     // A facade per entity, because that is what a card carries and what the remote router
     // indexes an entity by — a frond with no handler is a frond a peer cannot find.
-    class UserHandler extends Crud(User) {}
-    class PostHandler extends Crud(Post) {}
-    class CommentHandler extends Crud(Comment) {}
+    class UserHandler extends Repository<User> {}
+    class PostHandler extends Repository<Post> {}
+    class CommentHandler extends Repository<Comment> {}
     const declared = () => [
-      frond('people', { entities: [User], handlers: [UserHandler] }),
-      frond('blog', { entities: [Post, Comment], handlers: [PostHandler, CommentHandler] }),
+      frond('people', { entities: [User], handlers: [{ ctor: UserHandler, repository: User }] }),
+      frond('blog', { entities: [Post, Comment], handlers: [{ ctor: PostHandler, repository: Post }, { ctor: CommentHandler, repository: Comment }] }),
     ];
 
     const blog = await createApp({ createContainer, storageFactory, fronds: declared() });

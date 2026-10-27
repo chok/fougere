@@ -1,9 +1,9 @@
 import List from '../entities/List.js';
 import User from '../entities/User.js';
-import { Presenter } from '@fougere/core';
+import { Present } from '@fougere/core';
 
 /** Computed fields that depend on WHO is asking — the whole point. */
-export default class ListPresenter extends Presenter(List) {
+export default class ListPresenter extends Present<List> {
   /** Counts its own calls, so a test can prove it ran once for the page. */
   static calls = 0;
 

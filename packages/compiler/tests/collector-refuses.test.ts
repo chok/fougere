@@ -10,15 +10,16 @@ import { scanProject } from '../src/scan/scanner.js';
 
 const root = join(import.meta.dirname, 'fixtures-collector-refuses');
 
-describe('a collector\'s missing()', () => {
-  it('is walked like an operation, and what it refuses joins the ops that require it', async () => {
+describe('a collector\'s missing() and collect()', () => {
+  it('are walked like an operation: missing() joins the ops that require it, collect() every op it serves', async () => {
     const { fronds } = await scanProject(root);
     const desk = fronds.find((frond) => frond.name === 'desk')!;
     const { operations } = resolveEffectiveOperations(fronds, { diagnostics: [] });
     const errorsOf = (name: string) => operations.find((op) => op.frond === 'desk' && op.name === name)!.errors ?? [];
 
     expect(desk.collectors[0]!.refuses).toEqual(['UNAUTHORIZED']);
-    expect(errorsOf('mine')).toEqual(['UNAUTHORIZED']);
-    expect(errorsOf('maybe')).toEqual([]);
+    expect(desk.collectors[0]!.collecting).toEqual(['FORBIDDEN']);
+    expect([...errorsOf('mine')].sort()).toEqual(['FORBIDDEN', 'UNAUTHORIZED']);
+    expect(errorsOf('maybe')).toEqual(['FORBIDDEN']);
   }, 30_000);
 });

@@ -1,4 +1,4 @@
-import { Call, Repository, RouteAddress, type Storage } from '@fougere/core';
+import { Call, Repository, RouteAddress } from '@fougere/core';
 import Later from './Later.js';
 
 /** How long a taker holds a due call before anyone may take it over. */
@@ -11,9 +11,9 @@ const TAKE_MS = 30_000;
  * opposite case: a release may be redone, a call may not, so what is bounded here is how long
  * a taker is believed rather than how long a driver is assumed alive.
  */
-export default class LaterRepository extends Repository(Later) {
-  constructor(storage: Storage<Later>, private now: () => number = Date.now) {
-    super(storage);
+export default class LaterRepository extends Repository<Later> {
+  constructor(private now: () => number = Date.now) {
+    super();
   }
 
   async keep(call: Call, runAt: number): Promise<void> {

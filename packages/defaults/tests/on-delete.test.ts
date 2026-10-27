@@ -18,7 +18,7 @@ import { tmpdir } from 'node:os';
 import { createContainer } from '@fougere/container';
 import { entity, optional, primary, ref, text } from '@fougere/schema';
 import { createSqliteSource } from '@fougere/adapter-sql';
-import { createApp, createLocalRunner, Crud, frond, migrating, type App, type Storage, type Transport } from '@fougere/core';
+import { createApp, createLocalRunner, Repository, frond, migrating, type App, type Storage, type Transport } from '@fougere/core';
 import { layerOf, storageFrom } from '../src/storage/ResolvedStorage.js';
 
 class User extends entity({ id: primary(text()), name: text() }) {}
@@ -36,16 +36,16 @@ class Comment extends entity({
   authorId: ref(User),
 }) {}
 
-class UserHandler extends Crud(User) {}
-class PostHandler extends Crud(Post) {}
-class CommentHandler extends Crud(Comment) {}
+class UserHandler extends Repository<User> {}
+class PostHandler extends Repository<Post> {}
+class CommentHandler extends Repository<Comment> {}
 
 /** The same entities, as one frond or as two — declared the same way in every process. */
 const fronds = (together: boolean) => (together
-  ? [frond('app', { entities: [User, Post, Comment], handlers: [UserHandler, PostHandler, CommentHandler] })]
+  ? [frond('app', { entities: [User, Post, Comment], handlers: [{ ctor: UserHandler, repository: User }, { ctor: PostHandler, repository: Post }, { ctor: CommentHandler, repository: Comment }] })]
   : [
-    frond('people', { entities: [User], handlers: [UserHandler] }),
-    frond('blog', { entities: [Post, Comment], handlers: [PostHandler, CommentHandler] }),
+    frond('people', { entities: [User], handlers: [{ ctor: UserHandler, repository: User }] }),
+    frond('blog', { entities: [Post, Comment], handlers: [{ ctor: PostHandler, repository: Post }, { ctor: CommentHandler, repository: Comment }] }),
   ]);
 
 /**
@@ -257,9 +257,9 @@ describe('a chain cut twice, and code that is not here', () => {
     // is a subject of its own, and not what this bench is about.
     const layer = layerOf(storage);
 
-    const people = frond('people', { entities: [User], handlers: [UserHandler] });
-    const blog = frond('blog', { entities: [Post], handlers: [PostHandler] });
-    const talk = frond('talk', { entities: [Comment], handlers: [CommentHandler] });
+    const people = frond('people', { entities: [User], handlers: [{ ctor: UserHandler, repository: User }] });
+    const blog = frond('blog', { entities: [Post], handlers: [{ ctor: PostHandler, repository: Post }] });
+    const talk = frond('talk', { entities: [Comment], handlers: [{ ctor: CommentHandler, repository: Comment }] });
 
     let a: App; let b: App; let c: App;
     const to = (get: () => App): Transport => (call, invocation) => createLocalRunner(get())(call, invocation);

@@ -1,4 +1,4 @@
-import { Repository, type Storage } from '@fougere/core';
+import { Repository } from '@fougere/core';
 import Run from './Run.js';
 
 /** How long a driver holds a run before anyone may take it over. */
@@ -11,9 +11,9 @@ const LEASE_MS = 30_000;
  * the question is never asked. What is bounded instead is how long an answer is assumed, and
  * two drivers at once stay harmless because every hop can be done twice.
  */
-export default class RunRepository extends Repository(Run) {
-  constructor(storage: Storage<Run>, private now: () => number = Date.now) {
-    super(storage);
+export default class RunRepository extends Repository<Run> {
+  constructor(private now: () => number = Date.now) {
+    super();
   }
 
   /** Take this release on, or say it is already someone's — the same row either way. */

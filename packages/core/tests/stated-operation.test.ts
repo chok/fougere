@@ -6,17 +6,17 @@
 import { describe, it, expect } from 'vitest';
 import { createContainer } from '@fougere/container';
 import { entity, primary, text } from '@fougere/schema';
-import { Collector, Crud, createApp, createAppRunner, frond, identityCardOf, Invocation } from '../src/index.js';
+import { Collect, Repository, createApp, createAppRunner, frond, identityCardOf, Invocation } from '../src/index.js';
 import { memory } from './memory.js';
 
 class Post extends entity({ id: primary(), title: text(), status: text() }) {}
 class User extends entity({ id: primary(), name: text() }) {}
 
-class CurrentUserCollector extends Collector(User) {
+class CurrentUserCollector extends Collect<User> {
   async collect() { return { id: 'u1', name: 'Ada' }; }
 }
 
-class PostHandler extends Crud(Post) {
+class PostHandler extends Repository<Post> {
   async publish(id: string, user?: { name: string }) {
     const post = await super.findById(id);
 
@@ -30,9 +30,10 @@ class PostHandler extends Crud(Post) {
 
 const blog = () => frond('blog', {
   entities: [Post, User],
-  collectors: [CurrentUserCollector],
+  collectors: [{ ctor: CurrentUserCollector, collects: User }],
   handlers: [{
     ctor: PostHandler,
+    repository: Post,
     operations: {
       publish: { params: { id: [Post, 'id'], user: { type: User, optional: true } }, output: Post },
       searchByTitle: { params: { input: Post.pick('title') }, input: Post.pick('title'), output: [Post.pick('id', 'title')] },

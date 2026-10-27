@@ -1,11 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import { entity, primary, text } from '@fougere/schema';
-import { Presenter, getPresenterFields } from '../src/prefab/presenter.js';
-import { targetOf } from '../src/prefab/prefab.js';
+import { Present, getPresenterFields } from '../src/prefab/presenter.js';
+import { builtOn, targetOf } from '../src/prefab/prefab.js';
 
 class FakeEntity extends entity({ id: primary(), name: text() }) {}
 
-class ProductPresenter extends Presenter(FakeEntity) {
+class ProductPresenter extends Present<FakeEntity> {
   excerpt(products: any[]) {
     return products.map((p) => p.name.slice(0, 10));
   }
@@ -16,8 +16,10 @@ class ProductPresenter extends Presenter(FakeEntity) {
 }
 
 describe('Presenter', () => {
-  it('stores the target entity on the class', () => {
-    expect(targetOf(ProductPresenter)).toBe(FakeEntity);
+  it('is built on the entity TypeScript erased, once and for all', () => {
+    expect(targetOf(ProductPresenter)).toBeUndefined();
+    expect(targetOf(builtOn(ProductPresenter, FakeEntity))).toBe(FakeEntity);
+    expect(builtOn(ProductPresenter, FakeEntity)).toBe(builtOn(ProductPresenter, FakeEntity));
   });
 
   it('returns undefined for non-presenter classes', () => {

@@ -9,4 +9,6 @@ export interface CollectorEntry extends Subject {
    * off the method, or stated. It joins the `errors` of every op asking for it without `?`.
    */
   refuses?: ErrorCode[];
+  /** What its `collect()` refuses — it runs for every op asking for it, so it joins all of their `errors`. */
+  collecting?: ErrorCode[];
 }

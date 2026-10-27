@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { Collector, collectorKeyOf } from '../src/prefab/collector.js';
-import { targetOf } from '../src/prefab/prefab.js';
+import { Collect, collectorKeyOf } from '../src/prefab/collector.js';
+import { builtOn, targetOf } from '../src/prefab/prefab.js';
 
 /** No fields, no `getFields` — what a per-call value looks like. */
 class Ability {
@@ -8,11 +8,12 @@ class Ability {
 }
 
 describe('Collector', () => {
-  it('records a target that carries no schema', () => {
-    class AbilityCollector extends Collector(Ability) {
+  it('is built on a target that carries no schema, which the written class does not hold', () => {
+    class AbilityCollector extends Collect<Ability> {
       async collect() { return new Ability(); }
     }
-    expect(targetOf(AbilityCollector)).toBe(Ability);
+    expect(targetOf(AbilityCollector)).toBeUndefined();
+    expect(targetOf(builtOn(AbilityCollector, Ability as never))).toBe(Ability);
   });
 
   it('keys it by the type name, like any other', () => {

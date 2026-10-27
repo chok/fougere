@@ -4,7 +4,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { entity, primary, text } from '@fougere/schema';
-import { frond, Middleware, Presenter, type AppNext, type OperationContext } from '../src/index.js';
+import { frond, Middleware, Present, type AppNext, type OperationContext } from '../src/index.js';
 
 class Book extends entity({ id: primary(), title: text() }) {}
 class Hidden extends entity({ id: primary(), note: text() }) {}
@@ -16,7 +16,7 @@ class Timing extends Middleware {
   async around<T>(_context: OperationContext, next: AppNext<T>): Promise<T> { return next(); }
 }
 
-class BookPresenter extends Presenter(Book) {
+class BookPresenter extends Present<Book> {
   async spine(books: { title: string }[]) { return books.map((book) => book.title.toUpperCase()); }
 }
 
@@ -44,7 +44,7 @@ describe('frond(), handed a computed field\'s type', () => {
   it('keeps what TypeScript erased, beside the field the class carries', () => {
     const shelf = frond('shelf', {
       entities: [Book],
-      presenters: [{ ctor: BookPresenter, fieldMeta: [{ name: 'spine', returnType: 'string', list: false }] }],
+      presenters: [{ ctor: BookPresenter, presents: Book, fieldMeta: [{ name: 'spine', returnType: 'string', list: false }] }],
     });
 
     expect(shelf.presenters[0]!.fieldMeta).toEqual([{ name: 'spine', returnType: 'string', list: false }]);

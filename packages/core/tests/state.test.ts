@@ -4,7 +4,7 @@
 import { describe, it, expect } from 'vitest';
 import { createContainer } from '@fougere/container';
 import { date, entity, json, primary, text } from '@fougere/schema';
-import { Collector, createApp, createLocalRunner, ErrorCode, frond, Invocation, type Extension } from '../src/index.js';
+import { Collect, createApp, createLocalRunner, ErrorCode, frond, Invocation, type Extension } from '../src/index.js';
 
 class Member extends entity({ id: primary(), since: date() }) {}
 
@@ -87,7 +87,7 @@ describe('the state of a call', () => {
   });
 
   it('is read by the entity its collector names — rebuilt, or refused when it is not one', async () => {
-    class MemberCollector extends Collector(Member) {
+    class MemberCollector extends Collect<Member> {
       async collect(ctx: { state: Record<string, unknown> }) { return ctx.state.user as Member | undefined; }
     }
     class SinceHandler {
@@ -100,7 +100,7 @@ describe('the state of a call', () => {
           deps: [],
           operations: { read: { binding: [{ name: 'member', optional: false, source: { kind: 'collector' as const, typeName: 'member' } }] } },
         }],
-        collectors: [MemberCollector],
+        collectors: [{ ctor: MemberCollector, collects: Member }],
       })],
       createContainer,
     });

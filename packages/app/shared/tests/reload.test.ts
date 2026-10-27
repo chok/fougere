@@ -1,15 +1,15 @@
 import { describe, it, expect } from 'vitest';
 import { entity, primary, text } from '@fougere/schema';
-import { createLocalRunner, Crud, frond, Invocation, type App } from '@fougere/core';
+import { createLocalRunner, Repository, frond, Invocation, type App } from '@fougere/core';
 import { configureFougere, reloadFougere, useFougereApp } from '../src/boot.js';
 
 class Post extends entity({ id: primary(), title: text() }) {}
 class User extends entity({ id: primary(), name: text() }) {}
-class PostHandler extends Crud(Post) {}
-class UserHandler extends Crud(User) {}
+class PostHandler extends Repository<Post> {}
+class UserHandler extends Repository<User> {}
 
-const blog = () => frond('blog', { entities: [Post], handlers: [PostHandler] });
-const people = () => frond('people', { entities: [User], handlers: [UserHandler] });
+const blog = () => frond('blog', { entities: [Post], handlers: [{ ctor: PostHandler, repository: Post }] });
+const people = () => frond('people', { entities: [User], handlers: [{ ctor: UserHandler, repository: User }] });
 const listPosts = (app: App) => createLocalRunner(app)({ address: 'post', op: 'list' }, Invocation.empty);
 
 describe('a reload after a reconfiguration', () => {

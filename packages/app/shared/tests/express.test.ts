@@ -9,13 +9,13 @@
 import { afterAll, beforeAll, describe, it, expect } from 'vitest';
 import { createServer, type IncomingMessage, type Server } from 'node:http';
 import { entity, json, primary, text } from '@fougere/schema';
-import { Collector, frond, type InvocationContext } from '@fougere/core';
+import { Collect, frond, type InvocationContext } from '@fougere/core';
 import { fougere } from '../src/express.js';
 import { configureFougere, useFougereApp } from '../src/boot.js';
 
 class Member extends entity({ id: primary(), name: text() }) {}
-class MemberCollector extends Collector(Member) {
-  async collect(context: InvocationContext) { return context.state.user; }
+class MemberCollector extends Collect<Member> {
+  async collect(context: InvocationContext) { return context.state.user as Member | undefined; }
 }
 class CallerHandler {
   async who(member?: unknown) { return member ?? null; }
@@ -23,7 +23,7 @@ class CallerHandler {
 /** What an auth package declares a signed-in call carries — `betterAuth()` does the same. */
 const desk = frond('desk', {
   extensions: [{ name: 'members', state: { user: json(Member) } }],
-  collectors: [MemberCollector],
+  collectors: [{ ctor: MemberCollector, collects: Member }],
   handlers: [{ ctor: CallerHandler, operations: { who: { params: { member: { type: Member, optional: true } }, output: Member } } }],
 });
 

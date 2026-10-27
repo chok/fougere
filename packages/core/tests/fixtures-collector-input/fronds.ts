@@ -8,7 +8,7 @@ import PostHandler from './fronds/blog/handlers/PostHandler.js';
 export default [
   frond('blog', {
     entities: [Post, User],
-    collectors: [CurrentUserCollector],
+    collectors: [{ ctor: CurrentUserCollector, collects: User }],
     handlers: [{
       ctor: PostHandler,
       operations: {

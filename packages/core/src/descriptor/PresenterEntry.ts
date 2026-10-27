@@ -11,8 +11,7 @@ export interface PresenterEntry extends Subject {
   /** Per-field type metadata (inferred from source via parser). */
   fieldMeta: PresenterFieldMeta[];
   /**
-   * The view each computed field emits, when the presenter declares one (`Presenter(Order, {
-   * items: [OrderItemView] })`).
+   * The view each computed field emits, when its entry states one — `{ items: [OrderItemView] }`.
    */
   views?: PresenterViews;
 }

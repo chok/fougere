@@ -9,7 +9,7 @@ import { tmpdir } from 'node:os';
 import { createContainer } from '@fougere/container';
 import { entity, oneOf, primary, readOnly, ref, text } from '@fougere/schema';
 import { createSqliteSource } from '@fougere/adapter-sql';
-import { createApp, Crud, frond, migrating, Page } from '@fougere/core';
+import { createApp, Repository, frond, migrating, Page } from '@fougere/core';
 import { layerOf, storageFrom } from '../src/storage/ResolvedStorage.js';
 
 class Author extends entity({ id: primary(), name: text() }) {}
@@ -19,7 +19,7 @@ class Post extends entity({
   authorId: ref(Author),
   status: readOnly(oneOf('draft', 'published', { default: 'draft' })),
 }) {}
-class PostHandler extends Crud(Post) {}
+class PostHandler extends Repository<Post> {}
 
 const dirs: string[] = [];
 afterEach(() => { for (const dir of dirs.splice(0)) rmSync(dir, { recursive: true, force: true }); });
@@ -36,7 +36,7 @@ describe('a seed', () => {
       extensions: [migrating(storage.migrate)],
       fronds: [frond('blog', {
         entities: [Author, Post],
-        handlers: [PostHandler],
+        handlers: [{ ctor: PostHandler, repository: Post }],
         seeds: [
           { entityName: 'post', data: [{ title: 'Hello', authorId: 'alice', status: 'published' }] },
           { entityName: 'author', data: [{ id: 'alice', name: 'Alice' }] },

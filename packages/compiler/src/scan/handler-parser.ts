@@ -486,7 +486,7 @@ function docSentenceOf(member: ts.Node, source: ts.SourceFile): string | undefin
 
 /**
  * Parse inherited methods from a class's heritage clause.
- * Handles both `extends Crud(Entity)` (mixin) and `extends BaseClass` patterns.
+ * Handles both `extends Repository<Entity>` (mixin) and `extends BaseClass` patterns.
  */
 /** Where a name used here is declared. */
 function declarationFileOf(node: ts.Node, checker: ts.TypeChecker): string | undefined {
@@ -499,6 +499,21 @@ function declarationFileOf(node: ts.Node, checker: ts.TypeChecker): string | und
 }
 
 /** The methods a base class contributes, read from the INSTANTIATED type. */
+/** Whether a base written in an `extends` clause is core's `Repository`. */
+function isCoreRepository(base: ts.ExpressionWithTypeArguments, checker: ts.TypeChecker): boolean {
+  const symbol = checker.getTypeAtLocation(base).getSymbol();
+
+  return symbol?.name === 'Repository'
+    && (symbol.declarations ?? []).some((one) => /[\\/](core[\\/](src|dist)|@fougere[\\/]core)[\\/]/.test(one.getSourceFile().fileName));
+}
+
+/** A member core's `Repository` declares — not one a project's base class wrote over it. */
+function isCoreRepositoryMember(declaration: ts.Declaration): boolean {
+  const owner = declaration.parent as { name?: { text?: string } } | undefined;
+
+  return owner?.name?.text === 'Repository' && /[\\/](core[\\/](src|dist)|@fougere[\\/]core)[\\/]/.test(declaration.getSourceFile().fileName);
+}
+
 function inheritedFromBase(
   base: ts.ExpressionWithTypeArguments,
   checker: ts.TypeChecker,
@@ -513,6 +528,9 @@ function inheritedFromBase(
     // `private`/`protected` is a statement about the surface, and the declaration carries
     // it. A facade is what the author declares public.
     const declaration = property.declarations?.[0];
+    // What `Repository<…>` serves is the five it declares itself (`__ops`), never every gesture of
+    // the rows it forwards: those stay the class's own, callable and not served.
+    if (declaration && isCoreRepositoryMember(declaration)) continue;
     if (declaration && typescript.canHaveModifiers(declaration)
       && typescript.getModifiers(declaration)?.some((m) => m.kind === typescript.SyntaxKind.PrivateKeyword
         || m.kind === typescript.SyntaxKind.ProtectedKeyword)) continue;
@@ -563,6 +581,8 @@ function parseInheritedMethods(
     for (const base of clause.types) {
       const fromType = inheritedFromBase(base, checker, skip);
       if (fromType.length > 0) return fromType;
+      // Core's `Repository` brings what it declares (`__ops`), and none of its source is to be read.
+      if (isCoreRepository(base, checker)) continue;
 
       // A factory that ERASES its own type — `assertShape<unknown>(class …)`, `as unknown`
       // — leaves the checker with nothing to enumerate. The written class is still there,

@@ -1,11 +1,11 @@
-import { Crud } from '@fougere/core';
+import { Repository } from '@fougere/core';
 import Category from '../entities/Category.js';
 
 export class StatsOutput extends Category.pick('id', 'name', 'postCount') {}
 
-export default class CategoryHandler extends Crud(Category) {
+export default class CategoryHandler extends Repository<Category> {
   async stats(): Promise<StatsOutput[]> {
-    const { items: all } = await super.list();
+    const all = await super.list();
 
     return all.map((c) => ({
       id: String(c.id),

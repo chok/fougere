@@ -8,7 +8,7 @@ import ReadingRepository from './fronds/mesures/repositories/ReadingRepository.j
 
 export default [frond('mesures', {
   entities: [Node, Reading],
-  providers: [{ ctor: ReadingRepository, deps: ['ReadingStorage'] }],
+  providers: [{ ctor: ReadingRepository, repository: Reading }],
   handlers: [
     { ctor: NodeHandler, deps: ['NodeRepository'], operations: { all: op({ output: Node, cardinality: 'page' }) } },
     { ctor: ReadingHandler, deps: ['ReadingRepository'], operations: { loud: op({ output: Reading, cardinality: 'many' }) } },

@@ -6,7 +6,7 @@ import { describe, it, expect } from 'vitest';
 import { createContainer, type Container } from '@fougere/container';
 import { entity, number, primary, text, url, type SchemaView } from '@fougere/schema';
 import { createApp, frond, type ValueSources } from '../src/index.js';
-import { Repository } from '../src/prefab/RepositoryConstructor.js';
+import { Repository } from '../src/prefab/Repository.js';
 import { op } from './contract.js';
 
 class Meili extends entity({ url: url(), key: text(), timeoutMs: number({ integer: true, default: 2000 }) }) {}
@@ -15,7 +15,7 @@ class Post extends entity({ id: primary(), title: text() }) {}
 class Search {
   constructor(readonly meili: Meili) {}
 }
-class MeiliRepository extends Repository(Meili) {}
+class MeiliRepository extends Repository<Meili> {}
 class PostHandler {
   constructor(readonly post: Post) {}
   async list() { return []; }
@@ -68,7 +68,7 @@ describe('a value held by a source', () => {
   it('has no repository: reaching it as rows refuses the boot', async () => {
     await expect(booting(valuesOf({ meili: { url: 'https://meili.test', key: 'k' } }), {
       entities: [Meili],
-      providers: [{ ctor: MeiliRepository, deps: [] }],
+      providers: [{ ctor: MeiliRepository, repository: Meili }],
     })).rejects.toThrow(/MeiliRepository reaches Meili as rows, and Meili is held as one value/);
   });
 

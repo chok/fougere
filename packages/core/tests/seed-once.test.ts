@@ -1,10 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { createContainer } from '@fougere/container';
 import { entity, primary, text } from '@fougere/schema';
-import { createApp, Crud, frond, runSeeds, storageOver, type Store, type Values } from '../src/index.js';
+import { createApp, Repository, frond, runSeeds, storageOver, type Store, type Values } from '../src/index.js';
 
 class Note extends entity({ id: primary(), title: text() }) {}
-class NoteHandler extends Crud(Note) {}
+class NoteHandler extends Repository<Note> {}
 
 const mapStore = (): Store => {
   const map = new Map<string, Values>();
@@ -24,7 +24,7 @@ describe('a seed', () => {
     // `list` answers a page, not an array. Read as an array, `.length` was undefined, the
     // emptiness check never held, and every boot planted the same rows again.
     await using app = await createApp({
-      fronds: [frond('notes', { entities: [Note], handlers: [NoteHandler] })],
+      fronds: [frond('notes', { entities: [Note], handlers: [{ ctor: NoteHandler, repository: Note }] })],
       createContainer,
       storageFactory: storageOver(() => mapStore()),
     });

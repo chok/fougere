@@ -1,5 +1,5 @@
-import { Crud } from '@fougere/core';
+import { Repository } from '@fougere/core';
 import Product from '../entities/Product.js';
 
 /** The five CRUD ops — their input contract comes from the entity, so the façade validates. */
-export default class ProductHandler extends Crud(Product) {}
+export default class ProductHandler extends Repository<Product> {}

@@ -1,12 +1,13 @@
 /**
- * Mirror(Shape) — the loop, the validator and the write, so an author writes one
+ * `Mirror<Shape>` — the loop, the validator and the write, so an author writes one
  * generator and nothing else. The mark it pulls from is the caller's: a mirror that read
  * it off its own rows advanced past a pass that had thrown, and the rows the source had
  * changed in between were never asked for again.
  */
 import { describe, it, expect } from 'vitest';
 import { entity, primary, text, updated } from '@fougere/schema';
-import { Mirror } from '../src/prefab/MirrorConstructor.js';
+import { Mirror } from '../src/prefab/Mirror.js';
+import { seated } from '../src/prefab/Repository.js';
 import { StorageGuard } from '../src/dispatch/StorageGuard.js';
 import { targetOf } from '../src/prefab/prefab.js';
 
@@ -38,13 +39,20 @@ function spyStorage(shape: { getFields(): never } | unknown, rows: Record<string
   ) as never;
 }
 
+/** What the boot does: seat the class on its shape, and hand it the rows after its own dependencies. */
+function built<M>(ctor: abstract new () => M, shape: never, storage: unknown): M {
+  const Seated = seated(ctor, [shape]) as unknown as new (rows: unknown) => M;
+
+  return new Seated(storage);
+}
+
 describe('a mirror refreshes', () => {
   it('writes every page and reports the pass', async () => {
     const storage = spyStorage(Card);
-    class M extends Mirror(Card) {
+    class M extends Mirror<Card> {
       async *pull() { yield [{ id: 'a', title: 'A' }]; yield [{ id: 'b', title: 'B' }]; }
     }
-    const done = await new M(storage).refresh();
+    const done = await built(M, Card as never, storage).refresh();
 
     expect(done.written).toBe(2);
     expect((storage as any).written).toHaveLength(2);
@@ -56,10 +64,10 @@ describe('a mirror refreshes', () => {
     const mark = new Date('2026-01-01T00:00:00.000Z');
     const storage = spyStorage(Card, [{ id: 'a', title: 'A', pulledAt: new Date('2026-06-01T00:00:00.000Z') }]);
     let asked: Date | undefined = new Date(0);
-    class M extends Mirror(Card) {
+    class M extends Mirror<Card> {
       async *pull(since?: Date) { asked = since; yield []; }
     }
-    const done = await new M(storage).refresh(mark);
+    const done = await built(M, Card as never, storage).refresh(mark);
 
     // Never read off the rows: those carry when WE wrote them, not what the source
     // has changed since — and a pass that half-wrote would push the mark past its own gap.
@@ -72,14 +80,14 @@ describe('a mirror refreshes', () => {
     const storage = spyStorage(Card);
     const asked: (Date | undefined)[] = [];
     let fail = true;
-    class M extends Mirror(Card) {
+    class M extends Mirror<Card> {
       async *pull(since?: Date) {
         asked.push(since);
         yield [{ id: 'a', title: 'A' }];
         if (fail) { fail = false; throw new Error('source page failed'); }
       }
     }
-    const mirror = new M(storage);
+    const mirror = built(M, Card as never, storage);
     let mark: Date | undefined;
 
     const pass = async () => {
@@ -97,10 +105,10 @@ describe('a mirror refreshes', () => {
 
   it('refuses a key the shape does not declare — a mapping that went stale', async () => {
     const storage = spyStorage(Card);
-    class M extends Mirror(Card) {
+    class M extends Mirror<Card> {
       async *pull() { yield [{ id: 'P-0', titre: 'oups' } as never]; }
     }
-    await expect(new M(storage).refresh())
+    await expect(built(M, Card as never, storage).refresh())
       .rejects.toThrow(/row id "P-0" — titre: Unknown field/);
     // And nothing of that page was written.
     expect((storage as any).written).toHaveLength(0);
@@ -111,44 +119,45 @@ describe('a mirror refreshes', () => {
   // thousands, pointing at nothing an operator can look up on the other side.
   it('names a refused row by the key its SHAPE declares, not `id`', async () => {
     class Book extends entity({ isbn: primary(), title: text({ min: 1 }), pulledAt: updated() }) {}
-    class M extends Mirror(Book) {
+    class M extends Mirror<Book> {
       async *pull() { yield [{ isbn: '978-0', title: '' } as never]; }
     }
-    await expect(new M(spyStorage(Book)).refresh())
+    await expect(built(M, Book as never, spyStorage(Book)).refresh())
       .rejects.toThrow(/row isbn "978-0" — title:/);
   });
 
   it('writes what the validator PARSED, not what the caller handed over', async () => {
     const storage = spyStorage(Card);
-    class M extends Mirror(Card) {
+    class M extends Mirror<Card> {
       async *pull() { yield [{ id: 'a', title: 'A' }]; }
     }
-    await new M(storage).refresh();
+    await built(M, Card as never, storage).refresh();
     // The page written is the validator's output — the facade a boundary would decode at.
     expect((storage as any).written[0][0]).toEqual({ id: 'a', title: 'A' });
   });
 
   it('skips an empty page rather than issuing a statement for nothing', async () => {
     const storage = spyStorage(Card);
-    class M extends Mirror(Card) {
+    class M extends Mirror<Card> {
       async *pull() { yield []; yield [{ id: 'a', title: 'A' }]; }
     }
-    expect((await new M(storage).refresh()).written).toBe(1);
+    expect((await built(M, Card as never, storage).refresh()).written).toBe(1);
     expect((storage as any).written).toHaveLength(1);
   });
 });
 
 describe('what a mirror states about itself', () => {
-  it('names the shape it copies, at runtime — an installed app resolves no AST', () => {
-    class M extends Mirror(Card) { async *pull() { yield []; } }
-    expect(targetOf(M)).toBe(Card);
+  it('is seated like any repository: the shape it copies is read where TypeScript erased it', () => {
+    class M extends Mirror<Card> { async *pull() { yield []; } }
+    expect(targetOf(M)).toBeUndefined();
+    expect(targetOf(seated(M, [Card]))).toBe(Card);
   });
 
   it('copies a shape that dates nothing — the mark was never the rows\' to carry', async () => {
     class Undated extends entity({ id: primary(), title: text() }) {}
-    class M extends Mirror(Undated) {
+    class M extends Mirror<Undated> {
       async *pull() { yield [{ id: 'a', title: 'A' }]; }
     }
-    expect((await new M(spyStorage(Undated)).refresh()).written).toBe(1);
+    expect((await built(M, Undated as never, spyStorage(Undated)).refresh()).written).toBe(1);
   });
 });

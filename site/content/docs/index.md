@@ -28,9 +28,9 @@ And what the blog does with it:
 
 ```ts
 // fronds/blog/handlers/PostHandler.ts
-export default class PostHandler extends Crud(Post) {
+export default class PostHandler extends Repository<Post> {
   constructor(private posts: Repository<Post>) {
-    super(posts);
+    super();
   }
 
   async publish(id: Post['id'], user?: User): Promise<Post> {

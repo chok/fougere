@@ -81,7 +81,7 @@ packages/
     src/dispatch/        what happens per call: HandlerFacade, Dispatcher, the route registry, the validators and projectors, argument resolution, InFlight
     src/wire/            what travels, and the values a call is made of: Call, Invocation, RouteAddress, Emit,
                          CallLog, the operation contract, its signature and binding plan, errors, middleware
-    src/prefab/          what a user declares: Crud, Presenter, Collector, Repository, Mirror
+    src/prefab/          what a user declares: Repository<…>, Present<T>, Collect<T>, Mirror
     src/builtin/         what every app has without asking: the logger
     src/crypto/          one port, two realizations — node and webcrypto
     src/entry/           the three ways in, in two files: facade.ts holds the facade and its dynamic
@@ -103,7 +103,7 @@ packages/
                          ANSWER STEP (`dispatch/AnswerStep.ts`, run over an answer before the view
                          projects it). What a subject puts ON THE WIRE stays in `wire/`, `storage/`
                          and `prefab/` (`Emit`, `Fact`, `Pipe`, `Together`, the `kind`s of a binding,
-                         `Presenter()`, `Collector()`): the scan and the card read it, and moving it
+                         `Present<T>`, `Collect<T>`): the scan and the card read it, and moving it
                          would tie `descriptor/` to a module. The operation model judges that
                          vocabulary and stays in the kernel
     src/*.ts             what belongs to no phase: the two published entry points, frond(),
@@ -313,13 +313,19 @@ point — answered by NAME; the other is answered by TYPE (a port, a host port, 
 class hierarchy at boot. `resolve` throws and lists what the process answers; `find` returns
 `undefined` for a caller that has its own words for the absence.
 
-**`Repository(…entities)` — the arity is the declaration.** At ONE, the repository IS that
-entity's storage and forwards all thirteen gestures. From TWO on it is an aggregate: no
-default repository for any member, no forwarded gesture, and `ownersOf` refuses two
-aggregates over one entity. `Crud` on an owned entity is refused at boot
-(`refuseCrudOnOwned`). `Storage<E>` is reached only by a class BUILT ON E (`entitiesOfPrefab`,
-`core/src/boot/ownership.ts`) — a repository, or a prefab over that entity: naming
-`Storage<BookCard>` is what `Mirror(BookCard)` earns. A handler, a presenter, a collector
+**`Repository<…entities>` — the arity is the declaration.** At ONE, the repository forwards all
+thirteen gestures of the entity's rows. From TWO on — `Repository<Account, Ledger>`, four at most, the
+cap TypeScript itself refuses past — it is an aggregate: no default repository for any member, no
+forwarded gesture, `storages` the way in, and `ownersOf` refuses two aggregates over one entity. A
+handler extending the repository of an owned entity is refused at boot (`crudOnOwned`).
+TypeScript erases the type arguments, so the scan reads them (`compiler/src/scan/Seat.ts`, climbing
+`PostHandler extends PostRepository extends Repository<Post>`), the statement writes them as VALUES
+(`repository: Post`, never a name), and `frond()` states them by hand; the boot SEATS the class
+(`seated`, `prefab/Repository.ts`) — the same class, carrying `__entity`, `__ops`, `__owns`, and handed
+each entity's rows after its own constructor's dependencies. A class nothing seats is refused at boot
+(`refuseUnseated`). `Storage<E>` is reached only by a class BUILT ON E (`entitiesOfPrefab`,
+`core/src/boot/ownership.ts`) — a seated class, which a `Mirror<BookCard>` is too: a repository
+that fills itself (`prefab/Mirror.ts`). A handler, a presenter, a collector
 and a plain service are pointed at `<E>Repository`, and the aggregate check runs BEFORE the
 allowance, so an entity an aggregate owns refuses even the built-on case, naming the owner.
 The host is outside the rule: `app.storageFor()` and the `storageFactory` it hands in name
@@ -355,14 +361,14 @@ invocation is `fromAnotherProcess`, which only the transport receiver writes and
 that is where it entered. A receiver declares nothing: the envelope proves which process wrote the
 state, and judging it again made every receiver know declarations that are not its own — the blog
 process of `demos/nuxt-blog` has no auth and refused `state.user`. What a handler READS is read by
-the type it asks for: `collectedAs` (`module/collector/collectedAs.ts`) passes what a `Collector(User)`
+the type it asks for: `collectedAs` (`module/collector/collectedAs.ts`) passes what a `Collect<User>`
 answered through `json(User)`, judged and rebuilt. It used to be a `Record<string, unknown>` that
 crossed as raw JSON, so `state.user.since` was a `Date` in process and a string split — measured
 by the site-only audit, 2026-09-23. Core holds no user: `betterAuth()` declares `user` and
 `session`, the session without its `token`, since a process trusts the one that called it
 (`CallIdentity`) and never the cookie behind it. What made it possible is `Boundary.forShape`
-reading a date INSIDE `json(Entity)` and `list()`. An extension is recognized by `up`, `down`,
-`install`, `steps` or `state` (`isExtension`, `descriptor/ExtensionEntry.ts`), the one predicate the scan and the module
+reading a date INSIDE `json(Entity)` and `list()`. An extension is recognized by `up`, `down` or
+`state` (`isExtension`, `descriptor/ExtensionEntry.ts`), the one predicate the scan and the module
 keys share. Pinned by `core/tests/state.test.ts` and `defaults/tests/gradient.test.ts`.
 
 **The auth is a frond, written in place** — `fronds: { auth: betterAuth({ … }) }`. The config
@@ -386,11 +392,12 @@ Measured four ways on 2026-09-10 — the process hung, the call ring filled with
 writes, `activeCalls()` counted log deliveries, and a hard-coded list missed a third
 party's destination. A reentrancy flag cannot see it: the carry is asynchronous.
 
-**An extension has two doors into a frond, beside `up` and `down`** — `install(frond, { scope,
-container, ownLogger, log })`, called as each frond is installed and before any facade is built, and
-`steps(handler, frond, scope)`, the answer steps it runs over that handler's answers before the view
-projects them (`boot/Extension.ts`, read in `boot/install.ts`). They are what a module needs to live
-outside core: `presenters()` (`module/presenter/presenters.ts`) is itself an extension through them,
+**A module of the kernel has two doors into a frond, beside `up` and `down`** — `ModuleExtension`
+(`boot/Extension.ts`, read in `boot/install.ts`): `install(frond, { scope, container, ownLogger, log })`,
+called as each frond is installed and before any facade is built, and `steps(handler, frond, scope)`,
+the answer steps it runs over that handler's answers before the view projects them. A package's
+`Extension` states neither — nothing outside core read them, and a package stands in front of a port
+with a link, the way a frond does. They are what a module needs to live outside the kernel: `presenters()` (`module/presenter/presenters.ts`) is itself an extension through them,
 which is why `install.ts` names no presenter — measured 2026-10-18 by moving it into a package of its
 own in a throwaway worktree, where the same app answered with and without it. `app.extensionPoints()`
 reads what answers each point — every `Registry` by name, then per frond the chain of each port and
@@ -513,7 +520,7 @@ helpers) and `core/tests/refusals.test.ts`.
 **A page IMPORTS its facade, and the module is written by the scan** — `@fronds/facade`, one
 `const` per address carrying the handler that answers there as a TYPE. Compiled, the whole of
 `post` is `{ address: 'post' }`: the handler is named, never imported, so no server code reaches
-a bundle — 1.8 MB of core is reachable from `PostHandler`, and `extends Crud(Post)` is a call
+a bundle — 1.8 MB of core is reachable from `PostHandler`, and `extends Repository<Post>` is a class
 that would run in the browser. What the type buys is the page's whole contract: which operations
 exist, what each answers, and what each can refuse. Thirteen row shapes were written by hand
 across this tree before it, five of them incompatible versions of one Post. The address had to
@@ -1002,22 +1009,20 @@ whoever owns the gesture, so a run covers the whole thing. Pinned by `workflow/t
 `adapter/file` 142, two formats and the values included. `transacted` is deliberately not in the frame: a unit of work belongs to
 an engine that has one. `all()` reading everything is what bounds a file source.
 
-**Prefab ops** — `Crud(Post)` gives the five typed CRUD ops. `Crud(Post, { list: PostCard })`
-names the view ONE op emits: the handler keeps its full-row storage, and the façade projects.
-`Crud(Post, PostPublic)` is the handler-wide form and scopes the injected storage.
-
-**No handler holds a storage, a `Crud` one included** — `Crud` receives the entity's REPOSITORY
-(`depsOf`, `dispatch/HandlerFacade.ts`) and keeps it private (`#rows`, `prefab/CrudConstructor.ts`),
-so `CrudOps` has no `storage`. The five ops it inherits are the handler's SURFACE — what a caller
-reaches — and rows are read and written through the repository, which the handler asks for in its
-constructor and hands to `super()`, the form the boot already required of a `Crud` handler with a
-constructor. `this.posts.findById(id)` and `super.findById(id)` are two calls under one name: the
-first reads the row as stored, the second calls the handler's own operation — the door the outside
-calls, whatever the handler redefined there — and the method says which one it means. A handler
-with no constructor holds no repository, and `super` is then its only way to the rows. `this.storage` used to be the one place a
-handler touched the port directly, and the starter taught it: 22 of 71 `Crud` handlers wrote their
-queries there, filtering a whole `list()` in memory. The frond template `blank` went with it — an
-`Item` with `Crud(Item)` was the first lines of `blog` without its point, and `--bare` is the empty start.
+**A handler extends a repository, and exposes what it extends** — `PostHandler extends
+Repository<Post>`, or a `PostRepository` that names its queries. It serves the five the base declares
+(`__ops`, `prefab/RepositoryOps.ts`) beside its own public methods and those of a repository it
+extends; the rest of the rows' gestures (`findBy`, `upsert`…) are the class's to call and never
+served — the scan stops at core's base (`isCoreRepositoryMember`, `handler-parser.ts`). A handler that
+wants the five DIFFERENT — published only, a draft visible to its author — does not extend one:
+TypeScript refuses an inherited method a narrower answer or another parameter, so it asks for its
+repository and writes the ones it serves (`site/fronds/blog/handlers/PostHandler.ts`). An op answering
+a VIEW (`Page<PostCard>`, a derivation not anchored) closes its output — the façade projects onto it,
+a computed field included (`isView`, `EffectiveOperationModel.ts`); `Repository<PostPublic>` reads a
+whole handler through one, seated on the rows the view was cut from. A list a storage answered is
+marked in its type (`ListResult`, an optional brand) and the façade crosses it as a page, so `Answer`
+reads it as one (`wire/Answer.ts`). `Crud` is gone with its per-op view map: `Crud(Post, { list: PostCard
+})` was a second way to say what the return type says.
 
 **A test states what it expects** — `@fougere/testing`. The CASES come from `InputRefusal`'s
 closed set read against the four axes (`Cases`, in `@fougere/schema` because deriving them
@@ -1197,7 +1202,7 @@ entity's primary (`id: Post['id']`) DESIGNATES a row and comes before the op —
 `/posts/:id/publish`; another required primitive comes after it, an optional one is left to the
 query string. The checker answers `string` for `Post['id']`, so the parser reads the SYNTAX
 (`fieldOf`, `handler-parser.ts`) and the scan marks it `identifies` when the field is the
-entity's primary (`identifying`, `scanner.ts`). `Crud` declares it on its three `byId`. A `ById`
+entity's primary (`identifying`, `scanner.ts`). `Repository` declares it on its three `byId`. A `ById`
 in a name used to decide, so `publish(id: string)` and `publishById` answered different paths for
 one signature. Pinned by `adapter/rest/tests/routes.test.ts` and `compiler/tests/identifies.test.ts`.
 
@@ -1206,7 +1211,7 @@ one signature. Pinned by `adapter/rest/tests/routes.test.ts` and `compiler/tests
 reading) is `delete` or `remove` a `DELETE`; an op designating one row and taking a `patch` view
 (`Partial<Post>`, which the scan reads as `Post.partial()`, alias included) or only FIELDS of that
 row (`retitle(id: Post['id'], title: Post['title'])`) a `PATCH`; one taking the entity whole a
-`PUT`; anything else a `POST`, which promises nothing and so cannot lie. `Crud.update` merges, so
+`PUT`; anything else a `POST`, which promises nothing and so cannot lie. `Repository`'s `update` merges, so
 it is a `PATCH`, and the `PATCH → PUT` alias the hosts carried is gone. The fields of a change
 travel in the BODY — the path designates, the body carries what changes — so `ArgumentResolver`
 reads a field of the designated row from the body when neither the path nor the query holds it,
@@ -1223,7 +1228,7 @@ coerced to `number` or `boolean`, and `z.uuid()` or `.int().positive()` on a que
 nothing to say it in. Pinned by `core/tests/argument-resolver.test.ts`.
 
 **Operation contract, three producers** — the façade consumes `OperationContract` and
-nothing else. A prefab DECLARES (`Crud.__ops`, runtime), the scan DERIVES from source,
+nothing else. A base DECLARES (`Repository`'s `__ops`, once seated), the scan DERIVES from source,
 `frond.config.ts` STATES and wins over both. Config also creates an op neither producer
 found — the answer for a method inherited from an installed base class. `description` is the
 method's own doc sentence, read from the AST (`compiler/src/scan/handler-parser.ts`, `docSentenceOf`).

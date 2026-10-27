@@ -1,4 +1,4 @@
-import { lowerFirst, type SchemaView } from '@fougere/schema';
+import { lowerFirst, type Entity, type SchemaView } from '@fougere/schema';
 import { addressOf } from './wire/Facade.js';
 import type { CollectorEntry } from './descriptor/CollectorEntry.js';
 import type { EntityEntry } from './descriptor/EntityEntry.js';
@@ -16,9 +16,10 @@ import type { ErrorCode } from './wire/ErrorCode.js';
 import type { DeclaredSubject } from './DeclaredSubject.js';
 import type { DeclaredAnswer } from './descriptor/DeclaredAnswer.js';
 import type { DeclaredHandler } from './DeclaredHandler.js';
-import type { Declared } from './Declared.js';
+import type { Declared, Seating } from './Declared.js';
+import { seated, seatsOf } from './prefab/Repository.js';
 import { opsOf } from './prefab/opsOf.js';
-import { targetOf } from './prefab/prefab.js';
+import { builtOn, targetOf } from './prefab/prefab.js';
 import { contractOf, isStatementOperation } from './StatementOperation.js';
 import type { Ctor } from './Ctor.js';
 import type { FrondConfig } from './FrondConfig.js';
@@ -26,10 +27,23 @@ import type { PresenterFieldMeta } from './descriptor/PresenterFieldMeta.js';
 import { FrondConfigReading } from './descriptor/FrondConfigReading.js';
 
 
-const ctorOf = (d: Declared): Ctor => (typeof d === 'function' ? d : d.ctor) as Ctor;
+/** The class as the boot builds it: seated on what it says it is built on, or as written. */
+const ctorOf = (d: Declared | DeclaredHandler): Ctor => {
+  const written = (typeof d === 'function' ? d : d.ctor) as Ctor;
+  const { collects, presents } = typeof d === 'function' ? {} : d as Seating;
+  if (collects ?? presents) return builtOn(written, (collects ?? presents) as Entity);
+
+  return seatingOf(d).length > 0 ? seated(written, seatingOf(d)) : written;
+};
+
+const seatingOf = (d: Declared | DeclaredHandler): readonly Entity[] => {
+  const stated = typeof d === 'function' ? undefined : (d as Seating).repository;
+
+  return stated === undefined ? [] : Array.isArray(stated) ? stated : [stated as Entity];
+};
 
 /**
- * What a prefab was BUILT ON — `Presenter(Post)` and `Collector(User)` both keep it under
+ * What a prefab was BUILT ON — `Present<Post>` and `Collect<User>` both keep it under
  * `__entity`, which is the only place it survives: nothing in the FORM of `PostPresenter` says
  * `Post`.
  */
@@ -37,14 +51,15 @@ function subjectOf(ctor: Ctor, kind: string): { name: string } {
   const subject = targetOf(ctor);
   if (!subject?.name) {
     throw new Error(
-      `${ctor.name} is listed as a ${kind}, so it must extend ${kind === 'presenter' ? 'Presenter(Entity)' : 'Collector(Type)'}.`,
+      `${ctor.name} is listed as a ${kind}, so it must say what it ${kind === 'presenter' ? 'presents' : 'collects'}: `
+        + `{ ctor: ${ctor.name}, ${kind === 'presenter' ? 'presents: Entity' : 'collects: Type'} }.`,
     );
   }
 
   return subject;
 }
 
-const depsOf = (d: Declared): string[] => (typeof d === 'function' ? [] : d.deps ?? []);
+const depsOf = (d: Declared | DeclaredHandler): string[] => [...(typeof d === 'function' ? [] : d.deps ?? []), ...seatsOf(seatingOf(d))];
 
 /**
  * A Map either way — a statement is read as code, and an object literal is what code
@@ -68,8 +83,8 @@ export interface FrondDeclaration extends Pick<FrondConfig, 'pipes' | 'surfaces'
   entities?: (SchemaView | { entity: SchemaView; name: string })[];
   handlers?: (Ctor | DeclaredHandler)[];
   /** A computed field IS a method; what TypeScript erases of it — its type, its parameters — is `fieldMeta`. */
-  presenters?: (Ctor | DeclaredSubject & { fieldMeta?: PresenterFieldMeta[] })[];
-  collectors?: (Ctor | DeclaredSubject & { refuses?: ErrorCode[] })[];
+  presenters?: (Ctor | DeclaredSubject & Seating & { fieldMeta?: PresenterFieldMeta[] })[];
+  collectors?: (Ctor | DeclaredSubject & Seating & { refuses?: ErrorCode[]; collecting?: ErrorCode[] })[];
   providers?: Declared[];
   seeds?: { entityName: string; data: SeedEntry['data'] }[];
   /** What runs around this frond's operations, and around those of the fronds under it. */
@@ -127,7 +142,7 @@ export function frond(name: string, declared: FrondDeclaration = {}): FrondDescr
     };
   });
 
-  // Read off the class, never restated: `Presenter(Post)` keeps `Post` in `__entity` and a
+  // Read off the class, never restated: `Present<Post>` keeps `Post` in `__entity` and a
   // computed field IS a method, which `getPresenterFields` already reads from the prototype.
   // Asking for `entityName` and `fields` made a statement copy what the class carries — and
   // a copy that drifts silently, since nothing compares the two.
@@ -146,7 +161,7 @@ export function frond(name: string, declared: FrondDeclaration = {}): FrondDescr
     };
   });
 
-  // `Collector(User)` keeps `User` the same way — the type a handler names to receive it.
+  // `Collect<User>` keeps `User` the same way — the type a handler names to receive it.
   const collectors: CollectorEntry[] = (declared.collectors ?? []).map((c) => {
     const ctor = ctorOf(c);
 
@@ -161,6 +176,7 @@ export function frond(name: string, declared: FrondDeclaration = {}): FrondDescr
       deps: depsOf(c),
       filePath: fileOf(ctor),
       ...(typeof c !== 'function' && c.refuses ? { refuses: c.refuses } : {}),
+      ...(typeof c !== 'function' && c.collecting ? { collecting: c.collecting } : {}),
     };
   });
 

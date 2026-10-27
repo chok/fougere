@@ -1,4 +1,4 @@
-import { Crud, FougereError, ErrorCode } from '@fougere/core';
+import { Repository, FougereError, ErrorCode } from '@fougere/core';
 import Post from '../entities/Post.js';
 
 // An Output contract — a read projection of the entity, declared once.
@@ -6,10 +6,10 @@ import Post from '../entities/Post.js';
 // projection ('status' is readOnly), which useFormFor(Post) renders.
 export class PostCard extends Post.pick('id', 'title', 'status') {}
 
-// Crud(Post) gives list/create/update/delete for free — the accelerator.
+// Repository<Post> gives list/findById/create/update/delete for free — the accelerator.
 // 'publish' is the real business contract: a state transition that validates
 // before it realises. The golden path.
-export default class PostHandler extends Crud(Post) {
+export default class PostHandler extends Repository<Post> {
   /**
    * The draft→published transition. Validate: exists, draft only.
    * Realise: the server flips the owned field.
@@ -28,7 +28,7 @@ export default class PostHandler extends Crud(Post) {
 
   /** Only published posts exist for the outside world, projected to the card. */
   async listPublished(): Promise<PostCard[]> {
-    const { items: posts } = await super.list({ where: { status: 'published' } });
+    const posts = await super.list({ where: { status: 'published' } });
 
     return posts.map(({ id, title, status }) => ({ id, title, status }));
   }

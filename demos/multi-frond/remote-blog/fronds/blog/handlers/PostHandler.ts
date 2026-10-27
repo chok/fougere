@@ -1,4 +1,4 @@
-import { Crud } from '@fougere/core';
+import { Repository } from '@fougere/core';
 import Post from '../entities/Post.js';
 
-export default class PostHandler extends Crud(Post) {}
+export default class PostHandler extends Repository<Post> {}

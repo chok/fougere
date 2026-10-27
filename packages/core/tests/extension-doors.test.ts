@@ -1,10 +1,12 @@
 /**
- * An extension may put what it brings into a frond's scope, and step over an answer before the view
- * projects it — the two doors a module needs to live outside core.
+ * A module extension may put what it brings into a frond's scope, and step over an answer before the
+ * view projects it — the two doors a module of the kernel needs, which a package's `Extension` does
+ * not state.
  */
 import { describe, it, expect } from 'vitest';
 import { createContainer } from '@fougere/container';
-import { createApp, createAppRunner, frond, Invocation, type Extension } from '../src/index.js';
+import { createApp, createAppRunner, frond, Invocation } from '../src/index.js';
+import type { ModuleExtension } from '../src/boot/Extension.js';
 import { op } from './contract.js';
 
 class Greeting {
@@ -16,13 +18,13 @@ class HelloHandler {
   async getHello() { return { text: this.greeting.word }; }
 }
 
-const greeter = (word: string): Extension => ({
+const greeter = (word: string): ModuleExtension => ({
   name: 'greeter',
   install(_frond, { scope }) { scope.registerValue('Greeting', new Greeting(word)); },
   steps: () => [async (answered) => ({ ...(answered as object), stepped: true })],
 });
 
-const app = (extensions: Extension[]) => createApp({
+const app = (extensions: ModuleExtension[]) => createApp({
   createContainer,
   storageFactory: () => ({}) as never,
   fronds: [frond('hello', {

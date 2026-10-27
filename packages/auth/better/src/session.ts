@@ -1,4 +1,4 @@
-import { Collector, type FrondDeclaration, type InvocationContext } from '@fougere/core';
+import { Collect, type FrondDeclaration, type InvocationContext } from '@fougere/core';
 import { entity, json, nullable, type Entity, type Schema } from '@fougere/schema';
 
 /**
@@ -9,7 +9,7 @@ import { entity, json, nullable, type Entity, type Schema } from '@fougere/schem
 export function sessionOperation(user: Entity): Required<Pick<FrondDeclaration, 'collectors' | 'handlers'>> {
   class Session extends entity({ user: nullable(json(user as typeof Schema)) }) {}
 
-  class SessionCollector extends Collector(user) {
+  class SessionCollector extends Collect<unknown> {
     async collect(context: InvocationContext) {
       return context.state.user;
     }
@@ -22,7 +22,7 @@ export function sessionOperation(user: Entity): Required<Pick<FrondDeclaration, 
   }
 
   return {
-    collectors: [SessionCollector],
+    collectors: [{ ctor: SessionCollector, collects: user }],
     handlers: [{ ctor: SessionHandler, operations: { get: { params: { signedIn: { type: user, optional: true as const } }, output: Session } } }],
   };
 }

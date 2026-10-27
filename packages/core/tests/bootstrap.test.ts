@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { createContainer } from '@fougere/container';
-import { createApp, frond } from '../src/index.js';
+import { createApp, createLocalRunner, frond, Invocation } from '../src/index.js';
 import fronds from './fixtures/fronds.js';
 import TrapHandler from './fixtures-ctor-trap/fronds/shop/handlers/ItemHandler.js';
 import TrapItem from './fixtures-ctor-trap/fronds/shop/entities/Item.js';
@@ -168,7 +168,7 @@ describe('handler facades', () => {
     const storageFactory: StorageFactory = vi.fn(() => storage);
 
     await using app = await createApp({ fronds, createContainer, storageFactory });
-    // ItemHandler extends Crud(Item) — it declares the five by inheriting them.
+    // ItemHandler extends Repository<Item> — it declares the five by inheriting them.
     const itemHandler = app.resolve<Record<string, Function>>('itemHandler');
 
     const page = await itemHandler.list();
@@ -190,19 +190,27 @@ describe('handler facades', () => {
 });
 
 /**
- * A Crud handler that declares a constructor loses the automatic injection —
- * `bootstrap` only injects when `deps` is empty. Before this, `super()` handed
- * `undefined` down and the five CRUD ops broke on the first request, silently. No
- * handler in the repo had a constructor, so nobody had met it yet.
+ * A handler extending `Repository` takes what its constructor asks for, and the rows from the seat
+ * after it — and one nothing seats is refused at boot, since TypeScript erased which entity it was.
  */
-describe('a Crud handler that declares a constructor', () => {
-  it('is refused at boot when it does not take its storage, and the message says how', async () => {
+describe('a handler that extends Repository and declares a constructor', () => {
+  it('is handed its own dependencies and the rows, in that order', async () => {
+    await using app = await createApp({
+      fronds: [frond('shop', { entities: [TrapItem], handlers: [{ ctor: TrapHandler, repository: TrapItem, deps: ['Logger'] }] })],
+      createContainer,
+      storageFactory: () => fakeStorage({ list: vi.fn(async () => [{ id: '1' }]) }),
+    });
+
+    expect(await createLocalRunner(app)({ address: 'item', op: 'list' }, Invocation.empty)).toEqual({ items: [{ id: '1' }] });
+  });
+
+  it('is refused when nothing says which entity, naming the line to write', async () => {
     const boot = createApp({
       fronds: [frond('shop', { entities: [TrapItem], handlers: [{ ctor: TrapHandler, deps: ['Logger'] }] })],
       createContainer,
       storageFactory: () => fakeStorage(),
     });
-    await expect(boot).rejects.toThrow(/ItemHandler extends Crud and has a constructor/);
-    await expect(boot).rejects.toThrow(/constructor\(repo: ItemRepository, …\) \{ super\(repo\); \}/);
+    await expect(boot).rejects.toThrow(/ItemHandler extends Repository, and nothing says which entity/);
+    await expect(boot).rejects.toThrow(/\{ ctor: ItemHandler, repository: Item \}/);
   });
 });

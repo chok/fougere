@@ -9,8 +9,8 @@ import CurrentUserCollector from './fronds/stock/collectors/CurrentUserCollector
 
 export default frond('stock', {
   entities: [Article, User],
-  collectors: [CurrentUserCollector],
-  presenters: [ArticlePresenter],
+  collectors: [{ ctor: CurrentUserCollector, collects: User }],
+  presenters: [{ ctor: ArticlePresenter, presents: Article }],
   handlers: [{
     ctor: ArticleHandler,
     operations: {

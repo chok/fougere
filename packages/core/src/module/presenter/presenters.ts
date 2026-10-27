@@ -15,7 +15,7 @@ import { collectorKeyOf } from '../../prefab/collector.js';
  * over the answer. The boot installs it beside the schema check and the seeds, so a `Presenter` is
  * never declared with nothing to run it.
  */
-/** The two doors an extension answers here — written out, since `Extension` sits in `boot/`, which wires this. */
+/** The two doors a module extension answers here — written out, since `ModuleExtension` sits in `boot/`, which wires this. */
 interface Presenting {
   name: string;
   install(frond: FrondDescriptor, at: { scope: Container; container: Container; ownLogger: OwnLogger; log: Logger }): void;

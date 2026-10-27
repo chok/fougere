@@ -9,8 +9,8 @@ import LedgerRepository from './fronds/bank/repositories/LedgerRepository.js';
 export default [frond('bank', {
   entities: [Account, Ledger],
   providers: [
-    { ctor: AccountRepository, deps: ['AccountStorage', 'LedgerStorage'] },
-    { ctor: LedgerRepository, deps: ['LedgerStorage', 'AccountStorage'] },
+    { ctor: AccountRepository, repository: [Account, Ledger] },
+    { ctor: LedgerRepository, repository: [Ledger, Account] },
   ],
   handlers: [{
       ctor: AccountHandler,

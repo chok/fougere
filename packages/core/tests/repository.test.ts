@@ -13,7 +13,7 @@ import { entity, primary } from '@fougere/schema';
 import { describe, it, expect, vi } from 'vitest';
 import { createContainer } from '@fougere/container';
 import { createApp, createLocalRunner, Repository } from '../src/index.js';
-import { repositoryKeyOf } from '../src/prefab/RepositoryConstructor.js';
+import { repositoryKeyOf, seated } from '../src/prefab/Repository.js';
 import { targetOf } from '../src/prefab/prefab.js';
 import type { StorageFactory } from '../src/index.js';
 import { Invocation } from '../src/wire/Invocation.js';
@@ -39,12 +39,13 @@ function makeStorage() {
 
 const storageFactory: StorageFactory = (() => makeStorage()) as unknown as StorageFactory;
 
-describe('Repository(Entity)', () => {
+describe('Repository<Entity>', () => {
   it('remembers the entity it is for', () => {
     class Thing extends entity({ id: primary() }) {}
-    class ThingRepository extends Repository(Thing) {}
+    class ThingRepository extends Repository<Thing> {}
 
-    expect(targetOf(ThingRepository)).toBe(Thing);
+    // TypeScript erases `<Thing>`: the scan reads it, a statement says it, and the boot seats the class on it.
+    expect(targetOf(seated(ThingRepository, [Thing]))).toBe(Thing);
   });
 
   it('names its container key from the entity', () => {
@@ -54,7 +55,8 @@ describe('Repository(Entity)', () => {
   it('forwards the port, gesture by gesture — the same shape the default has', async () => {
     class Thing extends entity({ id: primary() }) {}
     const storage = makeStorage() as never;
-    const repo = new (Repository(Thing))(storage);
+    class ThingRepository extends Repository<Thing> {}
+    const repo = new (seated(ThingRepository, [Thing]) as unknown as new (storage: unknown) => ThingRepository)(storage);
 
     // The declared form and the default answer the same names: that is what makes a
     // handler read `this.things.list()` whether or not anyone wrote the file.
@@ -70,8 +72,9 @@ describe('the declared one wins, the default is always there', () => {
     await using app = await createApp({ fronds, createContainer, storageFactory });
     const out = await createLocalRunner(app)({ address: 'node', op: 'all' }, Invocation.empty);
 
-    // NodeHandler asked for `NodeRepository`, no such file exists, and the call answered.
-    expect(out).toEqual(rows);
+    // NodeHandler asked for `NodeRepository`, no such file exists, and the call answered — as a
+    // page, the envelope a page crosses in.
+    expect(out).toEqual({ items: rows });
   });
 
   it('uses the written one when there is one', async () => {

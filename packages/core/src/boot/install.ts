@@ -1,6 +1,6 @@
 /** Putting one frond into the app being built: its scope, what it serves, what it takes. */
 import type { Container } from '@fougere/container';
-import type { Extension } from './Extension.js';
+import type { ModuleExtension } from './Extension.js';
 import type { Plugged } from '../wire/Plugged.js';
 import type { AnswerStep } from '../dispatch/AnswerStep.js';
 import type { StateShape } from '../wire/StateShape.js';
@@ -35,8 +35,8 @@ import { DoorMiddleware } from '../prefab/DoorMiddleware.js';
 import type { DoorAround } from '../entry/door.js';
 import { linkOf, ownKeyOf, portBindings, hostPortChains, wrapping, HOST_PORTS } from './ports.js';
 import { contractsKeyOf, facadeKeyOf } from '../wire/Facade.js';
-import { inheritsCrud, subjectOf } from '../prefab/CrudConstructor.js';
-import { repositoryKeyOf } from '../prefab/RepositoryConstructor.js';
+import { extendsRepository, subjectOf } from '../prefab/RepositoryOps.js';
+import { repositoryKeyOf } from '../prefab/Repository.js';
 import { storageKeyOf } from '../storage/Storage.js';
 import { declares } from '../Source.js';
 import { relationChecksOf, refuseUnwritableNull, releasing } from '../module/relation/relations.js';
@@ -58,7 +58,7 @@ import { decoded } from '../dispatch/decoded.js';
 export interface Assembly {
   container: Container;
   /** Every extension of the app, in the order they rise — what installs into a frond and steps over an answer. */
-  extensions: readonly Extension[];
+  extensions: readonly ModuleExtension[];
   /** What answers each extension point here, written as it is installed — read by `app.extensionPoints()`. */
   plugged: Plugged[];
   routeRegistry: RouteRegistry;
@@ -505,7 +505,7 @@ function buildFacadeInto(
     operationModel, getMiddlewares,
   } = assembly;
 
-  if (inheritsCrud(handler.ctor) && !entity) {
+  if (extendsRepository(handler.ctor) && !entity) {
     // An installed Crud subject may be absent from the local scan.
     frondLog.debug(`${handler.ctor.name} extends Crud() and no scanned entity is named `
       + `'${subjectOf(handler.ctor, handler.address)}' — installed entity, or a missing `

@@ -7,7 +7,7 @@ import ProductPresenter from './fronds/catalog/presenters/ProductPresenter.js';
 export default [
   frond('catalog', {
     entities: [Product],
-    presenters: [ProductPresenter],
+    presenters: [{ ctor: ProductPresenter, presents: Product }],
     handlers: [{
       ctor: ProductHandler,
       operations: { create: op({ args: [input()], input: Product, output: Product, cardinality: 'one' }) },

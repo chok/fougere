@@ -1,12 +1,12 @@
-import { Crud, FougereError, ErrorCode } from '@fougere/core';
+import { Repository, FougereError, ErrorCode } from '@fougere/core';
 import User from '../entities/User.js';
 
 // An Output contract — a read projection of the entity, declared once.
 export class UserCard extends User.pick('id', 'name', 'status') {}
 
-// Crud(User) gives list/create/update/delete for free — the accelerator.
+// Repository<User> gives list/findById/create/update/delete for free — the accelerator.
 // 'deactivate' is the business contract: a state transition.
-export default class UserHandler extends Crud(User) {
+export default class UserHandler extends Repository<User> {
   /** active→inactive. Validate: active only. */
   async deactivate(id: User['id']): Promise<User> {
     const user = await super.findById(id);
@@ -22,7 +22,7 @@ export default class UserHandler extends Crud(User) {
 
   /** Active users, projected to the card contract. */
   async active(): Promise<UserCard[]> {
-    const { items: users } = await super.list({ where: { status: 'active' } });
+    const users = await super.list({ where: { status: 'active' } });
 
     return users.map(({ id, name, status }) => ({ id, name, status }));
   }

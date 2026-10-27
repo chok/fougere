@@ -27,7 +27,7 @@ describe('agent templates describe the storage boundary', () => {
       expect(contents).not.toContain('`Storage`, injected by type, is the only data access');
       expect(contents).toContain('Never inject `Storage` directly');
       expect(contents).toContain('Repository<Product>');
-      expect(contents).toContain('extends Repository(Product)');
+      expect(contents).toContain('extends Repository<Product>');
     });
   }
 

@@ -181,9 +181,6 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
   (`compiler/src/compile.ts`) follows the static imports of the config and the statement, so a module
   loaded through a path computed at run time is not in `.fougere/build/`, and `@fronds/<name>/X.ts`
   written with its `.ts` keeps it, which no file there answers. Stated 2026-10-20.
-- **`CrudViews` is typed on the five CRUD names** (`core/src/prefab/crud.ts`). Widening it to
-  admit a custom op also admits `{ lst: Card }`, the typo the five names catch. Measured
-  2026-08-24: zero custom ops want a closed view.
 - **`fronds:` names one address per frond**, so the same frond cannot be deployed twice. The
   key is a frond NAME, a type, while a deployment has instances. Not implemented.
 - **A named surface serves nothing when the frond is remote** — `boot/bootstrap.ts`,
@@ -203,7 +200,7 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
   remains open — a page size is not a constant, so there is no threshold to hard-code.
 - **`storage.client` remains the anonymous multi-statement path, validator off** — everything else
   writes through a guarded port, `Together<[…]>` included.
-- **`Mirror` holds a loop and a page contract, and nothing else** (`core/src/prefab/MirrorConstructor.ts`).
+- **`Mirror` holds a loop and a page contract, and nothing else** (`core/src/prefab/Mirror.ts`), on top of the repository it is.
   What it held of its own is gone — `StorageGuard` guards every write gesture now, so a page is
   judged where every other row is. The mark is the CALLER's since it read one off its own rows,
   which carry when WE wrote them: a pass that threw halfway still advanced it, and what the

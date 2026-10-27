@@ -11,7 +11,7 @@ import CrateRepository from './fronds/warehouse/repositories/CrateRepository.js'
 export default [
   frond('shop', {
     entities: [Product],
-    providers: [{ ctor: Counting, deps: ['Storage'] }, { ctor: ProductRepository, deps: ['ProductStorage'] }],
+    providers: [{ ctor: Counting, deps: ['Storage'] }, { ctor: ProductRepository, repository: Product }],
     handlers: [{
       ctor: ProductHandler,
       deps: ['ProductRepository'],
@@ -23,7 +23,7 @@ export default [
   }),
   frond('warehouse', {
     entities: [Crate],
-    providers: [{ ctor: CrateRepository, deps: ['CrateStorage'] }],
+    providers: [{ ctor: CrateRepository, repository: Crate }],
     handlers: [{
       ctor: CrateHandler,
       deps: ['CrateRepository'],

@@ -2,7 +2,7 @@ import { lowerFirst, upperFirst } from '@fougere/schema';
 import type { FrondDescriptor } from '../../descriptor/FrondDescriptor.js';
 import type { Diagnostic } from '../../diagnostic.js';
 import { targetOf } from '../../prefab/prefab.js';
-import { ownedBy, repositoryKeyOf } from '../../prefab/RepositoryConstructor.js';
+import { ownedBy, repositoryKeyOf } from '../../prefab/Repository.js';
 import { storageKeyOf } from '../../storage/Storage.js';
 
 interface Declared {

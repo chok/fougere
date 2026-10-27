@@ -9,7 +9,7 @@ export default class Product extends entity({
   state: optional(oneOf('draft', 'listed', 'archived', { default: 'draft' })),
 }) {}
 
-export default class ProductHandler extends Crud(Product) {}
+export default class ProductHandler extends Repository<Product> {}
 ```
 
 ```

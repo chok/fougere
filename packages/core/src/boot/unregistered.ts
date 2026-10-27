@@ -17,6 +17,7 @@ export function unregistered(
   conventions: Conventions = resolveConventions(),
 ): Diagnostic[] {
   const refused = new Map<string, Diagnostic>();
+  const handlerFrond = new Map(fronds.flatMap((frond) => frond.handlers.map((handler) => [handler.name, frond.name] as const)));
   for (const frond of fronds) {
     if (!container.has(`frond:${frond.name}`)) continue;
     const scope = container.resolve<Container>(`frond:${frond.name}`);
@@ -25,6 +26,20 @@ export function unregistered(
       for (const missing of deps) {
         if (scope.has(missing) || HOST_PORTS.has(missing) || facadeServedRemotely(missing)) continue;
         if (refused.has(`${ctor.name}→${missing}`)) continue;
+        const across = handlerFrond.get(missing);
+        if (across) {
+          refused.set(`${ctor.name}→${missing}`, {
+            severity: 'blocking',
+            code: 'handler-of-another-frond',
+            frond: frond.name,
+            subject: ctor.name,
+            filePath,
+            message: `${ctor.name} asks for ${missing}, a handler of the frond '${across}'. A handler is handed only inside its own `
+              + `frond: from another one, ask for its facade — Facade<${missing}> — which validates, runs the middlewares and `
+              + 'crosses a process when the frond moves.',
+          });
+          continue;
+        }
         refused.set(`${ctor.name}→${missing}`, {
           severity: 'blocking',
           code: 'dependency-unregistered',

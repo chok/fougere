@@ -1,4 +1,4 @@
-import { Mirror, type Refreshed, type Storage } from '@fougere/core';
+import { Mirror, type Refreshed } from '@fougere/core';
 import BookCard from '../entities/BookCard.js';
 import PartnerApi from './PartnerApi.js';
 
@@ -10,11 +10,11 @@ import PartnerApi from './PartnerApi.js';
  * A generator, because a source that has to be copied is a source that paginates —
  * yielding a page is the shape `upsertAll` already has.
  */
-export default class PartnerCatalog extends Mirror(BookCard) {
+export default class PartnerCatalog extends Mirror<BookCard> {
   private mark?: Date;
 
-  constructor(storage: Storage<BookCard>, private partner: PartnerApi) {
-    super(storage);
+  constructor(private partner: PartnerApi) {
+    super();
   }
 
   async *pull(since?: Date): AsyncIterable<Partial<BookCard>[]> {

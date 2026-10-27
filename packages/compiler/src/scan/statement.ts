@@ -1,12 +1,12 @@
 /** The scan, written as the STATEMENT an author would have written. */
 import { type ScanResult } from '@fougere/core';
 import { lowerFirst } from '@fougere/schema';
-import { nameOf, refusalOf, type FrondDescriptor, type PresenterEntry } from '@fougere/core/descriptor';
+import { nameOf, refusalOf, seatOf, seatsOf, targetOf, type FrondDescriptor, type PresenterEntry } from '@fougere/core/descriptor';
 import { frondConfigFileIn } from '@fougere/core/node';
 import { dirname, relative } from 'node:path';
 
 import { type Aliases } from './Aliases.js';
-import { operationsOf, type Live } from './Live.js';
+import { operationsOf, schemaRef, type Live } from './Live.js';
 
 /**
  * A file becomes the specifier the PROJECT already uses for it: `@fronds/blog/…`, the import scope
@@ -106,7 +106,31 @@ class Imports implements Aliases {
   }
 }
 
-/** `{ ctor: X, deps: [...] }` when there is something to say, the bare class otherwise. */
+/**
+ * What a class is built on, said as the values it was seated on — `repository: Post` — and its
+ * dependencies without the rows the boot hands it, which `frond()` adds back from that line.
+ */
+function seating(ctor: unknown, deps: string[], filePath: string, imports: Aliases): { deps: string[]; repository: string } {
+  const seat = seatOf(ctor);
+  if (seat.length === 0) return { deps, repository: '' };
+
+  // A view declared beside the handler — `Repository<AuthorPublic>` — is imported from that file.
+  const aliases = seat.map((entity) => schemaRef(entity, filePath, imports)!);
+
+  // The rows come LAST, after the class's own — which may ask for the same storage itself.
+  return {
+    deps: deps.slice(0, deps.length - seatsOf(seat).length),
+    repository: `repository: ${aliases.length === 1 ? aliases[0] : `[${aliases.join(', ')}]`}`,
+  };
+}
+
+/** `presents: Post`, `collects: User` — the subject TypeScript erased off `Present<Post>`, said as a value. */
+function builtOnOf(entry: { ctor: unknown; filePath: string }, key: 'presents' | 'collects', imports: Aliases): string {
+  const target = targetOf(entry.ctor);
+
+  return target ? `${key}: ${schemaRef(target, entry.filePath, imports)}` : '';
+}
+
 function subject(alias: string, deps: string[], ...extra: string[]): string {
   const parts = [
     ...(deps.length ? [`deps: ${JSON.stringify(deps)}`] : []),
@@ -140,7 +164,8 @@ function frondOf(frond: FrondDescriptor, imports: Imports): string {
   if (frond.handlers.length) {
     members.push(`handlers: ${list(frond.handlers.map((h) => subject(
       imports.default(h.filePath, frond, h.ctor as Live),
-      h.deps,
+      seating(h.ctor, h.deps, h.filePath, imports).deps,
+      seating(h.ctor, h.deps, h.filePath, imports).repository,
       h.surface ? `surface: ${JSON.stringify(h.surface)}` : '',
       // What the scan read from source, and what no class carries at runtime. Without it
       // a host that boots from this statement serves a prefab's five ops and nothing else.
@@ -148,15 +173,22 @@ function frondOf(frond: FrondDescriptor, imports: Imports): string {
     )))}`);
   }
   if (frond.presenters.length) {
-    members.push(`presenters: ${list(frond.presenters.map((p) => subject(imports.default(p.filePath, frond), p.deps, fieldMetaOf(p))))}`);
+    members.push(`presenters: ${list(frond.presenters.map((p) => subject(imports.default(p.filePath, frond), p.deps, builtOnOf(p, 'presents', imports), fieldMetaOf(p))))}`);
   }
   if (frond.collectors.length) {
-    members.push(`collectors: ${list(frond.collectors.map((c) => subject(imports.default(c.filePath, frond), c.deps, c.refuses ? `refuses: ${JSON.stringify(c.refuses)}` : '')))}`);
+    members.push(`collectors: ${list(frond.collectors.map((c) => subject(
+      imports.default(c.filePath, frond),
+      c.deps,
+      builtOnOf(c, 'collects', imports),
+      c.refuses ? `refuses: ${JSON.stringify(c.refuses)}` : '',
+      c.collecting?.length ? `collecting: ${JSON.stringify(c.collecting)}` : '',
+    )))}`);
   }
   if (frond.providers.length) {
     members.push(`providers: ${list(frond.providers.map((p) => subject(
       imports.default(p.filePath, frond, p.ctor as Live),
-      p.deps,
+      seating(p.ctor, p.deps, p.filePath, imports).deps,
+      seating(p.ctor, p.deps, p.filePath, imports).repository,
       // The container key, and a bundler is free to rewrite the class's own name — it did,
       // and a handler asking for `Communes` met a provider registered as `_Communes`.
       `name: ${JSON.stringify(nameOf(p))}`,
@@ -213,6 +245,9 @@ export function emitStatement(scan: ScanResult, options: { outFile?: string } = 
 
     return frond ? [imports.term(filePath, frond, name)] : [];
   });
+  // Every frond's entities first: a class of one frond may be built on another's — `Collect<User>`
+  // beside a `user` frond written after it — and is then said by the alias the entity already has.
+  for (const frond of scan.fronds) for (const e of frond.entities) imports.default(e.filePath, frond, e.entityClass as Live);
   const fronds = scan.fronds.map((f) => frondOf(f as FrondDescriptor & { source: Live }, imports));
 
   return [

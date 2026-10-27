@@ -15,7 +15,7 @@ export default [
   frond('catalog', {
     entities: [Brand, Product],
     providers: [ProductService],
-    presenters: [ProductPresenter],
+    presenters: [{ ctor: ProductPresenter, presents: Product }],
     handlers: [{
       ctor: ProductHandler,
       deps: ['ProductRepository'],
@@ -35,9 +35,10 @@ export default [
   frond('inventory', {
     entities: [Item],
     handlers: [
-      ItemHandler,
+      { ctor: ItemHandler, repository: Item },
       {
         ctor: StockHandler,
+        repository: Item,
         operations: {
           list: op({ output: Item, cardinality: 'page' }),
           searchStock: op({ args: [input()], input: StockSearchInput, output: StockSearchOutput, cardinality: 'many' }),

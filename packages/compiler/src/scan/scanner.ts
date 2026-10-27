@@ -1,5 +1,5 @@
 import { DEFAULT_CONVENTIONS, DoorMiddleware, Middleware, RouteAddress, frondDirsOf, frondPackage, providerDirsOf, resolveConventions, togetherKeyOf, type Conventions, type ConventionsInput, type Diagnostic, type ScanResult } from '@fougere/core';
-import { Fronds, addressOf, awaitKeyOf, cardinalityOf, computeBindingPlan, opsOf, emitKeyOf, getPresenterFields, outputOf, ownedBy, repositoryKeyOf, storageKeyOf, targetOf, type CollectorEntry, type EntityEntry, type FrondDescriptor, type HandlerEntry, type MiddlewareEntry, type OperationContract, type OperationsMap, type PresenterEntry, type ProviderEntry, type SeedEntry, type TypeRef, viewsOf, isExtension, FrondConfigReading, Term, type ExtensionEntry, type VocabularyEntry } from '@fougere/core/descriptor';
+import { Fronds, addressOf, awaitKeyOf, cardinalityOf, computeBindingPlan, opsOf, emitKeyOf, getPresenterFields, builtOn, outputOf, repositoryKeyOf, seated, seatsOf, storageKeyOf, targetOf, type CollectorEntry, type EntityEntry, type FrondDescriptor, type HandlerEntry, type MiddlewareEntry, type OperationContract, type OperationsMap, type PresenterEntry, type ProviderEntry, type SeedEntry, type TypeRef, viewsOf, isExtension, FrondConfigReading, Term, type ExtensionEntry, type VocabularyEntry } from '@fougere/core/descriptor';
 import { frondNamesOf, getModuleLoader, loadFrondConfig } from '@fougere/core/node';
 import type { FrondConfig, ErrorCode } from '@fougere/core';
 import type { Param, Signature } from '@fougere/core/descriptor';
@@ -7,7 +7,7 @@ import { readdir, readFile } from 'node:fs/promises';
 import { existsSync, type Dirent } from 'node:fs';
 import { join, dirname, basename, resolve as resolvePath } from 'node:path';
 
-import { ANONYMOUS_SCHEMA_NAME, FieldSet, type SchemaView } from '@fougere/schema';
+import { ANONYMOUS_SCHEMA_NAME, FieldSet, type Entity, type SchemaView } from '@fougere/schema';
 
 import {
   parseAllHandlerMethods,
@@ -18,6 +18,7 @@ import {
 } from './handler-parser.js';
 import { parseAbstract } from './Abstract.js';
 import { parseImplements } from './Implemented.js';
+import { parseSeat } from './Seat.js';
 import { resetTypePrograms, seedTypeProgram } from './TypeProgram.js';
 
 import { lowerFirst } from '@fougere/schema';
@@ -79,6 +80,35 @@ async function loadDefault(filePath: string): Promise<unknown> {
   const mod = await loadModule(filePath);
 
   return mod.default;
+}
+
+/**
+ * The entities `Repository<…>` names, as the values the boot seats on — each module loaded ONCE per
+ * run (`loadOnce`), so the `Author` a seat names is the `Author` the entities directory gave, in this
+ * frond or another: a host loading every module afresh handed back a second one, and the statement
+ * imported it from the handler that does not export it.
+ */
+async function seatOf(filePath: string, projectRoot?: string, base: 'Repository' | 'Collect' | 'Present' = 'Repository'): Promise<Entity[]> {
+  const seats = await parseSeat(filePath, projectRoot, base);
+
+  return Promise.all(seats.map(async ({ name, exported: by, filePath: declaredIn }) => {
+    const module = await loadOnce(declaredIn);
+    const exported = module[by] ?? Object.values(module)
+      .find((value) => typeof value === 'function' && (value as { name?: string }).name === name);
+    if (!exported) throw new Error(`${filePath}: ${base}<${name}> names a class ${declaredIn} does not export.`);
+
+    return exported as Entity;
+  }));
+}
+
+/** The modules this run loaded, by file — one identity per class for the whole scan. */
+let loaded = new Map<string, Promise<Record<string, unknown>>>();
+
+function loadOnce(filePath: string): Promise<Record<string, unknown>> {
+  const known = loaded.get(filePath) ?? loadModule(filePath);
+  loaded.set(filePath, known);
+
+  return known;
 }
 
 async function loadClass(filePath: string): Promise<ProviderEntry['ctor']> {
@@ -234,28 +264,17 @@ async function toProvider(filePath: string): Promise<ProviderEntry> {
   }
   const links = ports.filter((one) => deps.includes(one.name)).map((one) => one.name);
 
-  // A repository inherits its constructor from `Repository(…)`, so the file declares none
-  // and the scan reads no parameter. The mixin knows what it was built for and says so at
-  // runtime — same escape as `Crud.__ops`, and the same reason: what a prefab fabricates,
-  // only the prefab can describe.
-  //
-  // An AGGREGATE owns several, and its base takes them in the declared order. It is handed
-  // no frame: the boundary and the unit of work are two statements, and a frame is ASKED FOR
-  // like anywhere else — see `prefab/repository.ts`.
-  const owned = ownedBy(ctor);
-  const target = targetOf(ctor);
-  if (owned.length > 1 && deps.length === 0) {
-    deps.push(...owned.map((entity) => storageKeyOf(lowerFirst((entity as { name: string }).name))));
-  } else if (target && deps.length === 0) {
-    deps.push(storageKeyOf(lowerFirst((target as { name: string }).name)));
-  }
+  // `Repository<Post>` names what the class is built on where TypeScript erases it, so the scan
+  // reads it and the boot seats the class on it, handing it the rows after its own dependencies.
+  const seat = await seatOf(filePath);
+  if (seat.length > 0) deps.push(...seatsOf(seat));
 
   // `name` beside `ctor`, and it IS the registration key — what `depKeyOf` returns, since
   // it reads the type as written. It used to be asked of `ctor.name` at boot, which held
   // until a bundler lowered a static field and renamed the declaration doing it.
   return {
     name,
-    ctor,
+    ctor: seat.length > 0 ? seated(ctor, seat) : ctor,
     deps,
     filePath,
     ...(await parseAbstract(filePath) ? { abstract: true as const } : {}),
@@ -285,7 +304,7 @@ async function toExtensionEntry(filePath: string): Promise<ExtensionEntry | null
 }
 
 async function toEntityEntry(filePath: string): Promise<EntityEntry | null> {
-  const exported = await loadDefault(filePath);
+  const exported = (await loadOnce(filePath)).default;
   if (!isEntityClass(exported)) return null;
   const runtimeName = (exported as { name?: string }).name;
   // A derivation returned directly (`export default User.extend(...)`) carries the
@@ -490,6 +509,12 @@ async function inferOperations(
     }));
   }
 
+  // What the base declares of itself — `Repository<Post>`'s five — under what the author wrote:
+  // a method written over `create` is the one that runs, so its contract is the one that answers.
+  for (const [name, contract] of Object.entries(declared)) {
+    if (!map.has(name)) map.set(name, contract);
+  }
+
   return map;
 }
 
@@ -502,9 +527,11 @@ async function toHandlerEntry(
   surface?: string,
 ): Promise<HandlerEntry> {
   const mod = await loadModule(filePath);
-  const ctor = mod.default;
-  if (typeof ctor !== 'function' || !ctor.prototype)
+  const written = mod.default;
+  if (typeof written !== 'function' || !written.prototype)
     throw new Error(`${filePath}: default export is not a class`);
+  const seat = await seatOf(filePath, projectRoot);
+  const ctor = seat.length > 0 ? seated(written as ProviderEntry['ctor'], seat) : written;
 
   // Augment module exports with known entity classes so resolveSchema
   // can find them when T is substituted (e.g. T → Post after parsing Crud(Post))
@@ -523,7 +550,7 @@ async function toHandlerEntry(
     opsOf(ctor),
     projectRoot,
   );
-  const deps = await depsOf(filePath);
+  const deps = [...await depsOf(filePath), ...seatsOf(seat)];
 
   // Read output override from Crud(Entity, Output) — static __output property
   // A handler-wide view, when it is not simply the entity — the two are compared by
@@ -565,7 +592,9 @@ async function toSeedEntry(filePath: string): Promise<SeedEntry | null> {
 }
 
 async function toPresenterEntry(filePath: string): Promise<PresenterEntry | null> {
-  const ctor = await loadClass(filePath);
+  const written = await loadClass(filePath);
+  const [presented] = await seatOf(filePath, undefined, 'Present');
+  const ctor = presented ? builtOn(written, presented) : written;
   const target = targetOf(ctor);
   if (!target) return null;
   const entityName = lowerFirst((target as { name: string }).name);
@@ -619,7 +648,9 @@ async function toPresenterEntry(filePath: string): Promise<PresenterEntry | null
 }
 
 async function toCollectorEntry(filePath: string): Promise<CollectorEntry | null> {
-  const ctor = await loadClass(filePath);
+  const written = await loadClass(filePath);
+  const [collected] = await seatOf(filePath, undefined, 'Collect');
+  const ctor = collected ? builtOn(written, collected) : written;
   const target = targetOf(ctor);
   if (!target) return null;
   // The target's NAME and nothing else — a collector reads no fields, so the class it
@@ -627,10 +658,14 @@ async function toCollectorEntry(filePath: string): Promise<CollectorEntry | null
   const typeName = lowerFirst((target as { name: string }).name);
   const deps = await depsOf(filePath);
   // What its `missing()` refuses, walked like an op's — through the helpers it calls.
+  // …and what its `collect()` refuses, which every op asking for it meets, `?` or not.
   const missing = `${(ctor as { name: string }).name}.missing`;
-  const refuses = (await parseRefusals(filePath, (name) => name === missing).catch(() => new Map<string, ErrorCode[]>())).get(missing);
+  const collect = `${(ctor as { name: string }).name}.collect`;
+  const walked = await parseRefusals(filePath, (name) => name === missing || name === collect).catch(() => new Map<string, ErrorCode[]>());
+  const refuses = walked.get(missing);
+  const collecting = walked.get(collect);
 
-  return { typeName, ctor, deps, filePath, ...(refuses?.length ? { refuses } : {}) };
+  return { typeName, ctor, deps, filePath, ...(refuses?.length ? { refuses } : {}), ...(collecting?.length ? { collecting } : {}) };
 }
 
 /**
@@ -815,6 +850,7 @@ export async function scanProject(
   // must not inherit each other's.
   diagnostics = [];
   vocabulary = [];
+  loaded = new Map();
 
   const frondsDir = join(root, conventions.fronds);
   const dirNames = await dirs(frondsDir);

@@ -8,8 +8,8 @@ import ListPresenter from './fronds/listes/presenters/ListPresenter.js';
 
 const listes = frond('listes', {
   entities: [List, User],
-  collectors: [CurrentUserCollector],
-  presenters: [ListPresenter],
+  collectors: [{ ctor: CurrentUserCollector, collects: User }],
+  presenters: [{ ctor: ListPresenter, presents: List }],
   handlers: [{ ctor: ListHandler, deps: ['ListRepository'], operations: { list: op({ output: List, cardinality: 'many' }) } }],
 });
 

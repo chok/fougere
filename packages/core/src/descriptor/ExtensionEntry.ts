@@ -17,17 +17,14 @@ export interface ExtensionEntry {
     state?: Readonly<Record<string, Field>>;
     up?: (app: never) => void | Promise<void>;
     down?: (app: never) => void | Promise<void>;
-    install?: (frond: never, at: never) => void;
-    steps?: (handler: never, frond: never, scope: never) => readonly never[];
   };
   filePath: string;
 }
 
-/** Recognized by its FORM: a value stating `up`, `down`, `install`, `steps`, or the `state` members it declares. */
+/** Recognized by its FORM: a value stating `up`, `down`, or the `state` members it declares. */
 export function isExtension(value: unknown): value is ExtensionEntry['extension'] {
-  const shape = value as { up?: unknown; down?: unknown; install?: unknown; steps?: unknown; state?: unknown } | null;
+  const shape = value as { up?: unknown; down?: unknown; state?: unknown } | null;
 
   return typeof shape?.up === 'function' || typeof shape?.down === 'function'
-    || typeof shape?.install === 'function' || typeof shape?.steps === 'function'
     || (typeof shape?.state === 'object' && shape.state !== null);
 }

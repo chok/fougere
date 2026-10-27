@@ -1,4 +1,4 @@
-import { Crud } from '@fougere/core';
+import { Repository } from '@fougere/core';
 import Article from '../entities/Article.js';
 
-export default class ArticleHandler extends Crud(Article) {}
+export default class ArticleHandler extends Repository<Article> {}

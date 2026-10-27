@@ -8,14 +8,11 @@
 import { describe, it, expect, vi } from 'vitest';
 import { createContainer } from '@fougere/container';
 import { entity, primary, text, type SchemaView } from '@fougere/schema';
-import {
-  Call, createApp, Crud, frond, RouteAddress, storageOver,
-  type App, type PartialInvocation, type Storage, type Store,
-} from '@fougere/core';
+import { Call, createApp, Repository, frond, RouteAddress, storageOver, type App, type PartialInvocation, type Storage, type Store } from '@fougere/core';
 import { workflow } from '../src/index.js';
 
 class Note extends entity({ id: primary(text()), body: text() }) {}
-class NoteHandler extends Crud(Note) {}
+class NoteHandler extends Repository<Note> {}
 
 const store = (): Store => {
   const kept = new Map<string, Record<string, unknown>>();
@@ -37,7 +34,7 @@ async function booting(sweepMs: number): Promise<App> {
   return createApp({
     createContainer,
     storageFactory: storageOver((_schema: SchemaView, _name: string) => store()) as never,
-    fronds: [frond('notes', { entities: [Note], handlers: [NoteHandler] })],
+    fronds: [frond('notes', { entities: [Note], handlers: [{ ctor: NoteHandler, repository: Note }] })],
     extensions: [workflow({ sweepMs })],
   });
 }
@@ -102,7 +99,7 @@ describe('a call that runs later', () => {
     const app = await createApp({
       createContainer,
       storageFactory: storageOver((_schema: SchemaView, _name: string) => store()) as never,
-      fronds: [frond('notes', { entities: [Note], handlers: [NoteHandler] })],
+      fronds: [frond('notes', { entities: [Note], handlers: [{ ctor: NoteHandler, repository: Note }] })],
     });
 
     await expect(app.dispatch(

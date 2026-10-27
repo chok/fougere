@@ -49,7 +49,8 @@ describe('a realization narrowing the port', () => {
     const scan = await scanProject(root);
     const repository = scan.fronds[0]!.providers.find((one) => one.ctor.name === 'CardRepository');
 
-    expect(repository?.deps).toEqual([storageKeyOf('Card')]);
+    // Its own, then the rows the boot seats it on — the same storage under one key.
+    expect(repository?.deps).toEqual([storageKeyOf('Card'), storageKeyOf('Card')]);
   });
 
   it('reaches the gesture the port does not have, through the facade that owns it', async () => {

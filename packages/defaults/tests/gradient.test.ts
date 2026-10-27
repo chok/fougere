@@ -18,10 +18,7 @@ import {
   created, date, entity, json, oneOf, optional, primary, readOnly, ref, text, unique, updated, writeOnly,
 } from '@fougere/schema';
 import { createSqliteSource } from '@fougere/adapter-sql';
-import {
-  Collector, createApp, createAppRunner, createLocalRunner, Crud, ErrorCode, frond, Invocation, migrating, Presenter,
-  togetherKeyOf, type App, type Storage, type Transport,
-} from '@fougere/core';
+import { Collect, createApp, createAppRunner, createLocalRunner, Repository, ErrorCode, frond, Invocation, migrating, Present, togetherKeyOf, type App, type Storage, type Transport } from '@fougere/core';
 import { layerOf, storageFrom } from '../src/storage/ResolvedStorage.js';
 
 class Author extends entity({
@@ -44,8 +41,8 @@ class Article extends entity({
   authorId: ref(Author),
 }) {}
 
-class AuthorHandler extends Crud(Author) {}
-class ArticleHandler extends Crud(Article) {}
+class AuthorHandler extends Repository<Author> {}
+class ArticleHandler extends Repository<Article> {}
 
 /** Reads the authors through their repository — a service whose consumers name no frond. */
 class Directory {
@@ -57,7 +54,7 @@ class Directory {
 }
 
 /** Computed on the way out, for the WHOLE page at once — never one query per row. */
-class AuthorPresenter extends Presenter(Author) {
+class AuthorPresenter extends Present<Author> {
   /** How many rows the presenter was handed, written on each of them. */
   pageSize(authors: Author[]): number[] {
     return authors.map(() => authors.length);
@@ -77,7 +74,7 @@ class Caller {
 const door = { name: 'door', state: { who: text() } };
 
 /** Reads `ctx.state`, which is what every door fills. */
-class CallerCollector extends Collector(Caller) {
+class CallerCollector extends Collect<Caller> {
   async collect(ctx: { state: Record<string, unknown> }): Promise<Caller> {
     return new Caller(String(ctx.state.who ?? 'nobody'));
   }
@@ -146,9 +143,9 @@ const fronds = ({ together = false, moved = false, strandCollector = false, fram
   if (together) {
     return [frond('app', {
       entities: [Author, Article],
-      handlers: [AuthorHandler, ArticleHandler, census, ...framed],
-      presenters: [AuthorPresenter],
-      collectors: [CallerCollector],
+      handlers: [{ ctor: AuthorHandler, repository: Author }, { ctor: ArticleHandler, repository: Article }, census, ...framed],
+      presenters: [{ ctor: AuthorPresenter, presents: Author }],
+      collectors: [{ ctor: CallerCollector, collects: Caller }],
       providers: [service],
     })];
   }
@@ -156,18 +153,18 @@ const fronds = ({ together = false, moved = false, strandCollector = false, fram
   return [
     frond('people', {
       entities: [Author],
-      handlers: [AuthorHandler, ...(moved ? [] : [census]), ...framed],
-      presenters: [AuthorPresenter],
+      handlers: [{ ctor: AuthorHandler, repository: Author }, ...(moved ? [] : [census]), ...framed],
+      presenters: [{ ctor: AuthorPresenter, presents: Author }],
       // A collector lives in the frond that CONSUMES it — one in the wrong frond refuses the
       // boot, which is its own invariant and not something a placement may soften.
-      collectors: [CallerCollector],
+      collectors: [{ ctor: CallerCollector, collects: Caller }],
       providers: moved ? [] : [service],
     }),
     frond('writing', {
       entities: [Article],
-      handlers: [ArticleHandler, ...(moved ? [census] : [])],
+      handlers: [{ ctor: ArticleHandler, repository: Article }, ...(moved ? [census] : [])],
       // Stranded: `census` moved here and its collector did not follow.
-      collectors: moved && !strandCollector ? [CallerCollector] : [],
+      collectors: moved && !strandCollector ? [{ ctor: CallerCollector, collects: Caller }] : [],
       providers: moved ? [service] : [],
     }),
   ];
@@ -402,7 +399,7 @@ describe('what a placement may not soften — the refusals', () => {
 class Member extends entity({ id: primary(), name: text(), since: date() }) {}
 
 /** The member the door put on the call, read by the entity the collector names. */
-class MemberCollector extends Collector(Member) {
+class MemberCollector extends Collect<Member> {
   async collect(ctx: { state: Record<string, unknown> }): Promise<Member | undefined> {
     return ctx.state.user as Member | undefined;
   }
@@ -420,7 +417,7 @@ const visits = () => frond('visits', {
     deps: [],
     operations: { read: { binding: [{ name: 'member', optional: false, source: { kind: 'collector' as const, typeName: 'member' } }] } },
   }],
-  collectors: [MemberCollector],
+  collectors: [{ ctor: MemberCollector, collects: Member }],
 });
 
 /** Who fills `user`, and so the one process that declares it. */

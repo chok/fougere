@@ -1,9 +1,9 @@
-import { Crud } from '@fougere/core';
+import { Repository } from '@fougere/core';
 import Product from '../entities/Product.js';
 
 export class ListedInput extends Product.pick('id') {}
 
-export default class ProductHandler extends Crud(Product) {
+export default class ProductHandler extends Repository<Product> {
   /** Flip whether a product is listed. */
   async toggle(input: ListedInput): Promise<Product | undefined> {
     const product = await super.findById(input.id);

@@ -1,9 +1,9 @@
-import { Crud, type Repository, type Emit } from '@fougere/core';
+import { Repository, type Emit } from '@fougere/core';
 import Post from '../entities/Post.js';
 import PostPublished from '../entities/PostPublished.js';
 
-export default class PostHandler extends Crud(Post) {
-  constructor(repo: Repository<Post>, private published: Emit<PostPublished>) { super(repo); }
+export default class PostHandler extends Repository<Post> {
+  constructor(repo: Repository<Post>, private published: Emit<PostPublished>) { super(); }
 
   /** Publishes a post. */
   async publish(input: Post): Promise<Post> {

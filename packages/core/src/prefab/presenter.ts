@@ -1,5 +1,5 @@
 /**
- * Presenter(Entity) — enriches an entity's output with computed fields.
+ * `Present<Entity>` — enriches an entity's output with computed fields.
  *
  * Documented: [presenters](https://fougere.dev/docs/business/presenters).
  */
@@ -12,20 +12,33 @@ import { upperFirst, type Entity } from '@fougere/schema';
  */
 export type PresenterViews = Record<string, Entity | [Entity]>;
 
-/** `Presenter(Order, { items: [OrderItemView] })` — the views its computed fields emit. */
-export function Presenter<E extends Entity>(entity: E, views?: PresenterViews) {
-  class PresenterBase {
-    static readonly __entity = entity;
-    static readonly __views = views;
-  }
+const PRESENT = Symbol.for('fougere.present');
 
-  return PresenterBase;
+/**
+ * `Present<Order>` — each method a computed field of `Order`'s output, handed the page and answering
+ * one value per row, its type read off what it returns. TypeScript erases `<Order>`, so the scan reads
+ * it, and a frond written by hand says it — `presents: Order`.
+ */
+export abstract class Present<T> {
+  declare private readonly presented?: T;
+}
+Object.defineProperty(Present.prototype, PRESENT, { value: true });
+
+/** Whether a class extends `Present` — read by a name two copies of core share. */
+export function isPresent(ctor: unknown): boolean {
+  return typeof ctor === 'function' && (ctor.prototype as Record<symbol, unknown> | undefined)?.[PRESENT] === true;
 }
 
-/** List computed field names from a presenter class (own methods minus constructor). */
+/** The computed fields of a presenter: the methods written over `Present`, the classes between included. */
 export function getPresenterFields(ctor: Function): string[] {
-  return Object.getOwnPropertyNames(ctor.prototype)
-    .filter((name) => name !== 'constructor' && typeof ctor.prototype[name] === 'function');
+  const fields = new Set<string>();
+  for (let level = ctor.prototype; level && level !== Object.prototype && level !== Present.prototype; level = Object.getPrototypeOf(level)) {
+    for (const name of Object.getOwnPropertyNames(level)) {
+      if (name !== 'constructor' && typeof level[name] === 'function') fields.add(name);
+    }
+  }
+
+  return [...fields];
 }
 
 /** Container key of an entity's presenter — 'post' → 'PostPresenter'. */
