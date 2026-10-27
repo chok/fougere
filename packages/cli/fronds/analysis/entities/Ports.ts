@@ -1,7 +1,7 @@
 import { entity, bool, optional, text } from '@fougere/schema';
 
-/** `fougere points` — what answers each extension point of the app. */
-export default class Points extends entity({
+/** `fougere ports` — what answers each port of the app, and each registry. */
+export default class Ports extends entity({
   root: optional(text({ description: 'Project to read. Default: the current directory' })),
   json: bool({ default: false, description: 'Print the report as JSON, with nothing else on stdout' }),
 }) {}

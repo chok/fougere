@@ -2,13 +2,13 @@
 import type { Container } from '@fougere/container';
 import type { ModuleExtension } from './Extension.js';
 import { aroundCalls, standsAroundCalls, theRest } from './calls.js';
-import { registerDoorPorts, reserving, standingAtDoors } from './doors.js';
+import { isDoorPort, registerDoorPorts, reserving, standingAtDoors } from './doors.js';
 import { envKeyOf } from '../module/value/Env.js';
 import type { Plugged } from '../wire/Plugged.js';
 import type { AnswerStep } from '../dispatch/AnswerStep.js';
 import type { StateShape } from '../wire/StateShape.js';
 import type { ProviderEntry } from '../descriptor/ProviderEntry.js';
-import { lowerFirst, type Fields, type SchemaView } from '@fougere/schema';
+import { lowerFirst, upperFirst, type Fields, type SchemaView } from '@fougere/schema';
 import type { Logger } from '../builtin/Logger.js';
 import { ownLoggers, type OwnLogger } from '../builtin/OwnLoggers.js';
 import { basesOf } from '../descriptor/bases.js';
@@ -329,7 +329,7 @@ function registerProviders(
     if (links.has(provider)) continue;
     scope.register(nameOf(provider), provider.ctor, { deps: ownLogger(nameOf(provider), provider.deps), ...lifetimeOf(provider.ctor) });
   }
-  registerRepositories(frond, scope, refused, ownLogger);
+  registerRepositories(frond, scope, refused, ownLogger, plugged);
   for (const [seam, links] of hostPorts) {
     boundPorts.add(seam);
     frondLog.debug(`seam ${seam} → ${links.map((one) => one.ctor.name).join(' → ')} → the realization`);
@@ -370,7 +370,7 @@ function registerProviders(
     else scope.register(port, Outermost, outermostOptions);
     boundPorts.add(port);
     frondLog.debug(`port ${port} → ${chain.map((one) => one.ctor.name).join(' → ')}`);
-    plugged.push({ point: port, by: 'type', frond: frond.name, answers: chain.map(nameOf) });
+    plugged.push({ point: port, by: 'type', frond: frond.name, answers: [...chain.map(nameOf), ...(wraps ? [innermostOf(port)] : [])] });
   }
   if (frond.providers.length > 0) {
     frondLog.debug(`${frond.providers.length} provider(s): ${frond.providers.map(nameOf).join(', ')}`);
@@ -379,12 +379,21 @@ function registerProviders(
   return hostPorts;
 }
 
+/** What a chain whose last link asks for the port ends on — said, since no class of the frond is it. */
+function innermostOf(port: string): string {
+  if (port === 'Dispatcher') return 'the rest of the call';
+  if (isDoorPort(port)) return 'the rest of the request';
+  if (port.startsWith('Env<')) return 'the source';
+
+  return `the ${port} the frond had`;
+}
+
 /**
  * A service built on ONE entity — `class PostQueries extends Repository<Post>` — answers `Repository<Post>`
  * as well as its own name, the way `StripePayment` answers `Payment`: extending is being the thing, and
  * the default repository steps aside. Two refuse, naming both.
  */
-function registerRepositories(frond: FrondDescriptor, scope: Container, refused: Diagnostic[], ownLogger: OwnLogger): void {
+function registerRepositories(frond: FrondDescriptor, scope: Container, refused: Diagnostic[], ownLogger: OwnLogger, plugged: Plugged[]): void {
   const byKey = new Map<string, ProviderEntry[]>();
   for (const provider of frond.providers) {
     const seat = seatOf(provider.ctor);
@@ -408,6 +417,7 @@ function registerRepositories(frond: FrondDescriptor, scope: Container, refused:
     }
     const provider = providers[0]!;
     scope.register(key, provider.ctor, { deps: ownLogger(nameOf(provider), provider.deps), ...lifetimeOf(provider.ctor) });
+    plugged.push({ point: `Repository<${seatOf(provider.ctor)[0]!.name}>`, by: 'type', frond: frond.name, answers: [nameOf(provider)] });
   }
 }
 
@@ -533,8 +543,10 @@ function buildFacadeInto(
 }
 
 /** Its facades answer elsewhere, but what they LISTEN to is read here, and the bridges route with it. */
-function noteRemoteFrond(frond: FrondDescriptor, { operationModel, effectiveByKey, emissions, contractsOf, log }: Assembly): void {
+function noteRemoteFrond(frond: FrondDescriptor, { operationModel, effectiveByKey, emissions, contractsOf, log, options, plugged }: Assembly): void {
   log.child(frond.name).info('declared remote — not hosted locally');
+  // Its links stand where it is served: said, so a report of this process does not read as a frond with none.
+  plugged.push({ point: 'served at', by: 'name', frond: frond.name, answers: [options.remotes?.[frond.name] ?? 'another process'] });
   for (const handler of frond.handlers) {
     const key = facadeKeyOf(handler.address, handler.surface);
     const operations = operationModel.forHandler(handler);
@@ -677,6 +689,13 @@ export async function installFrond(frond: FrondDescriptor, assembly: Assembly): 
 
   for (const extension of assembly.extensions) extension.install?.(frond, { scope, container, ownLogger, log: frondLog });
   registerCollectors(frond, scope, ownLogger, frondLog);
+  // The two steps around a handler, by what each is built on — `Collect<User>`, `Present<Post>`.
+  for (const collector of frond.collectors) {
+    assembly.plugged.push({ point: `Collect<${upperFirst(collector.typeName)}>`, by: 'type', frond: frond.name, answers: [collector.ctor.name] });
+  }
+  for (const presenter of frond.presenters) {
+    assembly.plugged.push({ point: `Present<${upperFirst(presenter.entityName)}>`, by: 'type', frond: frond.name, answers: [presenter.ctor.name] });
+  }
   registerMiddlewares(frond, scope, assembly, ownLogger, frondLog);
 
   const building: Building = { frond, assembly, scope, ownLogger, frondLog };

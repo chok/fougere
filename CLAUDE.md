@@ -400,10 +400,13 @@ the answer steps it runs over that handler's answers before the view projects th
 with a link, the way a frond does. They are what a module needs to live outside the kernel: `presenters()` (`module/presenter/presenters.ts`) is itself an extension through them,
 which is why `install.ts` names no presenter — measured 2026-10-18 by moving it into a package of its
 own in a throwaway worktree, where the same app answered with and without it. `app.extensionPoints()`
-reads what answers each point — every `Registry` by name, then per frond the chain of each port and
-host port, the middlewares in order, the extensions stepping over each address — and `fougere points`
-prints it, booting the app with the schema check and the seeds left out. Pinned by
-`core/tests/extension-doors.test.ts`, `core/tests/extension-points.test.ts`, `cli/tests/points.test.ts`.
+reads what answers each point — every `Registry` by name, then per frond each port's links outside in
+and the realization they reach (`the rest of the call`, `the rest of the request`, `the source`, said
+where no class is it), the class answering `Repository<Post>`, `Collect<User>` and `Present<Post>`, the
+extensions stepping over each address, and `served at` for a frond another process serves, whose links
+stand there — and `fougere ports` prints it, booting the app with the schema check and the seeds left
+out. Pinned by `core/tests/extension-doors.test.ts`, `core/tests/extension-points.test.ts`,
+`cli/tests/ports.test.ts`.
 
 **The ascent is ORDERED BY CORE, and a host hands over a gesture** — `createApp` puts
 `checking(options.pending)`, `seeding()` and `presenters()` before whatever `extensions:` carries. Four

@@ -10,7 +10,7 @@ const SHOWN = 8;
 
 /**
  * Who answers, in the form the point gives them: a registry's names have no order, so they are a list;
- * a chain, a frond's middlewares and the extensions rising have one, outside in.
+ * a port's links have one, outside in, and the realization they reach comes last.
  */
 function answered(one: Plugged): string {
   if (one.answers.length === 0) return pc.dim('nothing');
@@ -20,25 +20,29 @@ function answered(one: Plugged): string {
   return one.answers.length > SHOWN ? `${shown} ${pc.dim(`… ${one.answers.length} in all`)}` : shown;
 }
 
-/** What plugs in where: the registries by name, then each frond's ports, seams, middlewares and steps. */
-export default class PointsCommand {
+/** A frond's ports first, then those with a subject — `Repository<Post>`, `Rest<PostHandler>` — and where it is served before both. */
+const rankOf = (one: Plugged): number => (one.point === 'served at' ? 0 : one.point.includes('<') ? 2 : 1);
+
+/** What answers each port, frond by frond, and each registry by name. */
+export default class PortsCommand {
   constructor(private app: App, private ui: Ui) {}
 
   async run(raw: Record<string, unknown>) {
-    const points = (await createAppRunner(this.app)(
-      { address: 'points', op: 'execute' },
+    const ports = (await createAppRunner(this.app)(
+      { address: 'ports', op: 'execute' },
       { params: {}, query: {}, input: raw, state: {} },
     )) as Plugged[];
 
-    if (machineWanted(raw)) return printMachine(points);
+    if (machineWanted(raw)) return printMachine(ports);
 
     const line = (one: Plugged) => `${one.point}${one.subject ? ` ${pc.dim(one.subject)}` : ''}  ${pc.dim('·')}  ${answered(one)}`;
-    const byName = points.filter((one) => one.by === 'name' && !one.frond);
+    const byName = ports.filter((one) => one.by === 'name' && !one.frond);
     this.ui.note(byName.map(line).join('\n'), 'By name');
 
-    const fronds = [...new Set(points.flatMap((one) => (one.frond ? [one.frond] : [])))];
+    const fronds = [...new Set(ports.flatMap((one) => (one.frond ? [one.frond] : [])))];
     for (const frond of fronds) {
-      this.ui.note(points.filter((one) => one.frond === frond).map(line).join('\n'), `Frond ${frond}`);
+      const answering = ports.filter((one) => one.frond === frond).sort((one, other) => rankOf(one) - rankOf(other));
+      this.ui.note(answering.map(line).join('\n'), `Frond ${frond}`);
     }
   }
 }
