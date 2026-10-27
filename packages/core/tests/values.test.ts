@@ -5,7 +5,7 @@
 import { describe, it, expect } from 'vitest';
 import { createContainer, type Container } from '@fougere/container';
 import { entity, number, primary, text, url, type SchemaView } from '@fougere/schema';
-import { createApp, frond, type ValueSources } from '../src/index.js';
+import { createApp, Env, frond, type ValueSources } from '../src/index.js';
 import { Repository } from '../src/prefab/Repository.js';
 import { op } from './contract.js';
 
@@ -32,6 +32,24 @@ const storageFactory = () => ({}) as never;
 
 const booting = (values: ValueSources, declared: Parameters<typeof frond>[1] = { entities: [Meili], providers: [{ ctor: Search, deps: ['Meili'] }] }) =>
   createApp({ createContainer, storageFactory, values, fronds: [frond('search', declared)] });
+
+/** A link in front of where Meili is read — the key from a vault, the rest as the source holds it. */
+class MeiliFromVault implements Partial<Env<Meili>> {
+  constructor(private inner: Env<Meili>) {}
+  async read() { return { ...await this.inner.read(), key: 'from-vault' }; }
+}
+
+describe('a value read through a link', () => {
+  it('is what the link answered, judged and completed like any value', async () => {
+    await using app = await booting(valuesOf({ meili: { url: 'https://meili.test' } }), {
+      entities: [Meili],
+      providers: [{ ctor: Search, deps: ['Meili'] }, { ctor: MeiliFromVault, deps: ['Env<Meili>'], implements: ['Env<Meili>'] }],
+    });
+    const search = app.container.resolve<Container>('frond:search').resolve<Search>('Search');
+
+    expect(search.meili).toEqual({ url: 'https://meili.test', key: 'from-vault', timeoutMs: 2000 });
+  });
+});
 
 describe('a value held by a source', () => {
   it('is injected as it is, its defaults filled', async () => {

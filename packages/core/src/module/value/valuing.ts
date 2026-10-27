@@ -3,6 +3,7 @@ import type { Container } from '@fougere/container';
 import { BootRefusal } from '../../BootRefusal.js';
 import type { FrondDescriptor } from '../../descriptor/FrondDescriptor.js';
 import type { ValueSources } from './ValueSources.js';
+import { envKeyOf, type Env } from './Env.js';
 
 /** What this member reads of the app, and the slot of the ascent it fills. */
 interface Valuing {
@@ -32,7 +33,9 @@ export function valuing(values?: ValueSources): Valuing {
         for (const { name, entityClass } of frond.entities) {
           if (values.sourceOf(name) === undefined) continue;
           const fields = entityClass.getFields();
-          const read = await values.read(name, entityClass);
+          // Through what stands in front of it, when anything does: the source's read is the innermost.
+          const env = scope.has(envKeyOf(entityClass.name)) ? scope.resolve<Env<unknown>>(envKeyOf(entityClass.name)) : undefined;
+          const read = env ? await env.read() as Record<string, unknown> | undefined : await values.read(name, entityClass);
           const judged = InputValidator.of(fields).validate(read ?? {});
           if (!judged.success) {
             refusals.push(...judged.errors.map((error) =>

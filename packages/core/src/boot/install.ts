@@ -3,6 +3,7 @@ import type { Container } from '@fougere/container';
 import type { ModuleExtension } from './Extension.js';
 import { aroundCalls, standsAroundCalls, theRest } from './calls.js';
 import { registerDoorPorts, reserving, standingAtDoors } from './doors.js';
+import { envKeyOf } from '../module/value/Env.js';
 import type { Plugged } from '../wire/Plugged.js';
 import type { AnswerStep } from '../dispatch/AnswerStep.js';
 import type { StateShape } from '../wire/StateShape.js';
@@ -661,6 +662,11 @@ export async function installFrond(frond: FrondDescriptor, assembly: Assembly): 
   const reserve = reserving(frond, scope, assembly.refused);
   reserve('Dispatcher', theRest, 'the rest of every call, which a link around the calls stands in front of');
   registerDoorPorts(frond, scope, reserve);
+  // What a source holds for each value, which a link declaring `implements Partial<Env<Meili>>` stands in front of.
+  const { values } = options;
+  for (const { name, entityClass } of frond.entities) {
+    if (values?.sourceOf(name) !== undefined) scope.registerValue(envKeyOf(entityClass.name), { read: () => values.read(name, entityClass) });
+  }
   const ports = { ...options.ports, ...frond.ports };
   const declared = registerProviders(frond, scope, ports, assembly.boundPorts, assembly.refused, ownLogger, frondLog, assembly.plugged);
   // An ancestor's links stand OUTSIDE this frond's own; a seam has no container key to inherit through.

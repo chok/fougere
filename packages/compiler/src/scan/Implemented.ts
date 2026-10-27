@@ -37,8 +37,8 @@ export async function parseImplements(filePath: string, projectRoot?: string): P
 
 /**
  * The port a class EXTENDS with a type argument — `extends Rest<NoteHandler>` — which the prototype
- * reads as `Rest` alone, so the scan states it whole: `Rest<NoteHandler>`. Core's own bases are not
- * ports but seats (`Repository<Post>`, `Collect<User>`), read by `parseSeat`.
+ * reads as `Rest` alone, so the scan states it whole: `Rest<NoteHandler>`. Four of core's bases are not
+ * ports but seats (`Repository<Post>`, `Collect<User>`), read by `parseSeat`; `Env<Meili>` is a port.
  */
 export async function parseExtendedPort(filePath: string, projectRoot?: string): Promise<Implemented | undefined> {
   const typescript = await loadTS();
@@ -48,10 +48,14 @@ export async function parseExtendedPort(filePath: string, projectRoot?: string):
   const subject = subjectIn(typescript, base?.typeArguments);
   if (!base || !subject || !typescript.isIdentifier(base.expression)) return undefined;
   const symbol = resolved(typescript, checker, base.expression);
-  if (symbol?.declarations?.some((one) => CORE.test(one.getSourceFile().fileName))) return undefined;
+  const seat = SEATS.has(base.expression.text) && symbol?.declarations?.some((one) => CORE.test(one.getSourceFile().fileName));
+  if (seat) return undefined;
 
   return { name: keyOf(base.expression.text, subject), isClass: isClass(typescript, checker, base.expression), partial: false };
 }
+
+/** Core's bases that SEAT a class on its entity rather than being a port — read by `parseSeat`. */
+const SEATS = new Set(['Repository', 'Collect', 'Present', 'Mirror']);
 
 /** Where core declares its own bases — a project's class of the same name is not one. */
 const CORE = /[\\/](core[\\/](src|dist)|@fougere[\\/]core)[\\/]/;

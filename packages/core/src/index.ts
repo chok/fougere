@@ -148,6 +148,7 @@ export type { Diagnostic } from './diagnostic.js';
 export { BootRefusal } from './BootRefusal.js';
 export { default as FougereValue, FOUGERE_VALUE } from './module/value/FougereValue.js';
 export type { ValueSources } from './module/value/ValueSources.js';
+export { Env } from './module/value/Env.js';
 export { valuing } from './module/value/valuing.js';
 export { DEFAULT_CONVENTIONS, frondDirsOf, frondPackage, providerDirsOf, resolveConventions, type Conventions } from './Conventions.js';
 export { type ConventionsInput } from './ConventionsInput.js';
