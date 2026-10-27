@@ -1,5 +1,8 @@
 import { type ProviderEntry } from './ProviderEntry.js';
 
+/** `Rest<NoteHandler>`, spelled as the type — the key no class name can take, since none holds a `<`. */
+export const subjectKeyOf = (port: string, subject: string): string => `${port}<${subject}>`;
+
 /**
  * Port class name → every concrete class below it, in scan order.
  *
@@ -39,8 +42,11 @@ export function basesOf(
  */
 function portsOf(provider: ProviderEntry, answers: (name: string) => boolean): string[] {
   const declared = (provider.implements ?? []).filter((port) => provider.deps.includes(port));
+  // `extends Rest<NoteHandler>` reads as `Rest` on the prototype and is stated whole: it stands in
+  // front of that one, and the bare base is not its port.
+  const subjectOf = (port: string) => declared.some((key) => key.startsWith(`${port}<`));
 
-  return [...declared, ...ancestorsOf(provider, answers).filter((port) => !declared.includes(port))];
+  return [...declared, ...ancestorsOf(provider, answers).filter((port) => !declared.includes(port) && !subjectOf(port))];
 }
 
 function ancestorsOf(provider: ProviderEntry, answers: (name: string) => boolean): string[] {

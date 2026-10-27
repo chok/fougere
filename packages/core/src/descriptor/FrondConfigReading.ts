@@ -2,7 +2,6 @@ import type { FrondConfig } from '../FrondConfig.js';
 import type { EntityEntry } from './EntityEntry.js';
 import type { FrondDescriptor } from './FrondDescriptor.js';
 import type { HandlerEntry } from './HandlerEntry.js';
-import type { MiddlewareEntry } from './MiddlewareEntry.js';
 
 /**
  * What a frond's `frond.config.ts` says about its descriptor — read the same way whether the scan
@@ -41,14 +40,6 @@ export class FrondConfigReading {
     for (const handler of handlers) handler.exposed = (handler.ctor as { __exposed?: boolean }).__exposed !== false;
   }
 
-  /** The middlewares outside in, as `middlewares:` lists them — what it does not list keeps its place, last. */
-  inOrder(middlewares: MiddlewareEntry[]): MiddlewareEntry[] {
-    const order = this.config?.middlewares;
-    if (!order) return middlewares;
-    const rank = (one: MiddlewareEntry) => (order.includes(one.name) ? order.indexOf(one.name) : order.length);
-
-    return [...middlewares].sort((one, other) => rank(one) - rank(other));
-  }
 
   /** What the file says of the frond as a whole, spread onto its descriptor. */
   members(): Pick<FrondDescriptor, 'pipes' | 'surfaces' | 'reads' | 'ports' | 'protocols' | 'operationsOverrides'> {

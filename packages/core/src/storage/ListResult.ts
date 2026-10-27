@@ -1,5 +1,4 @@
-/** What a type says of a list a storage answered, and a plain array never says — it exists in no value. */
-export declare const listed: unique symbol;
+import type { listed } from '../wire/Listed.js';
 
 /**
  * Result of list() — an array, carrying what the storage said about the rest of the rows. Its type

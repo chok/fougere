@@ -1,4 +1,5 @@
 import type { Subject } from './Subject.js';
+import type { DeclaredAnswer } from './DeclaredAnswer.js';
 /** A discovered provider — a class under `services/` or `repositories/`, injected by type. */
 export interface ProviderEntry extends Subject {
   /**
@@ -20,4 +21,10 @@ export interface ProviderEntry extends Subject {
    * `abstract`, so only the source can say it. With the port among its `deps`, it is a link.
    */
   implements?: string[];
+  /**
+   * What a link at a door bound to a handler — `Rest<PostHandler>` — may answer in an op's place, by op,
+   * published on the op's contract at that door. The scan reads it off the return types; a `frond()`
+   * states it.
+   */
+  answers?: Record<string, DeclaredAnswer[]>;
 }

@@ -1,3 +1,4 @@
+import { subjectKeyOf } from './bases.js';
 import { RouteAddress } from '../wire/RouteAddress.js';
 import { Protocols } from '../Protocol.js';
 import type { FougereOperationProtocols } from '../FougereOperationProtocols.js';
@@ -43,16 +44,22 @@ export class OperationOverrides {
     return Object.fromEntries(Object.entries(entry).filter(([key]) => Protocols.find(key))) as FougereOperationProtocols;
   }
 
-  /** The answers this frond's door middlewares declare for one op of the handler they stand around. */
+  /**
+   * The answers this frond's links at a door declare for one op of the handler they stand at — a link
+   * of `Rest<PostHandler>` stands at `PostHandler`'s routes, and the protocol says which door `Rest` is.
+   */
   private declaredAt(address: string, operation: string): { door: string; answers: DeclaredAnswer[] }[] {
-    return this.frond.middlewares.flatMap((middleware) => {
-      const { door, handler } = middleware.ctor as { door?: string; handler?: abstract new (...args: never[]) => unknown };
-      const answers = middleware.answers?.[operation];
-      if (!door || !handler || !answers) return [];
-      const stands = this.frond.handlers.some((one) =>
-        one.address === address && (one.ctor === handler || one.ctor.prototype instanceof handler));
+    const handlers = this.frond.handlers.filter((one) => one.address === address).map((one) => one.name);
 
-      return stands ? [{ door, answers }] : [];
+    return Protocols.entries.flatMap(([door, type]) => {
+      if (!type.port) return [];
+      const keys = new Set(handlers.map((handler) => subjectKeyOf(type.port!, handler)));
+
+      return this.frond.providers.flatMap((provider) => {
+        const answers = provider.answers?.[operation];
+
+        return answers && provider.implements?.some((key) => keys.has(key)) ? [{ door, answers }] : [];
+      });
     });
   }
 

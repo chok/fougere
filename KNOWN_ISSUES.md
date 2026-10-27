@@ -155,7 +155,7 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
   2026-10-19 and served `/`, `/docs`, `/blog`; the call answered `The app refused to start` on a database
   nobody had migrated, which is what the compose's `migrate` service is for. The runtime stage's needs
   were measured apart: `.output`, `.data`, `posts/` and `better-sqlite3`, alone, boot and answer.
-- **A door middleware's declared answer with an open status is ignored, not refused** —
+- **A door link's declared answer with an open status is ignored, not refused** —
   `parseDeclaredAnswers` (`compiler/src/scan/handler-parser.ts`) keeps a member whose `status` is a
   number LITERAL and skips `status: number`, which is also what `next()` hands back
   (`ResponseResult`). Telling a `RestResponse<number>` written on purpose from it would need the

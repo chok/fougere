@@ -35,7 +35,7 @@ export function dependencyCycles(container: Container, fronds: readonly FrondDes
 
 function cycleRefused(path: string[], frond: FrondDescriptor | undefined): Diagnostic {
   const [first, second] = path;
-  const declared = frond && [...frond.handlers, ...frond.providers, ...frond.presenters, ...frond.collectors, ...frond.middlewares]
+  const declared = frond && [...frond.handlers, ...frond.providers, ...frond.presenters, ...frond.collectors]
     .find(({ ctor }) => ctor.name === first);
 
   return {

@@ -1,5 +1,5 @@
 /**
- * What a door middleware bound to a handler may answer in an op's place, read off its return types:
+ * What a link at a handler's door — `Line<NoteHandler>` — may answer in an op's place, read off its return types:
  * every member whose `status` is a literal, with its headers' keys — behind an alias too. The scan
  * fills the field a `frond()` states by hand; it never makes it exist.
  */
@@ -9,10 +9,12 @@ import { emitStatement, scanProject } from '../src/index.js';
 
 const root = join(import.meta.dirname, 'fixtures-door-answers');
 
-describe('a door middleware\'s declared answers', () => {
+describe('a door link\'s declared answers', () => {
   it('are read off each method, a literal status at a time, and the answer next() hands back is not one', async () => {
     const scan = await scanProject(root);
-    const gate = scan.fronds.find((frond) => frond.name === 'desk')?.middlewares.find((one) => one.name === 'NoteGate');
+    const gate = scan.fronds.find((frond) => frond.name === 'desk')?.providers.find((one) => one.name === 'NoteGate');
+
+    expect(gate?.implements).toEqual(['Line<NoteHandler>']);
 
     expect(gate?.answers).toEqual({
       findById: [{ status: 301, headers: ['location'] }, { status: 308, headers: ['location'] }],

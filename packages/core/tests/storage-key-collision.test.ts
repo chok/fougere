@@ -19,7 +19,7 @@ function frondWith(provider: Partial<ProviderEntry>): FrondDescriptor {
     name: 'blog',
     source: { path: '/blog' } as FrondDescriptor['source'],
     providers: [{ ctor: PostCatalog, deps: [], filePath: 'provider.ts', ...provider } as ProviderEntry],
-    entities: [], handlers: [], presenters: [], collectors: [], seeds: [], middlewares: [],
+    entities: [], handlers: [], presenters: [], collectors: [], seeds: [],
   };
 }
 

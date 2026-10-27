@@ -6,7 +6,6 @@ import type { EntityEntry } from './EntityEntry.js';
 import type { HandlerEntry } from './HandlerEntry.js';
 import type { PresenterEntry } from './PresenterEntry.js';
 import type { CollectorEntry } from './CollectorEntry.js';
-import type { MiddlewareEntry } from './MiddlewareEntry.js';
 import type { SeedEntry } from './SeedEntry.js';
 import type { FrondSource } from './FrondSource.js';
 import type { ExtensionEntry } from './ExtensionEntry.js';
@@ -27,7 +26,6 @@ export interface FrondDescriptor extends Pick<FrondConfig, 'pipes' | 'surfaces' 
   presenters: PresenterEntry[];
   collectors: CollectorEntry[];
   seeds: SeedEntry[];
-  middlewares: MiddlewareEntry[];
   /** What this frond mounts on the process that serves it. Absent when it declares none. */
   extensions?: ExtensionEntry[];
   /**

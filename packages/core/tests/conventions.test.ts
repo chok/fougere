@@ -30,7 +30,7 @@ describe('resolveConventions', () => {
   /** `vocabulary` leads, and the order is load order: an entity may name what it registers. */
   it('derives the frond vocabulary from the names in force', () => {
     expect(frondDirsOf(resolveConventions(conventions)))
-      .toEqual(['vocabulary', 'models', 'usecases', 'presenters', 'collectors', 'seeds', 'middlewares', 'rules', 'versions', 'extensions', 'helpers', 'repositories']);
+      .toEqual(['vocabulary', 'models', 'usecases', 'presenters', 'collectors', 'seeds', 'rules', 'versions', 'extensions', 'helpers', 'repositories']);
   });
 
   it('reads one directory once when two roles name the same one', () => {

@@ -35,7 +35,6 @@ function declaredIn(frond: FrondDescriptor): Set<string> {
   return new Set([
     ...frond.providers.map((one) => one.ctor.name),
     ...frond.handlers.map((one) => one.ctor.name),
-    ...frond.middlewares.map((one) => one.ctor.name),
   ]);
 }
 
@@ -44,7 +43,6 @@ export function emitNames(scan: ScanResult): string {
   const entities = new Set<string>();
   const handlers = new Set<string>();
   const providers = new Set<string>();
-  const middlewares = new Set<string>();
   const ports = new Map<string, Set<string>>();
 
   for (const frond of scan.fronds) {
@@ -58,7 +56,6 @@ export function emitNames(scan: ScanResult): string {
     }
     for (const handler of frond.handlers) handlers.add(handler.ctor.name);
     for (const provider of frond.providers) providers.add(provider.ctor.name);
-    for (const middleware of frond.middlewares) middlewares.add(middleware.ctor.name);
 
     const declared = declaredIn(frond);
     for (const [port, answering] of basesOf(frond.providers, (name) => declared.has(name))) {
@@ -79,7 +76,6 @@ export function emitNames(scan: ScanResult): string {
     `    entity: ${union(entities)};`,
     `    handler: ${union(handlers)};`,
     `    provider: ${union(providers)};`,
-    `    middleware: ${union(middlewares)};`,
     '  }',
     '',
     '  /** Each port, and what extends it — so a config cannot answer one with the other. */',

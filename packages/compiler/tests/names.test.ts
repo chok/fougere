@@ -16,16 +16,16 @@ describe('the names file', () => {
   it('writes every kind the config can name', async () => {
     const written = emitNames(await scanProject(at('fixtures-refusals')));
 
-    for (const kind of ['frond', 'entity', 'handler', 'provider', 'middleware']) {
+    for (const kind of ['frond', 'entity', 'handler', 'provider']) {
       expect(written).toMatch(new RegExp(`^\\s+${kind}: `, 'm'));
     }
   });
 
   /** A kind with nothing in it says `never`, so a config naming one is refused rather than free. */
   it('says never for a kind the project declares nothing of', async () => {
-    const written = emitNames(await scanProject(at('fixtures-refusals')));
+    const written = emitNames(await scanProject(at('fixtures-config-contract')));
 
-    expect(written).toMatch(/middleware: never;/);
+    expect(written).toMatch(/provider: never;/);
   });
 
   /**

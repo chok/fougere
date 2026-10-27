@@ -32,7 +32,7 @@ function frond(names: string[]): FrondDescriptor {
   return {
     name: 'blog',
     source: { path: '/blog' } as FrondDescriptor['source'],
-    providers: [], handlers: [], presenters: [], collectors: [], middlewares: [],
+    providers: [], handlers: [], presenters: [], collectors: [],
     entities,
     seeds,
   };

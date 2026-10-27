@@ -1,5 +1,5 @@
-import { DEFAULT_CONVENTIONS, DoorMiddleware, RouteAddress, frondDirsOf, frondPackage, providerDirsOf, resolveConventions, togetherKeyOf, type Conventions, type ConventionsInput, type Diagnostic, type ScanResult } from '@fougere/core';
-import { Fronds, addressOf, awaitKeyOf, cardinalityOf, computeBindingPlan, opsOf, emitKeyOf, getPresenterFields, builtOn, outputOf, repositoryKeyOf, seated, seatsOf, storageKeyOf, targetOf, type CollectorEntry, type EntityEntry, type FrondDescriptor, type HandlerEntry, type MiddlewareEntry, type OperationContract, type OperationsMap, type PresenterEntry, type ProviderEntry, type SeedEntry, type TypeRef, viewsOf, isExtension, FrondConfigReading, Term, type ExtensionEntry, type VocabularyEntry } from '@fougere/core/descriptor';
+import { DEFAULT_CONVENTIONS, RouteAddress, frondDirsOf, frondPackage, providerDirsOf, resolveConventions, togetherKeyOf, type Conventions, type ConventionsInput, type Diagnostic, type ScanResult } from '@fougere/core';
+import { Fronds, addressOf, awaitKeyOf, cardinalityOf, computeBindingPlan, opsOf, emitKeyOf, getPresenterFields, builtOn, outputOf, repositoryKeyOf, seated, seatsOf, storageKeyOf, targetOf, type CollectorEntry, type EntityEntry, type FrondDescriptor, type HandlerEntry, type OperationContract, type OperationsMap, type PresenterEntry, type ProviderEntry, type SeedEntry, type TypeRef, viewsOf, isExtension, FrondConfigReading, Term, type ExtensionEntry, type VocabularyEntry } from '@fougere/core/descriptor';
 import { frondNamesOf, getModuleLoader, loadFrondConfig } from '@fougere/core/node';
 import type { FrondConfig, ErrorCode } from '@fougere/core';
 import type { Param, Signature } from '@fougere/core/descriptor';
@@ -17,7 +17,7 @@ import {
   parseDeclaredAnswers,
 } from './handler-parser.js';
 import { parseAbstract } from './Abstract.js';
-import { parseImplements } from './Implemented.js';
+import { keyOf, parseExtendedPort, parseImplements } from './Implemented.js';
 import { parseSeat } from './Seat.js';
 import { resetTypePrograms, seedTypeProgram } from './TypeProgram.js';
 
@@ -193,9 +193,14 @@ function depKeyOf(type: TypeRef): string {
   // asked for the key `RecordStorage`, which nothing registers. A shapeless row names no
   // subject: the key is the seam itself, which is what a class standing in front of every
   // entity's storage asks for.
-  if (!target || target === 'Record') return type.name;
+  if (target && target !== 'Record') return storageKeyOf(target);
 
-  return storageKeyOf(target);
+  // Any other port with a subject — `Rest<NoteHandler>`, `Env<Meili>` — is keyed as it is written. A
+  // class extending or implementing the same type declares the same key (`Implemented.ts`, `keyOf`).
+  const [only] = type.generics ?? [];
+  if (type.generics?.length === 1 && only && only.name !== 'Record') return keyOf(type.name, only.name);
+
+  return type.name;
 }
 
 /** `'[Account, Ledger]'` → `['Account', 'Ledger']`. */
@@ -244,12 +249,13 @@ async function toProvider(filePath: string): Promise<ProviderEntry> {
   const deps = await depsOf(filePath);
 
   const stated = await implementsOf(filePath);
-  const ports = stated.filter((one) => one.isClass);
+  const extended = await parseExtendedPort(filePath);
+  const ports = [...stated.filter((one) => one.isClass), ...(extended?.isClass ? [extended] : [])];
 
   // A class that implements a port AND asks for it stands in front of it — a link. Implementing
   // one without asking for it is legal TypeScript and answers nothing, so it is said rather than
   // refused: only the author knows whether a port was meant.
-  for (const { name: port, partial } of ports.filter((one) => !deps.includes(one.name))) {
+  for (const { name: port, partial } of stated.filter((one) => one.isClass && !deps.includes(one.name))) {
     record({
       severity: 'warning',
       code: 'port-implemented-not-extended',
@@ -263,6 +269,9 @@ async function toProvider(filePath: string): Promise<ProviderEntry> {
     });
   }
   const links = ports.filter((one) => deps.includes(one.name)).map((one) => one.name);
+  // A link at a handler's door — `Rest<PostHandler>` — may answer in an op's place: what its methods'
+  // return types declare is published with the op, the field a `frond()` states by hand.
+  const answers = links.some((link) => link.includes('<')) ? Object.fromEntries(await parseDeclaredAnswers(filePath)) : {};
 
   // `Repository<Post>` names what the class is built on where TypeScript erases it, so the scan
   // reads it and the boot seats the class on it, handing it the rows after its own dependencies.
@@ -279,6 +288,7 @@ async function toProvider(filePath: string): Promise<ProviderEntry> {
     filePath,
     ...(await parseAbstract(filePath) ? { abstract: true as const } : {}),
     ...(links.length > 0 ? { implements: links } : {}),
+    ...(Object.keys(answers).length > 0 ? { answers } : {}),
   };
 }
 
@@ -668,103 +678,6 @@ async function toCollectorEntry(filePath: string): Promise<CollectorEntry | null
   return { typeName, ctor, deps, filePath, ...(refuses?.length ? { refuses } : {}), ...(collecting?.length ? { collecting } : {}) };
 }
 
-/**
- * Two middlewares of one frond stand one inside the other, and the directory they were read from is
- * no order — the same reason a port refuses two realizations: whichever won would depend on the
- * order files were listed. `middlewares:` in `frond.config.ts` states it, outside in.
- */
-/** Says what the order leaves unsaid; the order itself is `FrondConfigReading.inOrder`'s. */
-function inStatedOrder(middlewares: MiddlewareEntry[], stated: readonly string[] | undefined): MiddlewareEntry[] {
-  const named = middlewares.map((one) => one.name);
-  if (!stated) {
-    if (middlewares.length > 1) {
-      record({
-        severity: 'blocking',
-        code: 'middlewares-unordered',
-        filePath: middlewares[0]!.filePath,
-        subject: named.join(', '),
-        message: `${named.join(' and ')} are both middlewares of this frond, in no set order. `
-          + `Give the order in frond.config.ts, outermost first: middlewares: [${named.map((one) => `'${one}'`).join(', ')}].`,
-      });
-    }
-
-    return middlewares;
-  }
-
-  const unlisted = middlewares.filter((one) => !stated.includes(one.name));
-  for (const one of unlisted) {
-    record({
-      severity: 'blocking',
-      code: 'middlewares-unlisted',
-      filePath: one.filePath,
-      subject: one.name,
-      message: `${one.name} is in middlewares/ but not in \`middlewares:\` (${stated.join(', ')}). `
-        + 'Add it to `middlewares:` in frond.config.ts.',
-    });
-  }
-
-  return middlewares;
-}
-
-/**
- * A class in `middlewares/` extending a door's base (`RestMiddleware()`). Anything else there runs
- * around nothing, which is said rather than left silent: what stands around every call is a link in
- * front of `Dispatcher`, a service like any other.
- */
-async function toMiddlewareEntry(filePath: string, projectRoot?: string): Promise<MiddlewareEntry | null> {
-  const ctor = await loadClass(filePath);
-  if (!(ctor.prototype instanceof DoorMiddleware)) {
-    record({
-      severity: 'warning',
-      code: 'middleware-not-a-door',
-      filePath,
-      subject: ctor.name,
-      message: `${ctor.name} is in middlewares/ but extends no door's base, so it never runs. What stands around every `
-        + `call is a link: \`class ${ctor.name} implements Partial<Dispatcher>\`, asking for \`inner: Dispatcher\`, in services/.`,
-    });
-
-    return null;
-  }
-  if (ctor.prototype instanceof DoorMiddleware && !(ctor as unknown as typeof DoorMiddleware).door) {
-    record({
-      severity: 'blocking',
-      code: 'door-middleware-without-door',
-      filePath,
-      subject: ctor.name,
-      message: `${ctor.name} extends DoorMiddleware, which stands at no door. Extend the base the door's package gives — `
-        + '`class ' + ctor.name + ' extends RestMiddleware()` from @fougere/adapter-rest.',
-    });
-
-    return null;
-  }
-  // `abstract` leaves nothing at runtime, so a class that never compiled — a misspelled `around`
-  // run without a type check — would be handed every call and fail on each one.
-  if (typeof (ctor.prototype as { around?: unknown }).around !== 'function') {
-    record({
-      severity: 'blocking',
-      code: 'middleware-without-around',
-      filePath,
-      subject: ctor.name,
-      message: `${ctor.name} extends a door's base but has no \`around(received, next)\` method.`,
-    });
-
-    return null;
-  }
-  const deps = await depsOf(filePath);
-  // Bound to a handler, it may answer in an op's place: what its return types declare is published
-  // with the op — the same field a `frond()` states by hand.
-  const answers = ctor.prototype instanceof DoorMiddleware && (ctor as unknown as typeof DoorMiddleware).handler
-    ? Object.fromEntries(await parseDeclaredAnswers(filePath, projectRoot))
-    : {};
-
-  return {
-    name: ctor.name,
-    ctor,
-    deps,
-    filePath,
-    ...(Object.keys(answers).length > 0 && { answers }),
-  };
-}
 
 
 
@@ -772,7 +685,6 @@ async function scanFrond(frondPath: string, name: string, source: FrondDescripto
   const {
     entities: entitiesDir, handlers: handlersDir,
     presenters: presentersDir, collectors: collectorsDir, seeds: seedsDir,
-    middlewares: middlewaresDir,
   } = conventions.dirs;
   /** A convention directory, read by whoever knows the shape it holds. */
   const collect = async <T extends object>(
@@ -821,7 +733,6 @@ async function scanFrond(frondPath: string, name: string, source: FrondDescripto
   const presenters = await collect(presentersDir, toPresenterEntry);
   const seeds = await collect(seedsDir, toSeedEntry);
   const reading = new FrondConfigReading(frondConfig);
-  const middlewares = reading.inOrder(inStatedOrder(await collect(middlewaresDir, (f) => toMiddlewareEntry(f, projectRoot)), frondConfig?.middlewares));
   reading.markExposed(entities, handlers);
 
   return {
@@ -833,7 +744,6 @@ async function scanFrond(frondPath: string, name: string, source: FrondDescripto
     presenters,
     collectors,
     seeds,
-    middlewares,
     ...(extensions.length > 0 ? { extensions } : {}),
     ...reading.members(),
   };

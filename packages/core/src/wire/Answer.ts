@@ -1,4 +1,4 @@
-import type { listed } from '../storage/ListResult.js';
+import type { listed } from './Listed.js';
 import type { Page } from './Page.js';
 
 /**

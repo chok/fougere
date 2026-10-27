@@ -6,5 +6,4 @@
 What stands around a frond's calls is a link in front of `Dispatcher`: `class Wrote implements
 Partial<Dispatcher>`, asking for `inner: Dispatcher`, in `services/`, handed each call as its `Call`.
 Two are ordered by `ports: { Dispatcher: [...] }` in `frond.config.ts`, outside in. `Middleware`, the
-`middlewares:` order for calls and `middleware-not-extended` are gone; `middlewares/` holds a door's
-middlewares only, and a class left there standing at no door is warned `middleware-not-a-door`.
+`middlewares:` order and `middleware-not-extended` are gone.

@@ -51,7 +51,8 @@ export type Answering = <Received, Decoded, Answer>(door: Door<Received, Decoded
 /** A door middleware as the cycle runs it: the door it stands at, and its `around`. */
 export interface DoorAround {
   door: string;
-  around(received: unknown, next: () => Promise<unknown>): Promise<unknown>;
+  /** `refused` turns a failure into the door's answer — what a link at the door is handed instead of a throw. */
+  around(received: unknown, next: () => Promise<unknown>, refused: (failure: unknown) => unknown): Promise<unknown>;
 }
 
 /** What the cycle needs of the app: where a request is entered, who watches it, who stands around it. */
@@ -121,12 +122,12 @@ export function answerAt<Received, Decoded, Answer>(
     };
 
     // Outermost first: the first one stands around all the others. A refusal becomes the door's
-    // answer where it is thrown, so a middleware standing outside it still sees an answer.
+    // answer where it is thrown, so a link standing outside it still sees an answer.
     const standing = door.address ? (middlewaresAt?.(door.address) ?? []).filter((one) => one.door === door.name) : [];
     const through = standing.reduceRight<() => Promise<Answer>>(
       (next, one) => async () => {
         try {
-          return await one.around(received, next) as Answer;
+          return await one.around(received, next, refused) as Answer;
         } catch (failure) {
           return refused(failure);
         }

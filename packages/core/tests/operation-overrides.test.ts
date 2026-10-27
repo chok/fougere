@@ -33,7 +33,7 @@ const comment = handlerOf(CommentHandler, 'comment');
 const blog = (operationsOverrides: FrondDescriptor['operationsOverrides']): FrondDescriptor => ({
   name: 'blog',
   source: { path: '/app/fronds/blog', package: '@fronds/blog' },
-  providers: [], entities: [], handlers: [post, comment], presenters: [], collectors: [], seeds: [], middlewares: [],
+  providers: [], entities: [], handlers: [post, comment], presenters: [], collectors: [], seeds: [],
   operationsOverrides,
 });
 

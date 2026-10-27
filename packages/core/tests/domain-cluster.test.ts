@@ -19,7 +19,7 @@ function frond(entities: Record<string, unknown>): FrondDescriptor {
   return {
     name: 'blog',
     source: { path: '/blog' } as FrondDescriptor['source'],
-    providers: [], handlers: [], presenters: [], collectors: [], middlewares: [], seeds: [],
+    providers: [], handlers: [], presenters: [], collectors: [], seeds: [],
     entities: Object.entries(entities).map(([name, entityClass]) => ({ name, entityClass, filePath: `${name}.ts` })) as EntityEntry[],
   };
 }

@@ -4,7 +4,6 @@ import type { CollectorEntry } from './descriptor/CollectorEntry.js';
 import type { EntityEntry } from './descriptor/EntityEntry.js';
 import type { FrondDescriptor } from './descriptor/FrondDescriptor.js';
 import type { HandlerEntry } from './descriptor/HandlerEntry.js';
-import type { MiddlewareEntry } from './descriptor/MiddlewareEntry.js';
 import type { PresenterEntry } from './descriptor/PresenterEntry.js';
 import type { ProviderEntry } from './descriptor/ProviderEntry.js';
 import type { SeedEntry } from './descriptor/SeedEntry.js';
@@ -14,7 +13,6 @@ import { getPresenterFields } from './prefab/presenter.js';
 import type { OperationContract } from './wire/OperationContract.js';
 import type { ErrorCode } from './wire/ErrorCode.js';
 import type { DeclaredSubject } from './DeclaredSubject.js';
-import type { DeclaredAnswer } from './descriptor/DeclaredAnswer.js';
 import type { DeclaredHandler } from './DeclaredHandler.js';
 import type { Declared, Seating } from './Declared.js';
 import { seated, seatsOf } from './prefab/Repository.js';
@@ -87,8 +85,6 @@ export interface FrondDeclaration extends Pick<FrondConfig, 'pipes' | 'surfaces'
   collectors?: (Ctor | DeclaredSubject & Seating & { refuses?: ErrorCode[]; collecting?: ErrorCode[] })[];
   providers?: Declared[];
   seeds?: { entityName: string; data: SeedEntry['data'] }[];
-  /** What runs around this frond's operations, and around those of the fronds under it. */
-  middlewares?: (Ctor | DeclaredSubject & { answers?: Record<string, DeclaredAnswer[]> })[];
   /** The import scope this frond answers under. Defaults to the conventional one. */
   scope?: string;
   /** What `frond.config.ts` states — the third producer of an operation contract. */
@@ -189,6 +185,7 @@ export function frond(name: string, declared: FrondDeclaration = {}): FrondDescr
     filePath: fileOf(ctorOf(p)),
     ...(typeof p !== 'function' && p.abstract ? { abstract: true as const } : {}),
     ...(typeof p !== 'function' && p.implements?.length ? { implements: p.implements } : {}),
+    ...(typeof p !== 'function' && p.answers ? { answers: p.answers } : {}),
   }));
 
   const seeds: SeedEntry[] = (declared.seeds ?? []).map((s) => ({
@@ -197,13 +194,6 @@ export function frond(name: string, declared: FrondDeclaration = {}): FrondDescr
     filePath: fileOf(s.data),
   }));
 
-  const middlewares: MiddlewareEntry[] = (declared.middlewares ?? []).map((m) => ({
-    name: ctorOf(m).name,
-    ctor: ctorOf(m),
-    deps: depsOf(m),
-    filePath: fileOf(ctorOf(m)),
-    ...(typeof m !== 'function' && m.answers ? { answers: m.answers } : {}),
-  }));
 
   const config = new FrondConfigReading(declared.config);
   if (declared.config) config.markExposed(entities, handlers);
@@ -220,7 +210,6 @@ export function frond(name: string, declared: FrondDeclaration = {}): FrondDescr
     presenters,
     collectors,
     seeds,
-    middlewares: config.inOrder(middlewares),
     ...(declared.pipes ? { pipes: declared.pipes } : {}),
     ...(declared.ports ? { ports: declared.ports } : {}),
     ...(declared.surfaces ? { surfaces: declared.surfaces } : {}),

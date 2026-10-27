@@ -1,3 +1,4 @@
+import { answeringAtDoor, isDoorPort } from './doors.js';
 import { nameOf } from '../descriptor/FrondDescriptor.js';
 import { type ProviderEntry } from '../descriptor/ProviderEntry.js';
 import { basesOf } from '../descriptor/bases.js';
@@ -82,13 +83,16 @@ export function wrapping<T extends object>(
  */
 export function linkOf(link: ProviderEntry, port: string): ProviderEntry['ctor'] {
   const at = link.deps.indexOf(port);
-  if (!link.implements?.includes(port) || at < 0) return link.ctor;
+  const forwards = link.implements?.includes(port) === true && at >= 0;
+  const atDoor = isDoorPort(port);
+  if (!forwards && !atDoor) return link.ctor;
 
   const Link = link.ctor as unknown as new (...args: unknown[]) => object;
   const Forwarding = class extends Link {
     constructor(...args: unknown[]) {
       super(...args);
-      forward(this, args[at]);
+      if (forwards) forward(this, args[at]);
+      if (atDoor) answeringAtDoor(this);
     }
   };
   Object.defineProperty(Forwarding, 'name', { value: Link.name });

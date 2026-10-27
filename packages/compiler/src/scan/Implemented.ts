@@ -1,4 +1,5 @@
 /** What a scanned class declares it implements. */
+import type ts from '@typescript/typescript6';
 import { loadTS, checkedSourceOf, findDefaultClass } from './TypeProgram.js';
 
 /**
@@ -9,36 +10,73 @@ import { loadTS, checkedSourceOf, findDefaultClass } from './TypeProgram.js';
  * `AsyncDisposable`, is how a provider says its scope keeps it and closes it.
  */
 export async function parseImplements(filePath: string, projectRoot?: string): Promise<Implemented[]> {
-  const ts = await loadTS();
+  const typescript = await loadTS();
   const { source, checker } = checkedSourceOf(filePath, projectRoot);
   const cls = findDefaultClass(source);
   if (!cls?.heritageClauses) return [];
 
   const found: Implemented[] = [];
   for (const clause of cls.heritageClauses) {
-    if (clause.token !== ts.SyntaxKind.ImplementsKeyword) continue;
+    if (clause.token !== typescript.SyntaxKind.ImplementsKeyword) continue;
 
     for (const base of clause.types) {
       // `implements Partial<Payment>` names the port inside `Partial`: a link writes only what it changes.
-      const partial = ts.isIdentifier(base.expression) && base.expression.text === 'Partial';
+      const partial = typescript.isIdentifier(base.expression) && base.expression.text === 'Partial';
       const argument = partial ? base.typeArguments?.[0] : undefined;
-      const named = argument && ts.isTypeReferenceNode(argument) && ts.isIdentifier(argument.typeName)
-        ? argument.typeName
-        : base.expression;
-      if (!ts.isIdentifier(named)) continue;
+      const written = argument && typescript.isTypeReferenceNode(argument) && typescript.isIdentifier(argument.typeName)
+        ? { named: argument.typeName, subject: subjectIn(typescript, argument.typeArguments) }
+        : { named: base.expression, subject: subjectIn(typescript, base.typeArguments) };
+      if (!typescript.isIdentifier(written.named)) continue;
 
-      let symbol = checker.getSymbolAtLocation(named);
-      if (symbol && symbol.flags & ts.SymbolFlags.Alias) symbol = checker.getAliasedSymbol(symbol);
-
-      found.push({
-        name: named.text,
-        isClass: symbol?.declarations?.some((one) => ts.isClassDeclaration(one)) ?? false,
-        partial,
-      });
+      found.push({ name: keyOf(written.named.text, written.subject), isClass: isClass(typescript, checker, written.named), partial });
     }
   }
 
   return found;
+}
+
+/**
+ * The port a class EXTENDS with a type argument — `extends Rest<NoteHandler>` — which the prototype
+ * reads as `Rest` alone, so the scan states it whole: `Rest<NoteHandler>`. Core's own bases are not
+ * ports but seats (`Repository<Post>`, `Collect<User>`), read by `parseSeat`.
+ */
+export async function parseExtendedPort(filePath: string, projectRoot?: string): Promise<Implemented | undefined> {
+  const typescript = await loadTS();
+  const { source, checker } = checkedSourceOf(filePath, projectRoot);
+  const clause = findDefaultClass(source)?.heritageClauses?.find((one) => one.token === typescript.SyntaxKind.ExtendsKeyword);
+  const base = clause?.types[0];
+  const subject = subjectIn(typescript, base?.typeArguments);
+  if (!base || !subject || !typescript.isIdentifier(base.expression)) return undefined;
+  const symbol = resolved(typescript, checker, base.expression);
+  if (symbol?.declarations?.some((one) => CORE.test(one.getSourceFile().fileName))) return undefined;
+
+  return { name: keyOf(base.expression.text, subject), isClass: isClass(typescript, checker, base.expression), partial: false };
+}
+
+/** Where core declares its own bases — a project's class of the same name is not one. */
+const CORE = /[\\/](core[\\/](src|dist)|@fougere[\\/]core)[\\/]/;
+
+/**
+ * `Rest<NoteHandler>`, spelled as the type: a class name cannot hold a `<`, so no class of the frond
+ * can take the key by its name.
+ */
+export const keyOf = (port: string, subject: string | undefined): string => (subject ? `${port}<${subject}>` : port);
+
+/** The one type argument naming a subject — `NoteHandler` in `Rest<NoteHandler>`. */
+function subjectIn(typescript: typeof ts, args: readonly ts.TypeNode[] | undefined): string | undefined {
+  const [first] = args ?? [];
+
+  return args?.length === 1 && first && typescript.isTypeReferenceNode(first) && typescript.isIdentifier(first.typeName) ? first.typeName.text : undefined;
+}
+
+function resolved(typescript: typeof ts, checker: ts.TypeChecker, name: ts.Identifier): ts.Symbol | undefined {
+  const symbol = checker.getSymbolAtLocation(name);
+
+  return symbol && symbol.flags & typescript.SymbolFlags.Alias ? checker.getAliasedSymbol(symbol) : symbol;
+}
+
+function isClass(typescript: typeof ts, checker: ts.TypeChecker, name: ts.Identifier): boolean {
+  return resolved(typescript, checker, name)?.declarations?.some((one) => typescript.isClassDeclaration(one)) ?? false;
 }
 
 /** One `implements` clause, and what the checker says its name is. */

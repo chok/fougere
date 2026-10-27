@@ -1,11 +1,11 @@
-import { DoorMiddleware, ErrorCode, FougereError, toHttpError, type Door } from '@fougere/core';
+import { ErrorCode, FougereError, toHttpError, type Door } from '@fougere/core';
 import type { HttpCarrier, ResponseResult } from '@fougere/http';
 import type { RouteDefinition } from './routes/RouteDefinition.js';
 import type { Fields } from '@fougere/schema';
 
 /** What a host hands the REST door for one matched route — the body still to read, so the door reads it. */
 export interface RestRequest {
-  /** The op the route names — what a middleware bound to a handler stands around. */
+  /** The op the route names — what a link bound to a handler answers by a method of that name. */
   operation: string;
   headers: Headers;
   params: Record<string, string>;
@@ -15,7 +15,7 @@ export interface RestRequest {
 }
 
 /**
- * An answer a REST middleware may give in the op's place, declared in its return type — the status
+ * An answer a link at REST's door may give in the op's place, declared in its return type — the status
  * and the headers are what the contract reads, in the vocabulary of OpenAPI's `responses`.
  */
 export interface RestResponse<Status extends number, Headers extends Record<string, string> = Record<never, string>, Body = null>
@@ -25,37 +25,30 @@ export interface RestResponse<Status extends number, Headers extends Record<stri
   data: Body;
 }
 
-type HandlerClass = abstract new (...args: never[]) => unknown;
-
-/** A REST middleware standing around its whole frond: `class Powered extends RestMiddleware()`. */
-export function RestMiddleware(): abstract new () => DoorMiddleware<RestRequest, ResponseResult>;
 /**
- * A REST middleware standing around one handler's operations, one method per op it names:
- * `class PostRest extends RestMiddleware(PostHandler) { bySlug(request, next) { … } }`. An op it
- * names nothing for goes straight through.
+ * What stands at REST's door, the port its links stand in front of. `implements Partial<Rest>`, asking
+ * for `inner: Rest`, stands around every route of its frond; `extends Rest<NoteHandler>`, handing its
+ * `inner` to `super`, stands around that handler's routes alone, one method per op it names — an op it
+ * names nothing for goes straight through. Two are ordered by `ports: { Rest: [...] }`.
+ *
+ * Throwing before `inner.answer` refuses the request, which the door says in its own shape — before
+ * the body is read, since the door reads it inside.
+ *
+ * Documented: [surfaces](https://fougere.dev/docs/infra/surfaces).
  */
-export function RestMiddleware(handler: HandlerClass): new () => { around(request: RestRequest, next: () => Promise<ResponseResult>): Promise<ResponseResult> };
-export function RestMiddleware(handler?: HandlerClass): unknown {
-  if (!handler) {
-    abstract class AtRest extends DoorMiddleware<RestRequest, ResponseResult> {
-      static override readonly door = 'rest';
-    }
+export abstract class Rest<H = never> {
+  declare private readonly standsAt?: H;
 
-    return AtRest;
+  constructor(protected readonly inner?: Rest<H>) {}
+
+  /** The request, answered by the method named after its op when there is one, by what comes next otherwise. */
+  answer(request: RestRequest): Promise<ResponseResult> {
+    const own = (this as unknown as Record<string, unknown>)[request.operation];
+    if (typeof own === 'function') return own.call(this, request) as Promise<ResponseResult>;
+    if (!this.inner) throw new Error(`${this.constructor.name} extends Rest and handed no inner to super: write super(inner).`);
+
+    return this.inner.answer(request);
   }
-
-  abstract class AtHandler extends DoorMiddleware<RestRequest, ResponseResult> {
-    static override readonly door = 'rest';
-    static override readonly handler = handler;
-
-    around(request: RestRequest, next: () => Promise<ResponseResult>): Promise<ResponseResult> {
-      const own = (this as unknown as Record<string, unknown>)[request.operation];
-
-      return typeof own === 'function' ? own.call(this, request, next) : next();
-    }
-  }
-
-  return AtHandler;
 }
 
 /** What a route's op is called with. */

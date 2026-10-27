@@ -21,7 +21,7 @@ export function unregistered(
   for (const frond of fronds) {
     if (!container.has(`frond:${frond.name}`)) continue;
     const scope = container.resolve<Container>(`frond:${frond.name}`);
-    const declared = [...frond.handlers, ...frond.providers, ...frond.presenters, ...frond.collectors, ...frond.middlewares];
+    const declared = [...frond.handlers, ...frond.providers, ...frond.presenters, ...frond.collectors];
     for (const { ctor, deps, filePath } of declared) {
       for (const missing of deps) {
         if (scope.has(missing) || HOST_PORTS.has(missing) || facadeServedRemotely(missing)) continue;

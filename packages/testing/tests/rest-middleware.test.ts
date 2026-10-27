@@ -1,10 +1,10 @@
 /**
- * A frond's REST middleware stands around its REST requests and no other: it reads the headers
+ * A link at a frond's REST door stands around its REST requests and no other: it reads the headers
  * before the body is read, refuses by throwing, and decorates the answer — and a call reaching the
  * same op through JSON-RPC never meets it.
  */
 import { describe, expect, it } from 'vitest';
-import { openApiOf, RestMiddleware, type ResponseResult, type RestRequest, type RestResponse } from '@fougere/adapter-rest';
+import { openApiOf, Rest, type ResponseResult, type RestRequest, type RestResponse } from '@fougere/adapter-rest';
 import { configureFougere, tableOf, useFougereApp } from '@fougere/app';
 import { answered, called } from './web.js';
 import { createContainer } from '@fougere/container';
@@ -17,30 +17,33 @@ class NoteHandler {
   write(title: string): Note { return { id: 'n1', title } as Note; }
 }
 
-class Powered extends RestMiddleware() {
-  async around(_request: RestRequest, next: () => Promise<ResponseResult>): Promise<ResponseResult> {
-    const answer = await next();
+class Powered implements Partial<Rest> {
+  constructor(private inner: Rest) {}
+  async answer(request: RestRequest): Promise<ResponseResult> {
+    const answer = await this.inner.answer(request);
 
     return { ...answer, headers: { ...answer.headers, 'x-frond': 'desk' } };
   }
 }
 
-class UploadLimit extends RestMiddleware() {
-  async around(request: RestRequest, next: () => Promise<ResponseResult>): Promise<ResponseResult> {
+class UploadLimit implements Partial<Rest> {
+  constructor(private inner: Rest) {}
+  async answer(request: RestRequest): Promise<ResponseResult> {
     if (Number(request.headers.get('content-length')) > 1000) {
       throw new FougereError({ code: ErrorCode.PAYLOAD_TOO_LARGE, message: 'Notes stop at 1000 bytes.' });
     }
 
-    return next();
+    return this.inner.answer(request);
   }
 }
 
 /** One handler's ops, by name: an old id is moved, every other op goes straight through. */
-class NoteRest extends RestMiddleware(NoteHandler) {
-  async find(request: RestRequest, next: () => Promise<ResponseResult>): Promise<ResponseResult | RestResponse<301, { location: string }>> {
+class NoteRest extends Rest<NoteHandler> {
+  constructor(inner: Rest<NoteHandler>) { super(inner); }
+  async find(request: RestRequest): Promise<ResponseResult | RestResponse<301, { location: string }>> {
     if (request.params.id === 'old') return { status: 301, headers: { location: '/api/desk/notes/n1/find' }, data: null };
 
-    return next();
+    return this.inner!.answer(request);
   }
 }
 
@@ -54,8 +57,12 @@ configureFougere({
       write: { params: { title: [Note, 'title'] }, output: Note },
     } }],
     // Stated by hand, as a `fronds.ts` with no scan writes it: what the scan would read off `find`.
-    middlewares: [Powered, UploadLimit, { ctor: NoteRest, answers: { find: [{ status: 301, headers: ['location'] }] } }],
-    config: { middlewares: ['Powered', 'UploadLimit', 'NoteRest'] },
+    providers: [
+      { ctor: Powered, deps: ['Rest'], implements: ['Rest'] },
+      { ctor: UploadLimit, deps: ['Rest'], implements: ['Rest'] },
+      { ctor: NoteRest, deps: ['Rest<NoteHandler>'], implements: ['Rest<NoteHandler>'], answers: { find: [{ status: 301, headers: ['location'] }] } },
+    ],
+    ports: { Rest: ['Powered', 'UploadLimit'] },
   })],
 });
 const app = await useFougereApp();
@@ -93,13 +100,14 @@ describe('a REST middleware', () => {
   });
 
   it('refuses the boot for a method naming no operation of its handler', async () => {
-    class Misspelt extends RestMiddleware(NoteHandler) {
-      async fnid(_request: RestRequest, next: () => Promise<ResponseResult>): Promise<ResponseResult> { return next(); }
+    class Misspelt extends Rest<NoteHandler> {
+      constructor(inner: Rest<NoteHandler>) { super(inner); }
+      async fnid(request: RestRequest): Promise<ResponseResult> { return this.inner!.answer(request); }
     }
     const desk = frond('desk', {
       entities: [Note],
       handlers: [{ ctor: NoteHandler, operations: { find: { params: { id: [Note, 'id'] }, output: Note } } }],
-      middlewares: [Misspelt],
+      providers: [{ ctor: Misspelt, deps: ['Rest<NoteHandler>'], implements: ['Rest<NoteHandler>'] }],
     });
 
     await expect(createApp({ fronds: [desk], createContainer, migrates: true } as never))

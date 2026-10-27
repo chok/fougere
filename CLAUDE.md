@@ -674,7 +674,7 @@ cold. Under Bun, `type: 'sqlite'` is realized by `bun:sqlite` (`openOnBun`, `ada
 `better-sqlite3`'s binding crashes it. Pinned by `compiler/tests/compile.test.ts`.
 
 **The names the scan reads** — `core/src/Conventions.ts`, read by `@fougere/compiler`. Everything else a frond states, it
-states by its SHAPE; the twelve convention directories and the import scope are the one place
+states by its SHAPE; the eleven convention directories and the import scope are the one place
 a NAME is the declaration, and the only ones a project may restate (`conventions:` in
 `fougere.config.ts`). Two of them extend the FRAMEWORK rather than declare a domain. A
 `vocabulary/` file EXPORTS a term — `export const slug = StringFormats.term('slug', …)`,
@@ -752,8 +752,7 @@ the call (`theRest`), so the port machinery builds the chain with nothing of its
 hands each call over as the `Call` it is. Two are ordered by the frond — `ports: { Dispatcher:
 ['Timing', 'Audit'] }` in `frond.config.ts`, outside in, read beside `fougere.config.ts`'s `ports:` and
 winning for that frond — and two with no order refuse like any two links. `Middleware`, the `middlewares:`
-order and `middleware-not-extended` are gone: `middlewares/` holds a door's middlewares only, and a class
-left there standing at no door is warned `middleware-not-a-door`. Measured before the move: the 23
+order and `middleware-not-extended` are gone, and so is `middlewares/`. Measured before the move: the 23
 middlewares of the tree read `context.address` and `context.operation`, both on the `Call`. Pinned by
 `core/tests/calls.test.ts`, `compiler/tests/middleware-form.test.ts`, `compiler/tests/middleware-order.test.ts`.
 A chain answers for its own frond — every ADDRESS its handlers answer to, wider than its
@@ -1087,28 +1086,29 @@ The terminal (`@fougere/oclif`) is a door too, and the one `trusted`: its caller
 the machine, so a refusal reaches it whole where every other door reads `Internal error` — a
 property a door states, not a case core knows. oclif parses the flags before the cycle; the door
 turns what it parsed into an invocation.
-A door middleware stands around a door's REQUESTS, where a `Middleware` stands around CALLS —
-`DoorMiddleware` (`core/src/prefab/DoorMiddleware.ts`), extended through the base a door's package
-hands out (`RestMiddleware()`, which names `door = 'rest'`), declared in `middlewares/` and ordered
-by the same `middlewares:` list. It runs when a door answers for ONE address (`Door.address`, a REST
-route) — so not for a GraphQL document, which spans several — around `decode → run → encode`, in the
-door's own terms: it reads the headers before the body is read, refuses by throwing, decorates the
-answer. A refusal becomes the door's answer where it is thrown, so a middleware outside it still
-decorates it. `install.ts` sets them apart from the call middlewares; a class extending
-`DoorMiddleware` directly stands at no door and is refused (`door-middleware-without-door`). The two
-names are provisional. Bound to a handler — `RestMiddleware(PostHandler)`, `DoorMiddleware.handler` —
-it stands at that handler's address alone, one method per op it names, and may answer in the op's
-place (`RestResponse<301, { location: string }>`, named so as not to shadow the Web `Response`); a
-method naming no op of the handler refuses the boot (`door-middleware-unknown-op`), and so does a
-handler the frond does not serve. What such a middleware may answer in an op's place is a field of
-its entry, `MiddlewareEntry.answers` (`{ find: [{ status: 301, headers: ['location'] }] }`), folded
-into the op's `protocols[door].responses` (`OperationOverrides.protocols`) and onto the REST route —
-what OpenAPI publishes. A `frond()` states it; the scan only fills it, reading each method's return
-type (`parseDeclaredAnswers`, `handler-parser.ts`): every member whose `status` is a number LITERAL,
-with its `headers` keys — the fields, never the type arguments, so an alias holds — while a `status:
-number` member is what `next()` hands back. The compiler reads the door's name off the class and
-knows no door. Pinned by `compiler/tests/door-answers.test.ts`, `core/tests/door.test.ts` and
-`testing/tests/rest-middleware.test.ts`.
+A door has a PORT, and what stands around its REQUESTS is a link in front of it — where a link in front
+of `Dispatcher` stands around CALLS. The door's package declares the port beside its protocol
+(`Protocols.register('rest', { …, port: 'Rest' })`, `ProtocolType.port`), and core reads the name and
+knows no door: each frond's scope answers `Rest`, and `Rest<PostHandler>` for each handler, with the rest
+of the request (`boot/doors.ts`). `implements Partial<Rest>` stands around every route of its frond;
+`extends Rest<PostHandler>` + `super(inner)` around that handler's alone, its base's `answer` handing a
+request to the method named after its op (`adapter/rest/src/door.ts`) — a method naming no op refuses the
+boot (`door-link-unknown-op`). Two are ordered by `ports: { Rest: [...] }`. A key with a subject is spelled
+as the type, `Rest<PostHandler>`: no class name holds a `<`, so none can take it, and the scan reads it the
+same on every side — a constructor asking for it, a class extending or implementing it
+(`compiler/src/scan/Implemented.ts`, `keyOf`; `depKeyOf`). A bare key core answers (`Dispatcher`, `Rest`)
+refuses a class of the frond named after it (`port-key-taken`). It runs when a door answers for ONE
+address (`Door.address`, a REST route), so not for a GraphQL document. At a door a refusal IS an answer:
+what a link throws leaves it as the door's answer (`answeringAtDoor`), so a link outside it still
+decorates it — measured on `testing/tests/rest-middleware.test.ts`, whose outer link put its header on
+a `413` before the move and lost it the day the throw became an exception. What a link of
+`Rest<PostHandler>` may answer in an op's place is `ProviderEntry.answers` (`{ find: [{ status: 301,
+headers: ['location'] }] }`), folded into the op's `protocols[door].responses` (`OperationOverrides`) and
+onto the REST route — what OpenAPI publishes; the scan fills it off each method's return type
+(`parseDeclaredAnswers`): every member whose `status` is a number LITERAL, with its `headers` keys.
+`DoorMiddleware`, `RestMiddleware()`, `middlewares/` and its `middlewares:` order are gone. Pinned by
+`core/tests/door.test.ts`, `compiler/tests/door-answers.test.ts`, `compiler/tests/subject-port.test.ts`
+and `testing/tests/rest-middleware.test.ts`.
 
 **The caller's state is the dual of a source, and core keeps none of it** — an op asks for `state:
 State` (`wire/State.ts`, the `state` binding source in `module/state/`) and reads or writes it by
@@ -1131,7 +1131,7 @@ door of no real kind.
 
 **What REST serves, it can publish, and only on request** — `openApiOf`
 (`adapter/rest/src/openapi/document.ts`) reads OpenAPI 3.1 off `generateRoutes` and `operationsFor`,
-never off a declaration of its own: the status `responseOf` answers, the door middlewares' `responses`,
+never off a declaration of its own: the status `responseOf` answers, the `responses` a link at REST's door declares,
 and `refusalsOf` at `toHttpError`'s status, each status narrowing `Refusal.code` to its own. A schema is the card's
 descriptor — JSON Schema already — named by the entity, and a view cut from it by its use
 (`PostUpdateInput`). `protocols: { rest: { openapi: {} } }` serves it at `{prefix}/openapi.json`, and `ui`
@@ -1169,7 +1169,7 @@ and `compiler/tests/collector-refuses.test.ts`.
 (`adapter/rest/src/routes/RouteDefinition.ts`) leaves out an op whose `placement` is `remote`, and
 `fougere serve` answers REST beside the call envelope (`ServeOptions.beside`, over `answer` in
 `app/shared/src/answer.ts`). The calling process used to project a remote frond's routes and relay each
-call over JSON-RPC, so a door middleware would have run where the frond's code and dependencies were
+call over JSON-RPC, so a link at REST's door would have run where the frond's code and dependencies were
 not. Every host answers through ONE door, `restDoor` (`adapter/rest/src/door.ts`), which reads the
 body INSIDE the cycle from the reader the host hands it — a request with no body reads as `undefined`
 on every host, where three read `{}` — and writes the status read off the contract — `201` for a `POST` on the collection answering one row, `204` for nothing or a `DELETE`

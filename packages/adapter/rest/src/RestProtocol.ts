@@ -77,5 +77,6 @@ function misplaced(overrides: Record<string, RestRoute> | undefined, fronds: rea
 
 Protocols.register('rest', {
   format: REST,
+  port: 'Rest',
   refusals: (options: Accepted<typeof REST>, fronds) => misplaced(options.overrides, fronds),
 });

@@ -9,6 +9,12 @@ export type ProtocolConfig = { [K in keyof FougereProtocols]?: FougereProtocols[
 /** A protocol an adapter serves: what its entry admits. A host reads the rest by name. */
 export interface ProtocolType<Options = any> {
   readonly format: Format<Options>;
+  /**
+   * The port its door's links stand in front of — `'Rest'` for REST: `implements Partial<Rest>` around
+   * every route of a frond, `Rest<NoteHandler>` around one handler's, keyed as written. Core reads the name and knows
+   * no door.
+   */
+  readonly port?: string;
   /** What the entry may not say of the fronds this app is made of — a sentence per refusal. */
   refusals?(options: Options, fronds: readonly FrondDescriptor[]): string[];
 }

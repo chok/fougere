@@ -5,7 +5,7 @@ import type { ProviderEntry } from './descriptor/ProviderEntry.js';
 
 /** A class on its own — a port, which is abstract, included — or a class with what it asks for. */
 export type Declared = AbstractCtor
-  | (Omit<DeclaredSubject, 'ctor'> & { ctor: AbstractCtor } & Partial<Pick<ProviderEntry, 'name' | 'abstract' | 'implements'>> & Seating);
+  | (Omit<DeclaredSubject, 'ctor'> & { ctor: AbstractCtor } & Partial<Pick<ProviderEntry, 'name' | 'abstract' | 'implements' | 'answers'>> & Seating);
 
 /**
  * What a class built on `Repository<…>` is built on — `repository: Post`, or the members of an

@@ -194,13 +194,7 @@ function frondOf(frond: FrondDescriptor, imports: Imports): string {
       `name: ${JSON.stringify(nameOf(p))}`,
       p.abstract ? 'abstract: true' : '',
       p.implements?.length ? `implements: ${JSON.stringify(p.implements)}` : '',
-    )))}`);
-  }
-  if (frond.middlewares.length) {
-    members.push(`middlewares: ${list(frond.middlewares.map((m) => subject(
-      imports.default(m.filePath, frond),
-      m.deps,
-      m.answers ? `answers: ${JSON.stringify(m.answers)}` : '',
+      p.answers ? `answers: ${JSON.stringify(p.answers)}` : '',
     )))}`);
   }
   if (frond.extensions?.length) {
@@ -214,7 +208,7 @@ function frondOf(frond: FrondDescriptor, imports: Imports): string {
     members.push(`seeds: ${list(frond.seeds.map((s) =>
       `{ entityName: ${JSON.stringify(s.entityName)}, data: ${imports.default(s.filePath, frond)} }`))}`);
   }
-  // The file itself, which `frond()` reads the way the scan does: the order of the middlewares,
+  // The file itself, which `frond()` reads the way the scan does: the order of a port's links,
   // what is exposed, the overrides of an op.
   const config = frondConfigFileIn(frond.source.path);
   if (config) members.push(`config: ${imports.default(config, frond)}`);

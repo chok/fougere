@@ -23,7 +23,6 @@ export function refuseArityDrift(frond: FrondDescriptor, refused: Diagnostic[]):
     ...frond.presenters,
     ...frond.collectors,
     ...frond.providers,
-    ...frond.middlewares,
   ];
 
   for (const { ctor: built, deps: given, filePath } of constructed) {

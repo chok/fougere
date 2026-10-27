@@ -4,7 +4,8 @@
  */
 import { describe, it, expect } from 'vitest';
 import { createContainer } from '@fougere/container';
-import { createApp, DispatchEvent, DoorEvent, DoorMiddleware, ErrorCode, FougereError, frond, type Door, type DoorOutcome } from '../src/index.js';
+import { Format } from '@fougere/schema';
+import { createApp, DispatchEvent, DoorEvent, ErrorCode, FougereError, frond, Protocols, type Door, type DoorOutcome } from '../src/index.js';
 import { op } from './contract.js';
 
 class OrderHandler {
@@ -114,58 +115,82 @@ describe('a door', () => {
   });
 });
 
-/** What a door package hands out: the base, with the door it stands at. */
-abstract class LineMiddleware extends DoorMiddleware<string, DoorOutcome> {
-  static override readonly door = 'line';
+/** What a door package declares: the port its links stand in front of. */
+Protocols.register('line', { format: Format.of('protocol/line').closed(), port: 'Line' });
+Protocols.register('other', { format: Format.of('protocol/other').closed(), port: 'Other' });
+
+/** The port, as the package hands it out: one gesture, the answer to what arrived. */
+declare namespace Line { type Received = { line: string } }
+abstract class Line {
+  abstract answer(received: Line.Received): Promise<DoorOutcome>;
 }
 
 const heard: string[] = [];
 
-class Outer extends LineMiddleware {
-  async around(received: string, next: () => Promise<DoorOutcome>): Promise<DoorOutcome> {
-    heard.push(`outer:${received}`);
+class Outer implements Partial<Line> {
+  constructor(private inner: Line) {}
+  async answer(received: Line.Received): Promise<DoorOutcome> {
+    heard.push(`outer:${received.line}`);
 
-    return next();
+    return this.inner.answer(received);
   }
 }
 
-class Gate extends LineMiddleware {
-  async around(received: string, next: () => Promise<DoorOutcome>): Promise<DoorOutcome> {
-    heard.push(`gate:${received}`);
-    if (received === 'forbidden') throw new FougereError({ code: ErrorCode.FORBIDDEN, message: 'Not at this door.' });
-    const answer = await next();
+class Gate implements Partial<Line> {
+  constructor(private inner: Line) {}
+  async answer(received: Line.Received): Promise<DoorOutcome> {
+    heard.push(`gate:${received.line}`);
+    if (received.line === 'forbidden') throw new FougereError({ code: ErrorCode.FORBIDDEN, message: 'Not at this door.' });
+    const answer = await this.inner.answer(received);
 
     return 'answered' in answer ? { answered: { wrapped: answer.answered } } : answer;
   }
 }
 
-abstract class OtherMiddleware extends DoorMiddleware<string, DoorOutcome> {
-  static override readonly door = 'other';
-}
-
-class Elsewhere extends OtherMiddleware {
-  async around(_received: string, next: () => Promise<DoorOutcome>): Promise<DoorOutcome> {
+class Elsewhere implements Partial<Line> {
+  constructor(private inner: Line) {}
+  async answer(received: Line.Received): Promise<DoorOutcome> {
     heard.push('elsewhere');
 
-    return next();
+    return this.inner.answer(received);
   }
 }
 
+/** Bound to one handler: `Line<OrderHandler>`, keyed as written, standing at that handler's address alone. */
+class Counted implements Partial<Line> {
+  constructor(private inner: Line) {}
+  async answer(received: Line.Received): Promise<DoorOutcome> {
+    heard.push(`counted:${received.line}`);
+
+    return this.inner.answer(received);
+  }
+}
+
+/** The same door, handed what arrived as an object — what a link at a door is handed on by. */
+function boxedDoor(app: Awaited<ReturnType<typeof createApp>>): Door<{ line: string }, string[], DoorOutcome> {
+  const line = lineDoor(app);
+
+  return { name: line.name, run: line.run, decode: (received) => line.decode(received.line), encode: (outcome) => outcome };
+}
+
+const linkAt = (ctor: abstract new (...args: never[]) => unknown, port: string) =>
+  ({ ctor, name: ctor.name, deps: [port], implements: [port] });
+
 const guarded = frond('shop', {
   handlers: [{ ctor: OrderHandler, deps: [], operations: { count: op({ cardinality: 'none' }) } }],
-  middlewares: [Outer, Gate, Elsewhere],
-  config: { middlewares: ['Outer', 'Gate', 'Elsewhere'] },
+  providers: [linkAt(Outer, 'Line'), linkAt(Gate, 'Line'), linkAt(Elsewhere, 'Other'), linkAt(Counted, 'Line<OrderHandler>')],
+  ports: { Line: ['Outer', 'Gate'] },
 });
 
-describe('a door middleware', () => {
+describe('a link at a door', () => {
   it('stands around a door answering for its frond\'s address, outermost first, and may rewrite the answer', async () => {
     heard.length = 0;
     await using app = await createApp({ fronds: [guarded], createContainer });
 
-    const answer = await app.answer({ ...lineDoor(app), address: 'order' }, 'count');
+    const answer = await app.answer({ ...boxedDoor(app), address: 'order' }, { line: 'count' });
 
     expect(answer).toEqual({ answered: { wrapped: [2] } });
-    expect(heard).toEqual(['outer:count', 'gate:count']);
+    expect(heard).toEqual(['outer:count', 'gate:count', 'counted:count']);
   });
 
   it('refuses before the door decodes, and the door says the refusal', async () => {
@@ -174,7 +199,7 @@ describe('a door middleware', () => {
     const steps: string[] = [];
     app.observe((event) => { if (event instanceof DoorEvent) steps.push(event.stage); });
 
-    const answer = await app.answer({ ...lineDoor(app), address: 'order' }, 'forbidden') as { refused: FougereError };
+    const answer = await app.answer({ ...boxedDoor(app), address: 'order' }, { line: 'forbidden' }) as { refused: FougereError };
 
     expect([answer.refused.code, answer.refused.message]).toEqual([ErrorCode.FORBIDDEN, 'Not at this door.']);
     expect(steps).toEqual(['received', 'failed', 'encoded']);
@@ -184,9 +209,32 @@ describe('a door middleware', () => {
     heard.length = 0;
     await using app = await createApp({ fronds: [guarded], createContainer });
 
-    await app.answer(lineDoor(app), 'count');
+    await app.answer(boxedDoor(app), { line: 'count' });
     await app.facadeFor('order')!.count!({});
 
     expect(heard).toEqual([]);
+  });
+
+  it('refuses a method of a handler\'s link that names no op of it', async () => {
+    class Misspelt {
+      constructor(private inner: Line) {}
+      async cuont(received: Line.Received) { return this.inner.answer(received); }
+    }
+    const typo = frond('shop', {
+      handlers: [{ ctor: OrderHandler, deps: [], operations: { count: op({ cardinality: 'none' }) } }],
+      providers: [linkAt(Misspelt, 'Line<OrderHandler>')],
+    });
+
+    await expect(createApp({ fronds: [typo], createContainer })).rejects.toThrow(/Misspelt\.cuont names no operation of OrderHandler/);
+  });
+
+  it('refuses a class of the frond named after a bare key core answers, whatever it does', async () => {
+    class Line { tally() { return 0; } }
+    const unrelated = frond('shop', {
+      handlers: [{ ctor: OrderHandler, deps: [], operations: { count: op({ cardinality: 'none' }) } }],
+      providers: [Line],
+    });
+
+    await expect(createApp({ fronds: [unrelated], createContainer })).rejects.toThrow(/Line is the port of the door.*Rename the class/s);
   });
 });

@@ -42,7 +42,7 @@ function frondWith(
     presenters: [],
     collectors: [],
     seeds: [],
-    middlewares: [],
+   
     ...(surfaces ? { surfaces } : {}),
   };
 }

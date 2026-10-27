@@ -172,7 +172,7 @@ describe('deterministic operation resolution', () => {
     presenters: [],
     collectors: [],
     seeds: [],
-    middlewares: [],
+   
     surfaces: { public: ['post'] },
     operationsOverrides: {
       'post.publish': {

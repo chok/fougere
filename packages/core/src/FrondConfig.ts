@@ -25,8 +25,6 @@ export interface FrondConfig {
    * choice of what answers; the frond's wins for its own scope.
    */
   ports?: Record<string, string | readonly string[]>;
-  /** The order this frond's door middlewares stand in, outside in — required once there are two. */
-  middlewares?: string[];
   /** What the frond says to each protocol about itself — `rest: { path: '/journal' }`. */
   protocols?: FougereFrondProtocols;
   /** Per-operation overrides, keyed the way an op is named: `post.list`. */
