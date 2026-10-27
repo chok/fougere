@@ -9,8 +9,14 @@ import { routeNotFound, servedOperations } from './routeNotFound.js';
 import type { InFlight } from './InFlight.js';
 import type { Journal } from '../wire/Journal.js';
 
-/** Resolves and executes every call through the same transverse lifecycle. */
-export class Dispatcher implements DispatchPort {
+/**
+ * Resolves and executes every call through the same transverse lifecycle — and the port a link stands
+ * in front of: `Dispatcher` around every call of its frond, `Dispatcher<PostHandler>` around that
+ * handler's alone, the argument naming what it stands at and nothing else.
+ */
+export class Dispatcher<H = never> implements DispatchPort {
+  declare private readonly standsAt?: H;
+
   constructor(
     private readonly routes: RouteRegistry,
     private readonly inFlight: InFlight,

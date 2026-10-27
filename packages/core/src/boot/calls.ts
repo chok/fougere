@@ -2,7 +2,6 @@ import type { Container } from '@fougere/container';
 import { Call } from '../wire/Call.js';
 import { RouteAddress } from '../wire/RouteAddress.js';
 import type { AppMiddleware } from '../wire/AppMiddleware.js';
-import type { ProviderEntry } from '../descriptor/ProviderEntry.js';
 
 /** What a link in front of `Dispatcher` stands in front of: the rest of ONE call, found by the call it was handed. */
 const REST = new WeakMap<Call, () => Promise<unknown>>();
@@ -24,22 +23,18 @@ export const theRest = {
   },
 };
 
-/** Whether a frond puts something in front of its calls — a class declaring `implements Partial<Dispatcher>`. */
-export function standsAroundCalls(providers: readonly ProviderEntry[]): boolean {
-  return providers.some((provider) => provider.implements?.includes('Dispatcher'));
-}
-
 /**
- * The frond's chain as a middleware of the dispatch: each call becomes the `Call` its links read, and
- * the rest of it is what the innermost reaches.
+ * A chain in front of the dispatch as a middleware of it: each call becomes the `Call` its links read,
+ * and the rest of it is what the innermost reaches. `Dispatcher` for every call of the frond,
+ * `Dispatcher<PostHandler>` for that handler's alone.
  *
  * Documented: [ports](https://fougere.dev/docs/business/ports).
  */
-export function aroundCalls(scope: Container): AppMiddleware {
+export function aroundCalls(scope: Container, key = 'Dispatcher'): AppMiddleware {
   return async (context, next) => {
     const call = new Call(new RouteAddress({ address: context.address, operation: context.operation }), context.invocation);
     REST.set(call, next);
 
-    return await scope.resolve<typeof theRest>('Dispatcher').dispatch(call) as never;
+    return await scope.resolve<typeof theRest>(key).dispatch(call) as never;
   };
 }

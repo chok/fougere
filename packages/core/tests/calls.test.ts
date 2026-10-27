@@ -58,6 +58,28 @@ describe('a link in front of the dispatch', () => {
     await expect(run([notes([linkOf(Timing, 'Timing'), linkOf(Audit, 'Audit')])])).rejects.toThrow(/Timing.*Audit|Audit.*Timing/);
   });
 
+  it('stands one handler\'s inside its frond\'s, around that handler\'s calls alone', async () => {
+    const Posts = link('Posts');
+    class TagHandler { async count() { trail.push('tags'); return 1; } }
+    const blog = frond('notes', {
+      handlers: [
+        { ctor: NoteHandler, operations: { count: op({ cardinality: 'one' }) } },
+        { ctor: TagHandler, operations: { count: op({ cardinality: 'one' }) } },
+      ],
+      providers: [linkOf(Timing, 'Timing'), { ctor: Posts, name: 'Posts', deps: ['Dispatcher<NoteHandler>'], implements: ['Dispatcher<NoteHandler>'] }],
+    });
+    trail.length = 0;
+    await using app = await createApp({ fronds: [blog], createContainer, storageFactory: () => ({}) as never });
+    const run = createLocalRunner(app);
+    await run({ address: 'note', op: 'count' }, Invocation.empty);
+    await run({ address: 'tag', op: 'count' }, Invocation.empty);
+
+    expect(trail).toEqual([
+      'Timing:note.count', 'Posts:note.count', 'handler', '/Posts', '/Timing',
+      'Timing:tag.count', 'tags', '/Timing',
+    ]);
+  });
+
   it('stands an ancestor\'s outside its child\'s', async () => {
     const family = frond('ops', { providers: [linkOf(Family, 'Family')] });
     const out = await run([family, notes([linkOf(Timing, 'Timing')])], { notes: { extends: 'ops' } });

@@ -198,7 +198,8 @@ function depKeyOf(type: TypeRef): string {
   // Any other port with a subject — `Rest<NoteHandler>`, `Env<Meili>` — is keyed as it is written. A
   // class extending or implementing the same type declares the same key (`Implemented.ts`, `keyOf`).
   const [only] = type.generics ?? [];
-  if (type.generics?.length === 1 && only && only.name !== 'Record') return keyOf(type.name, only.name);
+  // `never` is a port's default argument, `Dispatcher<H = never>` filled in by the checker: no subject.
+  if (type.generics?.length === 1 && only && only.name !== 'Record' && only.name !== 'never') return keyOf(type.name, only.name);
 
   return type.name;
 }

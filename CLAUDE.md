@@ -752,7 +752,9 @@ between the two, not a convention.
 Partial<Dispatcher>` with `inner: Dispatcher`, a service like any other, read off its clause like any
 link (`dispatch(call: Call)`, `boot/calls.ts`). Each frond's scope answers `Dispatcher` with the rest of
 the call (`theRest`), so the port machinery builds the chain with nothing of its own, and the facade
-hands each call over as the `Call` it is. Two are ordered by the frond — `ports: { Dispatcher:
+hands each call over as the `Call` it is. `Dispatcher<PostHandler>` is that handler's own chain, inside
+the frond's and never handed down to a child: a subject is an entity for what a thing IS
+(`Repository<Post>`), a handler for what RUNS (`Rest<PostHandler>`), and this was the case left empty. Two are ordered by the frond — `ports: { Dispatcher:
 ['Timing', 'Audit'] }` in `frond.config.ts`, outside in, read beside `fougere.config.ts`'s `ports:` and
 winning for that frond — and two with no order refuse like any two links. `Middleware`, the `middlewares:`
 order and `middleware-not-extended` are gone, and so is `middlewares/`. Measured before the move: the 23
