@@ -305,6 +305,7 @@ One line each, kept because a past version of this file asserted the opposite.
   (`defaults/src/storage/ResolvedStorage.ts`) is the one place that falls back. Nuxt used to impose
   SQLite, the web hosts fell back to memory at `debug`, and `fougere serve` had no storage at all.
   A `warn` and not an `info`: the CLI runs at `warn`, and losing rows at exit is what an operator must see.
+  Only when no source holds rows: once one lists its `rows:`, an entity left out refuses the boot.
 
 - **An error names itself with a LITERAL, not `new.target.name`** — `SchemaError`,
   `ContainerError`, `FougereError`. A bundler mangles a class name: measured 2026-09-18 in

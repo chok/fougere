@@ -28,6 +28,10 @@ export default defineFougere({
 The entry loads on any runtime: an engine reads its driver, and SQLite `node:fs`, when it opens.
 `type: 'd1'` with a `binding` opens a Cloudflare D1 database from inside a Worker.
 
+An entity an entry lists in `values:` is ONE row of the table `fougere_values`, keyed by its
+name and holding the value as JSON — created by `fougere migrate` like any other table. See
+[Values](https://fougere.dev/docs/business/values).
+
 ---
 
 Part of [Fougere](https://github.com/chok/fougere) — one schema, a gradient from

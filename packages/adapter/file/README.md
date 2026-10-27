@@ -32,6 +32,17 @@ archive: { type: 'file', path: './rows', format: 'yaml', rows: ['Snapshot'] },
 One key in two formats — `s1.json` beside `s1.yaml` — is two answers to one row, and is
 refused naming both files.
 
+## One file per value
+
+An entity listed in `values:` is ONE file named after it, beside the directories of rows —
+`config/prod/meili.yaml` for `Meili` under `path: 'config/prod'`, in either format. It is read
+once at boot and injected into the constructor that asks for a `Meili`; see
+[Values](https://fougere.dev/docs/business/values).
+
+```ts
+config: { type: 'file', path: `config/${process.env.APP_ENV}`, values: ['Meili', 'Catalog'] },
+```
+
 ## What it costs, before you find out
 
 `all()` reads the whole directory, so `list` with a `where` or an `orderBy` filters in
@@ -60,7 +71,7 @@ emits a constraint, so a `ref()` across sources costs nothing.
 
 ## Writing your own source
 
-This package is 135 lines, most of them filesystem guards and the two formats. `storageOver` (`@fougere/core`)
+This package is 142 lines, most of them filesystem guards and the two formats. `storageOver` (`@fougere/core`)
 derives the thirteen gestures of the storage port from four, so a new source supplies where
 rows are and nothing else:
 

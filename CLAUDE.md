@@ -916,6 +916,21 @@ boot answers. That entry loads on any runtime — an engine reads `node:fs`/`nod
 reads its binding from `cloudflare:workers` at the driver's `init()`. Pinned by
 `adapter/sql/tests/driver.test.ts` and `defaults/tests/no-db.test.ts`.
 
+**An entity listed in `values:` is injected as ONE value** — `constructor(meili: Meili)`, read by
+`valuing` (`core/src/module/value/valuing.ts`), the ascent member between `schema` and `seeds`: it
+reads the value, judges it with `InputValidator`, fills the defaults and registers it under the
+entity's name in the scope of the frond declaring it, so a family shares one through the frond it
+extends (which may hold values, never rows). A source holding rows keeps a value as the
+`FougereValue` row named after it (`fougere_values` in SQL), so `pending`, `migrate` and the read
+are its own gestures and it writes no code; a source with a place of its own states
+`Source.value` — `file` one file per value, `env` (`@fougere/adapter-env`) one variable per field,
+`ENTITY_FIELD`. `valueAt` says where to fix it, which is what a refusal names (`meili.key:
+Required — sources.env, MEILI_KEY`). Text becomes a value through `Shapes.fromText`, the one reader
+a form, a flag, a query parameter and the environment share. It replaced the `Config` builtin, an
+untyped `env.get` nobody read, and the workspace→app cascade of config files: an app reads the
+nearest file (`loadNearestConfig`). Pinned by `core/tests/values.test.ts`,
+`defaults/tests/values.test.ts` and `adapter/env/tests/`.
+
 **`protocols:` serves, an import makes available** — `FougereProtocols` and the `Protocols`
 registry (`core/src/Protocol.ts`), augmented by `adapter-rest` and `adapter-graphql` at import.
 `protocols: { graphql: {} }` with no import refuses the boot naming it (`boot/protocols.ts`); an
@@ -983,8 +998,8 @@ an interruption leaves it open, which is what a run is for. The row goes LAST, h
 whoever owns the gesture, so a run covers the whole thing. Pinned by `workflow/tests/release.test.ts`.
 
 **The thirteen gestures derive from four** — `core/src/storage/store.ts`, `storageOver(open)` over a
-`Store` (`get`/`has`/`set`/`delete`/`all`/`client`). `adapter/memory` is 25 lines and
-`adapter/file` 135, two formats included. `transacted` is deliberately not in the frame: a unit of work belongs to
+`Store` (`get`/`has`/`set`/`delete`/`all`/`client`). `adapter/memory` is 37 lines and
+`adapter/file` 142, two formats and the values included. `transacted` is deliberately not in the frame: a unit of work belongs to
 an engine that has one. `all()` reading everything is what bounds a file source.
 
 **Prefab ops** — `Crud(Post)` gives the five typed CRUD ops. `Crud(Post, { list: PostCard })`
