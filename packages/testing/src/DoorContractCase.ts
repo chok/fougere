@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { createLocalRunner, type App } from '@fougere/core';
 import { Invocation } from '@fougere/core/contract';
 import { tableOf } from '@fougere/app';
-import { answer } from '@fougere/app/web';
+import { answer } from '@fougere/app/answer';
 import { lowerFirst, type SchemaView } from '@fougere/schema';
 import { listQuery, findQuery, mutationFor, at } from './gql.js';
 import { sampleInput } from './sample.js';

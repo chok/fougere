@@ -19,7 +19,7 @@
     "@fougere/transport-http": "workspace:*",
     "kysely": "^0.28.17",
     "@fougere/adapter-rest": "workspace:*",
-    "@fougere/http": "workspace:*",
+    "@fougere/app": "workspace:*",
     "hono": "^4.7.0",
     "@fougere/observability": "workspace:*",
     "@fougere/compiler": "workspace:*"

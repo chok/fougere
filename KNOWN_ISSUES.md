@@ -385,8 +385,6 @@ One line each, kept because a past version of this file asserted the opposite.
   one being picked by parameter order.
 - A collector in another frond is not used and WARNS (`core/src/verify.ts`), since `inviteUser(user: User)` reads
   its user from the request on purpose; a declared binding silences it, and names only the parameters it changes.
-- The two HTTP adapters agree on a middleware's return: the passthrough sentinel is
-  `PASSTHROUGH` (`http/src/router.ts`), a symbol, not the legal value `data === null`.
 - `@fronds/<name>` resolves in the scan; `fougere check` reports the relative form as
   `cross-frond-import`.
 - `FougereError.details` is polymorphic on purpose — the shape belongs to the PAIR.

@@ -8,11 +8,11 @@
   },
   "dependencies": {
     "@fougere/defaults": "workspace:*",
+    "@fougere/app": "workspace:*",
     "@fougere/core": "workspace:*",
     "@fougere/schema": "workspace:*",
     "@fougere/adapter-rest": "workspace:*",
     "@fougere/transport-http": "workspace:*",
-    "@fougere/http": "workspace:*",
     "hono": "^4.0.0",
     "@hono/node-server": "^1.0.0",
     "jiti": "^2.0.0",

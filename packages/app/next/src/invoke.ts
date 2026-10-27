@@ -30,7 +30,7 @@ async function requestState(): Promise<Record<string, unknown>> {
     // Awaited on purpose: async in Next 15+, synchronous before — `await` accepts both.
     const { headers } = await import('next/headers');
 
-    return await stateFor(await headers());
+    return await stateFor(await headers(), await useFougereApp());
   } catch {
     return {};
   }

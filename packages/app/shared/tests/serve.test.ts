@@ -11,7 +11,7 @@ import '@fougere/adapter-graphql';
 import { describe, it, expect } from 'vitest';
 import { entity, primary, text } from '@fougere/schema';
 import { answerAt } from '@fougere/core';
-import { answer, surfaceOf } from '../src/web.js';
+import { answer, surfaceOf } from '../src/answer.js';
 
 class Post extends entity({ id: primary(), title: text() }) {}
 

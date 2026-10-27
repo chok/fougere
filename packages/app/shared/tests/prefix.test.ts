@@ -3,7 +3,8 @@
  * without booting; a host that routes by file is told when its file sits elsewhere.
  */
 import { afterEach, describe, it, expect } from 'vitest';
-import { answer, fougere } from '../src/web.js';
+import { answer } from '../src/answer.js';
+import { fougere } from '../src/web.js';
 import { configureFougere, useFougereApp } from '../src/boot.js';
 
 const prefixed = (prefix: string) =>

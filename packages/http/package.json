@@ -1,13 +1,11 @@
 {
   "name": "@fougere/http",
   "version": "0.26.0-alpha.0",
-  "description": "HTTP router and middleware.",
+  "description": "The words every HTTP door speaks — a method, an answer, the headers a state travels in.",
   "keywords": [
     "fougere",
     "typescript",
-    "http",
-    "router",
-    "middleware"
+    "http"
   ],
   "license": "MIT",
   "repository": {
@@ -30,14 +28,11 @@
   ],
   "scripts": {
     "build": "rm -rf dist && tsc",
-    "test": "vitest run",
-    "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
     "prepublishOnly": "pnpm run build"
   },
   "devDependencies": {
-    "@types/node": "^22.19.15",
-    "vitest": "^4.1.0"
+    "@types/node": "^22.19.15"
   },
   "publishConfig": {
     "access": "public"

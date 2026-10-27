@@ -35,8 +35,8 @@ Before adding a surface, reach for its **projection**:
 
 | surface | the call |
 |---|---|
-| REST | `generateRoutes(app)` then `registerRoutes(router, routes)` — `@fougere/adapter-rest` |
-| GraphQL | `registerAll(builder, app)` then `registerGraphQL(router, builder.toSchema())` — `@fougere/adapter-graphql` |
+| REST, GraphQL, the call envelope | `answer(app, request)` — `@fougere/app/answer`, the door read off the path |
+| a GraphQL schema of your own | `registerAll(builder, app)` then `graphqlDoor(builder.toSchema())` — `@fougere/adapter-graphql` |
 
 Hand-writing the types (`buildSchema`, raw SDL, one Pothos resolver per field) rebuilds what the
 projection already derives, and drops the validator on the way. `registerType` / `registerOperations`

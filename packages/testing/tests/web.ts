@@ -1,5 +1,5 @@
 /** A request as a browser or a client sends it, and what the app answers to it. */
-import { answer } from '@fougere/app/web';
+import { answer } from '@fougere/app/answer';
 import type { App } from '@fougere/core';
 
 interface Asked {

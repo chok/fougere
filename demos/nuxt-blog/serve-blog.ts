@@ -12,7 +12,7 @@ import { bootApp } from '@fougere/defaults';
 import { frondAliases, setModuleLoader, loadConfig, remotesOf } from '@fougere/core/node';
 import { prefixOf } from '@fougere/adapter-rest';
 import { serve } from '@fougere/transport-http';
-import { answer } from '@fougere/app/web';
+import { answer } from '@fougere/app/answer';
 import { calls } from '@fougere/calls';
 import { observability } from '@fougere/observability';
 

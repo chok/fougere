@@ -5,10 +5,11 @@ export {
   useFougereApp,
   useFougereConfig,
   reloadFougere,
+  useFougereAuth,
   type FougereServerConfig,
 } from './boot.js';
 
-export { authOf, useFougereAuth } from './auth.js';
+export { authOf } from './auth.js';
 
 export { tableOf } from './RouteMatch.js';
 export { prefixOf } from '@fougere/adapter-rest';

@@ -1,6 +1,6 @@
 import { createLocalRunner, envLevel, identityFromEnv, serves, setLogLevel } from '@fougere/core';
 import { prefixOf } from '@fougere/adapter-rest';
-import { answer as webAnswer } from '@fougere/app/web';
+import { answer as webAnswer } from '@fougere/app/answer';
 import { ALIASES, BUILD_DIRECTORY, loadConfig, registerFrondAliases, remotesOf, statementFileIn } from '@fougere/core/node';
 import { readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';

@@ -1,6 +1,5 @@
 /** Who the caller is, resolved server-side from the request's own headers. */
 import type { App } from '@fougere/core';
-import { useFougereApp } from './boot.js';
 import { authOf } from './auth.js';
 
 type SessionApi = {
@@ -8,8 +7,8 @@ type SessionApi = {
 };
 
 /** The request state for these headers. Empty when no auth is declared, or nobody is signed in. */
-export async function stateFor(headers: Headers, app?: App): Promise<Record<string, unknown>> {
-  const auth = authOf(app ?? await useFougereApp());
+export async function stateFor(headers: Headers, app: App): Promise<Record<string, unknown>> {
+  const auth = authOf(app);
   if (!auth) return {};
   // No cookie, no session — asking the provider would be a round-trip for a known answer.
   if (!headers.get('cookie')) return {};

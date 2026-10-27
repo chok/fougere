@@ -1,5 +1,5 @@
 import { ErrorCode, FougereError, toHttpError, type Door } from '@fougere/core';
-import { HttpError, type HttpCarrier, type ResponseResult } from '@fougere/http';
+import type { HttpCarrier, ResponseResult } from '@fougere/http';
 import { getOperationAST, graphql, parse, type ExecutionResult, type GraphQLSchema } from 'graphql';
 import { publicResult } from './publicResult.js';
 
@@ -32,7 +32,7 @@ export function graphqlDoor(schema: GraphQLSchema): Door<GraphQLReceived, GraphQ
     carries: 'http',
     carrier: ({ headers }): HttpCarrier | undefined => (headers ? { request: headers, response: new Headers() } : undefined),
     decode: async ({ document, readOnly, state }) => {
-      const read = await documentOf(document);
+      const read = await document();
       if (!read?.query) throw new FougereError({ code: ErrorCode.BAD_REQUEST, message: 'Missing query' });
       if (readOnly) refuseMutation(read.query, read.operationName);
 
@@ -62,16 +62,6 @@ export function graphqlDoor(schema: GraphQLSchema): Door<GraphQLReceived, GraphQ
       return status === 405 ? { ...refused, headers: { allow: 'POST' } } : refused;
     },
   };
-}
-
-/** `@fougere/http` refuses a body in its own words, since it takes no dependency on core. */
-async function documentOf(document: () => Promise<GraphQLDocument | undefined>): Promise<GraphQLDocument | undefined> {
-  try {
-    return await document();
-  } catch (failure) {
-    if (!(failure instanceof HttpError)) throw failure;
-    throw new FougereError({ code: failure.code as ErrorCode, message: failure.message, cause: failure });
-  }
 }
 
 function refuseMutation(query: string, operationName: string | undefined): void {

@@ -58,3 +58,6 @@ export function receive(
     return json(await handleRpc(runner, parsed, options));
   };
 }
+
+export { pageDoor, type PageDoorOptions } from './server.js';
+export { PARSE_ERROR } from './jsonrpc/RpcErrorShape.js';

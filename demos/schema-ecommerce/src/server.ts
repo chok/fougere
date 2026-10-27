@@ -1,16 +1,24 @@
 /**
- * Serveur demo — Hono + GraphiQL avec schema genere depuis les entites fougere
+ * Demo server — Hono, and a GraphQL schema generated from the fougere entities, answered through
+ * the door the adapter brings.
  */
 import { Hono } from 'hono';
 import { serve } from '@hono/node-server';
-import { createHonoRouter } from '@fougere/http';
-import { registerGraphQL } from '@fougere/adapter-graphql';
+import { answerAt } from '@fougere/core';
+import { graphqlDoor, type GraphQLDocument } from '@fougere/adapter-graphql';
 import { graphqlSchema } from './adapter-graphql.js';
 
+const door = graphqlDoor(graphqlSchema);
 const hono = new Hono();
-const router = createHonoRouter(hono);
+hono.post('/graphql', async (c) => {
+  const { status, data } = await answerAt(door, {
+    document: async () => (await c.req.json().catch(() => undefined)) as GraphQLDocument | undefined,
+    state: {},
+    headers: c.req.raw.headers,
+  });
 
-registerGraphQL(router, graphqlSchema);
+  return c.json(data as object, status as 200);
+});
 
 const port = 4000;
 serve({ fetch: hono.fetch, port });
@@ -19,8 +27,7 @@ const url = `http://localhost:${port}`;
 console.log(`
   🌿 Fougere Demo Server
 
-  GraphQL:   ${url}/graphql
-  GraphiQL:  ${url}/graphql  (open in browser)
+  GraphQL:   POST ${url}/graphql
 
   Try these queries:
 

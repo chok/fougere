@@ -1,6 +1,6 @@
 # @fougere/http
-> HTTP router and middleware
-`HttpRouter` and two levels of middleware: HTTP and application.
+> The words every HTTP door speaks
+`HttpMethod`, the `ResponseResult` a door answers, and the `HttpCarrier` a caller's state travels in. No router: an engine is one already, and an app mounts on it with `answer(app, request)` from `@fougere/app/answer`.
 
 ## Installation
 ```bash

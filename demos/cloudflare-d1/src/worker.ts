@@ -22,8 +22,8 @@ import { Sources, createApp, createLocalRunner, type App } from '@fougere/core';
 import { observability, flushTelemetry } from '@fougere/observability';
 import { createContainer } from '@fougere/container';
 import { receive } from '@fougere/transport-http/receive';
-import { createHonoRouter } from '@fougere/http';
-import { generateRoutes, registerRoutes } from '@fougere/adapter-rest';
+import { answer } from '@fougere/app/answer';
+import { generateRoutes } from '@fougere/adapter-rest';
 import config from '../fougere.config.js';
 import fronds, * as statement from '../.fougere/fronds.generated.js';
 
@@ -41,6 +41,7 @@ async function open() {
   const app: App = await createApp({
     fronds,
     vocabulary: statement.vocabulary,
+    protocols: config.protocols,
     createContainer,
     storageFactory: storage.storageFactory,
     extensions: [observability({
@@ -59,7 +60,7 @@ async function open() {
   // instead — `fougere keys` / `fougere grant`, and the three env vars as secrets.
   const envelope = receive(createLocalRunner(app), { allowUnsigned: true });
   const hono = new Hono();
-  registerRoutes(createHonoRouter(hono), generateRoutes(app as never));
+  hono.all('/api/*', async (c) => (await answer(app, c.req.raw)) ?? c.notFound());
   hono.get('/', (c) => c.html(landing(app)));
 
   // The envelope keeps its own path rather than becoming a hono route: it is a wire

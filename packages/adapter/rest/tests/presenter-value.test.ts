@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { entity, primary, text } from '@fougere/schema';
-import { generateRoutes, registerRoutes } from '../src/index.js';
+import { answerAt } from '@fougere/core';
+import { generateRoutes, restDoor } from '../src/index.js';
 
 /**
  * A computed field travels with the row; this projection adds nothing to it.
@@ -41,18 +42,13 @@ function fakeApp(facade: object, presenter: object) {
   } as never;
 }
 
-/** Drive the GET /posts route the way an HTTP adapter would, and return its body. */
+/** Answer GET /posts through the route's own door, the way every host does, and return its body. */
 async function getPosts(app: never) {
-  const routes = generateRoutes(app);
-  let handler!: (ctx: unknown) => Promise<{ status: number; data: unknown }>;
-  const router = {
-    on: (method: string, path: string, fn: never) => {
-      if (method === 'GET' && path === '/api/blog/posts') handler = fn;
-    },
-  };
-  registerRoutes(router as never, routes);
+  const route = generateRoutes(app).find((one) => one.method === 'GET' && one.path === '/api/blog/posts')!;
 
-  return handler({ request: new Request('http://localhost/api/blog/posts'), params: {}, query: {}, state: {}, body: async () => undefined });
+  return answerAt(restDoor(route), {
+    operation: route.operationName, headers: new Headers(), params: {}, query: {}, state: {}, body: async () => undefined,
+  });
 }
 
 describe('a computed field reaching REST', () => {

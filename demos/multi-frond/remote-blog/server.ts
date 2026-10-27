@@ -13,9 +13,8 @@ import { createApp, createLocalRunner } from '@fougere/core';
 import { statementOf } from '@fougere/defaults';
 import { frondAliases, setModuleLoader } from '@fougere/core/node';
 import { createContainer } from '@fougere/container';
-import { createHonoRouter } from '@fougere/http';
 import { handleRpc } from '@fougere/transport-http';
-import { generateRoutes, registerRoutes } from '@fougere/adapter-rest';
+import { answer } from '@fougere/app/answer';
 import { createMemoryStorage } from '@fougere/adapter-memory';
 
 const PORT = Number(process.env.PORT ?? 4001);
@@ -34,15 +33,12 @@ async function main() {
     ...(await statementOf(import.meta.dirname)),
     createContainer,
     storageFactory: createMemoryStorage,
+    protocols: { rest: {} },
   });
 
-  // HTTP
+  // HTTP — REST is the app's answer, mounted on the engine the way any Hono route is
   const hono = new Hono();
-  const router = createHonoRouter(hono);
-
-  // REST routes
-  const routes = generateRoutes(app);
-  registerRoutes(router, routes);
+  hono.all('/api/*', async (c) => (await answer(app, c.req.raw)) ?? c.notFound());
 
   // The envelope — same wire as process-to-process, and the surface `fougere sync`
   // reads (rpc.discover).

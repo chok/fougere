@@ -1,6 +1,6 @@
 /** The app as an Express middleware — the form an Express app expects. */
 import { NodeRequest, sendNodeResponse } from 'srvx/node';
-import { answer } from './web.js';
+import { answer } from './answer.js';
 import { useFougereApp } from './boot.js';
 
 /** What the middleware reads off an Express request. Structural, not imported. */

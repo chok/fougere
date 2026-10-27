@@ -5,7 +5,8 @@ import { applyConfig, createApp, Logger, migrating } from '@fougere/core';
 import { resolveConventions } from '@fougere/core';
 import { frondAliases, loadNearestConfig, remotesOf, setModuleLoader, configModules } from '@fougere/core/node';
 
-import type { App, CreateAppOptions, FougereConfig, Transport } from '@fougere/core';
+import type { App, AuthRuntime, CreateAppOptions, FougereConfig, Transport } from '@fougere/core';
+import { authOf } from './auth.js';
 import { layerOf, remoteTransport, statementOf, type ResolvedStorage, type Statement } from '@fougere/defaults';
 
 // ── Public types ─────────────────────────────────
@@ -232,3 +233,10 @@ async function boot(): Promise<App> {
   return app;
 }
 
+/** Get the auth runtime resolved at boot. Throws when no process-local frond brought one. */
+export async function useFougereAuth(): Promise<AuthRuntime> {
+  const auth = authOf(await useFougereApp());
+  if (!auth) throw new Error("Auth not configured — declare `fronds: { '@fougere/auth-better': { … } }` in fougere.config.ts.");
+
+  return auth;
+}

@@ -12,7 +12,7 @@ import { createServer } from 'node:http';
 import { createLocalRunner, type Page } from '@fougere/core';
 import { Invocation } from '@fougere/core/contract';
 import { formFieldsOf, payloadOf } from '@fougere/app';
-import { answer } from '@fougere/app/web';
+import { answer } from '@fougere/app/answer';
 import { testApp } from '@fougere/testing';
 import Product from './fronds/catalog/entities/Product.js';
 

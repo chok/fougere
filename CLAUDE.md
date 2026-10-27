@@ -108,7 +108,8 @@ packages/
                          vocabulary and stays in the kernel
     src/*.ts             what belongs to no phase: the two published entry points, frond(),
                          the effective operation model, the checkers
-  http/                @fougere/http          the HttpRouter port + its express/fastify/hono adapters
+  http/                @fougere/http          the words every HTTP door speaks — HttpMethod, ResponseResult,
+                                                HttpCarrier. No router: an app mounts on an engine with `answer`
   observability/       @fougere/observability optional: a span per op, the four signals, OTLP. Core holds none of it
   defaults/            @fougere/defaults      the conventional boot — the ONE place naming container+storage+transport
                                                 — booted from `fronds.ts` when the project writes one, the compiler
@@ -723,9 +724,7 @@ could not see it refused at 1 MiB whatever the receiver took. Every door reads t
 then while counting; four doors read without a limit before it (Hono, Nuxt's REST and GraphQL
 routes, `rest` and `graphql` in `app/shared/src/web.ts`). A body that is not JSON is refused with
 415 (`UNSUPPORTED_MEDIA_TYPE`), never read as `{}`, which left the op to refuse a missing field.
-`@fougere/http` keeps a reader and a default of its own, since it takes no dependency on core, and
-answers the same 400/413/415 through `HttpError`; the Express host hands it the configured limit.
-Pinned by `core/tests/body-limit.test.ts`, `http/tests/*.test.ts`, `app/shared/tests/web-body.test.ts`. `Logger` holds NO level:
+Pinned by `core/tests/body-limit.test.ts`, `app/shared/tests/web-body.test.ts`. `Logger` holds NO level:
 `setLogLevel` sets one threshold for the process. `FOUGERE_LOG_LEVEL` wins over the file. A
 re-read needs `loadConfig(root, { fresh: true })` — a module is cached by its specifier.
 Core catches no signal: a process belongs to its host. Pinned by `tests/log-level.test.ts`.
@@ -873,12 +872,12 @@ The other two candidates were MEASURED and refused, 2026-09-11, because each alr
 mechanism: an outgoing remote call runs `runMiddlewares` before the transport
 (`boot/remote.ts`, `createRemoteFacade`) — what is missing there is not a host port but a scope,
 since a frond's middleware covers the addresses its handlers SERVE and not the ones they
-CALL, which is a different subject with no name yet. And `HttpRouter` is never held by the
-boot at all: the host builds it, hands it to `registerRoutes`, and already holds both
-`router.use(middleware)` and the routes array — a host port would be a fourth way to say it. Both
-ways in are written down, with `Storage`'s, in `site/content/docs/4.business/10.ports.md`
-and `7.storage.md`: `remoteTransport:` swaps a transport whole, `app.use` wraps the outgoing
-call, `router.use` and the routes array reach the HTTP side.
+CALL, which is a different subject with no name yet. And HTTP is never held by the boot at all:
+the engine is the host's, the app mounts on it with `answer`, and the engine's own middleware
+stands around it — a host port would be a second way to say it. Both ways in are written down,
+with `Storage`'s, in `site/content/docs/4.business/10.ports.md` and `7.storage.md`:
+`remoteTransport:` swaps a transport whole, `app.use` wraps the outgoing call, the engine's
+middleware reaches the HTTP side.
 
 `Storage` is an interface AND an abstract class merged, so the class carries the thirteen
 gestures as a TYPE while its prototype carries them as a FORWARD — a link writes what it
@@ -1131,8 +1130,8 @@ and `refusalsOf` at `toHttpError`'s status, each status narrowing `Refusal.code`
 descriptor — JSON Schema already — named by the entity, and a view cut from it by its use
 (`PostUpdateInput`). `protocols: { rest: { openapi: {} } }` serves it at `{prefix}/openapi.json`, and `ui`
 adds a page at `{prefix}/docs` — `true` for Swagger UI, `'scalar'` for Scalar with its telemetry off —
-each file pinned by version and by SRI hash (`describedAt`, answered by `serveRest` before a route is
-matched, and `registerDescribed` on an `HttpRouter`). Nothing is published without the line, since the
+each file pinned by version and by SRI hash (`describedAt`, answered by `answer` before a route is
+matched). Nothing is published without the line, since the
 document names every op and what each refuses at once, and the page is a decision of its own, since it
 runs code from a CDN. The page is the first answer that is not JSON
 (`ResponseResult.raw`), the case the media-type work takes over. Pinned by `testing/tests/openapi.test.ts`.
@@ -1162,8 +1161,8 @@ and `compiler/tests/collector-refuses.test.ts`.
 
 **A process serves the REST door of the fronds it hosts** — `routesOf`
 (`adapter/rest/src/routes/RouteDefinition.ts`) leaves out an op whose `placement` is `remote`, and
-`fougere serve` answers REST beside the call envelope (`ServeOptions.beside`, over `restAnswer` in
-`app/shared/src/web.ts`). The calling process used to project a remote frond's routes and relay each
+`fougere serve` answers REST beside the call envelope (`ServeOptions.beside`, over `answer` in
+`app/shared/src/answer.ts`). The calling process used to project a remote frond's routes and relay each
 call over JSON-RPC, so a door middleware would have run where the frond's code and dependencies were
 not. Every host answers through ONE door, `restDoor` (`adapter/rest/src/door.ts`), which reads the
 body INSIDE the cycle from the reader the host hands it — a request with no body reads as `undefined`

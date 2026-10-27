@@ -22,7 +22,6 @@
     "@fougere/container": "workspace:*",
     "@fougere/core": "workspace:*",
     "@fougere/defaults": "workspace:*",
-    "@fougere/http": "workspace:*",
     "@fougere/log": "workspace:*",
     "@fougere/nuxt": "workspace:*",
     "@fougere/observability": "workspace:*",

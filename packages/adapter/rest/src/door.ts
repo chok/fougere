@@ -1,5 +1,5 @@
 import { DoorMiddleware, ErrorCode, FougereError, toHttpError, type Door } from '@fougere/core';
-import { HttpError, type HttpCarrier, type ResponseResult } from '@fougere/http';
+import type { HttpCarrier, ResponseResult } from '@fougere/http';
 import type { RouteDefinition } from './routes/RouteDefinition.js';
 import type { Fields } from '@fougere/schema';
 
@@ -81,7 +81,7 @@ export function restDoor(route: RouteDefinition): Door<RestRequest, RestInvocati
     decode: async ({ params, query, body, state }) => ({
       params,
       query,
-      input: route.method === 'GET' && route.inputFields ? inputOf(route.inputFields, query) : await read(body),
+      input: route.method === 'GET' && route.inputFields ? inputOf(route.inputFields, query) : await body(),
       state,
     }),
     run: (invocation) => route.handler(invocation),
@@ -103,16 +103,6 @@ function inputOf(fields: Fields, query: Record<string, unknown>): Record<string,
 
     return [[key, text]];
   }));
-}
-
-/** `@fougere/http` refuses a body in its own words, since it takes no dependency on core. */
-async function read(body: () => Promise<unknown>): Promise<unknown> {
-  try {
-    return await body();
-  } catch (failure) {
-    if (!(failure instanceof HttpError)) throw failure;
-    throw new FougereError({ code: failure.code as ErrorCode, message: failure.message, cause: failure });
-  }
 }
 
 function responseOf(route: RouteDefinition, result: unknown): ResponseResult {
