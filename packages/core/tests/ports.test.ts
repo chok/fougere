@@ -131,15 +131,20 @@ describe('a framework builtin is a port too', () => {
   it('stands a wrapper in front of the logger the boot built, and keeps what it carries', async () => {
     await using app = await createApp({ fronds: wrappedLogger, createContainer });
     const lines: string[] = [];
-    const spy = vi.spyOn(console, 'info').mockImplementation((...args) => { lines.push(args.join(' ')); });
+    const info = vi.spyOn(console, 'info').mockImplementation((...args) => { lines.push(args.join(' ')); });
+    const warn = vi.spyOn(console, 'warn').mockImplementation((...args) => { lines.push(args.join(' ')); });
 
     const out = await createLocalRunner(app)({ address: 'report', op: 'run' }, Invocation.empty);
-    spy.mockRestore();
+    // `super(inner)`: what the wrapper leaves out runs on the real logger's line, not on a blank one.
+    app.resolve<Container>('frond:ops').resolve<{ warn(m: string): void }>('Logger').warn('left as it was');
+    info.mockRestore();
+    warn.mockRestore();
 
     expect(out).toEqual({ logger: 'RedactingLogger' });
     expect(lines.filter((line) => line.includes('report ran'))).toEqual([
       expect.stringMatching(/\[app:ops\].* report ran with token=\*\*\*$/),
     ]);
+    expect(lines).toEqual(expect.arrayContaining([expect.stringMatching(/\[app:ops\].* left as it was$/)]));
   });
 
   it('leaves the default in place for a frond that declares none', async () => {

@@ -75,15 +75,13 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
   `const <Class>_base` is lost. `@fougere/log` states its frond rather than being scanned,
   which is the right form for a published package anyway — so this is a trap for a frond
   inside a workspace package, not a blocker.
-- **A `Logger` wrapper that EXTENDS `Logger` loses what it does not override, in silence** —
-  `builtin/Logger.ts`. Its own base is built by `super()` with nothing: no carry, no `during`, the
-  default name, and every method it does not override runs on that empty base. A wrapper written
-  `implements Partial<Logger>` with `inner` loses nothing — what it leaves out is the real logger's,
-  forwarded as it is built (`linkOf`, `boot/ports.ts`; pinned by `core/tests/ports.test.ts`). What
-  remains for both forms: `child()` hands back the real logger's child, which skips the wrapper's own
-  code (`masked.child('x').info('token=abc')` is not masked). A single `write(line)` every level and
-  every child funnels through is what would make nothing bypass the wrapper. Measured 2026-10-01,
-  narrowed 2026-10-27.
+- **A `Logger` wrapper's `child()` skips the wrapper** — `builtin/Logger.ts`. Both forms lose nothing
+  else: `extends Logger` with `super(inner)` writes with the real logger's line, carry and operation,
+  and `implements Partial<Logger>` with `inner` has what it leaves out forwarded as it is built
+  (`linkOf`, `boot/ports.ts`; both pinned by `core/tests/ports.test.ts`). `child()` hands back a bare
+  child of the real logger, so `masked.child('x').info('token=abc')` is not masked. A single
+  `write(line)` every level and every child funnels through is what would make nothing bypass the
+  wrapper. Measured 2026-10-01, narrowed 2026-10-27.
 - **`conventions:` restates the directory NAMES and the import scope, nothing else** —
   `Conventions` (`core/src/Conventions.ts`). What a file is recognized BY stays fixed: a
   middleware extends `Middleware`, an extension `up`/`down`/`state`, and an address is the class

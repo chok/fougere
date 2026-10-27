@@ -75,7 +75,20 @@ export class Logger {
   private lineBuffer?: LineBuffer;
   private during?: () => string | undefined;
 
-  constructor(prefix?: string, options?: Omit<LoggerOptions, 'name'>) {
+  /**
+   * A name — `new Logger('app')` — or the logger it stands in front of, whose line, carry and
+   * operation it then writes with: `class Masking extends Logger { constructor(inner: Logger) {
+   * super(inner) } }` loses nothing it leaves out.
+   */
+  constructor(prefix?: string | Logger, options?: Omit<LoggerOptions, 'name'>) {
+    if (typeof prefix === 'object') {
+      this.name = prefix.name;
+      this.color = prefix.color;
+      this.lineBuffer = prefix.lineBuffer;
+      this.during = prefix.during;
+
+      return;
+    }
     this.name = prefix ?? 'app';
     this.color = options?.color ?? supportsColor();
     this.lineBuffer = options?.lineBuffer;
