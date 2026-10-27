@@ -7,7 +7,9 @@
  */
 import { describe, it, expect } from 'vitest';
 import { join } from 'node:path';
+import { resolveEffectiveOperations } from '@fougere/core';
 import { parseRefusals } from '../src/scan/handler-parser.js';
+import { scanProject } from '../src/scan/scanner.js';
 
 const handler = join(import.meta.dirname, 'fixtures-refusals/fronds/shop/handlers/OrderHandler.ts');
 const walked = () => parseRefusals(handler, (name) => name.startsWith('OrderHandler.'));
@@ -32,6 +34,18 @@ describe('the walk', () => {
     const found = await walked();
 
     expect(found.get('OrderHandler.reserve')).toEqual(['UNPROCESSABLE_ENTITY']);
+  }, 30_000);
+
+  /**
+   * Through a PORT: the call lands on the abstract method, and what refuses is what stands behind
+   * it — a realization, and a link's guard before it hands over to `inner`. Without the edge from
+   * the base to its overrides the walk stopped at the abstract method and `pay` promised nothing.
+   */
+  it('crosses a port to every realization and link standing behind it', async () => {
+    const { fronds } = await scanProject(join(import.meta.dirname, 'fixtures-refusals'));
+    const { operations } = resolveEffectiveOperations(fronds, { diagnostics: [] });
+
+    expect(operations.find((op) => op.name === 'pay')!.errors).toEqual(['FORBIDDEN', 'UNPROCESSABLE_ENTITY']);
   }, 30_000);
 
   it('says nothing of an operation that reaches no refusal', async () => {

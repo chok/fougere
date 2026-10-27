@@ -1,5 +1,6 @@
 import { FougereError, ErrorCode } from '@fougere/core';
 import { requireStock } from '../rules/stock.js';
+import Payment from '../services/Payment.js';
 
 /**
  * The guard lives BESIDE the handler, which is the whole point of the walk: reading the method's
@@ -15,6 +16,13 @@ function requireOpen(closed: boolean, operation: string): void {
 }
 
 export default class OrderHandler {
+  constructor(private payment: Payment) {}
+
+  /** Through a port: what refuses is each realization behind it, the link's own guard included. */
+  async pay(cents: number): Promise<string> {
+    return this.payment.charge(cents);
+  }
+
   /** Two hops away: ship → requireOpen → requirePaid. */
   async ship(): Promise<void> {
     requireOpen(false, 'ship');

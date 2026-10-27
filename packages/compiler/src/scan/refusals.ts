@@ -113,6 +113,15 @@ export function refusalsIn(typescript: typeof ts, program: ts.Program, isOperati
         if (code && at && !MASKED.has(code)) sites.push({ at, code });
       }
 
+      // A call to a port's method may land on any realization standing behind it, so whoever
+      // calls the base reaches what each override refuses — the link's guard before `inner` too.
+      if (typescript.isMethodDeclaration(node)) {
+        const own = nameOf(typescript, node);
+        for (const overridden of overriddenBy(typescript, checker, node)) {
+          if (own) into(callers, own).add(overridden);
+        }
+      }
+
       if (typescript.isCallExpression(node)) {
         const callee = calleeOf(typescript, checker, node);
         const caller = callee ? holderOf(typescript, node) : undefined;
@@ -127,6 +136,22 @@ export function refusalsIn(typescript: typeof ts, program: ts.Program, isOperati
   }
 
   return { sites: sites.length, byMethod: reached(sites, callers, isOperation) };
+}
+
+/** The methods of the bases this method stands in for, named the way a refusal site is. */
+function overriddenBy(typescript: typeof ts, checker: ts.TypeChecker, method: ts.MethodDeclaration): string[] {
+  const owner = method.parent;
+  const named = method.name.getText();
+  if (!typescript.isClassDeclaration(owner) || !owner.name) return [];
+  const declared = checker.getSymbolAtLocation(owner.name);
+  if (!declared) return [];
+
+  const own = checker.getDeclaredTypeOfSymbol(declared);
+
+  return checker.getBaseTypes(own as ts.InterfaceType)
+    .map((base) => base.getProperty(named)?.declarations?.[0])
+    .map((found) => (found ? nameOf(typescript, found) : undefined))
+    .filter((name): name is string => name !== undefined);
 }
 
 /** The declaration a call resolves to, named the way a refusal site is. */
