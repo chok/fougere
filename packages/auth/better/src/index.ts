@@ -44,12 +44,10 @@ export function betterAuth(opts: BetterAuthOptions): FrondDescriptor {
   const brought = Object.values(models).filter((schema) => schema !== opts.user);
   const providers = opts.providers ?? {};
   const basePath = opts.basePath ?? '/auth';
-  const session = sessionOperation(user);
 
   return frond('auth', {
     entities: brought,
-    collectors: [session.collector],
-    handlers: [session.handler],
+    ...sessionOperation(user),
     extensions: [{
       name: 'auth',
       state: { user: json(user as typeof Schema), session: json((models.session as typeof Schema).omit('token')) },

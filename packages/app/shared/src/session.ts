@@ -18,7 +18,7 @@ export function nobodyWhenUnserved(failure: unknown): SessionView {
 /** The session, asked through the envelope a page calls everything else through. */
 export async function sessionOf(fetcher: Fetcher): Promise<SessionView> {
   try {
-    return { user: (await sendCall(fetcher, SESSION_CALL, invocationOf())) as SessionView['user'] ?? null };
+    return (await sendCall(fetcher, SESSION_CALL, invocationOf())) as SessionView;
   } catch (failure) {
     return nobodyWhenUnserved(failure);
   }
