@@ -58,12 +58,19 @@ function fakeRes() {
   return { res, sent };
 }
 
-/** Run a middleware to completion — they answer asynchronously. */
+/**
+ * Run a middleware until it has passed or answered — they decide asynchronously, after a boot
+ * a slow runner does not finish in a fixed delay.
+ */
 async function run(mw: ReturnType<typeof call>, req: any) {
   const { res, sent } = fakeRes();
-  const next = vi.fn();
+  let decided!: () => void;
+  const decision = new Promise<void>((resolve) => { decided = resolve; });
+  const next = vi.fn(() => decided());
+  const answer = res.json;
+  res.json = (body: unknown) => { answer(body); decided(); return res; };
   mw(req, res, next);
-  await new Promise((r) => setTimeout(r, 5));
+  await decision;
 
   return { sent, next };
 }
