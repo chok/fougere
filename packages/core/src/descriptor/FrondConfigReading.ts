@@ -51,12 +51,13 @@ export class FrondConfigReading {
   }
 
   /** What the file says of the frond as a whole, spread onto its descriptor. */
-  members(): Pick<FrondDescriptor, 'pipes' | 'surfaces' | 'reads' | 'protocols' | 'operationsOverrides'> {
+  members(): Pick<FrondDescriptor, 'pipes' | 'surfaces' | 'reads' | 'ports' | 'protocols' | 'operationsOverrides'> {
     const config = this.config;
     const operationsOverrides = this.operationsOverrides();
 
     return {
       ...(config?.pipes ? { pipes: config.pipes } : {}),
+      ...(config?.ports ? { ports: config.ports } : {}),
       ...(config?.surfaces ? { surfaces: config.surfaces } : {}),
       ...(config?.reads ? { reads: config.reads } : {}),
       ...(config?.protocols ? { protocols: config.protocols } : {}),

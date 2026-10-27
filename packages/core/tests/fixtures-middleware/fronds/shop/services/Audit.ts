@@ -1,18 +1,17 @@
-import { Middleware, type AppNext, type OperationContext } from '@fougere/core';
-import Trail from '../services/Trail.js';
+import type { Call, Dispatcher } from '@fougere/core';
+import Trail from './Trail.js';
 
 /** Its own frond, because nothing says otherwise. */
-export default class Audit extends Middleware {
-  constructor(private trail: Trail) {
-    super();
+export default class Audit implements Partial<Dispatcher> {
+  constructor(private inner: Dispatcher, private trail: Trail) {
     const counts = (globalThis as Record<string, unknown>).__audit as { built: number } | undefined;
     if (counts) counts.built += 1;
   }
 
-  async around<T>(context: OperationContext, next: AppNext<T>): Promise<T> {
-    this.trail.note(`audit:${context.address}.${context.operation}`);
+  async dispatch(call: Call): Promise<unknown> {
+    this.trail.note(`audit:${call.address.address}.${call.address.operation}`);
 
-    return next();
+    return this.inner.dispatch(call);
   }
 
   async [Symbol.asyncDispose](): Promise<void> {

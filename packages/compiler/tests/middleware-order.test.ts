@@ -1,29 +1,22 @@
-/** Two middlewares of one frond stand one inside the other, and the order is stated, never read off a directory. */
+/** Two links in front of one port stand one inside the other, and the frond states the order — never a directory. */
 import { describe, it, expect } from 'vitest';
 import { join } from 'node:path';
 import { scanProject } from '../src/index.js';
 
 const root = join(import.meta.dirname, 'fixtures-middleware-order');
 
-describe('the order of a frond\'s middlewares', () => {
-  it('refuses two that nothing orders, giving the line to write', async () => {
-    const { diagnostics } = await scanProject(root);
-    const refused = diagnostics.find((one) => one.code === 'middlewares-unordered');
-
-    expect(refused).toMatchObject({ severity: 'blocking', subject: 'Audit, Timing' });
-    expect(refused?.message).toContain("middlewares: ['Audit', 'Timing']");
-  });
-
-  it('stands them in the order frond.config.ts states, outside in', async () => {
+describe('the order of a frond\'s links', () => {
+  it('is what frond.config.ts states under ports:, outside in, carried onto the descriptor', async () => {
     const scan = await scanProject(root);
-    const ordered = scan.fronds.find((frond) => frond.name === 'ordered');
+    const ordered = scan.fronds.find((frond) => frond.name === 'ordered')!;
 
-    expect(ordered?.middlewares.map((one) => one.name)).toEqual(['Timing', 'Audit']);
+    expect(ordered.ports).toEqual({ Dispatcher: ['Timing', 'Audit'] });
+    expect(ordered.providers.map((one) => one.implements)).toEqual([['Dispatcher'], ['Dispatcher']]);
   });
 
-  it('refuses one the stated order leaves out', async () => {
-    const { diagnostics } = await scanProject(root);
+  it('is left to the boot to refuse when nothing states it — the scan reads, the boot judges', async () => {
+    const scan = await scanProject(root);
 
-    expect(diagnostics.filter((one) => one.code === 'middlewares-unlisted').map((one) => one.subject)).toEqual(['Audit']);
+    expect(scan.fronds.find((frond) => frond.name === 'unordered')!.ports).toBeUndefined();
   });
 });

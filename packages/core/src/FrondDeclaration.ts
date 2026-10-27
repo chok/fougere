@@ -78,7 +78,7 @@ function declaredOperations(h: Ctor | DeclaredHandler): Map<string, OperationCon
 }
 
 /** What a declaration states about one frond. Everything else is derived from the classes. */
-export interface FrondDeclaration extends Pick<FrondConfig, 'pipes' | 'surfaces' | 'protocols'> {
+export interface FrondDeclaration extends Pick<FrondConfig, 'pipes' | 'surfaces' | 'protocols' | 'ports'> {
   /** An entity, or one named otherwise than its class — a derivation's name is its file's. */
   entities?: (SchemaView | { entity: SchemaView; name: string })[];
   handlers?: (Ctor | DeclaredHandler)[];
@@ -222,6 +222,7 @@ export function frond(name: string, declared: FrondDeclaration = {}): FrondDescr
     seeds,
     middlewares: config.inOrder(middlewares),
     ...(declared.pipes ? { pipes: declared.pipes } : {}),
+    ...(declared.ports ? { ports: declared.ports } : {}),
     ...(declared.surfaces ? { surfaces: declared.surfaces } : {}),
     ...(declared.extensions
       ? { extensions: declared.extensions.map((extension) => ({ name: extension.name, extension, filePath: fileOf(extension) })) }

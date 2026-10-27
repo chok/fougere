@@ -4,27 +4,21 @@
  */
 import { describe, it, expect } from 'vitest';
 import { entity, primary, text } from '@fougere/schema';
-import { frond, Middleware, Present, type AppNext, type OperationContext } from '../src/index.js';
+import { frond, Present } from '../src/index.js';
 
 class Book extends entity({ id: primary(), title: text() }) {}
 class Hidden extends entity({ id: primary(), note: text() }) {}
 
-class Audit extends Middleware {
-  async around<T>(_context: OperationContext, next: AppNext<T>): Promise<T> { return next(); }
-}
-class Timing extends Middleware {
-  async around<T>(_context: OperationContext, next: AppNext<T>): Promise<T> { return next(); }
-}
 
 class BookPresenter extends Present<Book> {
   async spine(books: { title: string }[]) { return books.map((book) => book.title.toUpperCase()); }
 }
 
 describe('frond(), handed its frond.config.ts', () => {
-  it('stands the middlewares in the order the file states, outside in', () => {
-    const shelf = frond('shelf', { middlewares: [Audit, Timing], config: { middlewares: ['Timing', 'Audit'] } });
+  it('keeps the order its links stand in front of a port, outside in', () => {
+    const shelf = frond('shelf', { config: { ports: { Dispatcher: ['Timing', 'Audit'] } } });
 
-    expect(shelf.middlewares.map((one) => one.name)).toEqual(['Timing', 'Audit']);
+    expect(shelf.ports).toEqual({ Dispatcher: ['Timing', 'Audit'] });
   });
 
   it('exposes what the file names and leaves the rest out', () => {

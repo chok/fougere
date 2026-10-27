@@ -23,7 +23,6 @@ export type { StatementOperation, StatementParam, StatementType } from './Statem
 export type { OperationOverride } from './OperationOverride.js';
 export { buildGraph, clusterEntities, suggestSplit, type DomainCluster } from './DomainCluster.js';
 export { type EntityNode } from './EntityNode.js';
-export { Middleware } from './prefab/Middleware.js';
 export { DoorMiddleware } from './prefab/DoorMiddleware.js';
 export { Mirror } from './prefab/Mirror.js';
 export type { Refreshed } from './prefab/Refreshed.js';

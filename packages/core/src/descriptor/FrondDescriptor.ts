@@ -18,7 +18,7 @@ import type { FougereFrondProtocols } from '../FougereFrondProtocols.js';
  */
 export const nameOf = (provider: ProviderEntry): string => provider.name ?? provider.ctor.name;
 
-export interface FrondDescriptor extends Pick<FrondConfig, 'pipes' | 'surfaces' | 'reads'> {
+export interface FrondDescriptor extends Pick<FrondConfig, 'pipes' | 'surfaces' | 'reads' | 'ports'> {
   name: string;
   source: FrondSource;
   providers: ProviderEntry[];

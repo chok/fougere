@@ -1,10 +1,10 @@
 import { frond } from '../../src/index.js';
 import { op } from '../contract.js';
 import DigestHandler from './fronds/mail/handlers/DigestHandler.js';
-import Everywhere from './fronds/ops/middlewares/Everywhere.js';
+import Everywhere from './fronds/ops/services/Everywhere.js';
 import Note from './fronds/shop/entities/Note.js';
 import NoteHandler from './fronds/shop/handlers/NoteHandler.js';
-import Audit from './fronds/shop/middlewares/Audit.js';
+import Audit from './fronds/shop/services/Audit.js';
 import Trail from './fronds/shop/services/Trail.js';
 
 export default [
@@ -16,11 +16,10 @@ export default [
       },
     }],
   }),
-  frond('ops', { middlewares: [Everywhere] }),
+  frond('ops', { providers: [{ ctor: Everywhere, deps: ['Dispatcher'], implements: ['Dispatcher'] }] }),
   frond('shop', {
     entities: [Note],
-    providers: [Trail],
-    middlewares: [{ ctor: Audit, deps: ['Trail'] }],
+    providers: [Trail, { ctor: Audit, deps: ['Dispatcher', 'Trail'], implements: ['Dispatcher'] }],
     handlers: [{ ctor: NoteHandler, repository: Note }],
   }),
 ];

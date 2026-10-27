@@ -1,1 +1,1 @@
-export default { middlewares: ['Timing', 'Audit'] };
+export default { ports: { Dispatcher: ['Timing', 'Audit'] } };

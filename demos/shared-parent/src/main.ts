@@ -1,7 +1,7 @@
 /**
  * One frond holds what a family shares, and answers nothing itself.
  *
- *   fronds/billing/       services/Money.ts, middlewares/Audit.ts — no handlers
+ *   fronds/billing/       services/Money.ts, services/Audit.ts — no handlers
  *   fronds/cart/          handlers/CartHandler.ts
  *   fronds/invoice/       handlers/InvoiceHandler.ts
  *

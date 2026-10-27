@@ -1,6 +1,7 @@
 /** Putting one frond into the app being built: its scope, what it serves, what it takes. */
 import type { Container } from '@fougere/container';
 import type { ModuleExtension } from './Extension.js';
+import { aroundCalls, standsAroundCalls, theRest } from './calls.js';
 import type { Plugged } from '../wire/Plugged.js';
 import type { AnswerStep } from '../dispatch/AnswerStep.js';
 import type { StateShape } from '../wire/StateShape.js';
@@ -216,6 +217,7 @@ function registerMiddlewares(
   const inheritedAtDoors = frond.extends ? doorMiddlewaresOf.get(frond.extends) ?? [] : [];
   const mineAtDoors: (DoorAround & { at?: ReadonlySet<string> })[] = [];
 
+  if (standsAroundCalls(frond.providers)) mine.push(aroundCalls(scope));
   for (const middleware of frond.middlewares) {
     scope.register(middleware.name, middleware.ctor, { deps: ownLogger(middleware.name, middleware.deps), lifetime: 'singleton' });
     // A door's middleware stands at that door alone, around its requests — not around every call.
@@ -225,8 +227,15 @@ function registerMiddlewares(
       mineAtDoors.push({ door, around, ...(handler && { at: handledBy(frond, middleware, handler, assembly.refused) }) });
       continue;
     }
-    mine.push((context, next) =>
-      scope.resolve<{ around: AppMiddleware }>(middleware.name).around(context, next));
+    assembly.refused.push({
+      severity: 'blocking',
+      code: 'middleware-not-a-door',
+      frond: frond.name,
+      subject: middleware.name,
+      filePath: middleware.filePath,
+      message: `${middleware.name} is listed as a middleware and stands at no door. What stands around every call is a link: `
+        + `{ ctor: ${middleware.name}, deps: ['Dispatcher'], implements: ['Dispatcher'] } among the providers.`,
+    });
   }
 
   // Ancestors first, so they stand OUTSIDE — `getMiddlewares` hands back insertion order.
@@ -682,7 +691,10 @@ export async function installFrond(frond: FrondDescriptor, assembly: Assembly): 
   const owners = ownershipOf(frond, assembly);
 
   const ownLogger = ownLoggers(scope, basesOf(frond.providers, (base) => base === 'Logger').has('Logger'));
-  const declared = registerProviders(frond, scope, options.ports, assembly.boundPorts, assembly.refused, ownLogger, frondLog, assembly.plugged);
+  // The rest of every call, which a link declaring `implements Partial<Dispatcher>` stands in front of.
+  scope.registerValue('Dispatcher', theRest);
+  const ports = { ...options.ports, ...frond.ports };
+  const declared = registerProviders(frond, scope, ports, assembly.boundPorts, assembly.refused, ownLogger, frondLog, assembly.plugged);
   // An ancestor's links stand OUTSIDE this frond's own; a seam has no container key to inherit through.
   const hostPorts = inheritedHostPorts(frond, assembly.hostPortsOf, declared);
   assembly.hostPortsOf.set(frond.name, hostPorts);

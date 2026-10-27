@@ -10,11 +10,15 @@ export type OwnLogger = (className: string, deps: readonly string[]) => string[]
  * keeps that class whole: `child()` hands back a bare `Logger`.
  */
 export function ownLoggers(scope: Container, replaced: boolean): OwnLogger {
+  // A link is registered as a provider, then again in its chain: one class, one logger of its own.
+  const given = new Set<string>();
+
   return (className, deps) => {
     if (replaced || !deps.includes('Logger')) return [...deps];
 
     const key = `Logger:${className}`;
-    scope.registerValue(key, scope.resolve<Logger>('Logger').child(className));
+    if (!given.has(key)) scope.registerValue(key, scope.resolve<Logger>('Logger').child(className));
+    given.add(key);
 
     return deps.map((dep) => (dep === 'Logger' ? key : dep));
   };

@@ -19,7 +19,13 @@ export interface FrondConfig {
    * ran first, and scan order is not an answer.
    */
   pipes?: Record<NameOf<'entity'>, NameOf<'handler'>[]>;
-  /** The order this frond's middlewares stand in, outside in — required once there are two. */
+  /**
+   * The order this frond's links stand in front of a port, outside in — `ports: { Dispatcher: ['Timing',
+   * 'Audit'] }`. A decision of the definition, where `ports:` in `fougere.config.ts` is the operator's
+   * choice of what answers; the frond's wins for its own scope.
+   */
+  ports?: Record<string, string | readonly string[]>;
+  /** The order this frond's door middlewares stand in, outside in — required once there are two. */
   middlewares?: string[];
   /** What the frond says to each protocol about itself — `rest: { path: '/journal' }`. */
   protocols?: FougereFrondProtocols;

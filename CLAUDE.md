@@ -745,18 +745,18 @@ fact has neither — the announcer left with `void`, and a subscriber's answer i
 dead. That is why `Pipe<T>` returns a value instead of taking `next`, and it is the line
 between the two, not a convention.
 
-**A middleware is a frond's to declare** — `middlewares/`, the tenth convention directory
-and the only one whose members apply to code they do not name. A member EXTENDS `Middleware`
-(`prefab/Middleware.ts`), read by `instanceof`, so a misspelled `around` stops compiling; a class
-there that does not extend it runs around nothing and the scan WARNS `middleware-not-extended`,
-since a forgotten `extends` reads exactly like a helper. One that extends it with no `around` is
-refused. Pinned by `compiler/tests/middleware-form.test.ts` and `core/tests/middleware-base.test.ts`.
-Two of one frond stand one inside the other, and a directory is no order: `middlewares: ['Timing',
-'Audit']` in `frond.config.ts` states it outside in, two with no order are refused
-(`middlewares-unordered`), one the order leaves out too (`middlewares-unlisted`) — read by the scan,
-the one place that read the order off a directory. `frond()` states it by its array. Pinned by
-`compiler/tests/middleware-order.test.ts`.
-It answers for its own frond — every ADDRESS its handlers answer to, wider than its
+**What stands around a frond's calls is a link in front of `Dispatcher`** — `implements
+Partial<Dispatcher>` with `inner: Dispatcher`, a service like any other, read off its clause like any
+link (`dispatch(call: Call)`, `boot/calls.ts`). Each frond's scope answers `Dispatcher` with the rest of
+the call (`theRest`), so the port machinery builds the chain with nothing of its own, and the facade
+hands each call over as the `Call` it is. Two are ordered by the frond — `ports: { Dispatcher:
+['Timing', 'Audit'] }` in `frond.config.ts`, outside in, read beside `fougere.config.ts`'s `ports:` and
+winning for that frond — and two with no order refuse like any two links. `Middleware`, the `middlewares:`
+order and `middleware-not-extended` are gone: `middlewares/` holds a door's middlewares only, and a class
+left there standing at no door is warned `middleware-not-a-door`. Measured before the move: the 23
+middlewares of the tree read `context.address` and `context.operation`, both on the `Call`. Pinned by
+`core/tests/calls.test.ts`, `compiler/tests/middleware-form.test.ts`, `compiler/tests/middleware-order.test.ts`.
+A chain answers for its own frond — every ADDRESS its handlers answer to, wider than its
 entities since a handler without one runs behind it too — AND for the fronds under it in
 `FougereConfig.fronds`. How far it reaches is written nowhere else: `MiddlewareEntry.scope`
 is gone, because where a frond sits IS the reach and stating it twice put one decision in

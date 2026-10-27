@@ -1,4 +1,4 @@
-import { DEFAULT_CONVENTIONS, DoorMiddleware, Middleware, RouteAddress, frondDirsOf, frondPackage, providerDirsOf, resolveConventions, togetherKeyOf, type Conventions, type ConventionsInput, type Diagnostic, type ScanResult } from '@fougere/core';
+import { DEFAULT_CONVENTIONS, DoorMiddleware, RouteAddress, frondDirsOf, frondPackage, providerDirsOf, resolveConventions, togetherKeyOf, type Conventions, type ConventionsInput, type Diagnostic, type ScanResult } from '@fougere/core';
 import { Fronds, addressOf, awaitKeyOf, cardinalityOf, computeBindingPlan, opsOf, emitKeyOf, getPresenterFields, builtOn, outputOf, repositoryKeyOf, seated, seatsOf, storageKeyOf, targetOf, type CollectorEntry, type EntityEntry, type FrondDescriptor, type HandlerEntry, type MiddlewareEntry, type OperationContract, type OperationsMap, type PresenterEntry, type ProviderEntry, type SeedEntry, type TypeRef, viewsOf, isExtension, FrondConfigReading, Term, type ExtensionEntry, type VocabularyEntry } from '@fougere/core/descriptor';
 import { frondNamesOf, getModuleLoader, loadFrondConfig } from '@fougere/core/node';
 import type { FrondConfig, ErrorCode } from '@fougere/core';
@@ -707,20 +707,20 @@ function inStatedOrder(middlewares: MiddlewareEntry[], stated: readonly string[]
 }
 
 /**
- * A class in `middlewares/` that extends `Middleware`, or a door's base (`RestMiddleware()`). Anything
- * else there runs around nothing, which is said rather than left silent — a forgotten `extends` reads
- * exactly like a helper.
+ * A class in `middlewares/` extending a door's base (`RestMiddleware()`). Anything else there runs
+ * around nothing, which is said rather than left silent: what stands around every call is a link in
+ * front of `Dispatcher`, a service like any other.
  */
 async function toMiddlewareEntry(filePath: string, projectRoot?: string): Promise<MiddlewareEntry | null> {
   const ctor = await loadClass(filePath);
-  if (!(ctor.prototype instanceof Middleware) && !(ctor.prototype instanceof DoorMiddleware)) {
+  if (!(ctor.prototype instanceof DoorMiddleware)) {
     record({
       severity: 'warning',
-      code: 'middleware-not-extended',
+      code: 'middleware-not-a-door',
       filePath,
       subject: ctor.name,
-      message: `${ctor.name} is in middlewares/ but does not extend Middleware, so it never runs. `
-        + `Write \`class ${ctor.name} extends Middleware\`, or move it out of middlewares/.`,
+      message: `${ctor.name} is in middlewares/ but extends no door's base, so it never runs. What stands around every `
+        + `call is a link: \`class ${ctor.name} implements Partial<Dispatcher>\`, asking for \`inner: Dispatcher\`, in services/.`,
     });
 
     return null;
@@ -745,7 +745,7 @@ async function toMiddlewareEntry(filePath: string, projectRoot?: string): Promis
       code: 'middleware-without-around',
       filePath,
       subject: ctor.name,
-      message: `${ctor.name} extends Middleware but has no \`around(context, next)\` method.`,
+      message: `${ctor.name} extends a door's base but has no \`around(received, next)\` method.`,
     });
 
     return null;

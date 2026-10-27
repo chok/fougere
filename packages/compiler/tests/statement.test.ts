@@ -28,8 +28,8 @@ describe('a statement written from the scan', () => {
   it('brings back what the frond is made of beyond its classes', async () => {
     const { scanned, written } = await stated('fixtures-statement');
 
-    expect(written.middlewares.map((one) => one.name)).toEqual(['Timing', 'Audit']);
-    expect(written.middlewares.map((one) => one.name)).toEqual(scanned.middlewares.map((one) => one.name));
+    expect(written.ports).toEqual({ Dispatcher: ['Timing', 'Audit'] });
+    expect(written.providers.filter((one) => one.implements).map((one) => one.name).sort()).toEqual(['Audit', 'Timing']);
     expect(written.presenters[0]!.fieldMeta).toEqual(scanned.presenters[0]!.fieldMeta);
     expect(written.extensions?.map((one) => one.name)).toEqual(['stamp']);
     expect(written.seeds[0]!.data).toEqual([{ id: 'b1', title: 'Pnin', shelvedAt: new Date('1957-03-07T00:00:00Z') }]);
