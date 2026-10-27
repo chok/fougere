@@ -8,6 +8,10 @@ export async function jsonBodyOf(request: Request): Promise<unknown> {
   const declared = request.headers.get('content-length');
   if (!request.body || declared === '0') return undefined;
 
+  // A POST with neither a length nor chunks — what `curl -X POST` writes — still hands over a stream.
+  const raw = await readWithin(request.body, maxBodyBytes(), declared);
+  if (!raw) return undefined;
+
   const contentType = request.headers.get('content-type') ?? '';
   if (!contentType.toLowerCase().includes('json')) {
     throw new FougereError({
@@ -15,9 +19,6 @@ export async function jsonBodyOf(request: Request): Promise<unknown> {
       message: `The body is sent as ${contentType || 'no declared type'}. Send it as application/json.`,
     });
   }
-
-  const raw = await readWithin(request.body, maxBodyBytes(), declared);
-  if (!raw) return undefined;
 
   try {
     return JSON.parse(raw);

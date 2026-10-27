@@ -40,7 +40,7 @@ describe('a receiver with a door beside it', () => {
 
   it('hands beside no body for a POST that declares none, as curl sends one', async () => {
     const receiver = await serve(runner, {
-      beside: async (request) => Response.json({ body: request.body === null }),
+      beside: async (request) => Response.json({ body: (await request.text()) === '' }),
     });
     try {
       // Neither a length nor chunks: what `curl -X POST` writes, and what fetch never does.

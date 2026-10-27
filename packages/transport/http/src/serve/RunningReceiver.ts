@@ -1,5 +1,4 @@
-import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
-import { Readable } from 'node:stream';
+import { serve as listen } from 'srvx';
 import { ErrorCode, FougereError, readWithin, type Transport } from '@fougere/core';
 import type { RpcResponse } from '../jsonrpc/RpcResponse.js';
 import { handleRpc } from '../server.js';
@@ -19,7 +18,7 @@ export function serve(runner: Transport, options: ServeOptions = {}): Promise<Ru
   const refusal = whyNotHere(host, options);
   if (refusal) return Promise.reject(refusal);
 
-  return listening(createServer(answering(runner, options)), host!, options);
+  return listening(runner, host!, options);
 }
 
 /**
@@ -51,27 +50,18 @@ function whyNotHere(host: string | undefined, options: ServeOptions): Error | un
 
 /** One path, one method, and a body that is refused before it is read whole. */
 function answering(runner: Transport, options: ServeOptions) {
-  return async (req: IncomingMessage, res: ServerResponse): Promise<void> => {
-    if (req.method !== 'POST' || req.url !== CALL_PATH) {
-      const answered = options.beside && await options.beside(webRequestOf(req));
-      if (!answered) {
-        res.writeHead(404).end();
-
-        return;
-      }
-      res.writeHead(answered.status, Object.fromEntries(answered.headers)).end(Buffer.from(await answered.arrayBuffer()));
-
-      return;
+  return async (request: Request): Promise<Response> => {
+    if (request.method !== 'POST' || new URL(request.url).pathname !== CALL_PATH) {
+      return (await options.beside?.(request)) ?? new Response(null, { status: 404 });
     }
 
     let raw: string;
     try {
-      raw = await readWithin(req, maxFrameBytes(), req.headers['content-length']);
+      raw = await readWithin(request.body, maxFrameBytes(), request.headers.get('content-length'));
     } catch (refused) {
       if (!(refused instanceof FougereError && refused.code === ErrorCode.PAYLOAD_TOO_LARGE)) throw refused;
-      res.writeHead(413, { 'content-type': 'application/json' }).end(JSON.stringify(tooLarge()));
 
-      return;
+      return Response.json(tooLarge(), { status: 413 });
     }
 
     let response: RpcResponse;
@@ -81,38 +71,23 @@ function answering(runner: Transport, options: ServeOptions) {
       response = parseError();
     }
 
-    res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify(response));
+    return Response.json(response);
   };
 }
 
-/** A Node request as a Web one, its body still a stream — built only for what is not a call. */
-function webRequestOf(req: IncomingMessage): Request {
-  const headers = new Headers();
-  for (const [name, value] of Object.entries(req.headers)) {
-    if (value !== undefined) headers.set(name, Array.isArray(value) ? value.join(', ') : value);
-  }
-  // A message carries a body when it says so — a length, or chunks — and a POST with neither has none.
-  const reads = Number(req.headers['content-length']) > 0 || req.headers['transfer-encoding'] !== undefined;
-
-  return new Request(`http://${req.headers.host ?? 'localhost'}${req.url ?? '/'}`, {
-    method: req.method,
-    headers,
-    ...(reads && { body: Readable.toWeb(req) as ReadableStream<Uint8Array>, duplex: 'half' }),
-  } as RequestInit);
-}
-
-/** The port a receiver ended up on — asked of the server, since 0 means "whatever is free". */
-function listening(server: Server, host: string, options: ServeOptions): Promise<RunningReceiver> {
-  return new Promise((resolve, reject) => {
-    server.once('error', reject);
-    server.requestTimeout = options.requestTimeoutMs ?? 15_000;
-    server.listen(options.port ?? 0, host, () => {
-      const address = server.address();
-
-      resolve({
-        port: typeof address === 'object' && address !== null ? address.port : 0,
-        close: () => new Promise<void>((done, fail) => server.close((err) => (err ? fail(err) : done()))),
-      });
-    });
+/** The port a receiver ended up on — read off where it listens, since 0 means "whatever is free". */
+async function listening(runner: Transport, host: string, options: ServeOptions): Promise<RunningReceiver> {
+  const server = listen({
+    fetch: answering(runner, options),
+    port: options.port ?? 0,
+    hostname: host,
+    silent: true,
+    node: { requestTimeout: options.requestTimeoutMs ?? 15_000 },
   });
+  await server.ready();
+
+  return {
+    port: Number(new URL(server.url!).port),
+    close: () => server.close(),
+  };
 }
