@@ -9,6 +9,7 @@ export type { FougereProtocols } from './FougereProtocols.js';
 export type { FougereOperationProtocols } from './FougereOperationProtocols.js';
 export type { FougereFrondProtocols } from './FougereFrondProtocols.js';
 export type { FougereConfig } from './FougereConfig.js';
+export type { ServerConfig, ServerMiddleware } from './ServerConfig.js';
 export { statesModule, type FrondEntries, type FrondEntry } from './FrondEntries.js';
 export { keyedFrondEntries, type KeyedFrondEntry } from './KeyedFrondEntry.js';
 export { nested } from './boot/nesting.js';

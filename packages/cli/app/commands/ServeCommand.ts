@@ -83,7 +83,8 @@ export default class ServeCommand {
     // here takes its door with it, and the process it left no longer answers for it.
     const beside = (request: Request) => webAnswer(hosted, request);
     const answer: ReceiveOptions['answer'] = (door, received) => hosted.answer(door, received);
-    const { port: bound } = await serve((call, inv) => current(call, inv), { port, verify, requireIdentity, beside, answer });
+    const { use } = (await loadConfig(root)).server ?? {};
+    const { port: bound } = await serve((call, inv) => current(call, inv), { port, verify, requireIdentity, beside, answer, use });
     this.ui.step(`frond ${frond} served — POST http://127.0.0.1:${bound}/_fougere/call`);
     if (serves(hosted.protocols, 'rest')) this.ui.info(`REST under http://127.0.0.1:${bound}${prefixOf(hosted.protocols)}`);
     this.ui.info(requireIdentity ? 'signed calls only (FOUGERE_ROOT_KEY is set)' : 'unsigned calls accepted — no FOUGERE_ROOT_KEY');

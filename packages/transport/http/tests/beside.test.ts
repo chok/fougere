@@ -60,3 +60,40 @@ describe('a receiver with a door beside it', () => {
     }
   });
 });
+
+describe('what stands around beside', () => {
+  const stamp = (name: string) => async (request: Request, next: () => Promise<Response>) => {
+    const answered = await next();
+    const headers = new Headers(answered.headers);
+    headers.append('x-trail', name);
+
+    return new Response(answered.body, { status: answered.status, headers });
+  };
+
+  it('runs outside in, may answer in its place, and leaves the envelope alone', async () => {
+    const receiver = await serve(runner, {
+      beside: async () => Response.json({ beside: true }),
+      use: [
+        stamp('outer'),
+        stamp('inner'),
+        async (request, next) => (new URL(request.url).pathname === '/healthz' ? new Response('ok') : next()),
+      ],
+    });
+    const base = `http://127.0.0.1:${receiver.port}`;
+    try {
+      const posts = await fetch(`${base}/api/blog/posts`);
+      const health = await fetch(`${base}/healthz`);
+      const call = await fetch(`${base}/_fougere/call`, {
+        method: 'POST', body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'post.list', params: {} }),
+      });
+
+      expect(await posts.json()).toEqual({ beside: true });
+      expect(posts.headers.get('x-trail')).toBe('inner, outer');
+      expect([health.status, await health.text(), health.headers.get('x-trail')]).toEqual([200, 'ok', 'inner, outer']);
+      expect(call.headers.get('x-trail')).toBeNull();
+      expect(await call.json()).toMatchObject({ result: 'called' });
+    } finally {
+      await receiver.close();
+    }
+  });
+});

@@ -10,6 +10,7 @@ import { statesModule, type FrondEntries } from './FrondEntries.js';
 import { keyedFrondEntries } from './KeyedFrondEntry.js';
 import { DEFAULT_CONVENTIONS } from './Conventions.js';
 import type { StateEntry } from './FougereStates.js';
+import type { ServerConfig } from './ServerConfig.js';
 
 export interface FougereConfig {
   /**
@@ -40,6 +41,11 @@ export interface FougereConfig {
    * 604800 } } }` — named here, the way to keep it brought by an import (`@fougere/state-cookie`).
    */
   state?: Record<string, StateEntry>;
+  /**
+   * What stands around the requests `fougere serve` answers browsers — `{ use: [cors()] }`, srvx
+   * middlewares, outside in. A host with a server of its own uses that server's.
+   */
+  server?: ServerConfig;
 }
 
 const CONFIG_FILES = ['fougere.config.ts', 'fougere.config.js', 'fougere.config.mjs'];

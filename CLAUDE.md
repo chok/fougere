@@ -1185,7 +1185,9 @@ import it. Fougere ships no router: an engine is one, and its middleware stands 
 Measured 2026-10-27 on an app behind six mounts: srvx's `Request` costs 5–7 % against Fastify reading
 natively, where a call costs ~22 µs off the engine on a `GET`. The peer envelope stays read off the
 Node stream (`transport/http/src/serve/RunningReceiver.ts`): through a `Request` the same call answered
-29 % less. Who is signed in is not a door but the auth frond's op, `session.get`. Pinned by
+29 % less. `server: { use }` (`core/src/ServerConfig.ts`) stands srvx middlewares around what `fougere
+serve` answers beside it, outside in, and around nothing else: it is the one host where Fougere is the
+server, and every other host has middlewares of its own. Who is signed in is not a door but the auth frond's op, `session.get`. Pinned by
 `app/shared/tests/serve.test.ts`, `app/shared/tests/express.test.ts` and
 `testing/tests/graphql-get.test.ts`.
 

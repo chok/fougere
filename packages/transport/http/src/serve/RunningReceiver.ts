@@ -49,21 +49,27 @@ function whyNotHere(host: string | undefined, options: ServeOptions): Error | un
   );
 }
 
+/** What answers a request that is not a call — `beside` inside the middlewares, a 404 when nothing does. */
+function besides(options: ServeOptions): (request: Request) => Promise<Response> {
+  const inner = async (request: Request) => (await options.beside?.(request)) ?? new Response(null, { status: 404 });
+
+  return (options.use ?? []).reduceRight<(request: Request) => Promise<Response>>(
+    (next, middleware) => async (request) => middleware(request, () => next(request)),
+    inner,
+  );
+}
+
 /**
  * One path, one method, and a body that is refused before it is read whole. The envelope is read
  * off the Node stream itself: through a Web `Request` the same call answered 29 % less (85 227 →
  * 60 378 req/s, measured 2026-10-27), and this is the wire between two processes, not a host's door.
  */
 function answering(runner: Transport, options: ServeOptions) {
+  const besideOf = besides(options);
+
   return async (req: IncomingMessage, res: ServerResponse): Promise<void> => {
     if (req.method !== 'POST' || req.url !== CALL_PATH) {
-      const answered = options.beside && await options.beside(new NodeRequest({ req, res }));
-      if (!answered) {
-        res.writeHead(404).end();
-
-        return;
-      }
-      await sendNodeResponse(res, answered);
+      await sendNodeResponse(res, await besideOf(new NodeRequest({ req, res })));
 
       return;
     }

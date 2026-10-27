@@ -1,3 +1,4 @@
+import type { ServerMiddleware } from '@fougere/core';
 import { type ReceiveOptions } from '../server.js';
 
 export interface ServeOptions extends ReceiveOptions {
@@ -16,4 +17,6 @@ export interface ServeOptions extends ReceiveOptions {
    * `undefined` from it, or no `beside` at all, is a 404.
    */
   beside?: (request: Request) => Promise<Response | undefined>;
+  /** What stands around `beside`, outside in — the envelope stays outside every one of them. */
+  use?: ServerMiddleware[];
 }
