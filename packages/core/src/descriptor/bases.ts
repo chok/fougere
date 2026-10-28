@@ -17,8 +17,8 @@ export const subjectKeyOf = (port: string, subject: string): string => `${port}<
  * still a key, and a DECLARED abstract one is never a candidate. A wrapper stops at the class it asks for — it stands in front of that one and
  * realizes nothing above it.
  *
- * It is also what excludes a prefab: a repository extends the class `Repository(Post)`
- * returned (`RepositoryBase`), and no key is ever that name.
+ * It is also what keeps a seat out: a repository extends core's `Repository`, under which nothing
+ * answers — it answers `Repository<Post>` through its seat (`registerRepositories`), not as a port.
  *
  * Read twice, which is why it is stated once: the boot binds against it, and the scan emits
  * the same relation as types so a config cannot name a class that does not answer the port.

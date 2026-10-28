@@ -28,8 +28,8 @@ function union(names: Iterable<string>): string {
  *
  * `basesOf` asks whether a name is answered, which the boot settles against its container. A
  * scan has no container, so what stands in for it is the project itself: a port is a class this
- * scan read. That is the same line drawn from the other side — `RepositoryBase` is returned by a
- * call and declared in no file, so it is excluded here for the reason the boot excludes it.
+ * scan read. That is the same line drawn from the other side — core's `Repository` is declared in no
+ * file of the project, so it is excluded here for the reason the boot excludes it.
  */
 function declaredIn(frond: FrondDescriptor): Set<string> {
   return new Set([
