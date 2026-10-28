@@ -1,6 +1,6 @@
 {
   "name": "@fougere/http",
-  "version": "0.27.0-alpha.0",
+  "version": "0.28.0-alpha.0",
   "description": "The words every HTTP door speaks — a method, an answer, the headers a state travels in.",
   "keywords": [
     "fougere",
