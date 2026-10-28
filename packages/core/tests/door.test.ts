@@ -235,6 +235,6 @@ describe('a link at a door', () => {
       providers: [Line],
     });
 
-    await expect(createApp({ fronds: [unrelated], createContainer })).rejects.toThrow(/Line is the port of the door.*Rename the class/s);
+    await expect(createApp({ fronds: [unrelated], createContainer })).rejects.toThrow(/Line answers the rest of the request in every frond.*Rename the class/s);
   });
 });

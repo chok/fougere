@@ -1,9 +1,8 @@
 /** Putting one frond into the app being built: its scope, what it serves, what it takes. */
 import type { Container } from '@fougere/container';
 import type { ModuleExtension } from './Extension.js';
-import { aroundCalls, theRest } from './calls.js';
-import { subjectKeyOf } from '../descriptor/bases.js';
-import { isDoorPort, registerDoorPorts, reserving, standingAtDoors } from './doors.js';
+import { aroundCalls, DISPATCH } from './calls.js';
+import { doorPorts, doorStepOf, reserving, standingAtDoors } from './doors.js';
 import { envKeyOf } from '../module/value/Env.js';
 import type { Plugged } from '../wire/Plugged.js';
 import type { AnswerStep } from '../dispatch/AnswerStep.js';
@@ -177,8 +176,8 @@ function registerMiddlewares(
   const inheritedAtDoors = frond.extends ? doorMiddlewaresOf.get(frond.extends) ?? [] : [];
   const mineAtDoors: (DoorAround & { at?: ReadonlySet<string> })[] = [];
 
-  const chained = (key: string) => assembly.plugged.some((one) => one.frond === frond.name && one.point === key);
-  if (chained('Dispatcher')) mine.push(aroundCalls(scope));
+  const calls = DISPATCH.standing(frond, assembly.plugged);
+  mine.push(...calls.filter((one) => !one.at).map(({ key }) => aroundCalls(scope, key)));
   mineAtDoors.push(...standingAtDoors(frond, scope, assembly.plugged, assembly.refused));
 
   // Ancestors first, so they stand OUTSIDE — `getMiddlewares` hands back insertion order.
@@ -186,11 +185,10 @@ function registerMiddlewares(
     for (const address of addresses) use(around, address);
   }
   // One handler's own, inside its frond's and never handed down: `Dispatcher<PostHandler>`.
-  for (const name of new Set(frond.handlers.map((handler) => handler.name))) {
-    const key = subjectKeyOf('Dispatcher', name);
-    if (!chained(key)) continue;
+  for (const { key, at } of calls) {
+    if (!at) continue;
     const around = aroundCalls(scope, key);
-    for (const address of new Set(frond.handlers.filter((handler) => handler.name === name).map((handler) => handler.address))) use(around, address);
+    for (const address of at) use(around, address);
   }
   middlewaresOf.set(frond.name, [...inherited, ...mine]);
   // A child inherits what stands around its whole frond; one bound to a handler stays with it.
@@ -390,8 +388,8 @@ function registerProviders(
 
 /** What a chain whose last link asks for the port ends on — said, since no class of the frond is it. */
 function innermostOf(port: string): string {
-  if (port === 'Dispatcher' || port.startsWith('Dispatcher<')) return 'the rest of the call';
-  if (isDoorPort(port)) return 'the rest of the request';
+  const step = DISPATCH.covers(port) ? DISPATCH : doorStepOf(port);
+  if (step) return step.innermost;
   if (port.startsWith('Env<')) return 'the source';
 
   return `the ${port} the frond had`;
@@ -683,9 +681,7 @@ export async function installFrond(frond: FrondDescriptor, assembly: Assembly): 
   const ownLogger = ownLoggers(scope, basesOf(frond.providers, (base) => base === 'Logger').has('Logger'));
   // The rest of every call, which a link declaring `implements Partial<Dispatcher>` stands in front of.
   const reserve = reserving(frond, scope, assembly.refused);
-  reserve('Dispatcher', theRest, 'the rest of every call, which a link around the calls stands in front of');
-  for (const name of new Set(frond.handlers.map((handler) => handler.name))) scope.registerValue(subjectKeyOf('Dispatcher', name), theRest);
-  registerDoorPorts(frond, scope, reserve);
+  for (const step of [DISPATCH, ...doorPorts().map((one) => one.step)]) step.register(frond, scope, reserve);
   // What a source holds for each value, which a link declaring `implements Partial<Env<Meili>>` stands in front of.
   const { values } = options;
   for (const { name, entityClass } of frond.entities) {

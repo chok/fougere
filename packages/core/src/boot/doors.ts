@@ -4,29 +4,24 @@ import type { Diagnostic } from '../diagnostic.js';
 import { nameOf, type FrondDescriptor } from '../descriptor/FrondDescriptor.js';
 import type { DoorAround } from '../entry/door.js';
 import type { Plugged } from '../wire/Plugged.js';
-import { subjectKeyOf } from '../descriptor/bases.js';
+import { StepPort } from './StepPort.js';
 
-/** What a link at a door stands in front of — the rest of ONE request — and how the door says a refusal. */
-const REST = new WeakMap<object, { rest: () => Promise<unknown>; refused: (failure: unknown) => unknown }>();
+/** One step per door whose package names a port — `rest` → `Rest` — read off what registered, never named here. */
+const STEPS = new Map<string, StepPort>();
 
-/** What answers a door's port before anything stands in front of it — the rest of the request. */
-export const theRestOfTheRequest = {
-  answer(received: object): Promise<unknown> {
-    const at = REST.get(received);
-    if (!at) throw new Error('A link at a door handed on a request it was not given. Hand the inner what you received.');
+export function doorPorts(): { door: string; step: StepPort }[] {
+  return Protocols.entries.flatMap(([door, type]) => {
+    if (!type.port) return [];
+    const step = STEPS.get(type.port) ?? new StepPort(type.port, 'answer', 'the rest of the request');
+    STEPS.set(type.port, step);
 
-    return at.rest();
-  },
-};
-
-/** The doors whose package names a port — `rest` → `Rest` — read off what registered, never named here. */
-export function doorPorts(): { door: string; port: string }[] {
-  return Protocols.entries.flatMap(([door, type]) => (type.port ? [{ door, port: type.port }] : []));
+    return [{ door, step }];
+  });
 }
 
-/** Whether a key is a door's port — `Rest`, or one handler's `Rest<NoteHandler>`. */
-export function isDoorPort(key: string): boolean {
-  return doorPorts().some(({ port }) => key === port || key.startsWith(`${port}<`));
+/** The door step a key is — `Rest`, or one handler's `Rest<NoteHandler>` — if it is one. */
+export function doorStepOf(key: string): StepPort | undefined {
+  return doorPorts().find(({ step }) => step.covers(key))?.step;
 }
 
 /**
@@ -34,7 +29,7 @@ export function isDoorPort(key: string): boolean {
  * standing outside it still sees one — and adds its headers to a `413` as to a `200`. The door says the
  * refusal in its own terms, and the link writes no `catch` for it.
  */
-export function answeringAtDoor(link: object): void {
+export function answeringAtDoor(link: object, step: StepPort): void {
   const answer = (link as { answer?: (received: object) => Promise<unknown> }).answer;
   if (typeof answer !== 'function') return;
   Object.defineProperty(link, 'answer', {
@@ -43,26 +38,13 @@ export function answeringAtDoor(link: object): void {
       try {
         return await answer.call(link, received);
       } catch (failure) {
-        const at = REST.get(received);
-        if (!at) throw failure;
+        const refused = step.refusedAt(received);
+        if (!refused) throw failure;
 
-        return at.refused(failure);
+        return refused(failure);
       }
     },
   });
-}
-
-/**
- * In each frond's scope, the rest of the request under every door's port — `Rest`, for its whole
- * frond — and under the port of each handler — `Rest<NoteHandler>`, for that handler's routes alone.
- */
-export function registerDoorPorts(frond: FrondDescriptor, scope: Container, reserve: Reserve): void {
-  for (const { port } of doorPorts()) {
-    reserve(port, theRestOfTheRequest, `the port of the door every link of ${frond.name} stands in front of`);
-    for (const name of new Set(frond.handlers.map((handler) => handler.name))) {
-      scope.registerValue(subjectKeyOf(port, name), theRestOfTheRequest);
-    }
-  }
 }
 
 /** Puts what core answers under a key the frond does not choose — or refuses a class of the frond taking it. */
@@ -70,7 +52,7 @@ export type Reserve = (key: string, value: unknown, says: string) => void;
 
 /**
  * A bare key core answers in every frond — `Dispatcher`, `Rest` — is not a name a class of the frond may
- * take: it would collide with the rest of the call. A key with a subject cannot collide at all.
+ * take: it would collide with the rest of the step. A key with a subject cannot collide at all.
  */
 export function reserving(frond: FrondDescriptor, scope: Container, refused: Diagnostic[]): Reserve {
   const taken = new Map(frond.providers.map((provider) => [nameOf(provider), provider] as const));
@@ -88,7 +70,7 @@ export function reserving(frond: FrondDescriptor, scope: Container, refused: Dia
       frond: frond.name,
       subject: key,
       filePath: provider.filePath,
-      message: `${key} is ${says}, so no class of the frond may be called that. Rename the class.`,
+      message: `${key} answers ${says} in every frond, so no class of the frond may be called that. Rename the class.`,
     });
   };
 }
@@ -106,33 +88,27 @@ export function standingAtDoors(
   plugged: readonly Plugged[],
   refused: Diagnostic[],
 ): (DoorAround & { at?: ReadonlySet<string> })[] {
-  const chained = (key: string) => plugged.find((one) => one.frond === frond.name && one.point === key);
-  const around = (door: string, key: string) => (received: unknown, next: () => Promise<unknown>, refused: (failure: unknown) => unknown) => {
-    if (typeof received !== 'object' || received === null) {
-      throw new Error(`The door '${door}' hands its links a ${typeof received}: a link is handed on by what arrived, which must be an object.`);
-    }
-    REST.set(received, { rest: next, refused });
+  return doorPorts().flatMap(({ door, step }) => step.standing(frond, plugged).map(({ key, at }) => {
+    if (at) refuseUnknownOps(frond, plugged, key, refused);
 
-    return scope.resolve<typeof theRestOfTheRequest>(key).answer(received as object);
-  };
+    return {
+      door,
+      ...(at && { at }),
+      around: (received: unknown, next: () => Promise<unknown>, refusing: (failure: unknown) => unknown) => {
+        if (typeof received !== 'object' || received === null) {
+          throw new Error(`The door '${door}' hands its links a ${typeof received}: a link is handed on by what arrived, which must be an object.`);
+        }
 
-  return doorPorts().flatMap(({ door, port }) => {
-    const whole = chained(port) ? [{ door, around: around(door, port) }] : [];
-    const byHandler = [...new Set(frond.handlers.map((handler) => handler.name))].flatMap((name) => {
-      const key = subjectKeyOf(port, name);
-      const chain = chained(key);
-      if (!chain) return [];
-      const served = frond.handlers.filter((handler) => handler.name === name);
-      refuseUnknownOps(frond, chain.answers, served.flatMap((handler) => [...handler.operations.keys()]), name, refused);
-
-      return [{ door, around: around(door, key), at: new Set(served.map((handler) => handler.address)) }];
-    });
-
-    return [...whole, ...byHandler];
-  });
+        return step.hand(scope, key, received, next, refusing);
+      },
+    };
+  }));
 }
 
-function refuseUnknownOps(frond: FrondDescriptor, links: readonly string[], operations: readonly string[], handler: string, refused: Diagnostic[]): void {
+function refuseUnknownOps(frond: FrondDescriptor, plugged: readonly Plugged[], key: string, refused: Diagnostic[]): void {
+  const links = plugged.find((one) => one.frond === frond.name && one.point === key)?.answers ?? [];
+  const handler = key.slice(key.indexOf('<') + 1, -1);
+  const operations = frond.handlers.filter((one) => one.name === handler).flatMap((one) => [...one.operations.keys()]);
   for (const provider of frond.providers.filter((one) => links.includes(nameOf(one)))) {
     const prototype = provider.ctor.prototype as Record<string, unknown>;
     for (const method of Object.getOwnPropertyNames(prototype)) {
