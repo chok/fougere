@@ -1,12 +1,12 @@
 /**
- * One handler, four runs, and a list that decides what carries its calls.
+ * One handler, seven runs, and a list that decides what carries its calls.
  *
  *   cart ──▶ catalog          two crossings: list, then charge
  *
  *   pnpm dev
  *
  * `CartHandler` is never touched. What changes is the chain built below — the same shape
- * `ports: { Payment: ['Retrying', 'Stripe'] }` already has, read from the outside in.
+ * `ports: { Payment: ['Auditing', 'Stripe'] }` already has, read from the outside in.
  */
 import { statementOf } from '@fougere/defaults';
 import { log } from '@fougere/log';
@@ -18,6 +18,7 @@ import { memory } from './transport/memory.js';
 import { journal, type Kept } from './transport/journal.js';
 import { retrying } from './transport/retrying.js';
 import { cutting } from './transport/cutting.js';
+import { refusing } from './transport/refusing.js';
 
 const root = join(import.meta.dirname, '..');
 const config = await loadConfig(root);
@@ -74,6 +75,8 @@ await run('[journal, cut, link] — replayed', dropped);
 
 await run('[retrying, journal, cut, link]',
   retrying(1, journal([], cutting('charge', link.transport))));
+await run('[retrying, refusing, link]',
+  retrying(1, refusing('charge', link.transport)));
 
 console.log(`
   Line 2 crosses twice and keeps both answers. Line 3 crosses NOTHING and answers the same.
@@ -84,4 +87,8 @@ console.log(`
 
   Line 6 puts a retry in FRONT of the journal, so the same run absorbs the cut on its own.
   Change the order in that list and the behaviour changes; change no domain file at all.
+
+  Line 7 is the same retry, and \`charge\` crosses ONCE: the far side answered, and a refusal
+  asked twice says the same thing twice. Only this link can tell the two apart — it holds the
+  code a crossing failed with, which \`Payment.charge\` never sees.
 `);

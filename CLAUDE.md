@@ -858,7 +858,7 @@ impossible — a wrapper was a second implementation, so the boot refused it, an
 `StorageGuard` was the only one in the tree, hard-coded for one port. The container needs
 nothing new: a dep resolves by NAME, so wrapping is a substituted key. One wrapper needs no
 declaration; two REFUSE, because which stands in front is an order and scan order is not
-one — `ports: { Payment: ['Retrying', 'Stripe'] }` states the chain from the OUTSIDE IN,
+one — `ports: { Payment: ['Auditing', 'Stripe'] }` states the chain from the OUTSIDE IN,
 and the last name is what actually charges. Pinned by `tests/ports.test.ts`. A builtin is a port too: `class AuditLogger extends Logger` takes the `Logger` key
 for that frond. Pinned by `tests/ports.test.ts`.
 

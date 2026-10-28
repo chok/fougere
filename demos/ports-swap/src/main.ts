@@ -70,8 +70,8 @@ try {
   console.log('   →', (err as Error).message);
 }
 
-console.log('\n4. the same key says what stands IN FRONT — ports: { Payment: [\'RetryingPayment\', \'StripePayment\'] }');
-console.log('   →', JSON.stringify(await pay({ Payment: ['RetryingPayment', 'StripePayment'] })));
+console.log('\n4. the same key says what stands IN FRONT — ports: { Payment: [\'AuditingPayment\', \'StripePayment\'] }');
+console.log('   →', JSON.stringify(await pay({ Payment: ['AuditingPayment', 'StripePayment'] })));
 
 console.log('\n5. the same statement on a port the FRAMEWORK declares — catalog/services/Recording.ts');
 console.log('   it extends Storage and asks for one, and nothing else declares it:');
