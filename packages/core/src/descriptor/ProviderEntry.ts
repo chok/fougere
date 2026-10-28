@@ -1,7 +1,11 @@
 import type { Subject } from './Subject.js';
 import type { DeclaredAnswer } from './DeclaredAnswer.js';
-/** A discovered provider — a class under `services/`, injected by type. */
-export interface ProviderEntry extends Subject {
+import type { CollectorEntry } from './CollectorEntry.js';
+/**
+ * A discovered provider — a class under `services/`, injected by type. A link in front of
+ * `Collect<User>` carries the collector's `refuses` and `collecting`, since it stands in for both methods.
+ */
+export interface ProviderEntry extends Subject, Pick<CollectorEntry, 'refuses' | 'collecting'> {
   /**
    * The container key — the class name as the SOURCE spells it.
    *

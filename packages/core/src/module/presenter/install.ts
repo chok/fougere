@@ -2,23 +2,17 @@ import type { Container } from '@fougere/container';
 import type { Logger } from '../../builtin/Logger.js';
 import type { OwnLogger } from '../../builtin/OwnLoggers.js';
 import type { FrondDescriptor } from '../../descriptor/FrondDescriptor.js';
-import type { ProviderEntry } from '../../descriptor/ProviderEntry.js';
 import { lifetimeOf } from '../../lifetime.js';
 import { presenterKeyOf } from '../../prefab/presenter.js';
 
-/**
- * Every presenter of the frond under its own name, and as the realization of the port it extends —
- * `Present<Post>` — which the port machinery binds, with whatever stands in front of it.
- */
-export function registerPresenters(frond: FrondDescriptor, scope: Container, ownLogger: OwnLogger, frondLog: Logger): ProviderEntry[] {
+/** Every presenter of the frond under its own name — `realizationsOf` is what binds it under `Present<Post>`. */
+export function registerPresenters(frond: FrondDescriptor, scope: Container, ownLogger: OwnLogger, frondLog: Logger): void {
   for (const presenter of frond.presenters) {
     scope.register(presenter.ctor.name, presenter.ctor, { deps: ownLogger(presenter.ctor.name, presenter.deps), ...lifetimeOf(presenter.ctor) });
   }
   if (frond.presenters.length > 0) {
     frondLog.debug(`${frond.presenters.length} presenter(s): ${frond.presenters.map((p) => p.entityName).join(', ')}`);
   }
-
-  return frond.presenters.map(({ ctor, deps, filePath, entityName }) => ({ ctor, deps, filePath, name: ctor.name, implements: [presenterKeyOf(entityName)] }));
 }
 
 /**

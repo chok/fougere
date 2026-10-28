@@ -12,7 +12,7 @@
  *
  * Documented: [ports](https://fougere.dev/docs/business/ports).
  */
-import { basesOf } from '../descriptor/bases.js';
+import { basesOf, realizationsOf } from '../descriptor/bases.js';
 import type { FrondDescriptor } from '../descriptor/FrondDescriptor.js';
 import type { ScanResult } from '../scan.js';
 
@@ -58,7 +58,7 @@ export function emitNames(scan: ScanResult): string {
     for (const provider of frond.providers) providers.add(provider.ctor.name);
 
     const declared = declaredIn(frond);
-    for (const [port, answering] of basesOf(frond.providers, (name) => declared.has(name))) {
+    for (const [port, answering] of basesOf([...frond.providers, ...realizationsOf(frond)], (name) => declared.has(name))) {
       const known = ports.get(port) ?? new Set<string>();
       for (const one of answering) known.add(one.ctor.name);
       ports.set(port, known);
@@ -81,7 +81,7 @@ export function emitNames(scan: ScanResult): string {
     '  /** Each port, and what extends it — so a config cannot answer one with the other. */',
     '  interface FougerePorts {',
     ...(ports.size > 0
-      ? [...ports].sort().map(([port, answering]) => `    ${port}: ${union(answering)};`)
+      ? [...ports].sort().map(([port, answering]) => `    ${memberOf(port)}: ${union(answering)};`)
       : ['    // This project declares no port.']),
     '  }',
     '}',
@@ -89,4 +89,9 @@ export function emitNames(scan: ScanResult): string {
     'export {};',
     '',
   ].join('\n');
+}
+
+/** A port as an interface member: a key with a subject — `Collect<User>` — is no identifier, so it is quoted. */
+function memberOf(port: string): string {
+  return /^[A-Za-z_$][\w$]*$/.test(port) ? port : `'${port}'`;
 }

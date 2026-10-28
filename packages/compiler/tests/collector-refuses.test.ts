@@ -19,7 +19,14 @@ describe('a collector\'s missing() and collect()', () => {
 
     expect(desk.collectors[0]!.refuses).toEqual(['UNAUTHORIZED']);
     expect(desk.collectors[0]!.collecting).toEqual(['FORBIDDEN']);
-    expect([...errorsOf('mine')].sort()).toEqual(['FORBIDDEN', 'UNAUTHORIZED']);
-    expect(errorsOf('maybe')).toEqual(['FORBIDDEN']);
+    expect([...errorsOf('mine')].sort()).toEqual(['CONFLICT', 'FORBIDDEN', 'UNAUTHORIZED']);
+    expect(errorsOf('maybe')).toEqual(['CONFLICT', 'FORBIDDEN']);
+  }, 30_000);
+
+  it('are read off a link in front of the collector too, whose refusals are the chain\'s', async () => {
+    const { fronds } = await scanProject(root);
+    const desk = fronds.find((frond) => frond.name === 'desk')!;
+
+    expect(desk.providers.find((provider) => provider.name === 'LockedVisitor')).toMatchObject({ implements: ['Collect<Visitor>'], collecting: ['CONFLICT', 'FORBIDDEN'] });
   }, 30_000);
 });

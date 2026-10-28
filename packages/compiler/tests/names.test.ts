@@ -41,6 +41,12 @@ describe('the names file', () => {
     expect(written).not.toMatch(/Payment: .*'ProductHandler'/);
   });
 
+  it('names a collector and the link in front of it under Collect<Visitor>, which ports: may then choose', async () => {
+    const written = emitNames(await scanProject(at('fixtures-collector-refuses')));
+
+    expect(written).toMatch(/'Collect<Visitor>': 'LockedVisitor' \| 'VisitorCollector';/);
+  });
+
   /** `RepositoryBase` is returned by a call and declared in no file — the boot skips it too. */
   it('leaves out a base no file declares', async () => {
     const written = emitNames(await scanProject(at('../../../demos/ports-swap')));

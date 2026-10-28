@@ -4,6 +4,10 @@ import type { EffectiveOperation } from '../../EffectiveOperation.js';
 import type { EffectiveParameter } from '../../EffectiveParameter.js';
 import type { BindingPlan } from '../../wire/binding.js';
 import type { ErrorCode } from '../../wire/ErrorCode.js';
+import { collectorKeyOf } from '../../prefab/collector.js';
+
+/** What a member of a `Collect<User>` chain refuses: from its `missing()`, and from its `collect()`. */
+export type Refusing = Pick<CollectorEntry, 'refuses' | 'collecting'>;
 
 /**
  * The collectors a frond's operations can be handed: its own, then those of the frond it extends —
@@ -48,6 +52,28 @@ export function collectorsOf(
 }
 
 /**
+ * Each collected type's chain: the collector, and the links standing in front of it in the frond's
+ * scope — `implements Partial<Collect<User>>` asking for `Collect<User>` — whose refusals are the
+ * chain's too.
+ */
+export function chainsOf(frond: FrondDescriptor, fronds: readonly FrondDescriptor[], collectorsByType: Map<string, CollectorEntry[]>): Map<string, Refusing[]> {
+  const providers = providersInScope(frond, fronds);
+
+  return new Map([...collectorsByType].map(([typeName, collectors]) => {
+    const key = collectorKeyOf(typeName);
+    const links = providers.filter((provider) => provider.implements?.includes(key) && provider.deps.includes(key));
+
+    return [typeName, [...collectors, ...links]];
+  }));
+}
+
+function providersInScope(frond: FrondDescriptor, fronds: readonly FrondDescriptor[]): FrondDescriptor['providers'] {
+  const parent = frond.extends === undefined ? undefined : fronds.find((one) => one.name === frond.extends);
+
+  return [...frond.providers, ...(parent && parent !== frond ? providersInScope(parent, fronds) : [])];
+}
+
+/**
  * An op's refusals with what its required collectors refuse beside them: `publish(id, user: User)`
  * answers `UNAUTHORIZED` when nobody signed in, said by the collector's `missing()` and never by
  * the handler — so the contract would lose it if only the handler's body were read.
@@ -55,11 +81,11 @@ export function collectorsOf(
 export function refusalsWithCollected(
   errors: readonly ErrorCode[] | undefined,
   binding: BindingPlan,
-  collectorsByType: Map<string, CollectorEntry[]>,
+  chainsByType: Map<string, Refusing[]>,
 ): ErrorCode[] | undefined {
   // `missing()` refuses only a parameter written without `?`; `collect()` runs for every one.
   const collected = binding.flatMap(({ source, optional }) => (source.kind === 'collector'
-    ? (collectorsByType.get(source.typeName) ?? []).flatMap((collector) => [
+    ? (chainsByType.get(source.typeName) ?? []).flatMap((collector) => [
       ...(optional ? [] : collector.refuses ?? []),
       ...collector.collecting ?? [],
     ])

@@ -4,7 +4,7 @@ import type SchemaBuilder from '@pothos/core';
 import type { Fields, SchemaView } from '@fougere/schema';
 import { Shapes } from '@fougere/schema';
 import { type OperationMeta } from './OperationMeta.js';
-import { listens, type EntityEntry as CoreEntityEntry, type HandlerEntry as CoreHandlerEntry } from '@fougere/core';
+import { listens, presentedFields, type ProviderEntry, type EntityEntry as CoreEntityEntry, type HandlerEntry as CoreHandlerEntry } from '@fougere/core';
 import { registerOperations, registerType } from './OperationsConfig.js';
 
 type HandlerFacade = Record<string, Function>;
@@ -130,6 +130,8 @@ interface FrondLike {
   entities: EntityEntry[];
   handlers: HandlerEntry[];
   presenters: PresenterEntry[];
+  /** What may stand in front of a presenter — `implements Partial<Present<Post>>` — and add its fields. */
+  providers?: ProviderEntry[];
   surfaces?: Record<string, string[]>;
 }
 
@@ -227,8 +229,9 @@ export function registerAll(
   const entities = app.fronds.flatMap((frond) => frond.entities.map((entity) => ({ entity, frond })));
   const entityOf = (view: SchemaView): EntityEntry | undefined =>
     entities.find(({ entity }) => entity.entityClass === view)?.entity;
-  const presenters = new Map(app.fronds.flatMap((frond) =>
-    (frond.presenters ?? []).map((presenter) => [registryKey(presenter.entityName, frond.name), presenter] as const)));
+  // A presenter's fields are its chain's: a link in front of `Present<Post>` adds its own.
+  const presenters = new Map(app.fronds.flatMap((frond) => (frond.presenters ?? []).map((presenter) =>
+    [registryKey(presenter.entityName, frond.name), { ...presenter, fields: presentedFields(frond, presenter) }] as const)));
   const frondOfEntity = (entity: EntityEntry): string => entities.find((one) => one.entity === entity)?.frond.name ?? '';
 
   /** The GraphQL type of an entity, built the first time an operation returns it — named after its frond. */

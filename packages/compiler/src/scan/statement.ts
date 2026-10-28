@@ -195,6 +195,8 @@ function frondOf(frond: FrondDescriptor, imports: Imports): string {
       p.abstract ? 'abstract: true' : '',
       p.implements?.length ? `implements: ${JSON.stringify(p.implements)}` : '',
       p.answers ? `answers: ${JSON.stringify(p.answers)}` : '',
+      p.refuses ? `refuses: ${JSON.stringify(p.refuses)}` : '',
+      p.collecting?.length ? `collecting: ${JSON.stringify(p.collecting)}` : '',
     )))}`);
   }
   if (frond.extensions?.length) {

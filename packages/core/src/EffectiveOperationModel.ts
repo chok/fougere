@@ -7,7 +7,7 @@ import { computeBindingPlan } from './bindingPlan.js';
 import { targetOf } from './prefab/prefab.js';
 import { EFFECTIVE_OPERATION_SEMANTICS } from './EffectiveOperationSemantics.js';
 import type { CollectorEntry } from './descriptor/CollectorEntry.js';
-import { collectorsInScope, collectorsOf, groupedCollectors, refusalsWithCollected } from './module/collector/operation.js';
+import { chainsOf, collectorsInScope, collectorsOf, groupedCollectors, refusalsWithCollected, type Refusing } from './module/collector/operation.js';
 import { type FrondDescriptor } from './descriptor/FrondDescriptor.js';
 import type { HandlerEntry } from './descriptor/HandlerEntry.js';
 import { OperationOverrides, type OperationOverrideEntry } from './descriptor/OperationOverrides.js';
@@ -70,6 +70,7 @@ interface Resolving {
   schemas: Map<string, SchemaView>;
   served: Map<string, string>;
   collectorsByType: Map<string, CollectorEntry[]>;
+  chainsByType: Map<string, Refusing[]>;
   options: EffectiveOperationOptions;
   diagnostics: Diagnostic[];
 }
@@ -94,6 +95,7 @@ export function resolveEffectiveOperations(
     const seen = collectorsInScope(frond, fronds);
     const collectorsByType = groupedCollectors(seen);
     const collectorNames = new Set(seen.map((collector) => collector.typeName));
+    const chainsByType = chainsOf(frond, fronds, collectorsByType);
     const overrides = OperationOverrides.of(frond);
     diagnostics.push(...overrides.refusals());
     for (const handler of frond.handlers) {
@@ -104,7 +106,7 @@ export function resolveEffectiveOperations(
       diagnostics.push(...statementDrift(frond, handler));
       diagnostics.push(...operationsWithoutMethod(frond, handler, contracts.keys()));
 
-      const resolving: Resolving = { fronds, frond, handler, schemas, served, collectorsByType, options, diagnostics };
+      const resolving: Resolving = { fronds, frond, handler, schemas, served, collectorsByType, chainsByType, options, diagnostics };
       for (const [name, contract] of contracts) {
         const op = resolveOperation(resolving, name, contract);
         if (!op) continue;
@@ -127,7 +129,7 @@ export function resolveEffectiveOperations(
 
 /** One operation, or nothing when a refusal was written for it. */
 function resolveOperation(resolving: Resolving, name: string, rawContract: OperationContract): EffectiveOperation | undefined {
-  const { fronds, frond, handler, schemas, served, collectorsByType, options, diagnostics } = resolving;
+  const { fronds, frond, handler, schemas, served, collectorsByType, chainsByType, options, diagnostics } = resolving;
   const contract = normalizeBinding(rawContract, handler, frond, name, diagnostics);
   if (!contract || !answersData(resolving, name, contract)) return undefined;
 
@@ -152,7 +154,7 @@ function resolveOperation(resolving: Resolving, name: string, rawContract: Opera
     ? { schema: fact, closed: false }
     : effectiveOutput(frond, handler, name, contract);
 
-  const errors = refusalsWithCollected(contract.errors, contract.binding, collectorsByType);
+  const errors = refusalsWithCollected(contract.errors, contract.binding, chainsByType);
   const className = handler.ctor.name.replace(/Handler$/, '');
   const surface = handler.surface ? `/${handler.surface}` : '/default';
   const remote = options.remotes?.[frond.name];

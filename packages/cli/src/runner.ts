@@ -61,13 +61,8 @@ export async function run(app: App, root = new URL('..', import.meta.url).pathna
       const handlerEntry = handlerMap.get(entity.name);
       if (!handlerEntry) continue;
 
-      const handlerName = `${entity.name}Handler`;
-      let handler: Record<string, Function>;
-      try {
-        handler = app.resolve<Record<string, Function>>(handlerName);
-      } catch { continue; }
-
-      if (typeof handler.execute !== 'function') continue;
+      const handler = app.facadeFor(entity.name);
+      if (typeof handler?.execute !== 'function') continue;
 
       const cmdName = toKebab(entity.name);
       const fields = entity.entityClass.getFields();

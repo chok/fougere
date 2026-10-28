@@ -242,6 +242,8 @@ async function toProvider(filePath: string): Promise<ProviderEntry> {
   // A link at a handler's door — `Rest<PostHandler>` — may answer in an op's place: what its methods'
   // return types declare is published with the op, the field a `frond()` states by hand.
   const answers = links.some((link) => link.includes('<')) ? Object.fromEntries(await parseDeclaredAnswers(filePath)) : {};
+  // A link in front of `Collect<User>` stands in for its two methods, so what they refuse is read the same way.
+  const refusing = links.some((link) => link.startsWith('Collect<')) ? await collectorRefusals(filePath, name) : {};
 
   // `Repository<Post>` names what the class is built on where TypeScript erases it, so the scan
   // reads it and the boot seats the class on it, handing it the rows after its own dependencies.
@@ -259,6 +261,7 @@ async function toProvider(filePath: string): Promise<ProviderEntry> {
     ...(await parseAbstract(filePath) ? { abstract: true as const } : {}),
     ...(links.length > 0 ? { implements: links } : {}),
     ...(Object.keys(answers).length > 0 ? { answers } : {}),
+    ...refusing,
   };
 }
 
@@ -639,13 +642,17 @@ async function toCollectorEntry(filePath: string): Promise<CollectorEntry | null
   const deps = await depsOf(filePath);
   // What its `missing()` refuses, walked like an op's — through the helpers it calls.
   // …and what its `collect()` refuses, which every op asking for it meets, `?` or not.
-  const missing = `${(ctor as { name: string }).name}.missing`;
-  const collect = `${(ctor as { name: string }).name}.collect`;
+  return { typeName, ctor, deps, filePath, ...await collectorRefusals(filePath, (ctor as { name: string }).name) };
+}
+
+async function collectorRefusals(filePath: string, className: string): Promise<Pick<CollectorEntry, 'refuses' | 'collecting'>> {
+  const missing = `${className}.missing`;
+  const collect = `${className}.collect`;
   const walked = await parseRefusals(filePath, (name) => name === missing || name === collect).catch(() => new Map<string, ErrorCode[]>());
   const refuses = walked.get(missing);
   const collecting = walked.get(collect);
 
-  return { typeName, ctor, deps, filePath, ...(refuses?.length ? { refuses } : {}), ...(collecting?.length ? { collecting } : {}) };
+  return { ...(refuses?.length ? { refuses } : {}), ...(collecting?.length ? { collecting } : {}) };
 }
 
 

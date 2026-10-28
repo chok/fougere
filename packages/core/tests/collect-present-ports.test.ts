@@ -47,6 +47,8 @@ describe('a link in front of Collect<User>', () => {
     await expect(call).resolves.toMatchObject({ id: 'u1' });
     expect(CachedUser.asked).toBe(1);
     expect(app.extensionPoints()).toContainEqual({ point: 'Collect<User>', by: 'type', frond: 'blog', answers: ['CachedUser', 'CurrentUserCollector'] });
+    // Seated on `User`, the collector is a class extending the one it was written as — which is no port.
+    expect(app.extensionPoints().map((one) => one.point)).not.toContain('CurrentUserCollector');
   });
 
   it('refuses two collectors of one type, naming both', async () => {

@@ -1,6 +1,20 @@
 import { type ProviderEntry } from './ProviderEntry.js';
+import type { FrondDescriptor } from './FrondDescriptor.js';
+import { subjectKeyOf } from '../wire/SubjectKey.js';
+import { upperFirst } from '@fougere/schema';
 
 export { subjectKeyOf } from '../wire/SubjectKey.js';
+
+/**
+ * What realizes a port core opens with an entity for subject: a collector `Collect<User>`, a presenter
+ * `Present<Post>`. Read beside the providers, so a link stands in front of either and `ports:` may name it.
+ */
+export function realizationsOf(frond: Pick<FrondDescriptor, 'collectors' | 'presenters'>): ProviderEntry[] {
+  return [
+    ...frond.collectors.map(({ ctor, deps, filePath, typeName }) => ({ ctor, deps, filePath, name: ctor.name, implements: [subjectKeyOf('Collect', upperFirst(typeName))] })),
+    ...frond.presenters.map(({ ctor, deps, filePath, entityName }) => ({ ctor, deps, filePath, name: ctor.name, implements: [subjectKeyOf('Present', upperFirst(entityName))] })),
+  ];
+}
 
 /**
  * Port class name → every concrete class below it, in scan order.
@@ -50,10 +64,12 @@ function portsOf(provider: ProviderEntry, answers: (name: string) => boolean): s
 }
 
 function ancestorsOf(provider: ProviderEntry, answers: (name: string) => boolean): string[] {
+  // A seated class extends the one it was written as (`seated`, `builtOn`), and a class is no port of itself.
+  const own = provider.name ?? provider.ctor.name;
   const bases: string[] = [];
   for (let base = Object.getPrototypeOf(provider.ctor) as { name?: string } | null; base?.name; base = Object.getPrototypeOf(base) as { name?: string } | null) {
     if (provider.deps.includes(base.name)) return [base.name];
-    bases.push(base.name);
+    if (base.name !== own) bases.push(base.name);
   }
   const last = bases.findLastIndex(answers);
 

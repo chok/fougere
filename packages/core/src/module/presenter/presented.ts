@@ -1,6 +1,7 @@
 import type { Container } from '@fougere/container';
 import { lowerFirst } from '@fougere/schema';
 import type { Diagnostic } from '../../diagnostic.js';
+import type { FrondDescriptor } from '../../descriptor/FrondDescriptor.js';
 import type { PresenterEntry } from '../../descriptor/PresenterEntry.js';
 import type { ProviderEntry } from '../../descriptor/ProviderEntry.js';
 import type { AnswerStep } from '../../dispatch/AnswerStep.js';
@@ -32,12 +33,26 @@ export function presented(presenter: PresenterEntry | undefined, fields: readonl
   return [present];
 }
 
+/** The fields a `Present<Post>` chain computes — what GraphQL types, beside the boot that runs them. */
+export function presentedFields(frond: Chained, presenter: Chaining): string[] {
+  return chainFields(frond, presenter, []);
+}
+
+/** What a frond is read for to find a chain: its name, and the classes that may stand in front. */
+type Chained = Pick<FrondDescriptor, 'name'> & { providers?: readonly Pick<ProviderEntry, 'ctor' | 'deps' | 'implements' | 'filePath'>[] };
+
+/** What a presenter is read for — its entity and its fields, and its class when the refusal names it. */
+type Chaining = Pick<PresenterEntry, 'entityName' | 'fields'> & { ctor?: { name: string } };
+
 /**
- * The fields a chain computes: the presenter's, and what each link in front of it adds. A field two
- * classes of one chain compute is refused, naming both — computed twice, one would silently win.
+ * The fields a chain computes: the presenter's, and what each link in front of it in its frond adds —
+ * `implements Partial<Present<Post>>` asking for `Present<Post>`. A field two classes of one chain
+ * compute is refused, naming both — computed twice, one would silently win.
  */
-export function chainFields(presenter: PresenterEntry, links: readonly ProviderEntry[], frond: string, refused: Diagnostic[]): string[] {
-  const computedBy = new Map(presenter.fields.map((field) => [field, presenter.ctor.name] as const));
+export function chainFields(frond: Chained, presenter: Chaining, refused: Diagnostic[]): string[] {
+  const key = presenterKeyOf(presenter.entityName);
+  const links = (frond.providers ?? []).filter((provider) => provider.implements?.includes(key) && provider.deps.includes(key));
+  const computedBy = new Map(presenter.fields.map((field) => [field, presenter.ctor?.name ?? 'Present'] as const));
   for (const link of links) {
     for (const field of getPresenterFields(link.ctor)) {
       const first = computedBy.get(field);
@@ -48,7 +63,7 @@ export function chainFields(presenter: PresenterEntry, links: readonly ProviderE
       refused.push({
         severity: 'blocking',
         code: 'presenter-field-twice',
-        frond,
+        frond: frond.name,
         subject: `${presenterKeyOf(presenter.entityName)}.${field}`,
         filePath: link.filePath,
         message: `${first} and ${link.ctor.name} both compute ${field} for ${presenterKeyOf(presenter.entityName)}. Keep it in one of them.`,

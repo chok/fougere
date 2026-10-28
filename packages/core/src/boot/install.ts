@@ -10,7 +10,7 @@ import type { ProviderEntry } from '../descriptor/ProviderEntry.js';
 import { lowerFirst, type Fields, type SchemaView } from '@fougere/schema';
 import type { Logger } from '../builtin/Logger.js';
 import { ownLoggers, type OwnLogger } from '../builtin/OwnLoggers.js';
-import { basesOf } from '../descriptor/bases.js';
+import { basesOf, realizationsOf } from '../descriptor/bases.js';
 import type { Dispatcher } from '../dispatch/Dispatcher.js';
 import type { RouteRegistry } from '../dispatch/RouteRegistry.js';
 import type { Emissions } from '../module/fact/Emissions.js';
@@ -47,7 +47,6 @@ import type { RelationCheck } from '../module/relation/RelationCheck.js';
 import { RelationGuard } from '../module/relation/RelationGuard.js';
 import { registerCollectors } from '../module/collector/install.js';
 import { exposePresenters, registerPresenters } from '../module/presenter/install.js';
-import { presenterKeyOf } from '../prefab/presenter.js';
 import { chainFields, presented } from '../module/presenter/presented.js';
 import { RouteAddress } from '../wire/RouteAddress.js';
 import { servedSurfaces } from '../descriptor/surface.js';
@@ -698,8 +697,9 @@ export async function installFrond(frond: FrondDescriptor, assembly: Assembly): 
   }
   const ports = { ...options.ports, ...frond.ports };
   // A collector and a presenter realize the port they extend — `Collect<User>`, `Present<Post>` — and a link stands in front of either.
-  const realizations = [...registerCollectors(frond, scope, ownLogger, frondLog), ...registerPresenters(frond, scope, ownLogger, frondLog)];
-  const declared = registerProviders(frond, scope, ports, assembly.boundPorts, assembly.refused, ownLogger, frondLog, assembly.plugged, realizations);
+  registerCollectors(frond, scope, ownLogger, frondLog);
+  registerPresenters(frond, scope, ownLogger, frondLog);
+  const declared = registerProviders(frond, scope, ports, assembly.boundPorts, assembly.refused, ownLogger, frondLog, assembly.plugged, realizationsOf(frond));
   // An ancestor's links stand OUTSIDE this frond's own; a seam has no container key to inherit through.
   const hostPorts = inheritedHostPorts(frond, assembly.hostPortsOf, declared);
   assembly.hostPortsOf.set(frond.name, hostPorts);
@@ -707,12 +707,7 @@ export async function installFrond(frond: FrondDescriptor, assembly: Assembly): 
   registerFramesOf(frond, assembly, scope, frondLog);
 
   exposePresenters(frond, container, scope);
-  const presenterFields = new Map(frond.presenters.map((presenter) => {
-    const key = presenterKeyOf(presenter.entityName);
-    const links = frond.providers.filter((provider) => provider.implements?.includes(key) && provider.deps.includes(key));
-
-    return [presenter.entityName, chainFields(presenter, links, frond.name, assembly.refused)] as const;
-  }));
+  const presenterFields = new Map(frond.presenters.map((presenter) => [presenter.entityName, chainFields(frond, presenter, assembly.refused)] as const));
   registerMiddlewares(frond, scope, assembly, ownLogger, frondLog);
 
   const building: Building = { frond, assembly, scope, ownLogger, frondLog, presenterFields };
