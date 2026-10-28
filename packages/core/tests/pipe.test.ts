@@ -62,7 +62,7 @@ const finishing = (ctor: new () => unknown) => ({
 /** The frond that owns the fact, and states the order when there is one to state. */
 const subject = (pipes?: Record<string, string[]>) => frond('blog', {
   entities: [PostPublished],
-  handlers: [{ ctor: class PostHandler {}, deps: ['postPublishedEmit'], operations: {} }],
+  handlers: [{ ctor: class PostHandler {}, deps: ['Emit<PostPublished>'], operations: {} }],
   ...(pipes ? { pipes } : {}),
 });
 
@@ -99,7 +99,7 @@ describe('an op that finishes a fact', () => {
     // Nothing says which of two finishes the fact, and scan order is not an answer — the
     // same refusal two implementations of a port get, and two remotes over one entity.
     await expect(createApp({ fronds: [subject(), links(First, Second)], createContainer }))
-      .rejects.toThrow(/firstHandler\.set and secondHandler\.set both change postPublished/s);
+      .rejects.toThrow(/first\.set and second\.set both change postPublished/s);
   });
 
   it('runs them in the order the fact\'s OWNER declared', async () => {
@@ -109,7 +109,7 @@ describe('an op that finishes a fact', () => {
       createContainer,
     });
 
-    const announce = app.container.resolve<(raw: unknown) => Promise<void>>('postPublishedEmit');
+    const announce = app.container.resolve<(raw: unknown) => Promise<void>>('Emit<PostPublished>');
     await announce({ id: 'x', title: 'a' });
     await settle(() => ((globalThis as Record<string, unknown>).__ran as string[]).length === 2);
 
@@ -121,7 +121,7 @@ describe('an op that finishes a fact', () => {
     await expect(createApp({
       fronds: [subject({ postPublished: ['FirstHandler'] }), links(First, Second)],
       createContainer,
-    })).rejects.toThrow(/secondHandler\.set changes postPublished, but pipes: for postPublished lists only/s);
+    })).rejects.toThrow(/second\.set changes postPublished, but pipes: for postPublished lists only/s);
   });
 
   it('refuses a link that answers nothing, rather than letting it suppress the fact', async () => {
@@ -131,13 +131,13 @@ describe('an op that finishes a fact', () => {
       fronds: [subject(), frond('links', { handlers: [finishing(Silent)] })],
       createContainer,
     });
-    const announce = app.container.resolve<(raw: unknown) => Promise<void>>('postPublishedEmit');
+    const announce = app.container.resolve<(raw: unknown) => Promise<void>>('Emit<PostPublished>');
 
     // It used to reach nobody, by crash: every subscriber was handed `null` and died
     // reading it. A fact is what HAPPENED — the announcer already said so, and `Emit`
     // returning void means nothing could tell it otherwise.
     await expect(announce({ id: 'x', title: 'a' }))
-      .rejects.toThrow(/silentHandler\.set takes Pipe<postPublished> and returned nothing/);
+      .rejects.toThrow(/silent\.set takes Pipe<postPublished> and returned nothing/);
   });
 
   it('refuses a frond that orders a fact it does not own', async () => {
@@ -170,7 +170,7 @@ describe('a link in another process', () => {
 
     // Announced through the emitter the frond injects — `deliver` hands a fact to subscribers,
     // and a link runs where the fact is MADE final, which is on the announcing side.
-    const announce = near.container.resolve('postPublishedEmit') as (fact: unknown) => Promise<void>;
+    const announce = near.container.resolve('Emit<PostPublished>') as (fact: unknown) => Promise<void>;
 
     return { announce, dispose: async () => { await near.dispose(); await far.dispose(); } };
   };

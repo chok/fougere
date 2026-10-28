@@ -42,7 +42,7 @@ describe('verify — cross-frond dependency', () => {
   it('names the handler that will lose its collector at the split', () => {
     const app = {
       fronds: [
-        frond('blog', { handlers: [handler(PostHandler, 'post', ['UserCollector'])] }),
+        frond('blog', { handlers: [handler(PostHandler, 'post', ['Collect<User>'])] }),
         frond('identity', { collectors: [collector('user', UserCollector)] }),
       ],
     };
@@ -61,14 +61,14 @@ describe('verify — cross-frond dependency', () => {
     // The target as a FIELD, not as prose. A reader deciding whether this
     // violation concerns a frond named in `remotes:` reads it here — parsing the
     // sentence would be a second opinion on a fact already held.
-    expect(violations[0].dependsOn).toEqual({ key: 'UserCollector', frond: 'identity', kind: 'collector' });
+    expect(violations[0].dependsOn).toEqual({ key: 'Collect<User>', frond: 'identity', kind: 'collector' });
   });
 
   it('says nothing when the collector lives in the consuming frond', () => {
     const app = {
       fronds: [
         frond('blog', {
-          handlers: [handler(PostHandler, 'post', ['UserCollector'])],
+          handlers: [handler(PostHandler, 'post', ['Collect<User>'])],
           collectors: [collector('user', UserCollector)],
         }),
       ],
@@ -103,7 +103,7 @@ describe('verify — cross-frond dependency', () => {
   it('assertSplittable throws with every violation spelled out', () => {
     const app = {
       fronds: [
-        frond('blog', { handlers: [handler(PostHandler, 'post', ['UserCollector'])] }),
+        frond('blog', { handlers: [handler(PostHandler, 'post', ['Collect<User>'])] }),
         frond('identity', { collectors: [collector('user', UserCollector)] }),
       ],
     };
@@ -131,7 +131,7 @@ describe('verify — collector in another frond', () => {
     expect(violations[0].severity).toBe('warning');
     expect(violations[0].message).toContain("takes user from the request, but the frond 'identity' has a User collector that 'blog' cannot see");
     // What the boot filters on when `remotes:` names a frond.
-    expect(violations[0].dependsOn).toEqual({ key: 'UserCollector', frond: 'identity', kind: 'collector' });
+    expect(violations[0].dependsOn).toEqual({ key: 'Collect<User>', frond: 'identity', kind: 'collector' });
     // The consumer is 'blog', the target is 'identity' — two different fields,
     // and the pair is what a caller needs to decide anything.
     expect(violations[0].frond).not.toBe(violations[0].dependsOn.frond);

@@ -17,6 +17,6 @@ export default [frond('bank', {
         withdraw: op({ args: [param('id')], output: Account, cardinality: 'maybe', description: 'Take money out, and journal it.' }),
       },
     },
-    { ctor: LedgerHandler, deps: ['LedgerStorage'], operations: { all: op({ output: Ledger, cardinality: 'page' }) } },
+    { ctor: LedgerHandler, deps: ['Storage<Ledger>'], operations: { all: op({ output: Ledger, cardinality: 'page' }) } },
   ],
 })];

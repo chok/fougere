@@ -12,7 +12,7 @@ export const journal = frond('journal', {
 export const reader = frond('reader', {
   handlers: [{
     ctor: ReaderHandler,
-    deps: ['entryHandler'],
+    deps: ['Facade<EntryHandler>'],
     operations: { findStamp: op({ cardinality: 'one', description: 'Is the stamp a `Date` on this side too?' }) },
   }],
 });

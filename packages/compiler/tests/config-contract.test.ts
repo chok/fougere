@@ -70,7 +70,7 @@ describe('config declares an op the scan never saw', () => {
   it('puts it on the façade — the answer for a method inherited from an installed base', async () => {
     const { app, run } = await boot();
 
-    const facade = app.resolve<Record<string, unknown>>('noteHandler');
+    const facade = app.resolve<Record<string, unknown>>('Facade<NoteHandler>');
     expect(Object.keys(facade)).toContain('archive');
 
     const out = await run({ address: 'note', op: 'archive' }, call({ params: { id: 'note-9' } }));

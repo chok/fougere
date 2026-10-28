@@ -60,7 +60,7 @@ class Down {
 /** The announcer, and the second type is what makes it wait. */
 const booking = {
   ctor: class BookingHandler {},
-  deps: ['canBookAwait'],
+  deps: ['Emit<CanBook, Verdict>'],
   operations: {},
 };
 
@@ -73,7 +73,7 @@ const app = (...subscribers: (new () => unknown)[]) => createApp({
 });
 
 const announce = (built: Awaited<ReturnType<typeof app>>) =>
-  built.container.resolve<(fact: unknown) => Promise<Verdict[]>>('canBookAwait');
+  built.container.resolve<(fact: unknown) => Promise<Verdict[]>>('Emit<CanBook, Verdict>');
 
 describe('an announcement that waits', () => {
   it('gives back what every subscriber answered', async () => {
@@ -108,7 +108,7 @@ describe('an announcement that waits', () => {
 
     // The same fact, the other key: `Emit<CanBook>` hands it over and returns nothing.
     // Two functions, because they are two relationships to the same subject.
-    const said = built.container.resolve<(fact: unknown) => Promise<unknown[]>>('canBookEmit');
+    const said = built.container.resolve<(fact: unknown) => Promise<unknown[]>>('Emit<CanBook>');
     expect(await said({ room: 'library' })).toEqual([]);
   });
 

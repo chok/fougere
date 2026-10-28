@@ -90,7 +90,7 @@ function refuseDuplicateKeys(
         filePath,
         frond,
         subject: key,
-        message: `The fronds '${first}' and '${frond}' both have a ${what} named ${key}, the other in ${fileOf.get(key)}. `
+        message: `The fronds '${first}' and '${frond}' both have a ${what} answering ${key}, the other in ${fileOf.get(key)}. `
           + 'Rename one, or leave one frond out of this process (only:).',
       });
 

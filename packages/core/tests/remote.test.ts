@@ -95,8 +95,8 @@ describe('remote façade (repli)', () => {
     const consumer = await bootConsumer(host);
 
     // Code holds the facade: the rows as the handler answered them, on either side.
-    const facade = consumer.resolve<Record<string, () => Promise<unknown>>>('productHandler');
-    const local = host.resolve<Record<string, () => Promise<unknown>>>('productHandler');
+    const facade = consumer.resolve<Record<string, () => Promise<unknown>>>('Facade<ProductHandler>');
+    const local = host.resolve<Record<string, () => Promise<unknown>>>('Facade<ProductHandler>');
     expect(await facade.list()).toEqual(JSON.parse(JSON.stringify(await local.list())));
     expect(await facade.list()).toEqual(products);
 
@@ -142,7 +142,7 @@ describe('remote façade (repli)', () => {
     const host = await bootHost();
     const consumer = await bootConsumer(host);
 
-    const facade = consumer.resolve<Record<string, (id: string) => Promise<unknown>>>('productHandler');
+    const facade = consumer.resolve<Record<string, (id: string) => Promise<unknown>>>('Facade<ProductHandler>');
     expect(await facade.findById('2')).toEqual({ id: '2', name: 'Moss', price: 320 });
 
     // A miss is null on every transport — undefined has no wire form.
@@ -156,7 +156,7 @@ describe('remote façade (repli)', () => {
     const host = await bootHost();
     const consumer = await bootConsumer(host);
 
-    const facade = consumer.resolve<Record<string, (...args: unknown[]) => Promise<unknown>>>('productHandler');
+    const facade = consumer.resolve<Record<string, (...args: unknown[]) => Promise<unknown>>>('Facade<ProductHandler>');
     const failure = facade.explode();
     await expect(failure).rejects.toBeInstanceOf(FougereError);
     await expect(failure).rejects.toMatchObject({
@@ -173,7 +173,7 @@ describe('remote façade (repli)', () => {
     const host = await bootHost();
     const consumer = await bootConsumer(host);
 
-    const facade = consumer.resolve<Record<string, (...args: unknown[]) => Promise<unknown>>>('unicornHandler');
+    const facade = consumer.resolve<Record<string, (...args: unknown[]) => Promise<unknown>>>('Facade<UnicornHandler>');
     await expect(facade.list()).rejects.toMatchObject({
       code: ErrorCode.NOT_FOUND,
       address: 'unicorn',
@@ -188,7 +188,7 @@ describe('remote façade (repli)', () => {
     const dead: Transport = async () => { throw new TypeError('fetch failed'); };
     const consumer = await bootConsumer(host, dead);
 
-    const facade = consumer.resolve<Record<string, (...args: unknown[]) => Promise<unknown>>>('productHandler');
+    const facade = consumer.resolve<Record<string, (...args: unknown[]) => Promise<unknown>>>('Facade<ProductHandler>');
     const failure = facade.list();
     await expect(failure).rejects.toBeInstanceOf(FougereError);
     await expect(failure).rejects.toMatchObject({ code: ErrorCode.SERVICE_UNAVAILABLE });
@@ -204,7 +204,7 @@ describe('remote façade (repli)', () => {
     const spy = vi.fn(wire);
     const consumer = await bootConsumer(host, spy);
 
-    const facade = consumer.resolve<Record<string, (...args: unknown[]) => Promise<unknown>>>('productHandler');
+    const facade = consumer.resolve<Record<string, (...args: unknown[]) => Promise<unknown>>>('Facade<ProductHandler>');
     await facade.list();
     await facade.list();
     await facade.findById('1');
@@ -219,7 +219,7 @@ describe('remote façade (repli)', () => {
   it('the façade is not a thenable — awaiting resolve() stays safe', async () => {
     const host = await bootHost();
     const consumer = await bootConsumer(host);
-    const facade = await Promise.resolve(consumer.resolve<Record<string, Function>>('productHandler'));
+    const facade = await Promise.resolve(consumer.resolve<Record<string, Function>>('Facade<ProductHandler>'));
     expect(facade).toBeDefined();
     expect('list' in facade).toBe(true);
     expect(Object.hasOwn(facade, 'list')).toBe(true);
@@ -233,7 +233,7 @@ describe('remote façade (repli)', () => {
 
   it('without remotes, an unknown handler still fails fast at resolve', async () => {
     const app = await createApp({ fronds: [], createContainer });
-    expect(() => app.resolve('productHandler')).toThrow(/is not in this process/);
+    expect(() => app.resolve('Facade<ProductHandler>')).toThrow(/is not in this process/);
     await app.dispose();
   });
 
@@ -315,9 +315,9 @@ describe('remote façade (repli)', () => {
     });
 
     expect(consumer.fronds.map((f) => f.name)).toContain('catalog');
-    expect(consumer.container.has('productHandler')).toBe(false);
+    expect(consumer.container.has('Facade<ProductHandler>')).toBe(false);
 
-    const facade = consumer.resolve<Record<string, (...args: unknown[]) => Promise<unknown>>>('productHandler');
+    const facade = consumer.resolve<Record<string, (...args: unknown[]) => Promise<unknown>>>('Facade<ProductHandler>');
     expect(await facade.list()).toMatchObject([{ id: '1' }, { id: '2' }]);
 
     await consumer.dispose();
@@ -352,7 +352,7 @@ describe('two remotes serving one entity', () => {
       remoteTransport: (url) => (url.endsWith('east') ? serving('catalog', 'product') : serving('stock', 'product')),
     });
 
-    const facade = consumer.resolve<Record<string, () => Promise<unknown>>>('productHandler');
+    const facade = consumer.resolve<Record<string, () => Promise<unknown>>>('Facade<ProductHandler>');
     // Routing is lazy, so the refusal lands on the first call that misses — the same
     // place every other routing answer lands.
     await expect(facade.list()).rejects.toThrow(/Two remotes serve 'product': 'east' and 'west'/);
@@ -375,7 +375,7 @@ describe('two remotes serving one entity', () => {
       remoteTransport: (url) => (url.endsWith('east') ? slowEast : serving('stock', 'product')),
     });
 
-    const facade = consumer.resolve<Record<string, () => Promise<unknown>>>('productHandler');
+    const facade = consumer.resolve<Record<string, () => Promise<unknown>>>('Facade<ProductHandler>');
     await expect(facade.list()).rejects.toThrow(/'east' and 'west'/);
   });
 
@@ -387,7 +387,7 @@ describe('two remotes serving one entity', () => {
       remoteTransport: (url) => (url.endsWith('east') ? serving('catalog', 'product') : serving('stock', 'crate')),
     });
 
-    const facade = consumer.resolve<Record<string, () => Promise<unknown>>>('crateHandler');
+    const facade = consumer.resolve<Record<string, () => Promise<unknown>>>('Facade<CrateHandler>');
     await expect(facade.list()).resolves.toEqual([]);
   });
 });

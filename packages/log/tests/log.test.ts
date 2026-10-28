@@ -158,7 +158,7 @@ describe('a line the frond announces', () => {
     // A fact is validated strictly, and announcing is DISPATCH: the refusal is reported,
     // never handed back to the writer. The sink this replaced handed a destination whatever
     // the writer passed, so a collector downstream discovered the shape in another process.
-    await built.container.resolve<(line: unknown) => Promise<void>>('logLineEmit')(
+    await built.container.resolve<(line: unknown) => Promise<void>>('Emit<LogLine>')(
       { level: 'chatty', name: 'shop', message: 'x', args: [] },
     );
     await settle(() => refused.mock.calls.length > 0);

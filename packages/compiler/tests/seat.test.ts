@@ -20,6 +20,6 @@ describe('the seat a class is built on', () => {
     expect(shelf.handlers[0]!.operations.has('titled')).toBe(true);
     const mirror = shelf.providers.find((provider) => provider.name === 'BookMirror')!;
     expect(seatOf(mirror.ctor)).toEqual([book]);
-    expect(mirror.deps).toEqual(['BookStorage']);
+    expect(mirror.deps).toEqual(['Storage<Book>']);
   }, 30_000);
 });

@@ -4,6 +4,7 @@
  *
  * Documented: [collectors](https://fougere.dev/docs/business/collect-and-present#collect--a-parameter-filled-by-its-type).
  */
+import { subjectKeyOf } from '../wire/SubjectKey.js';
 import { upperFirst } from '@fougere/schema';
 import type { InvocationContext } from '../wire/InvocationContext.js';
 
@@ -25,7 +26,7 @@ export function isCollect(ctor: unknown): boolean {
   return typeof ctor === 'function' && (ctor.prototype as Record<symbol, unknown> | undefined)?.[COLLECT] === true;
 }
 
-/** Container key of a collector — 'user' → 'UserCollector', 'ability' → 'AbilityCollector'. */
+/** Container key of a collector — 'user' → `Collect<User>`, spelled as the type is written. */
 export function collectorKeyOf(type: string): string {
-  return `${upperFirst(type)}Collector`;
+  return subjectKeyOf('Collect', upperFirst(type));
 }

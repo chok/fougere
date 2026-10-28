@@ -73,7 +73,7 @@ describe('explain', () => {
       },
     ]);
     expect(result.collectors).toEqual([
-      expect.objectContaining({ typeName: 'user', class: 'CurrentUserCollector' }),
+      expect.objectContaining({ typeName: 'user', class: 'Collect<CurrentUser>' }),
     ]);
   });
 });

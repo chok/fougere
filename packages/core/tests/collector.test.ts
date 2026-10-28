@@ -17,7 +17,7 @@ describe('Collector', () => {
   });
 
   it('keys it by the type name, like any other', () => {
-    expect(collectorKeyOf('ability')).toBe('AbilityCollector');
-    expect(collectorKeyOf('authorUser')).toBe('AuthorUserCollector');
+    expect(collectorKeyOf('ability')).toBe('Collect<Ability>');
+    expect(collectorKeyOf('authorUser')).toBe('Collect<AuthorUser>');
   });
 });

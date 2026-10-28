@@ -1,15 +1,8 @@
-import type { Emit } from '@fougere/core';
+import type { Emit, Repository } from '@fougere/core';
 import type Post from '../entities/Post.js';
 import type PostDraft from '../entities/PostDraft.js';
 import type PostChanged from '../entities/PostChanged.js';
 import type User from '../entities/User.js';
-
-declare class PostRepository {
-  list(): Promise<Post[]>;
-  findById(id: Post['id']): Promise<Post | undefined>;
-  create(input: Partial<Post>): Promise<Post>;
-  update(id: Post['id'], input: Partial<Post>): Promise<Post>;
-}
 
 /**
  * An ordinary handler. Nothing here knows a connection is being held open, and
@@ -17,7 +10,7 @@ declare class PostRepository {
  * live facade is a consumer of this file, never a variant of it.
  */
 export default class PostHandler {
-  constructor(private posts: PostRepository, private changed: Emit<PostChanged>) {}
+  constructor(private posts: Repository<Post>, private changed: Emit<PostChanged>) {}
 
   /**
    * What this caller may read — published posts, plus their own drafts.

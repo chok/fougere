@@ -37,7 +37,7 @@ describe('the names file', () => {
   it('maps a port to the classes that extend it', async () => {
     const written = emitNames(await scanProject(at('../../../demos/ports-swap')));
 
-    expect(written).toMatch(/Payment: 'OgonePayment' \| 'RetryingPayment' \| 'StripePayment';/);
+    expect(written).toMatch(/Payment: 'AuditingPayment' \| 'OgonePayment' \| 'StripePayment';/);
     expect(written).not.toMatch(/Payment: .*'ProductHandler'/);
   });
 

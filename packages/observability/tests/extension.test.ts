@@ -52,7 +52,7 @@ describe('observability as an extension', () => {
 
     second.use('product', async (_ctx, next) => { underway = activeCalls(); return next(); });
 
-    await second.resolve<Facade>('productHandler').list();
+    await second.resolve<Facade>('Facade<ProductHandler>').list();
 
     expect(underway).toBe(1);
     await second.dispose();
@@ -74,7 +74,7 @@ describe('observability as an extension', () => {
     first.use('product', watch);
 
     // A sink is registered, so `tracing()` opens a span and the call is counted.
-    await first.resolve<Facade>('productHandler').list();
+    await first.resolve<Facade>('Facade<ProductHandler>').list();
     expect(underway).toBe(1);
 
     await first.dispose();
@@ -86,7 +86,7 @@ describe('observability as an extension', () => {
     second.use(tracing([]).middleware);
     second.use('product', watch);
 
-    await second.resolve<Facade>('productHandler').list();
+    await second.resolve<Facade>('Facade<ProductHandler>').list();
     expect(underway).toBe(0);
   });
 });

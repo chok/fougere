@@ -10,7 +10,7 @@ const listes = frond('listes', {
   entities: [List, User],
   collectors: [{ ctor: CurrentUserCollector, collects: User }],
   presenters: [{ ctor: ListPresenter, presents: List }],
-  handlers: [{ ctor: ListHandler, deps: ['ListRepository'], operations: { list: op({ output: List, cardinality: 'many' }) } }],
+  handlers: [{ ctor: ListHandler, deps: ['Repository<List>'], operations: { list: op({ output: List, cardinality: 'many' }) } }],
 });
 
 /** What a computed field takes after the rows is what the scan reads off its signature; `frond()` takes none, so the descriptor carries it. */

@@ -92,11 +92,11 @@ describe('createApp + storageFactory', () => {
     const catalogScope = app.resolve<Container>('frond:catalog');
 
     // Both entities get an storage
-    expect(catalogScope.has('ProductStorage')).toBe(true);
-    expect(catalogScope.has('BrandStorage')).toBe(true);
+    expect(catalogScope.has('Storage<Product>')).toBe(true);
+    expect(catalogScope.has('Storage<Brand>')).toBe(true);
     // What is registered wraps the factory's storage — writes are validated on the way to
     // storage — so the factory's own ops are reached through it, not identical to it.
-    const brandStorage = catalogScope.resolve<Storage>('BrandStorage');
+    const brandStorage = catalogScope.resolve<Storage>('Storage<Brand>');
     await brandStorage.list();
     expect(storage.list).toHaveBeenCalled();
   });
@@ -115,7 +115,7 @@ describe('createApp + storageFactory', () => {
 
   it('refuses the boot when no storageFactory leaves a handler without its repository', async () => {
     await expect(createApp({ fronds, createContainer }))
-      .rejects.toThrow(/ProductHandler asks for ProductRepository/);
+      .rejects.toThrow(/ProductHandler asks for Repository<Product>/);
   });
 });
 
@@ -126,9 +126,9 @@ describe('handler facades', () => {
 
     await using app = await createApp({ fronds, createContainer, storageFactory });
 
-    expect(app.container.has('productHandler')).toBe(true);
+    expect(app.container.has('Facade<ProductHandler>')).toBe(true);
     // Brand is an entity with no handler — a shape, not a surface.
-    expect(app.container.has('brandHandler')).toBe(false);
+    expect(app.container.has('Facade<BrandHandler>')).toBe(false);
   });
 
   it('handler facade respects operations whitelist', async () => {
@@ -138,7 +138,7 @@ describe('handler facades', () => {
     await using app = await createApp({ fronds, createContainer, storageFactory });
 
     // ProductHandler has static operations = ['list', 'findById']
-    const productHandler = app.resolve<Record<string, Function>>('productHandler');
+    const productHandler = app.resolve<Record<string, Function>>('Facade<ProductHandler>');
     expect(productHandler.list).toBeDefined();
     expect(productHandler.findById).toBeDefined();
     expect(productHandler.create).toBeUndefined();
@@ -154,9 +154,9 @@ describe('handler facades', () => {
 
     // Brand is scanned, gets its storage, and answers nothing: exposing it would be
     // the framework deciding, for the author, that its rows are public.
-    expect(app.resolve<Container>('frond:catalog').has('BrandStorage')).toBe(true);
-    expect(app.container.has('brandHandler')).toBe(false);
-    expect(() => app.resolve('brandHandler')).toThrow();
+    expect(app.resolve<Container>('frond:catalog').has('Storage<Brand>')).toBe(true);
+    expect(app.container.has('Facade<BrandHandler>')).toBe(false);
+    expect(() => app.resolve('Facade<BrandHandler>')).toThrow();
     expect(storage.list).not.toHaveBeenCalled();
   });
 
@@ -169,7 +169,7 @@ describe('handler facades', () => {
 
     await using app = await createApp({ fronds, createContainer, storageFactory });
     // ItemHandler extends Repository<Item> — it declares the five by inheriting them.
-    const itemHandler = app.resolve<Record<string, Function>>('itemHandler');
+    const itemHandler = app.resolve<Record<string, Function>>('Facade<ItemHandler>');
 
     const page = await itemHandler.list();
     expect(page).toEqual({ items: [{ id: '1' }] });
@@ -183,7 +183,7 @@ describe('handler facades', () => {
     await using app = await createApp({ fronds, createContainer, storageFactory });
 
     // Product has a custom ProductService → handler is instantiated with service as delegate
-    const productHandler = app.resolve<Record<string, Function>>('productHandler');
+    const productHandler = app.resolve<Record<string, Function>>('Facade<ProductHandler>');
     expect(productHandler.list).toBeDefined();
     expect(productHandler.findById).toBeDefined();
   });

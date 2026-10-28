@@ -127,7 +127,7 @@ beforeAll(async () => {
     remotes: { catalog: `tcp://127.0.0.1:${socket.port}` },
     remoteTransport: () => socketTransport,
   });
-  facade = consumer.resolve<Facade>('productHandler');
+  facade = consumer.resolve<Facade>('Facade<ProductHandler>');
 }, 30_000);
 
 afterAll(async () => {
@@ -174,7 +174,7 @@ describe('the protocol changes, the call does not', () => {
   }, 15_000);
 
   it('the identity card crosses a socket, so `remotes:` routes without HTTP', async () => {
-    expect(await facade.list()).toEqual(PRODUCTS);
+    expect(await facade.list()).toEqual({ items: PRODUCTS });
   });
 
   it('a business failure keeps its details over TCP', async () => {

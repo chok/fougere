@@ -52,7 +52,7 @@ pnpm -C demos/observability dev    # three processes; `pnpm load` (k6) and `pnpm
 pnpm -C demos/together-frame dev   # two writes that stand or fall as one — then uncomment `sources:`
 pnpm -C demos/crossing-cost dev    # a chain of three, and the config line that decides what it costs
 pnpm -C demos/oclif-catalog dev --help  # a frond as a terminal — topics, flags and help derived
-pnpm -C demos/boot-refusals dev    # fourteen projects that do not hold — a code, a subject, a file
+pnpm -C demos/boot-refusals dev    # thirteen projects that do not hold — a code, a subject, a file
 pnpm -C demos/on-delete dev        # restrict, cascade, set null — the engine, then the guard
 pnpm -C demos/no-compiler dev      # fronds written by hand, booted by Node alone — no scan, no TypeScript
 pnpm -C demos/test-gradient test   # 53 tests, 44 of them from a one-line file
@@ -163,7 +163,7 @@ demos/
   oclif-catalog/       a frond as a terminal — every flag read off the entity, nothing declared
   observability/       three Fronds in three processes, one trace — and what the wire cost
   test-gradient/       what the declaration writes on its own, and the four rungs it runs at
-  boot-refusals/       fourteen projects that do not hold, and what each refusal names
+  boot-refusals/       thirteen projects that do not hold, and what each refusal names
   on-delete/           what a deletion does to the rows that name it — one line moves who does it
   no-compiler/         fronds written by hand: Node boots them, and neither the compiler nor TypeScript loads
   anchor-chain/        a path with two stops — which derivations hold rows, and which say nothing

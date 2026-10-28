@@ -1,8 +1,9 @@
 import { applyCreate, dotted, lowerFirst, upperFirst, type SchemaView } from '@fougere/schema';
 import { addressOf, facadeKeyOf } from '../../wire/Facade.js';
+import { subjectsOf } from '../../wire/SubjectKey.js';
 import type { Container } from '@fougere/container';
 import { validationErrorsOf } from '../../wire/FougereError.js';
-import { awaitKeyOf, emitKeyOf, factsAnnouncedBy, factsAwaitedBy } from '../../wire/Emit.js';
+import { awaitKeysIn, emitKeyOf, factOfAwaitKey, factsAnnouncedBy, factsAwaitedBy } from '../../wire/Emit.js';
 import { ambient } from '#ambient';
 import type { Diagnostic } from '../../diagnostic.js';
 import { Invocation } from '../../wire/Invocation.js';
@@ -44,6 +45,8 @@ export class Emissions {
 
   /** What is announced AND waited for — `Emit<T, A>`, where the second type says so. */
   private readonly awaited: Set<string>;
+  /** Under which keys each awaited fact is asked for — the answer's type is in the key, as written. */
+  private readonly awaitKeys: string[];
 
   /** Where each facade and each frond was written, so a refusal here names a file to open. */
   private readonly fileOf = new Map<string, string>();
@@ -63,6 +66,7 @@ export class Emissions {
     }
     this.announced = new Set(fronds.flatMap((frond) => factsAnnouncedBy(frond.handlers)));
     this.awaited = new Set(fronds.flatMap((frond) => factsAwaitedBy(frond.handlers)));
+    this.awaitKeys = fronds.flatMap((frond) => awaitKeysIn(frond.handlers));
     // Read from the frond that OWNS the fact: ordering is a decision about the fact, and
     // a decision has one owner. A frond ordering a neighbour's fact is refused below.
     this.ordered = new Map(fronds.flatMap((frond) => {
@@ -123,7 +127,6 @@ export class Emissions {
   private orderPipes(): void {
     for (const [fact, links] of this.pipes) {
       const declared = this.ordered.get(fact);
-      const named = (one: Listener) => `${one.facade}.${one.op}`;
 
       if (!declared) {
         if (links.length < 2) continue;
@@ -132,8 +135,8 @@ export class Emissions {
           code: 'pipes-unordered',
           filePath: this.fileOf.get(links[0]!.facade) ?? '',
           subject: fact,
-          message: `${links.map(named).join(' and ')} ${links.length === 2 ? 'both' : 'all'} change ${fact}, in no set order. Give the order in `
-            + `frond.config.ts of the frond that owns ${fact}: pipes: { ${fact}: [${links.map((one) => `'${upperFirst(one.facade)}'`).join(', ')}] }. `
+          message: `${links.map(namedOf).join(' and ')} ${links.length === 2 ? 'both' : 'all'} change ${fact}, in no set order. Give the order in `
+            + `frond.config.ts of the frond that owns ${fact}: pipes: { ${fact}: [${links.map((one) => `'${subjectsOf(one.facade, 'Facade')![0]}'`).join(', ')}] }. `
             + 'Or, if only one of them changes it, make the others take Fact<…> instead.',
         });
         continue;
@@ -147,7 +150,7 @@ export class Emissions {
           code: 'pipes-unlisted',
           filePath: this.fileOf.get(unlisted[0]!.facade) ?? '',
           subject: fact,
-          message: `${unlisted.map(named).join(', ')} ${unlisted.length > 1 ? 'change' : 'changes'} ${fact}, `
+          message: `${unlisted.map(namedOf).join(', ')} ${unlisted.length > 1 ? 'change' : 'changes'} ${fact}, `
             + `but pipes: for ${fact} lists only ${declared.join(', ')}. Add ${unlisted.length > 1 ? 'them' : 'it'} to pipes:, `
             + 'or make it take Fact<…> if it only reads.',
         });
@@ -204,7 +207,9 @@ export class Emissions {
         });
         continue;
       }
-      this.container.registerValue(awaitKeyOf(fact), (raw: unknown) => this.announce(fact, raw, true));
+      for (const key of this.awaitKeys.filter((one) => factOfAwaitKey(one) === fact)) {
+        this.container.registerValue(key, (raw: unknown) => this.announce(fact, raw, true));
+      }
     }
     if (ambient.degraded && this.subscribers.size > 0) {
       this.log.warn('This runtime has no async context, so a fact that triggers itself in a loop is not detected. '
@@ -231,7 +236,7 @@ export class Emissions {
     const handed = this.handToListeners(fact, payload, listeners);
     if (!waiting) {
       for (const { facade, op, done } of handed) {
-        void done.catch((cause) => this.log.error(`${fact} → ${facade}.${op}`, this.describeRefusal(fact, cause) ?? cause));
+        void done.catch((cause) => this.log.error(`${fact} → ${namedOf({ facade, op })}`, this.describeRefusal(fact, cause) ?? cause));
       }
 
       return [];
@@ -258,13 +263,13 @@ export class Emissions {
       (result.status === 'rejected' ? [{ ...handed[at]!, reason: result.reason as unknown }] : []));
     if (missing.length > 0) {
       for (const { facade, op, reason } of missing) {
-        this.log.error(`${fact} → ${facade}.${op}`, this.describeRefusal(fact, reason) ?? reason);
+        this.log.error(`${fact} → ${namedOf({ facade, op })}`, this.describeRefusal(fact, reason) ?? reason);
       }
 
       throw new AggregateError(
         missing.map((one) => one.reason),
         `${fact} — ${missing.length} of ${handed.length} subscriber(s) did not answer`
-        + ` (${missing.map((one) => `${one.facade}.${one.op}`).join(', ')}).`
+        + ` (${missing.map(namedOf).join(', ')}).`
         + ' An announcement with an answer type waits for everyone: a partial answer would'
         + ' look like a complete one.',
       );
@@ -282,13 +287,13 @@ export class Emissions {
     const refused = settled.flatMap((result, i) =>
       result.status === 'rejected' ? [{ ...handed[i], reason: result.reason as unknown }] : []);
     for (const { facade, op, reason } of refused) {
-      this.log.error(`${fact} → ${facade}.${op}`, this.describeRefusal(fact, reason) ?? reason);
+      this.log.error(`${fact} → ${namedOf({ facade, op })}`, this.describeRefusal(fact, reason) ?? reason);
     }
     if (refused.length > 0) {
       throw new AggregateError(
         refused.map((r) => r.reason),
         `${fact} — ${refused.length} of ${handed.length} listener(s) refused it`
-        + ` (${refused.map((r) => `${r.facade}.${r.op}`).join(', ')}).`
+        + ` (${refused.map(namedOf).join(', ')}).`
         + ` Nothing here holds it: the carrier decides whether it comes back.`,
       );
     }
@@ -313,7 +318,7 @@ export class Emissions {
       // each reader; it is not a link's to decide for everyone.
       if (answer === null || answer === undefined) {
         throw new Error(
-          `${link.facade}.${link.op} takes Pipe<${fact}> and returned nothing. `
+          `${namedOf(link)} takes Pipe<${fact}> and returned nothing. `
           + 'It must return the fact, changed or as it is.',
         );
       }
@@ -405,6 +410,11 @@ export class Emissions {
 }
 
 /** The container key a declared CLASS NAME answers under — `RedactHandler` → `redactHandler`. */
+/** A listener as an op is named everywhere else — `index.reindex`. */
+function namedOf(listener: Listener): string {
+  return `${addressOf(listener.facade)}.${listener.op}`;
+}
+
 function facadeOf(declared: string): string {
   return facadeKeyOf(addressOf(declared));
 }

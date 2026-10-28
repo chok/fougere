@@ -10,7 +10,7 @@ export default [frond('catalog', {
   providers: [FileStorage, { ctor: PartnerCatalog, repository: BookCard }],
   handlers: [{
     ctor: BookCardHandler,
-    deps: ['BookCardRepository', 'FileStorage'],
+    deps: ['Repository<BookCard>', 'FileStorage'],
     operations: {
       list: op({ output: BookCard, cardinality: 'page' }),
       findPath: op({ args: [param('name')], cardinality: 'none', description: "Find where a card's file sits." }),

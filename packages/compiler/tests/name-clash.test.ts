@@ -25,7 +25,7 @@ const oneFrond = join(import.meta.dirname, 'fixtures-name-clash-provider');
 
 describe('two fronds claiming one name', () => {
   it('refuses to boot instead of letting one shadow the other', async () => {
-    await expect(createApp({ ...(await writtenStatement(root)), createContainer })).rejects.toThrow(/productHandler/);
+    await expect(createApp({ ...(await writtenStatement(root)), createContainer })).rejects.toThrow(/Facade<ProductHandler>/);
   });
 
   it('names both fronds and what to do about it', async () => {

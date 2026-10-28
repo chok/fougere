@@ -10,7 +10,7 @@ export default [frond('mesures', {
   entities: [Node, Reading],
   providers: [{ ctor: ReadingRepository, repository: Reading }],
   handlers: [
-    { ctor: NodeHandler, deps: ['NodeRepository'], operations: { all: op({ output: Node, cardinality: 'page' }) } },
+    { ctor: NodeHandler, deps: ['Repository<Node>'], operations: { all: op({ output: Node, cardinality: 'page' }) } },
     { ctor: ReadingHandler, deps: ['ReadingRepository'], operations: { loud: op({ output: Reading, cardinality: 'many' }) } },
   ],
   operationsOverrides: { 'reading.loud': { kind: 'query' } },

@@ -7,7 +7,7 @@ export default [
   frond('alpha', {
     handlers: [{
       ctor: AlphaHandler,
-      deps: ['betaEmit'],
+      deps: ['Emit<Beta>'],
       operations: { onAlpha: op({ args: [fact('fact', 'alpha')], cardinality: 'none', description: 'React to alpha by announcing beta.' }) },
     }],
     operationsOverrides: { 'alpha.onAlpha': { kind: 'command' } },
@@ -15,7 +15,7 @@ export default [
   frond('beta', {
     handlers: [{
       ctor: BetaHandler,
-      deps: ['alphaEmit'],
+      deps: ['Emit<Alpha>'],
       operations: { onBeta: op({ args: [fact('fact', 'beta')], cardinality: 'none', description: 'React to beta by announcing alpha.' }) },
     }],
     operationsOverrides: { 'beta.onBeta': { kind: 'command' } },

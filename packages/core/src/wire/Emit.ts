@@ -1,4 +1,5 @@
-import { lowerFirst } from '@fougere/schema';
+import { lowerFirst, upperFirst } from '@fougere/schema';
+import { subjectKeyOf, subjectsOf } from './SubjectKey.js';
 import { computeBindingPlan } from '../bindingPlan.js';
 import type { OperationContract } from './OperationContract.js';
 import type { OperationsMap } from './OperationsMap.js';
@@ -11,9 +12,9 @@ import type { OperationsMap } from './OperationsMap.js';
  */
 export type Emit<T, A = never> = (fact: Partial<T>) => Promise<A[]>;
 
-/** The container key of an emission — THE one place that spells the format. */
+/** The container key of an emission — `Emit<PostPublished>`, spelled as the type is written. */
 export function emitKeyOf(fact: string): string {
-  return `${lowerFirst(fact)}Emit`;
+  return subjectKeyOf('Emit', upperFirst(fact));
 }
 
 /**
@@ -21,28 +22,27 @@ export function emitKeyOf(fact: string): string {
  * the whole difference. A separate key because they are two functions: one hands the fact
  * over and returns, the other waits for every subscriber and gives back what they said.
  */
-export function awaitKeyOf(fact: string): string {
-  return `${lowerFirst(fact)}Await`;
+export function awaitKeyOf(fact: string, answer: string): string {
+  return subjectKeyOf('Emit', upperFirst(fact), upperFirst(answer));
 }
-
-const SUFFIX = 'Emit';
-
-const AWAIT_SUFFIX = 'Await';
 
 /** The fact behind an emission key, or `undefined` when the key is not one. */
 export function factOfEmitKey(key: string): string | undefined {
-  return behind(key, SUFFIX);
+  const subjects = subjectsOf(key, 'Emit');
+
+  return subjects?.length === 1 ? lowerFirst(subjects[0]!) : undefined;
 }
 
-/** The fact behind an awaited emission's key — the dual, read the same way. */
-function factOfAwaitKey(key: string): string | undefined {
-  return behind(key, AWAIT_SUFFIX);
+/** The fact behind an awaited emission's key — two subjects, the second what each subscriber answers. */
+export function factOfAwaitKey(key: string): string | undefined {
+  const subjects = subjectsOf(key, 'Emit');
+
+  return subjects?.length === 2 ? lowerFirst(subjects[0]!) : undefined;
 }
 
-function behind(key: string, suffix: string): string | undefined {
-  return key.length > suffix.length && key.endsWith(suffix)
-    ? key.slice(0, -suffix.length)
-    : undefined;
+/** The keys a set of handlers asks to announce and wait under — `Emit<CanBook, Verdict>`, each as written. */
+export function awaitKeysIn(handlers: readonly { deps: readonly string[] }[]): string[] {
+  return [...new Set(handlers.flatMap((handler) => handler.deps.filter((dep) => factOfAwaitKey(dep) !== undefined)))];
 }
 
 /** What a set of handlers ANNOUNCES — `Emit<T>` read back out of their dependencies. */

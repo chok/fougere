@@ -1,3 +1,4 @@
+import { subjectKeyOf, subjectsOf } from '../wire/SubjectKey.js';
 import { upperFirst, lowerFirst, type SchemaView } from '@fougere/schema';
 import type { ListOptions } from './ListOptions.js';
 import type { ListResult } from './ListResult.js';
@@ -153,42 +154,32 @@ export abstract class Storage<T = Record<string, unknown>> {
 
 /** Container key of an entity's storage — 'reading' → 'ReadingStorage'. */
 export function storageKeyOf(entity: string): string {
-  return `${upperFirst(entity)}${STORAGE_SUFFIX}`;
+  return subjectKeyOf('Storage', upperFirst(entity));
 }
 
 /** The entity behind a storage key, or `undefined` when the key is not one. */
 export function entityOfStorageKey(key: string, known: (entity: string) => boolean): string | undefined {
-  if (key.length <= STORAGE_SUFFIX.length || !key.endsWith(STORAGE_SUFFIX)) return undefined;
-  const entity = lowerFirst(key.slice(0, -STORAGE_SUFFIX.length));
+  const subjects = subjectsOf(key, 'Storage');
+  const entity = subjects?.length === 1 ? lowerFirst(subjects[0]!) : undefined;
 
-  return storageKeyOf(entity) === key && known(entity) ? entity : undefined;
+  return entity !== undefined && known(entity) ? entity : undefined;
 }
-
-/** What a holder keeps, said in the key it is registered under. */
-const STORAGE_SUFFIX = 'Storage';
 
 /**
  * The container key of a frame — `[['Account', 'Ledger'], ['RateMirror']]` →
- * 'Account+Ledger|RateMirrorTogether'.
+ * `Together<[Account, Ledger], [RateMirror]>`, spelled as the type is written.
  */
 export function togetherKeyOf(entities: readonly string[], providers: readonly string[] = []): string {
-  const named = entities.map(upperFirst).join(SEPARATOR);
+  const tuple = (names: readonly string[]) => `[${names.map(upperFirst).join(', ')}]`;
 
-  return `${named}${providers.length ? KINDS + providers.map(upperFirst).join(SEPARATOR) : ''}${FRAME}`;
+  return subjectKeyOf('Together', tuple(entities), ...(providers.length ? [tuple(providers)] : []));
 }
-
-const FRAME = 'Together';
-
-const SEPARATOR = '+';
-
-/** Separates the two lists — what the unwind covers, and what is rebuilt to make it true. */
-const KINDS = '|';
 
 /** The members behind a frame key, or `undefined` when the key is not one. */
 export function membersOfTogetherKey(key: string): { entities: string[]; providers: string[] } | undefined {
-  if (key.length <= FRAME.length || !key.endsWith(FRAME)) return undefined;
-  const [entities = '', providers = ''] = key.slice(0, -FRAME.length).split(KINDS);
-  const split = (list: string) => list.split(SEPARATOR).filter(Boolean);
+  const [entities, providers = '[]'] = subjectsOf(key, 'Together') ?? [];
+  if (entities === undefined) return undefined;
+  const split = (tuple: string) => tuple.replace(/^\[|\]$/g, '').split(',').map((one) => one.trim()).filter(Boolean);
 
   return { entities: split(entities), providers: split(providers) };
 }

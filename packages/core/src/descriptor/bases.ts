@@ -1,7 +1,6 @@
 import { type ProviderEntry } from './ProviderEntry.js';
 
-/** `Rest<NoteHandler>`, spelled as the type — the key no class name can take, since none holds a `<`. */
-export const subjectKeyOf = (port: string, subject: string): string => `${port}<${subject}>`;
+export { subjectKeyOf } from '../wire/SubjectKey.js';
 
 /**
  * Port class name → every concrete class below it, in scan order.

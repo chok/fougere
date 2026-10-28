@@ -1,11 +1,8 @@
+import type { Repository } from '@fougere/core';
 import Crate from '../entities/Crate.js';
 
-declare class CrateRepository {
-  list(): Crate[];
-}
-
 export default class CrateHandler {
-  constructor(private crates: CrateRepository) {}
+  constructor(private crates: Repository<Crate>) {}
 
   /** Every crate this warehouse holds. */
   async list(): Promise<Crate[]> {

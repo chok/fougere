@@ -1,12 +1,9 @@
+import type { Repository } from '@fougere/core';
 import type Product from '../entities/Product.js';
-
-declare class ProductRepository {
-  list(): Promise<Product[]>;
-}
 
 /** The far side of the crossing. It knows nothing of who reaches it, or how. */
 export default class ProductHandler {
-  constructor(private products: ProductRepository) {}
+  constructor(private products: Repository<Product>) {}
 
   /** Everything on the shelf. */
   async list(): Promise<Product[]> {

@@ -119,14 +119,14 @@ afterEach(() => { takers.length = 0; });
 describe('a span per operation', () => {
   it('opens none when nobody listens', async () => {
     spans = [];
-    await host.resolve<Facade>('productHandler').list();
+    await host.resolve<Facade>('Facade<ProductHandler>').list();
     expect(spans).toEqual([]);
   });
 
   it('names the op, its duration and its verdict', async () => {
     collect();
-    await host.resolve<Facade>('productHandler').list();
-    await expect(host.resolve<Facade>('productHandler').reserve()).rejects.toThrow();
+    await host.resolve<Facade>('Facade<ProductHandler>').list();
+    await expect(host.resolve<Facade>('Facade<ProductHandler>').reserve()).rejects.toThrow();
 
     expect(spans.map((s) => [s.address, s.operation, s.error])).toEqual([
       ['product', 'list', undefined],
@@ -136,7 +136,7 @@ describe('a span per operation', () => {
 
   it('in-process, one call is one span with no parent and no crossing', async () => {
     collect();
-    await host.resolve<Facade>('productHandler').list();
+    await host.resolve<Facade>('Facade<ProductHandler>').list();
 
     expect(spans).toHaveLength(1);
     expect(spans[0].parentId).toBeUndefined();
@@ -147,7 +147,7 @@ describe('a span per operation', () => {
 describe('across a wire — any wire', () => {
   it('over HTTP, both halves share one trace and the receiver hangs off the caller', async () => {
     collect();
-    await overHttp.resolve<Facade>('productHandler').list();
+    await overHttp.resolve<Facade>('Facade<ProductHandler>').list();
 
     expect(spans).toHaveLength(2);
     const [caller, received] = halves();
@@ -164,7 +164,7 @@ describe('across a wire — any wire', () => {
    */
   it('over a bare socket, the same trace crosses just the same', async () => {
     collect();
-    await overSocket.resolve<Facade>('productHandler').list();
+    await overSocket.resolve<Facade>('Facade<ProductHandler>').list();
 
     expect(spans).toHaveLength(2);
     const [caller, received] = halves();
@@ -174,7 +174,7 @@ describe('across a wire — any wire', () => {
 
   it('carries the trace even when the call is refused', async () => {
     collect();
-    await expect(overHttp.resolve<Facade>('productHandler').reserve()).rejects.toThrow();
+    await expect(overHttp.resolve<Facade>('Facade<ProductHandler>').reserve()).rejects.toThrow();
 
     expect(new Set(spans.map((s) => s.traceId)).size).toBe(1);
     expect(spans.every((s) => s.error === 'CONFLICT')).toBe(true);

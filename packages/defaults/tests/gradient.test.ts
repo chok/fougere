@@ -133,7 +133,7 @@ const fronds = ({ together = false, moved = false, strandCollector = false, fram
   };
   // Through the repository, never the port: the boot refuses `AuthorStorage` here, and it
   // is right — a repository answers every gesture and survives the entity joining an aggregate.
-  const service = { ctor: Directory, deps: ['AuthorRepository'] };
+  const service = { ctor: Directory, deps: ['Repository<Author>'] };
   // A frame over two entities, named the way a handler would: the boot refuses it the day one
   // of them answers in another process.
   const framed = frame
@@ -325,10 +325,10 @@ describe('the cut holds when the code moves', () => {
   });
 
   it('but it may not move to a frond that does not own what it reads', async () => {
-    // A scope sees its parent and never its siblings, so `AuthorRepository` — registered by the
+    // A scope sees its parent and never its siblings, so `Repository<Author>` — registered by the
     // frond that owns the entity — is not reachable from another one. That is the ownership
     // boundary doing its job: a neighbour goes through the facade, not through the rows.
-    await expect(world({ moved: true })).rejects.toThrow(/Directory asks for AuthorRepository/);
+    await expect(world({ moved: true })).rejects.toThrow(/Directory asks for Repository<Author>/);
   });
 
   it.each(cases)('a reference across the cut is written and read the same — %s', async (_name, where) => {

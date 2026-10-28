@@ -13,7 +13,7 @@ export default [
       { ctor: ArchiveHandler, operations: { keep: op({ args: [fact('fact', 'postPublished')], cardinality: 'none', description: 'Keep what went out.' }) } },
       {
         ctor: PostHandler,
-        deps: ['postPublishedEmit'],
+        deps: ['Emit<PostPublished>'],
         operations: { publish: op({ args: [param('id')], cardinality: 'one', description: 'Publish a draft, and say so.' }) },
       },
     ],

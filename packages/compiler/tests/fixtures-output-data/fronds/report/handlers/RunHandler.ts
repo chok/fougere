@@ -1,12 +1,9 @@
+import type { Repository } from '@fougere/core';
 import Run from '../entities/Run.js';
-
-declare class RunRepository {
-  list(): Promise<Run[]>;
-}
 
 /** Three outputs: one declared, one already data, one that is neither. */
 export default class RunHandler {
-  constructor(private runs: RunRepository) {}
+  constructor(private runs: Repository<Run>) {}
 
   /** Every run — a declared entity, whose `created()` field leaves as an ISO string. */
   async list(): Promise<Run[]> {

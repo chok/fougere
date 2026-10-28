@@ -61,7 +61,7 @@ describe('a statement belongs to the step it ran under', () => {
   it('is a child of the operation, in the same trace', async () => {
     collect();
     running = [5];
-    await app.resolve<Facade>('productHandler').list();
+    await app.resolve<Facade>('Facade<ProductHandler>').list();
 
     const [op] = operations();
     const [ran] = statements();
@@ -75,7 +75,7 @@ describe('a statement belongs to the step it ran under', () => {
   it('never begins before the operation that issued it', async () => {
     collect();
     running = [5];
-    await app.resolve<Facade>('productHandler').list();
+    await app.resolve<Facade>('Facade<ProductHandler>').list();
 
     const [op] = operations();
     const [ran] = statements();
@@ -99,7 +99,7 @@ describe('what a statement took is taken out of the step that waited for it', ()
   it('deducts the time and counts the statements', async () => {
     collect();
     running = [5, 5];
-    await app.resolve<Facade>('productHandler').list();
+    await app.resolve<Facade>('Facade<ProductHandler>').list();
 
     const [op] = operations();
     expect(op.statements).toBe(2);
@@ -115,7 +115,7 @@ describe('what a statement took is taken out of the step that waited for it', ()
     collect();
     // Four queries behind one `Promise.all` add up to more than the op that holds them.
     running = [SLOW, SLOW, SLOW, SLOW];
-    await app.resolve<Facade>('productHandler').list();
+    await app.resolve<Facade>('Facade<ProductHandler>').list();
 
     const [op] = operations();
     expect(op.selfMs).toBe(0);
@@ -124,7 +124,7 @@ describe('what a statement took is taken out of the step that waited for it', ()
   it('leaves a statement its whole time — it delegates to nothing observed', async () => {
     collect();
     running = [5];
-    await app.resolve<Facade>('productHandler').list();
+    await app.resolve<Facade>('Facade<ProductHandler>').list();
 
     const [ran] = statements();
     expect(ran.selfMs).toBe(ran.ms);
@@ -168,7 +168,7 @@ describe('the one reader that has to choose', () => {
     const measured = metrics(app);
     takers.push(measured.sink);
     running = [5, 5, 5];
-    await app.resolve<Facade>('productHandler').list();
+    await app.resolve<Facade>('Facade<ProductHandler>').list();
 
     const { series } = measured.snapshot();
     // `product.select` is not an operation this process answers: published as one, it would

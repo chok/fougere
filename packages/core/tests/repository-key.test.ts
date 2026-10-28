@@ -25,7 +25,7 @@ const boot = (extra: unknown[] = []) => createApp({
   migrates: true,
   fronds: [frond('blog', {
     entities: [Post],
-    providers: [{ ctor: PostQueries, repository: Post }, ...extra as never[], { ctor: Digest, deps: ['PostRepository', 'PostQueries'] }],
+    providers: [{ ctor: PostQueries, repository: Post }, ...extra as never[], { ctor: Digest, deps: ['Repository<Post>', 'PostQueries'] }],
   })],
 } as never);
 

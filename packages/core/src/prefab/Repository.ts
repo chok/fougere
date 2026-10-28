@@ -1,3 +1,4 @@
+import { subjectKeyOf } from '../wire/SubjectKey.js';
 import { lowerFirst, upperFirst, type Entity, type SchemaView } from '@fougere/schema';
 import type { ListOptions } from '../storage/ListOptions.js';
 import type { ListResult } from '../storage/ListResult.js';
@@ -135,7 +136,7 @@ export function seatOf(ctor: unknown): readonly Entity[] {
 
 /** Container key of an entity's repository — 'reading' → 'ReadingRepository'. */
 export function repositoryKeyOf(entity: string): string {
-  return `${upperFirst(entity)}Repository`;
+  return subjectKeyOf('Repository', upperFirst(entity));
 }
 
 /** The entities a class owns — empty for anything that is not an aggregate. */

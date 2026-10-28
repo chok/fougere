@@ -25,7 +25,7 @@ const settle = () => new Promise((r) => setTimeout(r, 50));
 describe('emitKeyOf and its dual', () => {
   it('undoes exactly what it does', () => {
     expect(factOfEmitKey(emitKeyOf('PostPublished'))).toBe('postPublished');
-    expect(factOfEmitKey('postHandler')).toBeUndefined();
+    expect(factOfEmitKey('Facade<PostHandler>')).toBeUndefined();
     // Not a key, just the suffix on its own — a fact with an empty name is not one.
     expect(factOfEmitKey('Emit')).toBeUndefined();
   });
@@ -62,7 +62,7 @@ describe('a fact reaching several fronds', () => {
 
   it('binds the fact parameter as a fact, never as the request input', async () => {
     await using app = await createApp({ fronds: emitted, createContainer });
-    const contracts = app.container.resolve<Map<string, any>>('indexHandler:contracts');
+    const contracts = app.container.resolve<Map<string, any>>('Facade<IndexHandler>:contracts');
 
     // `binding.ts` branch 4 would have handed this parameter whatever a caller typed.
     // The plan says what it is, and that sentence is what makes the index readable.
@@ -347,7 +347,7 @@ describe('a sender whose copy has moved ahead', () => {
       spy.mockRestore();
     }
 
-    const line = written.find((entry) => entry.includes('postPublished → indexHandler.reindex'));
+    const line = written.find((entry) => entry.includes('postPublished → index.reindex'));
     expect(line).toMatch(/author: Unknown field/);
     expect(line).toMatch(/fougere sync/);
   });
@@ -397,7 +397,7 @@ describe('a carrier that must decide whether to redeliver', () => {
 
     expect(refused).toBeInstanceOf(AggregateError);
     expect((refused as AggregateError).message).toMatch(/1 of 2 listener\(s\) refused it/);
-    expect((refused as AggregateError).message).toMatch(/digestHandler\.queue/);
+    expect((refused as AggregateError).message).toMatch(/digest\.queue/);
     // And it says the framework is not holding it — the carrier decides.
     expect((refused as AggregateError).message).toMatch(/the carrier decides/);
     // The one that accepted still ran: a partial failure is not a rollback.

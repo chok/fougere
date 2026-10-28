@@ -1,5 +1,5 @@
-import { DEFAULT_CONVENTIONS, RouteAddress, frondDirsOf, frondPackage, providerDirsOf, resolveConventions, togetherKeyOf, type Conventions, type ConventionsInput, type Diagnostic, type ScanResult } from '@fougere/core';
-import { Fronds, addressOf, awaitKeyOf, cardinalityOf, computeBindingPlan, opsOf, emitKeyOf, getPresenterFields, builtOn, outputOf, repositoryKeyOf, seated, seatsOf, storageKeyOf, targetOf, type CollectorEntry, type EntityEntry, type FrondDescriptor, type HandlerEntry, type OperationContract, type OperationsMap, type PresenterEntry, type ProviderEntry, type SeedEntry, type TypeRef, viewsOf, isExtension, FrondConfigReading, Term, type ExtensionEntry, type VocabularyEntry } from '@fougere/core/descriptor';
+import { DEFAULT_CONVENTIONS, RouteAddress, frondDirsOf, frondPackage, providerDirsOf, resolveConventions, type Conventions, type ConventionsInput, type Diagnostic, type ScanResult } from '@fougere/core';
+import { Fronds, subjectKeyOf, addressOf, cardinalityOf, computeBindingPlan, opsOf, getPresenterFields, builtOn, outputOf, seated, seatsOf, storageKeyOf, targetOf, type CollectorEntry, type EntityEntry, type FrondDescriptor, type HandlerEntry, type OperationContract, type OperationsMap, type PresenterEntry, type ProviderEntry, type SeedEntry, type TypeRef, viewsOf, isExtension, FrondConfigReading, Term, type ExtensionEntry, type VocabularyEntry } from '@fougere/core/descriptor';
 import { frondNamesOf, getModuleLoader, loadFrondConfig } from '@fougere/core/node';
 import type { FrondConfig, ErrorCode } from '@fougere/core';
 import type { Param, Signature } from '@fougere/core/descriptor';
@@ -17,7 +17,7 @@ import {
   parseDeclaredAnswers,
 } from './handler-parser.js';
 import { parseAbstract } from './Abstract.js';
-import { keyOf, parseExtendedPort, parseImplements } from './Implemented.js';
+import { parseExtendedPort, parseImplements } from './Implemented.js';
 import { parseSeat } from './Seat.js';
 import { resetTypePrograms, seedTypeProgram } from './TypeProgram.js';
 
@@ -155,58 +155,27 @@ function findWorkspaceRoot(from: string): string {
  * type was spelled.
  */
 function depKeyOf(type: TypeRef): string {
-  // `Facade<PostHandler>` — the second port, read exactly like the first. The type names
-  // what arrives: not the handler (its methods take positional arguments and it is never
-  // injected), but the facade built in front of it. Same key whether that facade is the local
-  // façade or a doublure, which is what makes the topology invisible from a signature.
-  const facadeOf = type.name === 'Facade' ? type.generics?.[0]?.name : undefined;
-  if (facadeOf) return lowerFirst(facadeOf);
-
-  // `Emit<PostPublished>` — the third port, and the only one that names a SUBJECT rather
-  // than an interlocutor. Read like the other two: the type names what arrives, here a
-  // function that announces. Who receives it is not in the signature and never will be.
-  const factOf = type.name === 'Emit' ? type.generics?.[0]?.name : undefined;
-  // A SECOND type is what says the announcer waits: `Emit<CanBook, Verdict>` gives back
-  // what every subscriber answered, `Emit<CanBook>` gives back nothing. Two functions,
-  // two keys — the presence of the type is the whole declaration, and there is no option.
-  if (factOf) return (type.generics?.length ?? 0) > 1 ? awaitKeyOf(factOf) : emitKeyOf(factOf);
-
-  // `Together<[Account, Ledger], [RateMirror]>` — the fifth reading, and the only one whose
-  // argument is a SET rather than one subject. The AST hands each tuple back as a single
-  // string, so they are split here, where every other question of "how was it written" lives.
-  const frame = type.name === 'Together' ? type.generics?.[0]?.name : undefined;
-  if (frame) return togetherKeyOf(tupleMembers(frame), tupleMembers(type.generics?.[1]?.name ?? ''));
-
-  // `Repository<Post>` — what an author writes when no repository file exists. The dual
-  // of the line below: one names the port, the other the holder, and both resolve to a key
-  // rather than to a class the author would have to invent.
-  const subject = type.name === 'Repository' ? type.generics?.[0]?.name : undefined;
-  if (subject) return repositoryKeyOf(subject);
-
-  // The GENERIC names the subject, so a prefix does not change the key — `MeiliStorage<Card>`
-  // is `Card`'s storage. A class named `FileStorage` is untouched: it carries no generic.
-  const target = type.name.endsWith('Storage') && type.generics?.length === 1
-    ? type.generics[0]?.name
-    : undefined;
-  // `Record` is `Storage<T = Record<string, unknown>>`'s DEFAULT, which the checker fills in
-  // — so a bare `Storage` arrives here indistinguishable from one that named an entity, and
-  // asked for the key `RecordStorage`, which nothing registers. A shapeless row names no
-  // subject: the key is the seam itself, which is what a class standing in front of every
-  // entity's storage asks for.
+  // A prefix does not change the key — `MeiliStorage<Card>` is `Card`'s storage. A class named
+  // `FileStorage` is untouched: it carries no generic.
+  const target = type.name.endsWith('Storage') && type.generics?.length === 1 ? type.generics[0]?.name : undefined;
   if (target && target !== 'Record') return storageKeyOf(target);
 
-  // Any other port with a subject — `Rest<NoteHandler>`, `Env<Meili>` — is keyed as it is written. A
-  // class extending or implementing the same type declares the same key (`Implemented.ts`, `keyOf`).
-  const [only] = type.generics ?? [];
-  // `never` is a port's default argument, `Dispatcher<H = never>` filled in by the checker: no subject.
-  if (type.generics?.length === 1 && only && only.name !== 'Record' && only.name !== 'never') return keyOf(type.name, only.name);
+  // Every other port with a subject is keyed as it is written — `Repository<Post>`, `Facade<PostHandler>`,
+  // `Emit<CanBook, Verdict>`, `Together<[Account, Ledger]>`, `Rest<NoteHandler>` — and a class extending or
+  // implementing the same type declares the same key (`Implemented.ts`). `Record`, `never` and `[]` are defaults
+  // the checker fills in (`Storage<T = Record<…>>`, `Dispatcher<H = never>`, `Together<T, P = []>`): they name no subject.
+  const subjects = (type.generics ?? []).map((generic) => tupleOf(generic.name)).filter((name) => !DEFAULTS.has(name));
 
-  return type.name;
+  return subjects.length > 0 ? subjectKeyOf(type.name, ...subjects) : type.name;
 }
 
-/** `'[Account, Ledger]'` → `['Account', 'Ledger']`. */
-function tupleMembers(raw: string): string[] {
-  return raw.replace(/^\[|\]$/g, '').split(',').map((member) => member.trim()).filter(Boolean);
+const DEFAULTS = new Set(['Record', 'never', '[]']);
+
+/** A tuple as the key writes it — `'[Account,Ledger]'` → `'[Account, Ledger]'` — and any other name as it is. */
+function tupleOf(raw: string): string {
+  if (!raw.startsWith('[')) return raw;
+
+  return `[${raw.replace(/^\[|\]$/g, '').split(',').map((member) => member.trim()).filter(Boolean).join(', ')}]`;
 }
 
 /** These readings are semantic. */

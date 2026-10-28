@@ -80,7 +80,7 @@ describe('the edges', () => {
     const declared = declaredTopologyOf({
       fronds: fronds.map((frond) => (frond.name !== 'commande' ? frond : {
         ...frond,
-        handlers: [{ ...handler, deps: ['CommandeRepository', 'Logger', 'commandeHandler'] }],
+        handlers: [{ ...handler, deps: ['Repository<Commande>', 'Logger', 'Facade<CommandeHandler>'] }],
       })),
       remotes: {},
     });

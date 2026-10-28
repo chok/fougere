@@ -90,15 +90,15 @@ describe('the key and its dual', () => {
   it('keeps the declared order, because the callback destructures it', () => {
     // Sorting would hand `[ledger, accounts]` to a signature that says the opposite —
     // the type and the runtime disagreeing about one line.
-    expect(togetherKeyOf(['Account', 'Ledger'])).toBe('Account+LedgerTogether');
-    expect(togetherKeyOf(['Ledger', 'Account'])).toBe('Ledger+AccountTogether');
+    expect(togetherKeyOf(['Account', 'Ledger'])).toBe('Together<[Account, Ledger]>');
+    expect(togetherKeyOf(['Ledger', 'Account'])).toBe('Together<[Ledger, Account]>');
   });
 });
 
 describe('one source — the engine gives both', () => {
   it('says at boot that it built a transaction', async () => {
     await using app = await boot(false);
-    expect(app.said.some((line) => /Account\+LedgerTogether — transaction, source 'main'/.test(line))).toBe(true);
+    expect(app.said.some((line) => /Together<\[Account, Ledger\]> — transaction, source 'main'/.test(line))).toBe(true);
   });
 
   it('takes both writes back when the block throws', async () => {
@@ -122,7 +122,7 @@ describe('one source — the engine gives both', () => {
 describe('two sources — the frame replays its own inverses', () => {
   it('says at boot that it compensates, and that isolation is gone', async () => {
     await using app = await boot(true);
-    const line = app.said.find((l) => l.includes('Account+LedgerTogether'));
+    const line = app.said.find((l) => l.includes('Together<[Account, Ledger]>'));
     expect(line).toMatch(/compensated/);
     expect(line).toMatch(/no isolation/);
   });

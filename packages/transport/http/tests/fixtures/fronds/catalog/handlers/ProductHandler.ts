@@ -1,19 +1,9 @@
-import { FougereError, ErrorCode } from '@fougere/core';
+import { FougereError, ErrorCode, type Repository } from '@fougere/core';
 import type Product from '../entities/Product.js';
-
-// Resolved by type from the container — not imported directly. Declared over the
-// entity rather than over `Record<string, unknown>`: the default repository IS the port,
-// and an entity class is not an index signature, so a stand-in typed on records
-// forces every caller into a cast that says nothing.
-declare class ProductRepository {
-  list(): Promise<Product[]>;
-  findById(id: string): Promise<Product | undefined>;
-  create(input: Partial<Product>): Promise<Product>;
-}
 
 /** Handler fixture — enough surface to prove parity, deliberate failure included. */
 export default class ProductHandler {
-  constructor(private products: ProductRepository) {}
+  constructor(private products: Repository<Product>) {}
 
   async list() { return this.products.list(); }
   async findById(id: string) { return this.products.findById(id); }

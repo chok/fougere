@@ -12,6 +12,6 @@ describe('a constructor parameter whose import does not resolve', () => {
     const scan = await scanProject(join(import.meta.dirname, 'fixtures-shared-tsconfig'));
     const digest = scan.fronds.find((frond) => frond.name === 'digest')!;
 
-    expect(digest.handlers[0]!.deps).toEqual(['postHandler']);
+    expect(digest.handlers[0]!.deps).toEqual(['Facade<PostHandler>']);
   });
 });

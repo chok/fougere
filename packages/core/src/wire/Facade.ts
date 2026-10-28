@@ -1,4 +1,5 @@
-import { lowerFirst } from '@fougere/schema';
+import { lowerFirst, upperFirst } from '@fougere/schema';
+import { subjectKeyOf, subjectsOf } from './SubjectKey.js';
 
 /**
  * The facade built in front of a handler — the framework's second port, after `Storage`.
@@ -20,20 +21,24 @@ export type Facade<T> = {
 
 /** The container key of a façade — THE one place that spells the format. */
 export function facadeKeyOf(entityName: string, surface?: string): string {
-  return surface ? `${surface}:${entityName}Handler` : `${entityName}Handler`;
+  const key = subjectKeyOf('Facade', `${upperFirst(entityName)}${HANDLER}`);
+
+  return surface ? `${surface}:${key}` : key;
 }
 
 /**
  * The address a handler answers at, read off its class name or its facade key — the dual of
- * `facadeKeyOf`. `PostHandler` → `post`, `postHandler` → `post`.
+ * `facadeKeyOf`. `PostHandler` → `post`, `Facade<PostHandler>` → `post`.
  */
 export function addressOf(name: string): string {
-  return lowerFirst(name.endsWith(HANDLER) ? name.slice(0, -HANDLER.length) : name);
+  const handler = subjectsOf(name, 'Facade')?.[0] ?? name;
+
+  return lowerFirst(handler.endsWith(HANDLER) ? handler.slice(0, -HANDLER.length) : handler);
 }
 
-/** A default facade's key — `postHandler`, never `admin:postHandler` nor `PostStorage`. */
+/** A default facade's key — `Facade<PostHandler>`, never `admin:Facade<PostHandler>` nor `Storage<Post>`. */
 export function isFacadeKey(key: string): boolean {
-  return key.endsWith(HANDLER) && !key.includes(':');
+  return subjectsOf(key, 'Facade') !== undefined;
 }
 
 const HANDLER = 'Handler';

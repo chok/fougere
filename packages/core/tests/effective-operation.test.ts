@@ -136,7 +136,7 @@ describe('deterministic operation resolution', () => {
   });
 
   const handler: HandlerEntry = {
-    name: 'postHandler',
+    name: 'Facade<PostHandler>',
     address: 'post',
     ctor: PostHandler,
     operations: new Map([

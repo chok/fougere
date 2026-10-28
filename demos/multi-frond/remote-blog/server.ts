@@ -46,7 +46,7 @@ async function main() {
   hono.post('/_fougere/call', async (c) => c.json(await handleRpc(runner, await c.req.json()) as never));
 
   // Seed some data
-  const postHandler = app.resolve<Record<string, Function>>('postHandler');
+  const postHandler = app.resolve<Record<string, Function>>('Facade<PostHandler>');
   await postHandler.create({ title: 'Hello from remote blog', body: 'This post lives on a separate server.', views: 0 });
   await postHandler.create({ title: 'Second post', body: 'Another one.', views: 42 });
 

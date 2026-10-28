@@ -9,7 +9,7 @@ export const commande = frond('commande', {
   entities: [Commande],
   handlers: [{
     ctor: CommandeHandler,
-    deps: ['articleHandler'],
+    deps: ['Facade<ArticleHandler>'],
     operations: { servable: op({ cardinality: 'none', description: 'Can this order be served from the shelf?' }) },
   }],
   operationsOverrides: { 'commande.servable': { kind: 'query' } },

@@ -10,7 +10,7 @@ export default [
     entities: [PostPublished],
     handlers: [{
       ctor: PostHandler,
-      deps: ['postPublishedEmit'],
+      deps: ['Emit<PostPublished>'],
       operations: {
         publish: op({ args: [param('id')], cardinality: 'one', description: 'Publish a draft, and say so — with something a reader should not see.' }),
       },

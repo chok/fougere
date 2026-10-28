@@ -2,7 +2,7 @@
  * The gradient proof — path-2026, dérogation 2026-07-17.
  *
  * Same fronds/**, twice: locally (control app) and moved to a child process
- * behind /_fougere/call. The same user code — resolve('productHandler').op() —
+ * behind /_fougere/call. The same user code — resolve('Facade<ProductHandler>').op() —
  * must give the same results, errors included. Criteria 4 and 5 of the path.
  */
 import { writtenStatement } from '@fougere/compiler';
@@ -55,7 +55,7 @@ let facade: Facade;
 beforeAll(async () => {
   ({ child, port } = await startHost());
   control = await createApp({ ...(await writtenStatement(fixturesDir)), createContainer, storageFactory: createStorageFactory() });
-  local = control.resolve<Facade>('productHandler');
+  local = control.resolve<Facade>('Facade<ProductHandler>');
   consumer = await createApp({
     ...(await writtenStatement(emptyRoot)),
     createContainer,
@@ -63,7 +63,7 @@ beforeAll(async () => {
     remoteTransport: (url) => createHttpTransport(url, { timeoutMs: 5_000 }),
   });
   // The path's criterion 5: this is the exact line user code writes locally.
-  facade = consumer.resolve<Facade>('productHandler');
+  facade = consumer.resolve<Facade>('Facade<ProductHandler>');
 }, 40_000);
 
 afterAll(async () => {
@@ -102,7 +102,7 @@ describe('gradient — the moved Frond behaves identically', () => {
   }, 15_000);
 
   it('sanity: the dataset actually crossed', async () => {
-    expect(await facade.list()).toEqual(PRODUCTS);
+    expect(await facade.list()).toEqual({ items: PRODUCTS });
   });
 
   it('the validation verdict happens handler-side and crosses typed', async () => {
@@ -132,7 +132,7 @@ describe('gradient — the moved Frond goes down', () => {
       remotes: { catalog: `http://127.0.0.1:${port}` },
       remoteTransport: (url) => createHttpTransport(url, { timeoutMs: 2_000, retries: 1 }),
     });
-    const lateFacade = lateConsumer.resolve<Facade>('productHandler');
+    const lateFacade = lateConsumer.resolve<Facade>('Facade<ProductHandler>');
     const failure = lateFacade.list();
     await expect(failure).rejects.toBeInstanceOf(FougereError);
     await expect(failure).rejects.toMatchObject({ code: ErrorCode.SERVICE_UNAVAILABLE });

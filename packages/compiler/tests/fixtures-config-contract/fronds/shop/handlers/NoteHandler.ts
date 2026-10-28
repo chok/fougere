@@ -1,8 +1,5 @@
+import type { Repository } from '@fougere/core';
 import Note from '../entities/Note.js';
-
-declare class NoteRepository {
-  findById(id: string): Promise<Note | undefined>;
-}
 
 /**
  * Two ops the scan cannot fully serve — the reason `frond.config.ts` can state a contract.
@@ -12,7 +9,7 @@ declare class NoteRepository {
  * entity. Config names the validator.
  */
 export default class NoteHandler {
-  constructor(private notes: NoteRepository) {}
+  constructor(private notes: Repository<Note>) {}
 
   async retitle(input: Record<string, unknown>) {
     const note = await this.notes.findById('note-1');
@@ -31,7 +28,7 @@ export default class NoteHandler {
  * RUNTIME and not in the parsed source, which is exactly the production case.
  */
 Object.assign(NoteHandler.prototype, {
-  async archive(this: { notes: NoteRepository }, id: string) {
+  async archive(this: { notes: Repository<Note> }, id: string) {
     return { id, archived: true };
   },
 });

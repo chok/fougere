@@ -36,7 +36,7 @@ function collect(): void {
 describe('rate, errors and duration come from one histogram', () => {
   it('counts calls and sums their time, per op', async () => {
     collect();
-    const facade = app.resolve<Facade>('productHandler');
+    const facade = app.resolve<Facade>('Facade<ProductHandler>');
     await facade.list();
     await facade.list();
     await facade.findById('p1');
@@ -51,7 +51,7 @@ describe('rate, errors and duration come from one histogram', () => {
 
   it('separates a refusal into its own series, named by its code', async () => {
     collect();
-    const facade = app.resolve<Facade>('productHandler');
+    const facade = app.resolve<Facade>('Facade<ProductHandler>');
     await facade.list();
     await expect(facade.reserve()).rejects.toThrow();
 
@@ -63,7 +63,7 @@ describe('rate, errors and duration come from one histogram', () => {
 
   it('carries the frond — the unit that gets deployed', async () => {
     collect();
-    await app.resolve<Facade>('productHandler').list();
+    await app.resolve<Facade>('Facade<ProductHandler>').list();
 
     expect(measured.snapshot().series[0].frond).toBe('catalog');
   });
@@ -74,7 +74,7 @@ describe('rate, errors and duration come from one histogram', () => {
    */
   it('does not grow a series per call', async () => {
     collect();
-    const facade = app.resolve<Facade>('productHandler');
+    const facade = app.resolve<Facade>('Facade<ProductHandler>');
     for (let i = 0; i < 50; i++) await facade.list();
 
     expect(measured.snapshot().series).toHaveLength(1);
@@ -84,7 +84,7 @@ describe('rate, errors and duration come from one histogram', () => {
 describe('saturation and topology', () => {
   it('counts nothing as active once every call has returned', async () => {
     collect();
-    await app.resolve<Facade>('productHandler').list();
+    await app.resolve<Facade>('Facade<ProductHandler>').list();
     expect(activeCalls()).toBe(0);
   });
 
@@ -99,7 +99,7 @@ describe('saturation and topology', () => {
 
     app.use('product', async (_ctx, next) => { underway = activeCalls(); return next(); });
 
-    await app.resolve<Facade>('productHandler').list();
+    await app.resolve<Facade>('Facade<ProductHandler>').list();
 
     expect(underway).toBe(1);
     expect(activeCalls()).toBe(0);
@@ -114,7 +114,7 @@ describe('saturation and topology', () => {
     collect();
     serveTopology(app, measured);
     const run = createLocalRunner(app);
-    await app.resolve<Facade>('productHandler').list();
+    await app.resolve<Facade>('Facade<ProductHandler>').list();
 
     const report = await run({ address: 'rpc', op: 'topology' }, { params: {}, query: {}, input: undefined, state: {} }) as {
       fronds: { frond: string; placement: string }[];
@@ -141,7 +141,7 @@ describe('saturation and topology', () => {
 describe('what leaves as OTLP', () => {
   it('publishes both metrics, with cumulative temporality and matching bucket counts', async () => {
     collect();
-    await app.resolve<Facade>('productHandler').list();
+    await app.resolve<Facade>('Facade<ProductHandler>').list();
 
     const body = metricsPayload('catalog', measured.snapshot());
     const published = body.resourceMetrics[0].scopeMetrics[0].metrics;
@@ -174,7 +174,7 @@ describe('what leaves as OTLP', () => {
    */
   it('never publishes a metric with no data points', async () => {
     collect();
-    await app.resolve<Facade>('productHandler').list();
+    await app.resolve<Facade>('Facade<ProductHandler>').list();
 
     const published = metricsPayload('catalog', measured.snapshot())
       .resourceMetrics[0].scopeMetrics[0].metrics as Record<string, any>[];

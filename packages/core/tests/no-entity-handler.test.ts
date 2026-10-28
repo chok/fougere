@@ -25,7 +25,7 @@ describe('a handler with no entity', () => {
 
   it('lets its result through untouched — there is no shape to project onto', async () => {
     await using app = await createApp({ fronds, createContainer });
-    const facade = app.container.resolve<Record<string, Function>>('healthHandler');
+    const facade = app.container.resolve<Record<string, Function>>('Facade<HealthHandler>');
 
     // Not `{}`: an absent field set means nothing to encode, not everything to drop.
     expect(Object.keys(facade)).toEqual(['check']);

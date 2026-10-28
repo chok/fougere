@@ -120,7 +120,7 @@ describe('a line carries the call it was written inside', () => {
       return next();
     });
 
-    await app.resolve<Facade>('productHandler').list();
+    await app.resolve<Facade>('Facade<ProductHandler>').list();
 
     expect(spans).toHaveLength(1);
     expect(sent[0].traceId).toBe(spans[0].traceId);

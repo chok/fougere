@@ -81,34 +81,6 @@ function entitiesOfPrefab(ctor: unknown): string[] {
   return target?.name ? [lowerFirst(target.name)] : [];
 }
 
-/** `Storage<E>` is not a word of the user's vocabulary — `<E>Repository` is the one way in. */
-/**
- * A provider named `<Entity>Storage` takes the key of that entity's own storage — and the storage
- * is registered second, so the provider is never resolved. The name is already wrong by two other
- * rules, which is why nothing hits it; it is said rather than left silent.
- */
-function refuseStorageKeyAsProvider(
-  provider: ProviderEntry,
-  frond: string,
-  known: (entity: string) => boolean,
-  refused: Diagnostic[],
-): void {
-  // The key the boot registers it under, which a bundler may have renamed — the same reading
-  // `ProviderEntry.name` exists for.
-  const registered = nameOf(provider);
-  const entity = entityOfStorageKey(registered, known);
-  if (!entity) return;
-
-  refused.push({
-    severity: 'blocking',
-    code: 'storage-key-is-provider',
-    filePath: provider.filePath,
-    frond,
-    subject: registered,
-    message: `The name ${registered} is taken by ${entity}'s storage. Rename this class.`,
-  });
-}
-
 /**
  * Storage is reached through a repository, and an OWNED entity's not even that way: an aggregate's
  * members are reached through it and nowhere else. The ownership question is asked first, so a
@@ -185,8 +157,6 @@ export function storageInUserCode(
     ...frond.collectors.map((c) => ({ ...c, kind: 'collector' })),
   ];
   const holders = frond.providers.map((p) => ({ ...p, kind: 'provider' as const }));
-
-  for (const provider of holders) refuseStorageKeyAsProvider(provider, frond.name, known, refused);
 
   for (const decl of [...facades, ...holders]) {
     refuseStorageReached(decl, frond.name, owners, known, refused);

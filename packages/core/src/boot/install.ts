@@ -416,7 +416,6 @@ function registerRepositories(frond: FrondDescriptor, scope: Container, refused:
     const seat = seatOf(provider.ctor);
     if (seat.length !== 1) continue;
     const key = repositoryKeyOf(seat[0]!.name);
-    if (key === nameOf(provider)) continue;
     byKey.set(key, [...(byKey.get(key) ?? []), provider]);
   }
   for (const [key, providers] of byKey) {

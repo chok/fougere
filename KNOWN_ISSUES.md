@@ -279,7 +279,7 @@ One line each, kept because a past version of this file asserted the opposite.
   `registerValue` refuse a name the scope already holds; `replace`/`replaceValue` stand in place
   of what answers, here or above, and refuse a name nothing holds. A child scope masking its parent
   is still a registration. Both used to be a silent `registry.set`, which every boot rule guarding
-  a key (`frond-key-taken`, `storage-key-is-provider`) existed to get ahead of. Such a rule still
+  a key (`frond-key-taken`, `port-key-taken`) existed to get ahead of. Such a rule still
   answers first: a frond failing to install once a check refused it is answered by the check,
   with the fronds after it still installed and judged (`installing`, `boot/bootstrap.ts`). Measured 2026-10-17 over 861
   tests: the only replacements were the port chains (`install.ts`, `registerProviders`) and
@@ -352,9 +352,12 @@ One line each, kept because a past version of this file asserted the opposite.
   (`core/src/storage/store.ts`) applies the scope SQL puts in its SELECT. Pinned by
   `adapter/memory/tests/storage.test.ts`.
 
-- **A container key and the way to undo it are declared together** — `storageKeyOf` /
-  `entityOfStorageKey` (`core/src/storage/port.ts`), the third pair beside `togetherKeyOf` and
-  `emitKeyOf`. The dual asks whether the prefix names a SCANNED entity.
+- **A key with a subject is spelled as the type, and read back by one function** — `subjectKeyOf` /
+  `subjectsOf` (`core/src/wire/SubjectKey.ts`): `Repository<Post>`, `Storage<Post>`,
+  `Facade<PostHandler>`, `Emit<CanBook, Verdict>`, `Together<[Account, Ledger]>`, `Collect<User>`,
+  `Present<Post>`. Each port used to glue its own suffix (`PostStorage`, `postHandler`,
+  `canBookAwait`, `Account+LedgerTogether`) and hold its own way back; a class named `PostStorage`
+  then took a storage's key, which `storage-key-is-provider` refused. No class name holds a `<`.
 - A decision has ONE owner, instantiated on its subject when the subject can be held:
   `InputValidator.of(fields, opts).validate(row)`, `Card.fromSchema(Post)`, `FieldSet.of(f).primary`.
 - **A registry is an instance of `Registry<T>`, not a class of statics.** An `Adapters`

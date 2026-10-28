@@ -4,6 +4,7 @@
  * Documented: [presenters](https://fougere.dev/docs/business/collect-and-present#present--fields-computed-over-the-page).
  */
 
+import { subjectKeyOf } from '../wire/SubjectKey.js';
 import { upperFirst, type Entity } from '@fougere/schema';
 
 /**
@@ -41,7 +42,7 @@ export function getPresenterFields(ctor: Function): string[] {
   return [...fields];
 }
 
-/** Container key of an entity's presenter — 'post' → 'PostPresenter'. */
+/** Container key of an entity's presenter — 'post' → `Present<Post>`, spelled as the type is written. */
 export function presenterKeyOf(entity: string): string {
-  return `${upperFirst(entity)}Presenter`;
+  return subjectKeyOf('Present', upperFirst(entity));
 }

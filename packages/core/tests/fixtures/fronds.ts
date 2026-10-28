@@ -18,7 +18,7 @@ export default [
     presenters: [{ ctor: ProductPresenter, presents: Product }],
     handlers: [{
       ctor: ProductHandler,
-      deps: ['ProductRepository'],
+      deps: ['Repository<Product>'],
       operations: {
         list: op({ output: SearchOutput, cardinality: 'many' }),
         findById: op({ args: [param('id')], output: SearchOutput, cardinality: 'maybe' }),

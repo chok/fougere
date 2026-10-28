@@ -64,7 +64,7 @@ describe.each([
 ])('a facade, %s', (_, boot) => {
   it('binds the arguments as written, and judges the input', async () => {
     const { app, done } = await boot();
-    const articles = app.resolve<Facade<ArticleHandler>>('articleHandler');
+    const articles = app.resolve<Facade<ArticleHandler>>('Facade<ArticleHandler>');
 
     expect(await articles.restock('a1', { quantity: 3 }, admin))
       .toEqual({ id: 'a1', sku: 'fern', quantity: 3, by: 'admin@fern.dev' });
@@ -76,7 +76,7 @@ describe.each([
 
   it('collects nothing: a user left out stays out', async () => {
     const { app, done } = await boot();
-    const articles = app.resolve<Facade<ArticleHandler>>('articleHandler');
+    const articles = app.resolve<Facade<ArticleHandler>>('Facade<ArticleHandler>');
 
     expect(await articles.restock('a1', { quantity: 1 })).toMatchObject({ by: null });
 
@@ -85,7 +85,7 @@ describe.each([
 
   it('presents nothing — the computed field is a door\'s', async () => {
     const { app, done } = await boot();
-    const articles = app.resolve<Facade<ArticleHandler>>('articleHandler');
+    const articles = app.resolve<Facade<ArticleHandler>>('Facade<ArticleHandler>');
 
     expect(await articles.restock('a1', { quantity: 2 })).not.toHaveProperty('label');
 
@@ -94,7 +94,7 @@ describe.each([
 
   it('hands a fact over as an argument, judged like an input', async () => {
     const { app, done } = await boot();
-    const articles = app.resolve<Facade<ArticleHandler>>('articleHandler');
+    const articles = app.resolve<Facade<ArticleHandler>>('Facade<ArticleHandler>');
 
     expect(await articles.record({ quantity: 4 })).toBe(4);
     await expect(articles.record({ quantity: 0 }))
@@ -118,7 +118,7 @@ describe.each([
 
 it('the type is the handler\'s signature', async () => {
   await using app = await here();
-  const articles = app.resolve<Facade<ArticleHandler>>('articleHandler');
+  const articles = app.resolve<Facade<ArticleHandler>>('Facade<ArticleHandler>');
 
   // @ts-expect-error — an invocation is what a door sends, not what code writes
   await expect(articles.restock({ params: { id: 'a1' }, query: {}, input: { quantity: 1 }, state: {} })).rejects.toThrow();

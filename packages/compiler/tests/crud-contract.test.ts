@@ -118,7 +118,7 @@ describe('as an installed app — the scan finds nothing, the façade validates 
       type: { raw: "Note['id']", name: 'string', field: { entity: 'Note', name: 'id' }, identifies: 'Note' },
     }]);
     // The ops themselves still arrive by prototype, as they always did.
-    expect(Object.keys(app.resolve('noteHandler') as object).sort())
+    expect(Object.keys(app.resolve('Facade<NoteHandler>') as object).sort())
       .toEqual(['create', 'delete', 'findById', 'list', 'update']);
     await app.dispose();
   });

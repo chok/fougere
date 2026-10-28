@@ -1,11 +1,5 @@
-import { FougereError, ErrorCode } from '@fougere/core';
+import { FougereError, ErrorCode, type Repository } from '@fougere/core';
 import type Reading from '../entities/Reading.js';
-
-declare class ReadingRepository {
-  list(): Promise<Reading[]>;
-  findById(id: Reading['id']): Promise<Reading | undefined>;
-  create(input: Partial<Reading>): Promise<Reading>;
-}
 
 /**
  * An ordinary handler. Nothing here names a protocol, a port or a broker —
@@ -13,7 +7,7 @@ declare class ReadingRepository {
  * arrives in memory, over HTTP, or over a socket.
  */
 export default class ReadingHandler {
-  constructor(private readings: ReadingRepository) {}
+  constructor(private readings: Repository<Reading>) {}
 
   /** Every reading the station has sent. */
   async list() { return this.readings.list(); }

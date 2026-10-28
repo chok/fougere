@@ -8,31 +8,30 @@ import { entity, primary, text } from '@fougere/schema';
 import { createApp, frond } from '../src/index.js';
 
 class Post extends entity({ id: primary(), title: text() }) {}
-class PostStorage {}
+class Dispatcher {}
 
 const storageFactory = () => ({}) as never;
 
-describe('a provider named like an entity storage', () => {
+describe('a provider named like a key core answers', () => {
   it('is answered by the check that names it, not by the container', async () => {
     await expect(createApp({
-      fronds: [frond('blog', { entities: [Post], providers: [PostStorage] })],
+      fronds: [frond('blog', { entities: [Post], providers: [Dispatcher] })],
       createContainer,
       storageFactory,
-    })).rejects.toThrow(/\[storage-key-is-provider\] PostStorage/);
+    })).rejects.toThrow(/\[port-key-taken\] Dispatcher/);
   });
 
   it('names every frond that does it, not the first', async () => {
     class Item extends entity({ id: primary(), name: text() }) {}
-    class ItemStorage {}
 
     await expect(createApp({
       fronds: [
-        frond('blog', { entities: [Post], providers: [PostStorage] }),
-        frond('shop', { entities: [Item], providers: [ItemStorage] }),
+        frond('blog', { entities: [Post], providers: [Dispatcher] }),
+        frond('shop', { entities: [Item], providers: [Dispatcher] }),
       ],
       createContainer,
       storageFactory,
-    })).rejects.toThrow(/2 declaration\(s\)[\s\S]*PostStorage[\s\S]*ItemStorage/);
+    })).rejects.toThrow(/2 declaration\(s\)[\s\S]*port-key-taken[\s\S]*port-key-taken/);
   });
 
   it('boots once it is named for what it is', async () => {

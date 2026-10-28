@@ -49,7 +49,7 @@ describe('Repository<Entity>', () => {
   });
 
   it('names its container key from the entity', () => {
-    expect(repositoryKeyOf('reading')).toBe('ReadingRepository');
+    expect(repositoryKeyOf('reading')).toBe('Repository<Reading>');
   });
 
   it('forwards the port, gesture by gesture — the same shape the default has', async () => {

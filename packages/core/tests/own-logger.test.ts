@@ -44,7 +44,7 @@ const fronds = [
   }),
   frond('blog', {
     providers: [{ ctor: Pricing, deps: ['Logger'] }],
-    handlers: [{ ctor: PostHandler, deps: ['Pricing', 'authorHandler'], operations: { publish: op({ cardinality: 'one', description: 'Publish.' }) } }],
+    handlers: [{ ctor: PostHandler, deps: ['Pricing', 'Facade<AuthorHandler>'], operations: { publish: op({ cardinality: 'one', description: 'Publish.' }) } }],
   }),
 ];
 

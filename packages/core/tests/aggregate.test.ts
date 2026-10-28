@@ -80,11 +80,8 @@ describe('an owned entity has no other facade', () => {
     // Providers live in the frond's scope, which is the container a handler resolves in.
     const bank = app.resolve<Container>('frond:bank');
 
-    // `AccountRepository` takes the key derived from its FIRST member, so `Account` was
-    // already covered by `if (!scope.has(repoKey))`. `Ledger` was the hole: its default was
-    // registered under a name any handler could spell, and the aggregate meant nothing.
     expect(bank.has(repositoryKeyOf('ledger'))).toBe(false);
-    expect(bank.has(repositoryKeyOf('account'))).toBe(true);
+    expect(bank.has(repositoryKeyOf('account'))).toBe(false);
     expect(bank.resolve('AccountRepository')).toBeDefined();
   });
 
@@ -104,14 +101,14 @@ describe('an owned entity has no other facade', () => {
   });
 
   it('refuses a handler that reaches around it through a frame', async () => {
-    const rejected = createApp({ fronds: bankWith([], ['LedgerTogether']), createContainer, storageFactory });
+    const rejected = createApp({ fronds: bankWith([], ['Together<[Ledger]>']), createContainer, storageFactory });
 
-    await expect(rejected).rejects.toThrow(/\[aggregate-storage-reached\] LedgerHandler\(LedgerTogether\)/);
+    await expect(rejected).rejects.toThrow(/\[aggregate-storage-reached\] LedgerHandler\(Together<\[Ledger\]>\)/);
     await expect(rejected).rejects.toThrow(/ledger belongs to AccountRepository/);
   });
 
   it('lets the owner frame its own members', async () => {
-    await using app = await createApp({ fronds: bankWith(['Account+LedgerTogether'], ['AccountRepository']), createContainer, storageFactory });
+    await using app = await createApp({ fronds: bankWith(['Together<[Account, Ledger]>'], ['AccountRepository']), createContainer, storageFactory });
 
     expect(app.resolve<Container>('frond:bank').resolve('AccountRepository')).toBeDefined();
   });
@@ -129,7 +126,7 @@ function bankWith(repository: string[], handler: string[]): FrondDescriptor[] {
 describe('storage is reached through a repository, never through the port', () => {
   it('refuses a facade that names the port, and points at the repository key', async () => {
     const rejected = boot('fixtures-aggregate-trap');
-    await expect(rejected).rejects.toThrow(/LedgerStorage/);
+    await expect(rejected).rejects.toThrow(/Storage<Ledger>/);
   });
 
   it('seats a HOLDER on the rows of what it was built on', async () => {
@@ -142,15 +139,11 @@ describe('storage is reached through a repository, never through the port', () =
     expect(catalog.has(storageKeyOf('bookCard'))).toBe(true);
   });
 
-  it('lets a facade depend on a class whose NAME ends in the key suffix', async () => {
-    // `FileStorage` is a provider, not `file`'s rows, and the suffix alone cannot tell.
-    // Without `entityOfStorageKey`'s `known`, measured: this boot is refused.
+  it('lets a facade depend on a class whose NAME ends in Storage', async () => {
     await using app = await boot('fixtures-holder');
     const catalog = app.resolve<Container>('frond:catalog');
 
-    // The class's own name IS the key `Storage<File>` would ask for; an app declaring both
-    // would have them meet, which nothing here can tell apart.
-    const files = catalog.resolve<{ path(name: string): string }>(storageKeyOf('file'));
+    const files = catalog.resolve<{ path(name: string): string }>('FileStorage');
     expect(files.path('a')).toBe('/files/a');
   });
 
