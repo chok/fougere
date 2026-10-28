@@ -640,8 +640,9 @@ async function toCollectorEntry(filePath: string): Promise<CollectorEntry | null
   // was built on needs no schema.
   const typeName = lowerFirst((target as { name: string }).name);
   const deps = await depsOf(filePath);
-  // What its `missing()` refuses, walked like an op's — through the helpers it calls.
-  // …and what its `collect()` refuses, which every op asking for it meets, `?` or not.
+
+  // What its `missing()` refuses, walked like an op's — through the helpers it calls —
+  // and what its `collect()` refuses, which every op asking for it meets, `?` or not.
   return { typeName, ctor, deps, filePath, ...await collectorRefusals(filePath, (ctor as { name: string }).name) };
 }
 
