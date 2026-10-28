@@ -150,13 +150,18 @@ interface AppLike {
  * depending on where its name came from: the scan yields the registration name (`authorUser`),
  * while a card's relation target is fully lowercased by `describe` (`authoruser`).
  */
-function registryKey(entityName: string): string {
-  return entityName.toLowerCase();
+function registryKey(entityName: string, frond: string): string {
+  return `${frond}:${entityName.toLowerCase()}`;
 }
 
-/** The key a relation points at. */
+/** The name a relation points at — a class, or a card's `{ name }` stand-in. */
+function targetName(target: unknown): string {
+  return String((target as { name?: string } | undefined)?.name ?? '').toLowerCase();
+}
+
+/** The key a batch of one relation direction is loaded under. */
 function targetKey(target: unknown): string {
-  return registryKey(String((target as { name?: string } | undefined)?.name ?? ''));
+  return targetName(target);
 }
 
 // ─── Public API ─────────────────────────────────
@@ -208,6 +213,8 @@ export function registerAll(
       presenterFields: Set<string>;
       /** The entity's OWN fields — pass 2 wires relations from these, not from an output view. */
       fields: Fields;
+      /** The frond declaring it — a relation resolves its target there first. */
+      frond: string;
     }
   >();
 
@@ -221,15 +228,18 @@ export function registerAll(
   const entityOf = (view: SchemaView): EntityEntry | undefined =>
     entities.find(({ entity }) => entity.entityClass === view)?.entity;
   const presenters = new Map(app.fronds.flatMap((frond) =>
-    (frond.presenters ?? []).map((presenter) => [registryKey(presenter.entityName), presenter] as const)));
+    (frond.presenters ?? []).map((presenter) => [registryKey(presenter.entityName, frond.name), presenter] as const)));
+  const frondOfEntity = (entity: EntityEntry): string => entities.find((one) => one.entity === entity)?.frond.name ?? '';
 
-  /** The GraphQL type of an entity, built the first time an operation returns it. */
+  /** The GraphQL type of an entity, built the first time an operation returns it — named after its frond. */
   const entityType = (entity: EntityEntry): any => {
-    const known = typeRegistry.get(registryKey(entity.name));
+    const frond = frondOfEntity(entity);
+    const key = registryKey(entity.name, frond);
+    const known = typeRegistry.get(key);
     if (known) return known.type;
 
-    const name = upperFirst(entity.name);
-    const presenterMeta = presenters.get(registryKey(entity.name));
+    const name = `${upperFirst(frond)}${upperFirst(entity.name)}`;
+    const presenterMeta = presenters.get(key);
     const presenter = presenterMeta
       ? app.presenterFor(entity.name) as Record<string, Function> | undefined
       : undefined;
@@ -244,8 +254,8 @@ export function registerAll(
     });
     // The presenter's computed field names travel too: pass 2 must not derive a relation over a
     // name the author wrote.
-    typeRegistry.set(registryKey(entity.name), {
-      name, type,
+    typeRegistry.set(key, {
+      name, type, frond,
       presenterFields: new Set(presenterMeta?.fields ?? []),
       fields: entity.entityClass.getFields(),
     });
@@ -282,37 +292,49 @@ export function registerAll(
       const operations = new Map([...effective].filter(([, meta]) => !listens(meta)));
 
       const name = upperFirst(address);
+      const typeName = `${upperFirst(frond.name)}${name}`;
       const rows = operations.get('list')?.output ?? operations.get('findById')?.output;
 
       // A relation reads its target through the address that serves its rows.
       const target = rows && entityOf(rows);
       if (target) {
         entityType(target);
-        typeRegistry.get(registryKey(target.name))!.facade ??= facade;
+        typeRegistry.get(registryKey(target.name, frondOfEntity(target)))!.facade ??= facade;
       }
 
       registerOperations(builder, {
         name,
-        type: rows ? typeOf(rows, name) : undefined,
+        typeName,
+        type: rows ? typeOf(rows, typeName) : undefined,
         facade,
         operations,
         // Named so a root-field clash can say WHICH two handlers, in which fronds.
         origin: `${frond.name}/${handler?.ctor?.name ?? `${name}Handler`}`,
-        viewType: (view, opName) => typeOf(view, `${name}${upperFirst(opName)}`),
+        viewType: (view, opName) => typeOf(view, `${typeName}${upperFirst(opName)}`),
       });
     }
   }
 
   // ── Pass 2: auto-wire relations (ref → N:1, many → 1:N) ──
 
-  for (const [entityName, { type, fields, presenterFields }] of typeRegistry) {
+  for (const [entityKey, { type, fields, presenterFields, frond: sourceFrond }] of typeRegistry) {
+    // A target is the very class when the registry holds it, else the entity of that name in this
+    // frond, else wherever one is: two fronds may each declare an `Author`.
+    const entryOf = (target: unknown) => {
+      const declared = entities.find(({ entity }) => entity.entityClass === target);
+      if (declared) return typeRegistry.get(registryKey(declared.entity.name, declared.frond.name));
+      const named = targetName(target);
+
+      return typeRegistry.get(registryKey(named, sourceFrond))
+        ?? [...typeRegistry].find(([key]) => key.endsWith(`:${named}`))?.[1];
+    };
     const relationFields: Record<string, (t: any) => any> = {};
 
     for (const [fieldName, field] of Object.entries(fields)) {
       if (Role.of(field).isReference()) {
         const target = Role.of(field).target;
         if (!target) continue;
-        const targetEntry = typeRegistry.get(targetKey(target));
+        const targetEntry = entryOf(target);
         const targetFacade = targetEntry?.facade;
         if (!targetEntry || !targetFacade) continue;
 
@@ -360,7 +382,7 @@ export function registerAll(
       if (Role.of(field).isCollection()) {
         const target = Role.of(field).target;
         if (!target) continue;
-        const targetEntry = typeRegistry.get(targetKey(target));
+        const targetEntry = entryOf(target);
         const targetFacade = targetEntry?.facade;
         if (!targetEntry || !targetFacade) continue;
 
@@ -369,7 +391,7 @@ export function registerAll(
         // a `{ name }` stand-in with no fields to walk, and the registry already holds them.
         const reverseFk = Object.entries(targetEntry.fields).find(
           ([, f]) => Role.of(f).isReference()
-            && targetKey(Role.of(f).target) === entityName,
+            && entryOf(Role.of(f).target) === typeRegistry.get(entityKey),
         );
         if (!reverseFk) continue;
 

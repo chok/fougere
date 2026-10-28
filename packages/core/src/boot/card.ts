@@ -13,7 +13,11 @@ export function identityCardOf(app: App, surface?: string): IdentityCard {
   const declared = app.fronds.schemas();
   // An op's output that IS an entity travels under the entity's name, so a reader of the card
   // ties it to that entity instead of guessing from the address.
-  const entityNames = new Map([...declared].map(([name, schema]) => [schema, name]));
+  // Each frond's own view too: two fronds may declare one table, and an op answers its frond's.
+  const entityNames = new Map<unknown, string>([
+    ...[...declared].map(([name, schema]) => [schema, name] as const),
+    ...app.fronds.flatMap((frond) => frond.entities.map((entity) => [entity.entityClass, entity.name] as const)),
+  ]);
 
   return {
     // What this app SERVES, never what instruments it. A frond an extension BROUGHT is a

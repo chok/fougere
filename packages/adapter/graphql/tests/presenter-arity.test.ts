@@ -113,7 +113,7 @@ describe('the arity of a computed field', () => {
     builder.mutationType({});
     registerAll(builder, app as never);
 
-    const fields = (builder.toSchema().getTypeMap().Post as any).getFields();
+    const fields = (builder.toSchema().getTypeMap().BlogPost as any).getFields();
     expect(String(fields.tags.type)).toBe('[String!]');
     expect(String(fields.excerpt.type)).toBe('String');
   });

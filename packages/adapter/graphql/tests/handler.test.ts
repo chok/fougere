@@ -181,12 +181,12 @@ describe('registerAll', () => {
     const schema = builder.toSchema();
     const typeMap = schema.getTypeMap();
 
-    expect(typeMap['Author']).toBeDefined();
-    expect(typeMap['Post']).toBeDefined();
-    expect(typeMap['CreateAuthorInput']).toBeDefined();
-    expect(typeMap['UpdateAuthorInput']).toBeDefined();
-    expect(typeMap['CreatePostInput']).toBeDefined();
-    expect(typeMap['UpdatePostInput']).toBeDefined();
+    expect(typeMap['TestAuthor']).toBeDefined();
+    expect(typeMap['TestPost']).toBeDefined();
+    expect(typeMap['CreateTestAuthorInput']).toBeDefined();
+    expect(typeMap['UpdateTestAuthorInput']).toBeDefined();
+    expect(typeMap['CreateTestPostInput']).toBeDefined();
+    expect(typeMap['UpdateTestPostInput']).toBeDefined();
 
     const queryFields = schema.getQueryType()!.getFields();
     expect(queryFields['authors']).toBeDefined();
@@ -215,7 +215,7 @@ describe('registerAll', () => {
     registerAll(builder, app);
     const schema = builder.toSchema();
 
-    const createInput = schema.getTypeMap()['CreatePostInput'] as any;
+    const createInput = schema.getTypeMap()['CreateTestPostInput'] as any;
     const fields = createInput.getFields();
 
     expect(fields['id']).toBeUndefined();
@@ -237,7 +237,7 @@ describe('registerAll', () => {
     registerAll(builder, app);
     const schema = builder.toSchema();
 
-    const updateInput = schema.getTypeMap()['UpdateAuthorInput'] as any;
+    const updateInput = schema.getTypeMap()['UpdateTestAuthorInput'] as any;
     const fields = updateInput.getFields();
 
     expect(fields['name'].type.toString()).toBe('String');
@@ -261,8 +261,8 @@ describe('registerAll', () => {
     const schema = builder.toSchema();
     const typeMap = schema.getTypeMap();
 
-    expect(typeMap['Author']).toBeDefined();
-    expect(typeMap['Post']).toBeUndefined();
+    expect(typeMap['TestAuthor']).toBeDefined();
+    expect(typeMap['TestPost']).toBeUndefined();
   });
 
   it('respects filter option', () => {
@@ -285,8 +285,8 @@ describe('registerAll', () => {
     const schema = builder.toSchema();
     const typeMap = schema.getTypeMap();
 
-    expect(typeMap['Author']).toBeDefined();
-    expect(typeMap['Post']).toBeUndefined();
+    expect(typeMap['TestAuthor']).toBeDefined();
+    expect(typeMap['TestPost']).toBeUndefined();
   });
 
   it('restricts operations via handler', () => {
@@ -315,8 +315,8 @@ describe('registerAll', () => {
     expect(mutationFields['deletePost']).toBeUndefined();
 
     const typeMap = schema.getTypeMap();
-    expect(typeMap['CreatePostInput']).toBeUndefined();
-    expect(typeMap['UpdatePostInput']).toBeUndefined();
+    expect(typeMap['CreateTestPostInput']).toBeUndefined();
+    expect(typeMap['UpdateTestPostInput']).toBeUndefined();
   });
 
   it('handler with only create exposes create mutation but no list/findById', () => {
@@ -405,9 +405,9 @@ describe('registerAll', () => {
     expect(queryFields['searchByTitle']).toBeDefined();
 
     const typeMap = schema.getTypeMap();
-    expect(typeMap['SearchByTitlePostInput']).toBeDefined();
+    expect(typeMap['SearchByTitleTestPostInput']).toBeDefined();
     // Output is the entity type itself (Post) — no separate *Output type
-    expect(typeMap['Post']).toBeDefined();
+    expect(typeMap['TestPost']).toBeDefined();
   });
 
   it('registers custom mutation operations', () => {
@@ -445,7 +445,7 @@ describe('registerAll', () => {
     expect(mutationFields['publish']).toBeDefined();
 
     const typeMap = schema.getTypeMap();
-    expect(typeMap['PublishPostInput']).toBeDefined();
+    expect(typeMap['PublishTestPostInput']).toBeDefined();
   });
 
   it('operation without input generates no input arg', () => {
@@ -501,8 +501,8 @@ describe('registerAll', () => {
     const schema = builder.toSchema();
     const typeMap = schema.getTypeMap();
 
-    expect(typeMap['Post']).toBeDefined();
-    expect(typeMap['Author']).toBeUndefined();
+    expect(typeMap['TestPost']).toBeDefined();
+    expect(typeMap['TestAuthor']).toBeUndefined();
   });
 
   it('without surface option, surfaces config is ignored (default: all exposed)', () => {
@@ -524,8 +524,8 @@ describe('registerAll', () => {
     const schema = builder.toSchema();
     const typeMap = schema.getTypeMap();
 
-    expect(typeMap['Post']).toBeDefined();
-    expect(typeMap['Author']).toBeDefined();
+    expect(typeMap['TestPost']).toBeDefined();
+    expect(typeMap['TestAuthor']).toBeDefined();
   });
 
   it('a surface nothing declares serves nothing — it does not fall back to the full façade', () => {
@@ -549,8 +549,8 @@ describe('registerAll', () => {
     registerAll(builder, app, { surface: 'graphql' });
     const typeMap = builder.toSchema().getTypeMap();
 
-    expect(typeMap['Post']).toBeUndefined();
-    expect(typeMap['Author']).toBeUndefined();
+    expect(typeMap['TestPost']).toBeUndefined();
+    expect(typeMap['TestAuthor']).toBeUndefined();
   });
 
   it('a surface handler names its entity in, and the rest stays out', () => {
@@ -571,8 +571,8 @@ describe('registerAll', () => {
     registerAll(builder, app, { surface: 'public' });
     const typeMap = builder.toSchema().getTypeMap();
 
-    expect(typeMap['Post']).toBeDefined();
-    expect(typeMap['Author']).toBeUndefined();
+    expect(typeMap['TestPost']).toBeDefined();
+    expect(typeMap['TestAuthor']).toBeUndefined();
   });
 
   describe('auto-wired relations', () => {
@@ -605,7 +605,7 @@ describe('registerAll', () => {
       const schema = builder.toSchema();
 
       // BlogPost should have an 'author' relation field (derived from authorId)
-      const postType = schema.getTypeMap()['BlogPost'] as any;
+      const postType = schema.getTypeMap()['TestBlogPost'] as any;
       const postFields = postType.getFields();
       expect(postFields['author']).toBeDefined();
       expect(postFields['authorId']).toBeDefined();
@@ -628,7 +628,7 @@ describe('registerAll', () => {
       const schema = builder.toSchema();
 
       // BlogAuthor should have a 'posts' relation field
-      const authorType = schema.getTypeMap()['BlogAuthor'] as any;
+      const authorType = schema.getTypeMap()['TestBlogAuthor'] as any;
       const authorFields = authorType.getFields();
       expect(authorFields['posts']).toBeDefined();
     });
@@ -667,7 +667,7 @@ describe('registerAll', () => {
       const schema = builder.toSchema();
 
       // Resolve the author field on a post
-      const postType = schema.getTypeMap()['BlogPost'] as any;
+      const postType = schema.getTypeMap()['TestBlogPost'] as any;
       const authorField = postType.getFields()['author'];
       const result = await authorField.resolve({ id: 'p1', authorId: 'a1' }, {}, {});
       expect(authorCrud.list).toHaveBeenCalledWith(
@@ -708,8 +708,8 @@ describe('an operation that declares its return type', () => {
     registerAll(builder, app);
     const typeMap = builder.toSchema().getTypeMap();
 
-    expect(typeMap['PostDigest']).toBeDefined();
-    expect(Object.keys((typeMap['PostDigest'] as any).getFields()).sort()).toEqual(['id', 'title']);
+    expect(typeMap['TestPostDigest']).toBeDefined();
+    expect(Object.keys((typeMap['TestPostDigest'] as any).getFields()).sort()).toEqual(['id', 'title']);
   });
 
   it('reuses the entity type when what it declares IS the entity', () => {
@@ -724,8 +724,8 @@ describe('an operation that declares its return type', () => {
     const typeMap = builder.toSchema().getTypeMap();
 
     // No second Post type minted under another name.
-    expect(typeMap['PostDigest']).toBeUndefined();
-    expect(typeMap['Post']).toBeDefined();
+    expect(typeMap['TestPostDigest']).toBeUndefined();
+    expect(typeMap['TestPost']).toBeDefined();
   });
 });
 
@@ -770,7 +770,7 @@ describe('an entity a client can supply nothing for', () => {
     registerAll(builder, app);
     const schema = builder.toSchema();
 
-    expect(schema.getTypeMap()['CreateStampInput']).toBeUndefined();
+    expect(schema.getTypeMap()['CreateTestStampInput']).toBeUndefined();
     const createStamp = schema.getMutationType()!.getFields()['createStamp'];
     expect(createStamp).toBeDefined();
     expect(createStamp.args.map((a) => a.name)).toEqual([]);
@@ -792,8 +792,8 @@ describe('a root field per address, a type per schema returned', () => {
     const schema = builder.toSchema();
 
     const articles = schema.getQueryType()!.getFields().articles!;
-    expect(String(articles.type)).toBe('ArticleList!');
-    expect(String((schema.getTypeMap()['ArticleList'] as any).getFields().items.type)).toBe('[Post!]!');
+    expect(String(articles.type)).toBe('TestArticleList!');
+    expect(String((schema.getTypeMap()['TestArticleList'] as any).getFields().items.type)).toBe('[TestPost!]!');
   });
 
   it('serves an address that names no entity', () => {

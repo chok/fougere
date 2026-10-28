@@ -1,3 +1,4 @@
+import { tablesOf } from '../descriptor/tables.js';
 import { createContainer, type Container } from '@fougere/container';
 import { resolveConventions } from '../Conventions.js';
 import { servedProtocols } from './protocols.js';
@@ -259,7 +260,17 @@ function whatTheAppKnows(
 ): { entityByName: Map<string, SchemaView>; frondOf: Map<string, string>; emissions: Emissions } {
   // By name, so a fact can be validated where it LANDS and a `reads:` clause can name a
   // neighbour's entity.
-  const entityByName = fronds.schemas();
+  const { tables: entityByName, contradictions } = tablesOf(fronds);
+  for (const { entity: name, field, fronds: [one, other], filePath } of contradictions) {
+    refused.push({
+      severity: 'blocking',
+      code: 'table-contradicted',
+      subject: `${name}.${field}`,
+      filePath,
+      message: `The fronds '${one}' and '${other}' both declare ${name}.${field}, differently. They are two views of one `
+        + `table, and one column has one shape: declare ${field} the same way in both, or leave it out of one.`,
+    });
+  }
   // The line is core's, so its SHAPE is too: a destination that declares only a handler would
   // otherwise be handed a line with no `at` — the announcement stamps `created()` off the shape,
   // and the strict judge refuses what it did not stamp. Measured on `demos/observability`, where

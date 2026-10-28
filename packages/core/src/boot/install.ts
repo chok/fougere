@@ -512,7 +512,9 @@ function buildFacadeInto(
     frond: frond.name,
     handlers: frond.handlers,
     operations: operationModel.forHandler(handler),
-    entities: (name) => assembly.entityByName.get(lowerFirst(name)),
+    // Its own frond's view first: two fronds may declare one table with different fields, and a handler
+    // speaks the one its frond wrote.
+    entities: (name) => frond.entities.find((entity) => entity.name === lowerFirst(name))?.entityClass ?? assembly.entityByName.get(lowerFirst(name)),
     steps: stepsOver(assembly, handler, frond, scope),
     middlewares: () => getMiddlewares(handler.address),
     state: assembly.state,

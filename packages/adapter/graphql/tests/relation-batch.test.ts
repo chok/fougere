@@ -50,7 +50,7 @@ function build(userDoor: Record<string, Function>) {
   builder.mutationType({});
   registerAll(builder, app);
   const schema = builder.toSchema();
-  const relation = (schema.getTypeMap()['Order'] as any).getFields().user;
+  const relation = (schema.getTypeMap()['ShopOrder'] as any).getFields().user;
 
   return { orders, relation };
 }
@@ -187,7 +187,7 @@ describe('the many side of a relation', () => {
     builder.mutationType({});
     registerAll(builder, app);
     const schema = builder.toSchema();
-    const relation = (schema.getTypeMap()['Shelf'] as any).getFields().slots;
+    const relation = (schema.getTypeMap()['LibShelf'] as any).getFields().slots;
 
     const shelves = [{ id: 'sh0' }, { id: 'sh1' }, { id: 'sh2' }];
     // ONE context object for the page — what graphql-js hands every resolver of a

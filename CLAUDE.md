@@ -903,6 +903,19 @@ link reads the value the door already parsed. A bare `Storage` in a signature bi
 default of `Storage<T = Record<string, unknown>>`, which the checker fills in, and the key
 was `RecordStorage`. Pinned by `tests/host-port.test.ts`.
 
+**One table, a view per frond** — `tablesOf` (`core/src/descriptor/tables.ts`), read by `Fronds.schemas()`
+and `sourceViewOf`, the one place a source learns its tables. A frond declares the fields IT cares about,
+and two fronds declaring `Author` in one source are two views of one table: its union, a column some view
+leaves out optional there, since the required is each frond's to judge on its own writes. A field two
+declare differently is one column with two shapes, refused at boot (`table-contradicted`). A storage
+built on a view answers that view's fields only (`fromRow` in `SqlStorage`, `storageOver`), and a memory
+source keeps one Map per name. The facade judges with its own frond's view, the card publishes each view
+in its frond, and a GraphQL type is named after its frond first — `BlogAuthor`, always, the way a REST URL
+carries `/blog/`, so a neighbour never renames yours. Measured before (2026-10-28, two `Author`s, SQLite +
+GraphQL): one table built on the last view and the first one's writes failing at run time, one GraphQL
+type built on the first, the card dropping one — three winners and no refusal. Pinned by
+`core/tests/tables.test.ts`, `adapter/sql/tests/shared-table.test.ts`, `adapter/memory/tests/shared-rows.test.ts`.
+
 **Sources** — a place rows live, and the five gestures it owns: `storageFactory` (required),
 `pending?`, `migrate?`, `transacted?`, `close?` (`core/src/source.ts`). `pending` is `migrate`'s
 dual — read by every boot, where `migrate` is run by `fougere migrate --apply` alone. What a source is MADE OF is not

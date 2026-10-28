@@ -33,8 +33,9 @@ export function queryFieldFor(
   for (const field of Object.values(fields)) {
     // `String(type)` gives the name with its wrappers (`Product!`, `[Product!]!`), which
     // is why this compares on inclusion rather than equality.
+    // A type is named after its frond first — `CatalogArticleList` — which the entity does not know.
     const named = String(field.type).replace(/[![\]]/g, '');
-    if (named !== wanted) continue;
+    if (!named.endsWith(wanted)) continue;
     const takesId = field.args.some((arg) => arg.name === 'id');
     if (op === 'findById' ? takesId : !takesId) return field.name;
   }

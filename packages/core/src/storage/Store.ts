@@ -43,10 +43,11 @@ export function storageOver(open: (entity: SchemaView, name: string) => Store): 
     // A store holds whole instances and reads them whole, so the scope SQL puts in its
     // SELECT is applied here on the way out. Same set of gestures either way: everything
     // that hands back an instance, which leaves `delete` and `upsertAll` alone.
+    // A store may hold what another frond's view of the same rows declares: this one answers its own.
+    const own = new Set(Object.keys(fields));
     const scoped = (selected?: Set<string>): Storage => {
-      const pick = (values: Values): Values => (selected
-        ? Object.fromEntries(Object.entries(values).filter(([key]) => selected.has(key)))
-        : values);
+      const shown = selected ?? own;
+      const pick = (values: Values): Values => Object.fromEntries(Object.entries(values).filter(([key]) => shown.has(key)));
 
       // Same contract as SQL: a row that is already there is UPDATED, so what the write leaves
       // out stays where it was.

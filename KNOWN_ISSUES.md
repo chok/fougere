@@ -75,6 +75,14 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
   `const <Class>_base` is lost. `@fougere/log` states its frond rather than being scanned,
   which is the right form for a published package anyway — so this is a trap for a frond
   inside a workspace package, not a blocker.
+- **A view of a shared table cannot name its column otherwise** — `tablesOf` (`core/src/descriptor/tables.ts`).
+  Two fronds declaring `Author` in one source are two views of one table, and a column is named after the
+  field in every view: a frond calling it `penName` where another says `pen` declares two columns, not one.
+  Renaming is planned; `previous:` only renames a column across versions. Stated 2026-10-28.
+- **A relation to a name two fronds declare resolves in its own frond first** — GraphQL's `entryOf`
+  (`adapter/graphql/src/auto-register.ts`). `ref(Author)` targets the very class when it is one, else the
+  `Author` of the referring frond, else the first frond declaring one: a card's `{ name }` stand-in carries
+  no frond. Stated 2026-10-28.
 - **A `Logger` wrapper's `child()` skips the wrapper** — `builtin/Logger.ts`. Both forms lose nothing
   else: `extends Logger` with `super(inner)` writes with the real logger's line, carry and operation,
   and `implements Partial<Logger>` with `inner` has what it leaves out forwarded as it is built

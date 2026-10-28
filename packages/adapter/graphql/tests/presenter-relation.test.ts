@@ -71,7 +71,7 @@ const fieldsOf = (schema: any, typeName: string) =>
 describe('presenter et relation sur un même nom', () => {
   it('construit un schéma quand le presenter ne recoupe rien', () => {
     const schema = build(['items', 'total_cents']);
-    expect(schema.getTypeMap()['Order']).toBeDefined();
+    expect(schema.getTypeMap()['OrdersOrder']).toBeDefined();
   });
 
   it('construit un schéma quand le presenter nomme aussi une relation', () => {
@@ -79,12 +79,12 @@ describe('presenter et relation sur un même nom', () => {
     // l'app ne démarre plus, et la seule issue visible est de supprimer le presenter (donc de
     // casser la surface REST qui en dépend).
     const schema = build(['user', 'items', 'total_cents']);
-    expect(schema.getTypeMap()['Order']).toBeDefined();
+    expect(schema.getTypeMap()['OrdersOrder']).toBeDefined();
   });
 
   it("le champ contesté existe et vient du presenter", () => {
     const schema = build(['user', 'items', 'total_cents']);
-    const fields = (schema.getTypeMap()['Order'] as never as { getFields(): Record<string, unknown> }).getFields();
+    const fields = (schema.getTypeMap()['OrdersOrder'] as never as { getFields(): Record<string, unknown> }).getFields();
     expect(Object.keys(fields)).toContain('user');
   });
 
@@ -94,13 +94,13 @@ describe('presenter et relation sur un même nom', () => {
     // donc aucun champ calculé n'atteignait le schéma — une commande GraphQL sortait sans
     // son client, ses lignes ni son total, quand REST les portait tous les trois.
     const schema = build(['user', 'items', 'total_cents']);
-    const fields = (schema.getTypeMap()['Order'] as never as { getFields(): Record<string, unknown> }).getFields();
+    const fields = (schema.getTypeMap()['OrdersOrder'] as never as { getFields(): Record<string, unknown> }).getFields();
     expect(Object.keys(fields)).toEqual(expect.arrayContaining(['user', 'items', 'total_cents']));
   });
 
   it("n'expose pas les dépendances injectées du presenter", () => {
     const schema = build(['user', 'items', 'total_cents']);
-    const fields = (schema.getTypeMap()['Order'] as never as { getFields(): Record<string, unknown> }).getFields();
+    const fields = (schema.getTypeMap()['OrdersOrder'] as never as { getFields(): Record<string, unknown> }).getFields();
     expect(Object.keys(fields)).not.toContain('itemStorage');
   });
 });
@@ -111,15 +111,15 @@ describe('un champ calculé qui déclare sa vue', () => {
     // `items { quantity }` reçoit « Field items must not have a selection since type
     // String has no subfields » sur un champ que REST servait entier.
     const schema = build(['items'], { items: [LineView] });
-    const items = fieldsOf(schema, 'Order').items;
-    expect(String(items.type)).toContain('OrderItems');
-    expect(Object.keys(fieldsOf(schema, 'OrderItems'))).toEqual(
+    const items = fieldsOf(schema, 'OrdersOrder').items;
+    expect(String(items.type)).toContain('OrdersOrderItems');
+    expect(Object.keys(fieldsOf(schema, 'OrdersOrderItems'))).toEqual(
       expect.arrayContaining(['id', 'quantity']),
     );
   });
 
   it('un champ non déclaré reste sérialisé — la déclaration est facultative', () => {
     const schema = build(['items']);
-    expect(String(fieldsOf(schema, 'Order').items.type)).toBe('String');
+    expect(String(fieldsOf(schema, 'OrdersOrder').items.type)).toBe('String');
   });
 });

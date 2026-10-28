@@ -14,8 +14,13 @@ import type { ObjectFieldDef } from './ObjectFieldDef.js';
 type PresenterInstance = Record<string, (parent: any) => any>;
 
 export interface OperationsConfig {
-  /** Entity name (PascalCase). */
+  /** Entity name (PascalCase) — what a root field is named after: `listAuthor`. */
   name: string;
+  /**
+   * What the types it builds are named after — `BlogAuthor`, its frond first, so two fronds' `Author`
+   * are two types and a neighbour never renames one. Defaults to `name`.
+   */
+  typeName?: string;
   /** GraphQL entity type ref (from registerType). */
   type: any;
   /** Handler facade — each op receives InvocationContext. */
@@ -766,7 +771,7 @@ export function registerOperations(builder: InstanceType<typeof SchemaBuilder>, 
   let listWrapperType: any;
   const listMeta = config.operations.get('list');
   if (listMeta && config.type && typeof config.facade.list === 'function') {
-    listWrapperType = registerObjectType(builder, `${config.name}List`, {
+    listWrapperType = registerObjectType(builder, `${config.typeName ?? config.name}List`, {
       items:     { type: [config.type] },
       total:     {
         type: 'int', nullable: true,
@@ -795,7 +800,7 @@ export function registerOperations(builder: InstanceType<typeof SchemaBuilder>, 
     const fieldName = meta.protocols?.graphql
       ?? graphqlFieldName(opName, config.name);
     claimRootField(builder, fieldName, `${config.origin ?? config.name}.${opName}`);
-    const { argsDef, buildInvocation } = buildArgsFromSignature(sig, meta, builder, opName, config.name);
+    const { argsDef, buildInvocation } = buildArgsFromSignature(sig, meta, builder, opName, config.typeName ?? config.name);
 
     // Output type — what the op declares, else the entity's.
     const output = resolveOutputType(sig, config, meta, opName);

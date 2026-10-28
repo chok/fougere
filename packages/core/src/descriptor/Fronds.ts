@@ -1,6 +1,7 @@
 import type { SchemaView } from '@fougere/schema';
 import type { EntityEntry } from './EntityEntry.js';
 import type { FrondDescriptor } from './FrondDescriptor.js';
+import { tablesOf } from './tables.js';
 
 /** What this app hosts, with the questions everyone was asking it by hand. */
 export class Fronds extends Array<FrondDescriptor> {
@@ -31,9 +32,9 @@ export class Fronds extends Array<FrondDescriptor> {
     return undefined;
   }
 
-  /** Every entity class, by name — across all fronds and never per-frond. */
+  /** Every table, by name — the union of what the fronds declaring it say (`tablesOf`). */
   schemas(): Map<string, SchemaView> {
-    return new Map(this.flatMap((frond) => frond.entities.map((e) => [e.name, e.entityClass] as const)));
+    return tablesOf(this).tables;
   }
 
   /** Every declared entity, sorted. What is DECLARED, not what answers. */

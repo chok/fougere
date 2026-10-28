@@ -19,8 +19,20 @@ function mapStore(): Store {
 /** The whole port over a Map, per entity. */
 export const createMemoryStorage = storageOver(() => mapStore());
 
+/**
+ * One Map per entity NAME in this source: two fronds declaring `Author` here are two views of the same
+ * rows, the way they would be of one SQL table.
+ */
 export function createMemorySource(): Source {
-  return { storageFactory: createMemoryStorage, name: 'memory' };
+  const stores = new Map<string, Store>();
+  const storageFactory = storageOver((_entity, name) => {
+    const store = stores.get(name) ?? mapStore();
+    stores.set(name, store);
+
+    return store;
+  });
+
+  return { storageFactory, name: 'memory' };
 }
 
 const MEMORY = Format.of('source/memory')

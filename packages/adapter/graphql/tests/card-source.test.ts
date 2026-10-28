@@ -77,8 +77,8 @@ suite('the GraphQL projection reads a card as readily as a class', () => {
       Card.fromSchema(Post, 'post').toSchema(),
     ));
 
-    expect(fieldNamesOf(fromCards, 'Post')).toEqual(fieldNamesOf(fromClasses, 'Post'));
-    expect(fieldNamesOf(fromCards, 'Author')).toEqual(fieldNamesOf(fromClasses, 'Author'));
+    expect(fieldNamesOf(fromCards, 'BlogPost')).toEqual(fieldNamesOf(fromClasses, 'BlogPost'));
+    expect(fieldNamesOf(fromCards, 'BlogAuthor')).toEqual(fieldNamesOf(fromClasses, 'BlogAuthor'));
   });
 
   it('wires the relation both ways, from cards', () => {
@@ -89,15 +89,15 @@ suite('the GraphQL projection reads a card as readily as a class', () => {
 
     // ref → N:1. `authorId` yields an `author` field typed Author, and its absence is what
     // the object-keyed registry produced without complaining.
-    const postFields = (schema.getTypeMap()['Post'] as any).getFields();
+    const postFields = (schema.getTypeMap()['BlogPost'] as any).getFields();
     expect(Object.keys(postFields)).toContain('author');
-    expect(String(postFields.author.type)).toBe('Author!');   // the FK is not nullable
+    expect(String(postFields.author.type)).toBe('BlogAuthor!');   // the FK is not nullable
 
     // many → 1:N, which needs the TARGET's fields to find the reverse FK — read off the
     // registry, since a card's stand-in target has none to walk.
-    const authorFields = (schema.getTypeMap()['Author'] as any).getFields();
+    const authorFields = (schema.getTypeMap()['BlogAuthor'] as any).getFields();
     expect(Object.keys(authorFields)).toContain('posts');
-    expect(String(authorFields.posts.type)).toBe('[Post!]');
+    expect(String(authorFields.posts.type)).toBe('[BlogPost!]');
   });
 
   it('resolves a target whose name is cased differently on each side', () => {
@@ -129,8 +129,8 @@ suite('the GraphQL projection reads a card as readily as a class', () => {
     },
     } as any);
 
-    const noteFields = (schema.getTypeMap()['Note'] as any).getFields();
+    const noteFields = (schema.getTypeMap()['NotesNote'] as any).getFields();
     expect(Object.keys(noteFields)).toContain('authorUser');
-    expect(String(noteFields.authorUser.type)).toBe('AuthorUser!');
+    expect(String(noteFields.authorUser.type)).toBe('NotesAuthorUser!');
   });
 });

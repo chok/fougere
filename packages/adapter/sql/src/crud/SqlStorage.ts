@@ -148,11 +148,15 @@ export class SqlStorage {
     return row;
   }
 
-  /** Column keys → entity keys, and column values → the values the entity declares. */
+  /**
+   * Column keys → entity keys, and column values → the values the entity declares — and only those:
+   * a table may hold columns another frond's view of it declares, which this one never answers.
+   */
   private fromRow(row: Record<string, unknown>): Record<string, unknown> {
     const data: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(row)) {
-      const field = this.toField.get(key) ?? key;
+      const field = this.toField.get(key);
+      if (field === undefined) continue;
       data[field] = this.codecs.get(field)?.read(value) ?? value;
     }
 
