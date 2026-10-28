@@ -45,3 +45,25 @@ describe('a provider named like a key core answers', () => {
     expect(app.fronds.map((one) => one.name)).toEqual(['blog']);
   });
 });
+
+describe('a class name two files share', () => {
+  it('is refused, and the rest of the frond is still judged', async () => {
+    class Payment {}
+    class StripePayment extends Payment {}
+    class OgonePayment extends Payment {}
+    class Pricing {}
+    const SecondPricing = class Pricing {};
+
+    await expect(createApp({
+      fronds: [frond('shop', {
+        providers: [
+          { ctor: Pricing, filePath: 'services/Pricing.ts' },
+          { ctor: SecondPricing, filePath: 'services/PricingRate.ts' },
+          Payment, StripePayment, OgonePayment,
+        ] as never,
+      })],
+      createContainer,
+      storageFactory,
+    })).rejects.toThrow(/\[provider-name-taken\] Pricing[\s\S]*\[port-implemented-twice\] Payment/);
+  });
+});

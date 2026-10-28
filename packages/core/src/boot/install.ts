@@ -342,8 +342,12 @@ function registerProviders(
   // and nothing answers that name.
   const hostPorts = hostPortChains(frond.providers, ports, refused);
   const links = new Set([...hostPorts.values()].flat());
+  // A second class of one name is already refused (`provider-name-taken`); registering it would stop
+  // the frond here, and what the ports below have to say would go unsaid.
+  const registered = new Set<string>();
   for (const provider of frond.providers) {
-    if (links.has(provider)) continue;
+    if (links.has(provider) || registered.has(nameOf(provider))) continue;
+    registered.add(nameOf(provider));
     scope.register(nameOf(provider), provider.ctor, { deps: ownLogger(nameOf(provider), provider.deps), ...lifetimeOf(provider.ctor) });
   }
   registerRepositories(frond, scope, refused, ownLogger, plugged);
