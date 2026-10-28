@@ -1,4 +1,4 @@
-import type AccountRepository from '../repositories/AccountRepository.js';
+import type AccountRepository from '../services/AccountRepository.js';
 
 /** A facade onto the aggregate — the only way its members are reached. */
 export default class AccountHandler {

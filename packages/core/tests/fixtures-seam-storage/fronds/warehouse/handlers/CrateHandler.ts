@@ -1,4 +1,4 @@
-import type CrateRepository from '../repositories/CrateRepository.js';
+import type CrateRepository from '../services/CrateRepository.js';
 
 /** A neighbour that declares no link, and whose rows go through none. */
 export default class CrateHandler {

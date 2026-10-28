@@ -9,10 +9,11 @@ export interface Conventions {
   dirs: {
     entities: string;
     handlers: string;
+    /**
+     * Every class the frond injects, told apart by what it extends: a repository extends
+     * `Repository<Post>`, a collector `Collect<User>`, a presenter `Present<Post>`.
+     */
     services: string;
-    repositories: string;
-    presenters: string;
-    collectors: string;
     seeds: string;
     /**
      * What the domain computes with nothing injected. Read into the type program, because
@@ -45,9 +46,6 @@ export const DEFAULT_CONVENTIONS: Conventions = {
     entities: 'entities',
     handlers: 'handlers',
     services: 'services',
-    repositories: 'repositories',
-    presenters: 'presenters',
-    collectors: 'collectors',
     seeds: 'seeds',
     rules: 'rules',
     versions: 'versions',
@@ -75,20 +73,10 @@ export function directoryOf(frond: string, dir: keyof Conventions['dirs'], conve
   return `${conventions.fronds}/${frond}/${conventions.dirs[dir]}/`;
 }
 
-/** Directories whose classes register as providers — two spellings, one behaviour. */
-export function providerDirsOf(conventions: Conventions): string[] {
-  return [...new Set([conventions.dirs.services, conventions.dirs.repositories])];
-}
-
 /** The frond vocabulary — every directory the scan reads. */
 export function frondDirsOf(conventions: Conventions): string[] {
-  const { entities, handlers, presenters, collectors, seeds, rules, versions } = conventions.dirs;
-  const { vocabulary, extensions } = conventions.dirs;
+  const { vocabulary, entities, handlers, services, seeds, rules, versions, extensions } = conventions.dirs;
 
   // `vocabulary` first, and the order is the point: an entity may name what it registers.
-  return [...new Set([
-    vocabulary,
-    entities, handlers, presenters, collectors, seeds, rules, versions, extensions,
-    ...providerDirsOf(conventions),
-  ])];
+  return [...new Set([vocabulary, entities, handlers, services, seeds, rules, versions, extensions])];
 }

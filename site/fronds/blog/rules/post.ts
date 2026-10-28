@@ -1,6 +1,6 @@
 import { FougereError, ErrorCode } from '@fougere/core';
 import Post from '../entities/Post.js';
-import PostRepository from '../repositories/PostRepository.js';
+import PostRepository from '../services/PostRepository.js';
 import User from '@fronds/user/entities/User.js';
 
 // What every operation on a post checks before it writes. They take what they judge and hold

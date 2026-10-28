@@ -22,7 +22,7 @@ import { createApp, createLocalRunner, frond, Repository, type FrondDescriptor }
 import { op } from './contract.js';
 import Account from './fixtures-aggregate-trap/fronds/bank/entities/Account.js';
 import Ledger from './fixtures-aggregate-trap/fronds/bank/entities/Ledger.js';
-import AccountRepository from './fixtures-aggregate-trap/fronds/bank/repositories/AccountRepository.js';
+import AccountRepository from './fixtures-aggregate-trap/fronds/bank/services/AccountRepository.js';
 import LedgerHandler from './fixtures-aggregate-trap/fronds/bank/handlers/LedgerHandler.js';
 import { ownedBy, repositoryKeyOf, seated } from '../src/prefab/Repository.js';
 import { storageKeyOf } from '../src/storage/Storage.js';

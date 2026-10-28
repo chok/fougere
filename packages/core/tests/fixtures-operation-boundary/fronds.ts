@@ -2,7 +2,7 @@ import { frond } from '../../src/index.js';
 import { input, op } from '../contract.js';
 import Product from './fronds/catalog/entities/Product.js';
 import ProductHandler from './fronds/catalog/handlers/ProductHandler.js';
-import ProductPresenter from './fronds/catalog/presenters/ProductPresenter.js';
+import ProductPresenter from './fronds/catalog/services/ProductPresenter.js';
 
 export default [
   frond('catalog', {

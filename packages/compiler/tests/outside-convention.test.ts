@@ -41,8 +41,9 @@ describe('a frond holding what no convention names', () => {
   it('says nothing about the eight, `rules/` included', async () => {
     const root = mkdtempSync(join(tmpdir(), 'fougere-placement-'));
     try {
-      for (const dir of ['entities', 'handlers', 'services', 'repositories', 'presenters',
-        'collectors', 'seeds', 'rules', 'versions']) mkdirSync(join(root, dir), { recursive: true });
+      for (const dir of ['vocabulary', 'entities', 'handlers', 'services', 'seeds', 'rules', 'versions', 'extensions']) {
+        mkdirSync(join(root, dir), { recursive: true });
+      }
       writeFileSync(join(root, 'rules', 'Quiet.ts'), 'export const bandOf = () => 1;\n');
       writeFileSync(join(root, 'frond.config.ts'), 'export default {};\n');
 

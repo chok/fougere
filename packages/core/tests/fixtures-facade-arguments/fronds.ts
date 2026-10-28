@@ -4,8 +4,8 @@ import Article from './fronds/stock/entities/Article.js';
 import Restock from './fronds/stock/entities/Restock.js';
 import User from './fronds/stock/entities/User.js';
 import ArticleHandler from './fronds/stock/handlers/ArticleHandler.js';
-import ArticlePresenter from './fronds/stock/presenters/ArticlePresenter.js';
-import CurrentUserCollector from './fronds/stock/collectors/CurrentUserCollector.js';
+import ArticlePresenter from './fronds/stock/services/ArticlePresenter.js';
+import CurrentUserCollector from './fronds/stock/services/CurrentUserCollector.js';
 
 export default frond('stock', {
   entities: [Article, User],

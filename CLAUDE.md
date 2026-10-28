@@ -678,7 +678,7 @@ cold. Under Bun, `type: 'sqlite'` is realized by `bun:sqlite` (`openOnBun`, `ada
 `better-sqlite3`'s binding crashes it. Pinned by `compiler/tests/compile.test.ts`.
 
 **The names the scan reads** — `core/src/Conventions.ts`, read by `@fougere/compiler`. Everything else a frond states, it
-states by its SHAPE; the eleven convention directories and the import scope are the one place
+states by its SHAPE; the eight convention directories and the import scope are the one place
 a NAME is the declaration, and the only ones a project may restate (`conventions:` in
 `fougere.config.ts`). Two of them extend the FRAMEWORK rather than declare a domain. A
 `vocabulary/` file EXPORTS a term — `export const slug = StringFormats.term('slug', …)`,

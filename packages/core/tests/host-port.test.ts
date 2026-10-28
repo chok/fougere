@@ -15,7 +15,7 @@ import { createApp, createAppRunner, createLocalRunner, frond, Invocation, toget
 import type { Container } from '@fougere/container';
 import Product from './fixtures-seam-storage/fronds/shop/entities/Product.js';
 import ProductHandler from './fixtures-seam-storage/fronds/shop/handlers/ProductHandler.js';
-import ProductRepository from './fixtures-seam-storage/fronds/shop/repositories/ProductRepository.js';
+import ProductRepository from './fixtures-seam-storage/fronds/shop/services/ProductRepository.js';
 import Counting from './fixtures-seam-storage/fronds/shop/services/Counting.js';
 import { op, param } from './contract.js';
 

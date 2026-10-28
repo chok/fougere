@@ -150,7 +150,7 @@ export { default as FougereValue, FOUGERE_VALUE } from './module/value/FougereVa
 export type { ValueSources } from './module/value/ValueSources.js';
 export { Env } from './module/value/Env.js';
 export { valuing } from './module/value/valuing.js';
-export { DEFAULT_CONVENTIONS, frondDirsOf, frondPackage, providerDirsOf, resolveConventions, type Conventions } from './Conventions.js';
+export { DEFAULT_CONVENTIONS, frondDirsOf, frondPackage, resolveConventions, type Conventions } from './Conventions.js';
 export { type ConventionsInput } from './ConventionsInput.js';
 export type { CollectorEntry } from './descriptor/CollectorEntry.js';
 export type { EntityEntry } from './descriptor/EntityEntry.js';

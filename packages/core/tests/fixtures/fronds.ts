@@ -3,12 +3,12 @@ import { input, op, param } from '../contract.js';
 import Brand from './fronds/catalog/entities/Brand.js';
 import Product from './fronds/catalog/entities/Product.js';
 import ProductHandler, { SearchInput, SearchOutput } from './fronds/catalog/handlers/ProductHandler.js';
-import ProductPresenter from './fronds/catalog/presenters/ProductPresenter.js';
+import ProductPresenter from './fronds/catalog/services/ProductPresenter.js';
 import ProductService from './fronds/catalog/services/ProductService.js';
 import Item from './fronds/inventory/entities/Item.js';
 import ItemHandler from './fronds/inventory/handlers/ItemHandler.js';
 import StockHandler, { StockSearchInput, StockSearchOutput } from './fronds/inventory/handlers/StockHandler.js';
-import OrderRepository from './fronds/orders/repositories/OrderRepository.js';
+import OrderRepository from './fronds/orders/services/OrderRepository.js';
 import OrderService from './fronds/orders/services/OrderService.js';
 
 export default [

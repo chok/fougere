@@ -1,4 +1,4 @@
-import type CardRepository from '../repositories/CardRepository.js';
+import type CardRepository from '../services/CardRepository.js';
 import type FileStorage from '../services/FileStorage.js';
 
 export default class CardHandler {

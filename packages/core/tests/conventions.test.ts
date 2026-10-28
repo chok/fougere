@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { resolveConventions, frondDirsOf, providerDirsOf, DEFAULT_CONVENTIONS } from '../src/index.js';
+import { resolveConventions, frondDirsOf, DEFAULT_CONVENTIONS } from '../src/index.js';
 
 /** Every name the scan reads, renamed: `fronds/` is `domains/`, and three directories move. */
 const conventions = {
@@ -30,11 +30,11 @@ describe('resolveConventions', () => {
   /** `vocabulary` leads, and the order is load order: an entity may name what it registers. */
   it('derives the frond vocabulary from the names in force', () => {
     expect(frondDirsOf(resolveConventions(conventions)))
-      .toEqual(['vocabulary', 'models', 'usecases', 'presenters', 'collectors', 'seeds', 'rules', 'versions', 'extensions', 'helpers', 'repositories']);
+      .toEqual(['vocabulary', 'models', 'usecases', 'helpers', 'seeds', 'rules', 'versions', 'extensions']);
   });
 
   it('reads one directory once when two roles name the same one', () => {
-    const resolved = resolveConventions({ dirs: { services: 'providers', repositories: 'providers' } });
-    expect(providerDirsOf(resolved)).toEqual(['providers']);
+    expect(frondDirsOf(resolveConventions({ dirs: { services: 'code', handlers: 'code' } })))
+      .toEqual(['vocabulary', 'entities', 'code', 'seeds', 'rules', 'versions', 'extensions']);
   });
 });

@@ -2,11 +2,11 @@ import { frond } from '../../src/index.js';
 import { op, param } from '../contract.js';
 import Product from './fronds/shop/entities/Product.js';
 import ProductHandler from './fronds/shop/handlers/ProductHandler.js';
-import ProductRepository from './fronds/shop/repositories/ProductRepository.js';
+import ProductRepository from './fronds/shop/services/ProductRepository.js';
 import Counting from './fronds/shop/services/Counting.js';
 import Crate from './fronds/warehouse/entities/Crate.js';
 import CrateHandler from './fronds/warehouse/handlers/CrateHandler.js';
-import CrateRepository from './fronds/warehouse/repositories/CrateRepository.js';
+import CrateRepository from './fronds/warehouse/services/CrateRepository.js';
 
 export default [
   frond('shop', {

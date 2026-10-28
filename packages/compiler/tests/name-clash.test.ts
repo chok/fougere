@@ -44,9 +44,8 @@ describe('two fronds claiming one name', () => {
 });
 
 /**
- * The same silence one level down. `services/` and `repositories/` are two spellings of one
- * provider list, so two files may declare `Rates` and the frond registers both under that
- * key — `register` is a `Map.set`, and whoever asks is handed whichever was scanned last.
+ * The same silence one level down: two files of `services/` may declare `Rates`, and the frond
+ * would register both under that key — whoever asks handed whichever was scanned last.
  */
 describe('two files of one frond claiming one name', () => {
   it('refuses to boot, and names both files', async () => {
@@ -59,7 +58,7 @@ describe('two files of one frond claiming one name', () => {
 
     expect(message).toMatch(/Rates/);
     expect(message).toMatch(/services\/Rates\.ts/);
-    expect(message).toMatch(/repositories\/Rates\.ts/);
+    expect(message).toMatch(/services\/ReducedRates\.ts/);
     expect(message).toMatch(/rename/i);
   });
 });

@@ -1,10 +1,10 @@
 import { frond, type FrondDescriptor } from '../../src/index.js';
 import { op, typed } from '../contract.js';
-import CurrentUserCollector from './fronds/listes/collectors/CurrentUserCollector.js';
+import CurrentUserCollector from './fronds/listes/services/CurrentUserCollector.js';
 import List from './fronds/listes/entities/List.js';
 import User from './fronds/listes/entities/User.js';
 import ListHandler from './fronds/listes/handlers/ListHandler.js';
-import ListPresenter from './fronds/listes/presenters/ListPresenter.js';
+import ListPresenter from './fronds/listes/services/ListPresenter.js';
 
 const listes = frond('listes', {
   entities: [List, User],

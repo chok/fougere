@@ -1,6 +1,6 @@
 import type { Subject } from './Subject.js';
 import type { DeclaredAnswer } from './DeclaredAnswer.js';
-/** A discovered provider — a class under `services/` or `repositories/`, injected by type. */
+/** A discovered provider — a class under `services/`, injected by type. */
 export interface ProviderEntry extends Subject {
   /**
    * The container key — the class name as the SOURCE spells it.

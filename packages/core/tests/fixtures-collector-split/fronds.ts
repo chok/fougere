@@ -2,7 +2,7 @@ import { frond } from '../../src/index.js';
 import { op, typed } from '../contract.js';
 import Post from './fronds/blog/entities/Post.js';
 import PostHandler from './fronds/blog/handlers/PostHandler.js';
-import CurrentUserCollector from './fronds/identity/collectors/CurrentUserCollector.js';
+import CurrentUserCollector from './fronds/identity/services/CurrentUserCollector.js';
 import User from './fronds/identity/entities/User.js';
 
 export const identity = frond('identity', { entities: [User], collectors: [{ ctor: CurrentUserCollector, collects: User }] });

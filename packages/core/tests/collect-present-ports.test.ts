@@ -10,7 +10,7 @@ import { op, typed } from './contract.js';
 import WhoHandler from './fixtures-collector-split/fronds/blog/handlers/PostHandler.js';
 import BlogPost from './fixtures-collector-split/fronds/blog/entities/Post.js';
 import User from './fixtures-collector-split/fronds/identity/entities/User.js';
-import CurrentUserCollector from './fixtures-collector-split/fronds/identity/collectors/CurrentUserCollector.js';
+import CurrentUserCollector from './fixtures-collector-split/fronds/identity/services/CurrentUserCollector.js';
 
 class CachedUser implements Partial<Collect<User>> {
   static asked = 0;

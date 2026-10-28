@@ -135,7 +135,7 @@ export function validateProvenance(
           frond: frond.name,
           subject: `${handler.ctor.name}.${name}(${parameter.name})`,
           message: `${handler.ctor.name}.${name} takes ${parameter.name}: ${parameter.type ?? upperFirst(source.typeName)}, and no collector in the frond '${frond.name}' provides one. `
-            + `Add a class extending Collect<${parameter.type ?? upperFirst(source.typeName)}> in ${directoryOf(frond.name, 'collectors', conventions)}.`,
+            + `Add a class extending Collect<${parameter.type ?? upperFirst(source.typeName)}> in ${directoryOf(frond.name, 'services', conventions)}.`,
         });
       }
       continue;

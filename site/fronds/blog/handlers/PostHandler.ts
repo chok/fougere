@@ -1,6 +1,6 @@
 import { FougereError, ErrorCode, Page } from '@fougere/core';
 import Post from '../entities/Post.js';
-import PostRepository from '../repositories/PostRepository.js';
+import PostRepository from '../services/PostRepository.js';
 import User from '@fronds/user/entities/User.js';
 import { requireOwn, requireFreeSlug } from '../rules/post.js';
 

@@ -3,7 +3,7 @@ import { op, param } from '../contract.js';
 import Stamping from './fronds/ledger/services/Stamping.js';
 import Crate from './fronds/warehouse/entities/Crate.js';
 import CrateHandler from './fronds/warehouse/handlers/CrateHandler.js';
-import CrateRepository from './fronds/warehouse/repositories/CrateRepository.js';
+import CrateRepository from './fronds/warehouse/services/CrateRepository.js';
 
 export default [
   frond('ledger', { providers: [{ ctor: Stamping, deps: ['Storage'] }] }),

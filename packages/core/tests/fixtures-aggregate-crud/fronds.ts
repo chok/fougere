@@ -3,7 +3,7 @@ import { op, param } from '../contract.js';
 import Account from './fronds/bank/entities/Account.js';
 import Ledger from './fronds/bank/entities/Ledger.js';
 import AccountHandler from './fronds/bank/handlers/AccountHandler.js';
-import AccountRepository from './fronds/bank/repositories/AccountRepository.js';
+import AccountRepository from './fronds/bank/services/AccountRepository.js';
 import LedgerHandler from './fronds/bank/handlers/LedgerHandler.js';
 
 export default [frond('bank', {

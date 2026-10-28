@@ -1,5 +1,5 @@
-import { DEFAULT_CONVENTIONS, RouteAddress, frondDirsOf, frondPackage, providerDirsOf, resolveConventions, type Conventions, type ConventionsInput, type Diagnostic, type ScanResult } from '@fougere/core';
-import { Fronds, subjectKeyOf, addressOf, cardinalityOf, computeBindingPlan, opsOf, getPresenterFields, builtOn, outputOf, seated, seatsOf, storageKeyOf, targetOf, type CollectorEntry, type EntityEntry, type FrondDescriptor, type HandlerEntry, type OperationContract, type OperationsMap, type PresenterEntry, type ProviderEntry, type SeedEntry, type TypeRef, viewsOf, isExtension, FrondConfigReading, Term, type ExtensionEntry, type VocabularyEntry } from '@fougere/core/descriptor';
+import { DEFAULT_CONVENTIONS, RouteAddress, frondDirsOf, frondPackage, resolveConventions, type Conventions, type ConventionsInput, type Diagnostic, type ScanResult } from '@fougere/core';
+import { Fronds, subjectKeyOf, addressOf, cardinalityOf, computeBindingPlan, opsOf, getPresenterFields, isCollect, isPresent, builtOn, outputOf, seated, seatsOf, storageKeyOf, targetOf, type CollectorEntry, type EntityEntry, type FrondDescriptor, type HandlerEntry, type OperationContract, type OperationsMap, type PresenterEntry, type ProviderEntry, type SeedEntry, type TypeRef, viewsOf, isExtension, FrondConfigReading, Term, type ExtensionEntry, type VocabularyEntry } from '@fougere/core/descriptor';
 import { frondNamesOf, getModuleLoader, loadFrondConfig } from '@fougere/core/node';
 import type { FrondConfig, ErrorCode } from '@fougere/core';
 import type { Param, Signature } from '@fougere/core/descriptor';
@@ -34,7 +34,7 @@ function record(d: Diagnostic): void {
 }
 
 /**
- * An absent convention directory is the ordinary case — a frond without `presenters/` is not a
+ * An absent convention directory is the ordinary case — a frond without `seeds/` is not a
  * defect.
  */
 async function readEntries(path: string): Promise<Dirent[]> {
@@ -653,8 +653,7 @@ async function toCollectorEntry(filePath: string): Promise<CollectorEntry | null
 
 async function scanFrond(frondPath: string, name: string, source: FrondDescriptor['source'], conventions: Conventions, projectRoot?: string): Promise<FrondDescriptor> {
   const {
-    entities: entitiesDir, handlers: handlersDir,
-    presenters: presentersDir, collectors: collectorsDir, seeds: seedsDir,
+    entities: entitiesDir, handlers: handlersDir, services: servicesDir, seeds: seedsDir,
   } = conventions.dirs;
   /** A convention directory, read by whoever knows the shape it holds. */
   const collect = async <T extends object>(
@@ -673,11 +672,14 @@ async function scanFrond(frondPath: string, name: string, source: FrondDescripto
     vocabulary.push(...exported.map(([exportName, term]) => ({ term: term as Term<unknown>, name: exportName, filePath })));
   }
 
-  // services/ and repositories/ — two spellings, one provider list.
-  const providers = (await Promise.all(providerDirsOf(conventions).map((dir) => collect(dir, toProvider)))).flat();
+  // services/ holds every class the frond injects, told apart by the base it extends.
+  const services = await collect(servicesDir, async (filePath) => ({ filePath, ctor: await loadClass(filePath) }));
+  const extending = (base: (ctor: unknown) => boolean) => services.filter(({ ctor }) => base(ctor)).map(({ filePath }) => filePath);
+  const plain = services.filter(({ ctor }) => !isCollect(ctor) && !isPresent(ctor)).map(({ filePath }) => filePath);
+  const providers = await Promise.all(plain.map(toProvider));
   const entities = await collect(entitiesDir, toEntityEntry);
   const extensions = await collect(conventions.dirs.extensions, toExtensionEntry);
-  const collectors = await collect(collectorsDir, toCollectorEntry);
+  const collectors = (await Promise.all(extending(isCollect).map(toCollectorEntry))).filter((entry) => entry !== null);
   const collectorTypeNames = new Set(collectors.map((collector) => collector.typeName));
   const frondConfig = await loadFrondConfig(frondPath);
   const explicitInputs = new Set(
@@ -700,7 +702,7 @@ async function scanFrond(frondPath: string, name: string, source: FrondDescripto
       toHandlerEntry(f, entityByClassName, collectorTypeNames, explicitInputs, projectRoot, surface)));
   }
 
-  const presenters = await collect(presentersDir, toPresenterEntry);
+  const presenters = (await Promise.all(extending(isPresent).map(toPresenterEntry))).filter((entry) => entry !== null);
   const seeds = await collect(seedsDir, toSeedEntry);
   const reading = new FrondConfigReading(frondConfig);
   reading.markExposed(entities, handlers);

@@ -4,7 +4,7 @@ import Node from './fronds/mesures/entities/Node.js';
 import Reading from './fronds/mesures/entities/Reading.js';
 import NodeHandler from './fronds/mesures/handlers/NodeHandler.js';
 import ReadingHandler from './fronds/mesures/handlers/ReadingHandler.js';
-import ReadingRepository from './fronds/mesures/repositories/ReadingRepository.js';
+import ReadingRepository from './fronds/mesures/services/ReadingRepository.js';
 
 export default [frond('mesures', {
   entities: [Node, Reading],

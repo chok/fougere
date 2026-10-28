@@ -7,7 +7,7 @@ import { op, typed } from './contract.js';
 import PostHandler from './fixtures-collector-split/fronds/blog/handlers/PostHandler.js';
 import Post from './fixtures-collector-split/fronds/blog/entities/Post.js';
 import User from './fixtures-collector-split/fronds/identity/entities/User.js';
-import CurrentUserCollector from './fixtures-collector-split/fronds/identity/collectors/CurrentUserCollector.js';
+import CurrentUserCollector from './fixtures-collector-split/fronds/identity/services/CurrentUserCollector.js';
 
 const family = [
   frond('shared', { collectors: [{ ctor: CurrentUserCollector, collects: User }] }),

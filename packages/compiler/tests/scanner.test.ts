@@ -37,9 +37,8 @@ describe('scanProject', () => {
     expect(orders.providers.map((p) => p.ctor.name)).toContain('OrderRepository');
   });
 
-  // Two directories, one list: where a provider was found is not recorded, because
-  // nothing ever decided on it. DI resolves by type either way.
-  it('services/ and repositories/ land in the same provider list', async () => {
+  // A repository is a provider like any other: what it extends says what it is, not a directory.
+  it('reads a repository and a service from services/ into one provider list', async () => {
     const result = await scanProject(fixturesRoot);
     const orders = result.fronds.find((f) => f.name === 'orders')!;
     expect(orders.providers.map((p) => p.ctor.name).sort()).toEqual(['OrderRepository', 'OrderService']);
@@ -106,7 +105,7 @@ describe('scanProject', () => {
     expect(orders.handlers).toEqual([]);
   });
 
-  it('discovers presenters from presenters/ directory', async () => {
+  it('tells a presenter in services/ by what it extends', async () => {
     const result = await scanProject(fixturesRoot);
     const catalog = result.fronds.find((f) => f.name === 'catalog')!;
     expect(catalog.presenters).toHaveLength(1);
@@ -147,7 +146,7 @@ describe('scanProject', () => {
     expect(meta('canEdit')).toMatchObject({ returnType: 'boolean', list: false });
   });
 
-  it('returns empty presenters for fronds without presenters/ dir', async () => {
+  it('returns empty presenters for fronds that declare none', async () => {
     const result = await scanProject(fixturesRoot);
     const orders = result.fronds.find((f) => f.name === 'orders')!;
     expect(orders.presenters).toEqual([]);

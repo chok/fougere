@@ -15,7 +15,7 @@ import { json } from '@fougere/schema';
 import { createApp, createLocalRunner } from '../src/index.js';
 import type { StorageFactory } from '../src/index.js';
 import { Invocation } from '../src/wire/Invocation.js';
-import ListPresenter from './fixtures-presenter-reader/fronds/listes/presenters/ListPresenter.js';
+import ListPresenter from './fixtures-presenter-reader/fronds/listes/services/ListPresenter.js';
 import fronds from './fixtures-presenter-reader/fronds.js';
 
 const rows = [

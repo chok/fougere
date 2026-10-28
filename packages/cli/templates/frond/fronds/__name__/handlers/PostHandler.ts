@@ -1,7 +1,7 @@
 import { Repository, FougereError, ErrorCode } from '@fougere/core';
 import Post from '../entities/Post.js';
 import type PostCard from '../entities/PostCard.js';
-import PostRepository from '../repositories/PostRepository.js';
+import PostRepository from '../services/PostRepository.js';
 
 export default class PostHandler extends Repository<Post> {
   constructor(private posts: PostRepository) {

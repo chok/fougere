@@ -68,7 +68,7 @@ create / update / delete
 
 Read a relation with `findAllBy`. Never read a whole table to filter it in memory.
 
-When a query deserves a domain name, add `repositories/ProductRepository.ts` with
+When a query deserves a domain name, add `services/ProductRepository.ts` with
 `class ProductRepository extends Repository<Product>`, put the query there, and inject
 `ProductRepository`. A repository is registered as a provider and remains the only route to storage.
 

@@ -1,4 +1,4 @@
-import type ProductRepository from '../repositories/ProductRepository.js';
+import type ProductRepository from '../services/ProductRepository.js';
 
 export default class ProductHandler {
   constructor(private products: ProductRepository) {}

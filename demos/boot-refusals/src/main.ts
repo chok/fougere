@@ -51,7 +51,7 @@ interface Case {
 }
 
 const CASES: Case[] = [
-  { name: 'provider-name-taken', states: 'services/Pricing.ts and repositories/Pricing.ts both declare Pricing' },
+  { name: 'provider-name-taken', states: 'services/Pricing.ts and services/PricingRate.ts both declare Pricing' },
   { name: 'port-implemented-twice', states: 'StripePayment and OgonePayment both extend Payment' },
   { name: 'port-wrapped-twice', states: 'AuditingPayment and LoggingPayment both wrap Payment' },
   { name: 'port-not-extended', states: "ports: { Payment: 'Absent' } names a class nothing declares", ports: { Payment: 'Absent' } },

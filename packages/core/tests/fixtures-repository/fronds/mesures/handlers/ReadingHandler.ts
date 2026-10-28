@@ -1,5 +1,5 @@
 import Reading from '../entities/Reading.js';
-import ReadingRepository from '../repositories/ReadingRepository.js';
+import ReadingRepository from '../services/ReadingRepository.js';
 
 /** Asks the question; never spells the storage. */
 export default class ReadingHandler {

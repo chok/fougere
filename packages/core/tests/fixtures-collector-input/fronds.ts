@@ -1,6 +1,6 @@
 import { frond } from '../../src/index.js';
 import { op, typed } from '../contract.js';
-import CurrentUserCollector from './fronds/blog/collectors/CurrentUserCollector.js';
+import CurrentUserCollector from './fronds/blog/services/CurrentUserCollector.js';
 import Post from './fronds/blog/entities/Post.js';
 import User from './fronds/blog/entities/User.js';
 import PostHandler from './fronds/blog/handlers/PostHandler.js';

@@ -1,4 +1,4 @@
-import type CrateRepository from '../repositories/CrateRepository.js';
+import type CrateRepository from '../services/CrateRepository.js';
 
 /** It declares no link of its own; what wraps its rows comes from the frond above it. */
 export default class CrateHandler {
