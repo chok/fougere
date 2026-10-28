@@ -3,7 +3,7 @@
  *
  * The façade is the only public thing a frond has: the handler stays private in the
  * frond's scope (`_handler:…`), the façade goes to the root container under
- * `facadeKeyOf(entity)`. So `constructor(private articleHandler: ArticleHandler)` is the
+ * `facadeKeyOf(entity)`. So `constructor(private articles: Facade<ArticleHandler>)` is the
  * sanctioned way for one frond to reach another, and the gradient's promise says it must
  * keep working when that frond moves to its own process.
  *
