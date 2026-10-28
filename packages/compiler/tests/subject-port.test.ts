@@ -18,4 +18,12 @@ describe('a port with a subject', () => {
     expect(named('NoteGate')).toMatchObject({ deps: ['Gate<NoteHandler>'], implements: ['Gate<NoteHandler>'] });
     expect(named('WatchGate')).toMatchObject({ deps: ['Gate<NoteHandler>'], implements: ['Gate<NoteHandler>'] });
   }, 30_000);
+
+  it('is how a link stands in front of a collector: Collect<Reader>', async () => {
+    const { fronds } = await scanProject(root);
+    const desk = fronds.find((frond) => frond.name === 'desk')!;
+
+    expect(desk.providers.find((provider) => provider.name === 'CachedReader')).toMatchObject({ deps: ['Collect<Reader>'], implements: ['Collect<Reader>'] });
+    expect(desk.collectors.map((collector) => collector.typeName)).toEqual(['reader']);
+  }, 30_000);
 });

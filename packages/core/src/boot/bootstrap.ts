@@ -53,7 +53,6 @@ import { addressOf, facadeKeyOf, isFacadeKey } from '../wire/Facade.js';
 import { identityCardOf } from './card.js';
 import { AppLifecycle, checking, closeAll } from './AppLifecycle.js';
 import { seeding } from './seed.js';
-import { presenters } from '../module/presenter/presenters.js';
 import { Registry } from '@fougere/registry';
 import type { Plugged } from '../wire/Plugged.js';
 
@@ -430,7 +429,7 @@ function announceLines(emissions: Emissions, container: Container, lineBuffer: L
 export async function createApp(options: CreateAppOptions): Promise<App> {
   const container = (options.createContainer ?? createContainer)();
   // The schema checked, then rows, then whatever the host took on — the order is not a host's to choose.
-  const appLifecycle = new AppLifecycle().add(checking(options.pending), valuing(options.values), seeding(), presenters(), ...(options.extensions ?? []));
+  const appLifecycle = new AppLifecycle().add(checking(options.pending), valuing(options.values), seeding(), ...(options.extensions ?? []));
   const lineBuffer = new LineBuffer();
   let createdApp: App | undefined;
   let stopAnnouncing: (() => void) | undefined;
@@ -481,7 +480,6 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
       boundPorts, refused, relations, rowHosts: hosting, operationModel, entityByName, frondOf, contractsOf,
       getMiddlewares, use, middlewaresOf: new Map(), doorMiddlewaresOf: new Map(), doorMiddlewaresAt, hostPortsOf: new Map(), log, options,
       state: appLifecycle.state(),
-      extensions: appLifecycle.all(),
       plugged,
     };
     for (const frond of fronds) await installing(frond, assembly);

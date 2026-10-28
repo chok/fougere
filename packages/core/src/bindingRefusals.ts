@@ -126,19 +126,16 @@ export function validateProvenance(
   for (const parameter of parameters) {
     const source = parameter.binding.source;
     if (source.kind === 'collector') {
-      const matches = localCollectors.get(source.typeName) ?? [];
-      if (matches.length !== 1) {
+      if (!localCollectors.has(source.typeName)) {
         valid = false;
         diagnostics.push({
           severity: 'blocking',
-          code: matches.length === 0 ? 'collector-unavailable' : 'collector-ambiguous',
+          code: 'collector-unavailable',
           filePath: handler.filePath,
           frond: frond.name,
           subject: `${handler.ctor.name}.${name}(${parameter.name})`,
-          message: matches.length === 0
-            ? `${handler.ctor.name}.${name} takes ${parameter.name}: ${parameter.type ?? upperFirst(source.typeName)}, and no collector in the frond '${frond.name}' provides one. `
-              + `Add a class extending Collect<${parameter.type ?? upperFirst(source.typeName)}> in ${directoryOf(frond.name, 'collectors', conventions)}.`
-            : `${matches.length} collectors in the frond '${frond.name}' provide ${source.typeName}. Keep one.`,
+          message: `${handler.ctor.name}.${name} takes ${parameter.name}: ${parameter.type ?? upperFirst(source.typeName)}, and no collector in the frond '${frond.name}' provides one. `
+            + `Add a class extending Collect<${parameter.type ?? upperFirst(source.typeName)}> in ${directoryOf(frond.name, 'collectors', conventions)}.`,
         });
       }
       continue;

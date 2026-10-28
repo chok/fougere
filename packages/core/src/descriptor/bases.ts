@@ -37,10 +37,11 @@ export function basesOf(
 
 /**
  * The ancestors a provider answers under, nearest first, up to the last one that answers — and the
- * ports it says it implements and asks for, which no prototype carries.
+ * ports it states, which no prototype carries: a link asks for the one it implements, and a collector
+ * or a presenter realizes `Collect<User>` or `Present<Post>` without asking for it.
  */
 function portsOf(provider: ProviderEntry, answers: (name: string) => boolean): string[] {
-  const declared = (provider.implements ?? []).filter((port) => provider.deps.includes(port));
+  const declared = provider.implements ?? [];
   // `extends Rest<NoteHandler>` reads as `Rest` on the prototype and is stated whole: it stands in
   // front of that one, and the bare base is not its port.
   const subjectOf = (port: string) => declared.some((key) => key.startsWith(`${port}<`));

@@ -1,13 +1,13 @@
 import type { App } from './App.js';
-import type { Extension, ModuleExtension } from './Extension.js';
+import type { Extension } from './Extension.js';
 import { StateShape } from '../wire/StateShape.js';
 import { BootRefusal } from '../BootRefusal.js';
 
 /** Runs application extensions up in order and down in reverse order. */
 export class AppLifecycle {
-  private readonly members: ModuleExtension[] = [];
+  private readonly members: Extension[] = [];
 
-  add(...extensions: readonly (ModuleExtension | undefined)[]): this {
+  add(...extensions: readonly (Extension | undefined)[]): this {
     for (const extension of extensions) {
       if (!extension) continue;
       const at = this.members.findIndex((held) => held.name === extension.name);
@@ -20,11 +20,6 @@ export class AppLifecycle {
 
   names(): string[] {
     return this.members.map((extension) => extension.name);
-  }
-
-  /** Every member, in the order they rise — what installs into a frond and steps over an answer. */
-  all(): readonly ModuleExtension[] {
-    return [...this.members];
   }
 
   /** Read off the members that stay, so an extension replaced by name declares nothing. */

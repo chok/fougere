@@ -1,6 +1,5 @@
 import type { CollectorEntry } from '../../descriptor/CollectorEntry.js';
 import type { FrondDescriptor } from '../../descriptor/FrondDescriptor.js';
-import type { Diagnostic } from '../../diagnostic.js';
 import type { EffectiveOperation } from '../../EffectiveOperation.js';
 import type { EffectiveParameter } from '../../EffectiveParameter.js';
 import type { BindingPlan } from '../../wire/binding.js';
@@ -27,25 +26,6 @@ export function groupedCollectors(collectors: readonly CollectorEntry[]): Map<st
   }
 
   return grouped;
-}
-
-export function refuseAmbiguousCollectors(
-  frond: FrondDescriptor,
-  collectorsByType: Map<string, CollectorEntry[]>,
-  diagnostics: Diagnostic[],
-): void {
-  for (const [typeName, collectors] of collectorsByType) {
-    if (collectors.length < 2) continue;
-    diagnostics.push({
-      severity: 'blocking',
-      code: 'collector-ambiguous',
-      filePath: collectors[0]!.filePath,
-      frond: frond.name,
-      subject: typeName,
-      message: `${collectors.length} collectors in the frond '${frond.name}' provide ${typeName}: `
-        + `${collectors.map((collector) => collector.ctor.name).sort().join(', ')}. Keep one.`,
-    });
-  }
 }
 
 export function collectorsOf(

@@ -7,7 +7,7 @@ import { computeBindingPlan } from './bindingPlan.js';
 import { targetOf } from './prefab/prefab.js';
 import { EFFECTIVE_OPERATION_SEMANTICS } from './EffectiveOperationSemantics.js';
 import type { CollectorEntry } from './descriptor/CollectorEntry.js';
-import { collectorsInScope, collectorsOf, groupedCollectors, refuseAmbiguousCollectors, refusalsWithCollected } from './module/collector/operation.js';
+import { collectorsInScope, collectorsOf, groupedCollectors, refusalsWithCollected } from './module/collector/operation.js';
 import { type FrondDescriptor } from './descriptor/FrondDescriptor.js';
 import type { HandlerEntry } from './descriptor/HandlerEntry.js';
 import { OperationOverrides, type OperationOverrideEntry } from './descriptor/OperationOverrides.js';
@@ -91,8 +91,6 @@ export function resolveEffectiveOperations(
   const diagnostics = scanDiagnostics.filter((diagnostic) => diagnostic.code === 'input-contract-ambiguous');
 
   for (const frond of fronds) {
-    refuseAmbiguousCollectors(frond, groupedCollectors(frond.collectors), diagnostics);
-
     const seen = collectorsInScope(frond, fronds);
     const collectorsByType = groupedCollectors(seen);
     const collectorNames = new Set(seen.map((collector) => collector.typeName));

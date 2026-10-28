@@ -92,7 +92,7 @@ packages/
                          thirteen gestures from four (store.ts), and what a criterion compares
     src/module/          a SUBJECT the kernel wires but does not know — `fact/` (the emission, and
                          the `fact`/`pipe` binding sources), `collector/` (its binding source and its
-                         installation), `presenter/` (an answer step), `relation/` (refs and onDelete
+                         realization), `presenter/` (the answer step of its chain), `relation/` (refs and onDelete
                          under the guard, `RowHosts`, the three readings it serves across processes),
                          `frame/` (Together), `topology/` (the
                          declared half). The kernel is cut by PHASE, a module by SUBJECT;
@@ -392,24 +392,25 @@ Measured four ways on 2026-09-10 — the process hung, the call ring filled with
 writes, `activeCalls()` counted log deliveries, and a hard-coded list missed a third
 party's destination. A reentrancy flag cannot see it: the carry is asynchronous.
 
-**A module of the kernel has two doors into a frond, beside `up` and `down`** — `ModuleExtension`
-(`boot/Extension.ts`, read in `boot/install.ts`): `install(frond, { scope, container, ownLogger, log })`,
-called as each frond is installed and before any facade is built, and `steps(handler, frond, scope)`,
-the answer steps it runs over that handler's answers before the view projects them. A package's
-`Extension` states neither — nothing outside core read them, and a package stands in front of a port
-with a link, the way a frond does. They are what a module needs to live outside the kernel: `presenters()` (`module/presenter/presenters.ts`) is itself an extension through them,
-which is why `install.ts` names no presenter — measured 2026-10-18 by moving it into a package of its
-own in a throwaway worktree, where the same app answered with and without it. `app.extensionPoints()`
+**`Collect<User>` and `Present<Post>` are ports, read at their own position** — a collector or a
+presenter REALIZES the key it extends (`registerCollectors`, `registerPresenters`, handed to `portBindings`
+as realizations), so a link stands in front of either the way it stands in front of `Payment`:
+`implements Partial<Collect<User>>` with `inner: Collect<User>` (a cache, an audit), or `implements
+Partial<Present<Post>>` with `inner` (fields of its own). Two realizations refuse like any port's
+(`port-implemented-twice`) and `ports:` settles them; a field two classes of one chain compute refuses,
+naming both (`presenter-field-twice`, `chainFields`). The POSITION is each one's: `Collect<User>` is
+resolved where the parameter is bound (the `collector` binding source), `Present<Post>` after the handler
+and before the view (`presented`, built by `install.ts` itself). There used to be a third mechanism, the
+`install`/`steps` doors of a `ModuleExtension`, whose only user was `presenters()`. `app.extensionPoints()`
 reads what answers each point — every `Registry` by name, then per frond each port's links outside in
 and the realization they reach (`the rest of the call`, `the rest of the request`, `the source`, said
-where no class is it), the class answering `Repository<Post>`, `Collect<User>` and `Present<Post>`, the
-extensions stepping over each address, and `served at` for a frond another process serves, whose links
-stand there — and `fougere ports` prints it, booting the app with the schema check and the seeds left
-out. Pinned by `core/tests/extension-doors.test.ts`, `core/tests/extension-points.test.ts`,
-`cli/tests/ports.test.ts`.
+where no class is it), the class answering `Repository<Post>`, `Collect<User>` and `Present<Post>`, and
+`served at` for a frond another process serves, whose links stand there — and `fougere ports` prints it,
+booting the app with the schema check and the seeds left out. Pinned by
+`core/tests/collect-present-ports.test.ts`, `core/tests/extension-points.test.ts`, `cli/tests/ports.test.ts`.
 
 **The ascent is ORDERED BY CORE, and a host hands over a gesture** — `createApp` puts
-`checking(options.pending)`, `seeding()` and `presenters()` before whatever `extensions:` carries. Four
+`checking(options.pending)`, `valuing(values)` and `seeding()` before whatever `extensions:` carries. Four
 hosts assembled those two members themselves (`defaults/src/boot.ts`,
 `app/shared/src/boot.ts`, the Nuxt codegen as a STRING, and a demo), and eight demos wrote
 nothing. Rows before a checked schema is not a host's preference to hold. `Source.pending` is

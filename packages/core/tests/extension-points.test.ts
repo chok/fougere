@@ -27,7 +27,7 @@ class PostHandler {
 }
 
 describe('app.extensionPoints()', () => {
-  it('says what answers each point: a port, a link around the calls, a step, a registry and the extensions', async () => {
+  it('says what answers each point: a port, a link around the calls, a presenter, a registry and the extensions', async () => {
     await using app = await createApp({
       createContainer,
       storageFactory: () => ({}) as never,
@@ -43,8 +43,7 @@ describe('app.extensionPoints()', () => {
     expect(points).toContainEqual({ point: 'Payment', by: 'type', frond: 'blog', answers: ['StripePayment'] });
     expect(points).toContainEqual({ point: 'Dispatcher', by: 'type', frond: 'blog', answers: ['Audit', 'the rest of the call'] });
     expect(points).toContainEqual({ point: 'Present<Post>', by: 'type', frond: 'blog', answers: ['PostPresenter'] });
-    expect(points).toContainEqual({ point: 'answer step', by: 'name', frond: 'blog', subject: 'post', answers: ['presenters'] });
     expect(points).toContainEqual(expect.objectContaining({ point: 'binding source', by: 'name', answers: ['fact', 'pipe', 'collector', 'state'] }));
-    expect(points).toContainEqual({ point: 'extension', by: 'name', answers: ['schema', 'values', 'seeds', 'presenters'] });
+    expect(points).toContainEqual({ point: 'extension', by: 'name', answers: ['schema', 'values', 'seeds'] });
   });
 });

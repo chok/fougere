@@ -35,7 +35,7 @@ describe('the ascent a host composes', () => {
     });
 
     const app = await useFougereApp();
-    expect(app.extensions()).toEqual(['schema', 'values', 'seeds', 'presenters']);
+    expect(app.extensions()).toEqual(['schema', 'values', 'seeds']);
     expect(ran).toEqual(['schema', 'seeds']);
     await app.dispose();
   });
@@ -43,7 +43,7 @@ describe('the ascent a host composes', () => {
   it('declares the two framework members even when the host adds none', async () => {
     configureFougere({ storage: { storageFactory: storage } });
     const app = await useFougereApp();
-    expect(app.extensions()).toEqual(['schema', 'values', 'seeds', 'presenters']);
+    expect(app.extensions()).toEqual(['schema', 'values', 'seeds']);
     await app.dispose();
   });
 });

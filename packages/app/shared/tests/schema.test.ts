@@ -78,7 +78,7 @@ describe('the schema on a web host', () => {
     const app = await useFougereApp();
 
     await app.storageFor('note')!.create({ title: 'kept' });
-    expect(app.extensions()).toEqual(['schema', 'values', 'seeds', 'presenters']);
+    expect(app.extensions()).toEqual(['schema', 'values', 'seeds']);
     await app.dispose();
   });
 });
