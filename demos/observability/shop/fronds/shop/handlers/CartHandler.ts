@@ -1,4 +1,6 @@
-// Two neighbours, both resolved by TYPE. Nothing in this file says either one runs in
+import type { Facade } from '@fougere/core';
+
+// Two neighbours, both reached through their facade. Nothing in this file says either one runs in
 // another process — that is stated once, in `remotes:`, and nowhere else.
 declare class ProductHandler {
   list(): Promise<unknown[]>;
@@ -9,8 +11,8 @@ declare class ShipmentHandler {
 
 export default class CartHandler {
   constructor(
-    private productHandler: ProductHandler,
-    private shipmentHandler: ShipmentHandler,
+    private productHandler: Facade<ProductHandler>,
+    private shipmentHandler: Facade<ShipmentHandler>,
   ) {}
 
   /** What is in the cart, priced by the catalog and quoted by shipping. */
