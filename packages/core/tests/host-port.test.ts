@@ -11,7 +11,13 @@ import shop from './fixtures-seam-storage/fronds.js';
 import familyFronds from './fixtures-seam-family/fronds.js';
 import { describe, it, expect, beforeEach } from 'vitest';
 import { createContainer } from '@fougere/container';
-import { createApp, createLocalRunner, Invocation, type FrondEntries, type StorageFactory } from '../src/index.js';
+import { createApp, createAppRunner, createLocalRunner, frond, Invocation, togetherKeyOf, type FrondEntries, type Storage, type StorageFactory } from '../src/index.js';
+import type { Container } from '@fougere/container';
+import Product from './fixtures-seam-storage/fronds/shop/entities/Product.js';
+import ProductHandler from './fixtures-seam-storage/fronds/shop/handlers/ProductHandler.js';
+import ProductRepository from './fixtures-seam-storage/fronds/shop/repositories/ProductRepository.js';
+import Counting from './fixtures-seam-storage/fronds/shop/services/Counting.js';
+import { op, param } from './contract.js';
 
 /** `ledger` holds a link and answers nothing; `warehouse` declares none and sits under it. */
 
@@ -136,5 +142,43 @@ describe('a link declared by the frond above', () => {
     await createLocalRunner(built)({ address: 'crate', op: 'add' }, { ...Invocation.empty, params: { label: 'ash' } });
 
     expect(wrote()).toEqual([]);
+  });
+});
+
+describe('every way a frond builds its rows', () => {
+  beforeEach(() => { (globalThis as Record<string, unknown>).__wrote = []; });
+
+  const framed = togetherKeyOf(['product']);
+  class Restocking {}
+  const shopWithEveryWay = [frond('shop', {
+    entities: [Product],
+    providers: [{ ctor: Counting, deps: ['Storage'] }, { ctor: ProductRepository, repository: Product }],
+    handlers: [
+      { ctor: Restocking, deps: [framed] },
+      {
+        ctor: ProductHandler,
+        deps: ['ProductRepository'],
+        surface: 'admin',
+        operations: { add: op({ args: [param('title')], cardinality: 'none', description: 'Write one row.' }) },
+      },
+    ],
+  })];
+
+  it('puts the link in front of a named surface', async () => {
+    await using built = await createApp({ fronds: shopWithEveryWay, createContainer, storageFactory });
+
+    await createAppRunner(built, 'admin')({ address: 'product', op: 'add' }, { ...Invocation.empty, params: { title: 'fern' } });
+
+    expect(wrote()).toEqual(['counting(fern)']);
+  });
+
+  it('puts the link in front of a frame', async () => {
+    await using built = await createApp({ fronds: shopWithEveryWay, createContainer, storageFactory });
+    const frame = built.container.resolve<Container>('frond:shop')
+      .resolve<{ run(fn: (storages: Storage[]) => Promise<unknown>): Promise<unknown> }>(framed);
+
+    await frame.run(([products]) => products!.create({ id: 'moss', title: 'moss' }));
+
+    expect(wrote()).toEqual(['counting(moss)']);
   });
 });

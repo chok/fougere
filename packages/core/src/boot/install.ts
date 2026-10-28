@@ -34,12 +34,13 @@ import { ownersOf, sharedNames, storageInUserCode, crudOnOwned } from './ownersh
 import { refuseValuesAsRows } from '../module/value/refusals.js';
 import { refuseArityDrift } from './arity.js';
 import { StorageGuard } from '../dispatch/StorageGuard.js';
+import type { GuardReport } from '../dispatch/GuardReport.js';
 import type { DoorAround } from '../entry/door.js';
 import { linkOf, ownKeyOf, portBindings, hostPortChains, wrapping, HOST_PORTS } from './ports.js';
 import { contractsKeyOf, facadeKeyOf } from '../wire/Facade.js';
 import { extendsRepository, subjectOf } from '../prefab/RepositoryOps.js';
 import { repositoryKeyOf, seatOf } from '../prefab/Repository.js';
-import { storageKeyOf } from '../storage/Storage.js';
+import { storageKeyOf, type Storage } from '../storage/Storage.js';
 import { declares } from '../Source.js';
 import { relationChecksOf, refuseUnwritableNull, releasing } from '../module/relation/relations.js';
 import type { RowHosts } from '../module/relation/RowHosts.js';
@@ -214,16 +215,33 @@ function inheritedHostPorts(
 }
 
 /**
- * One storage per entity, and the default repository that IS it.
+ * An entity's rows as every reader here gets them — its frond's, a named surface's, a frame's.
  *
- * The declared chain first, then the guard OUTSIDE it: the guard hands on the value it parsed,
- * so a link reads what the entity says a row is rather than what arrived.
+ * The links of the frond that OWNS the entity first, then the guards OUTSIDE them: the guard hands
+ * on the value it parsed, so a link reads what the entity says a row is rather than what arrived.
  */
+function rowsOf(
+  assembly: Assembly,
+  owner: string,
+  scope: Container,
+  entity: { name: string; schema: SchemaView },
+  realization: Storage,
+  report?: GuardReport,
+): Storage {
+  const links = assembly.hostPortsOf.get(owner)?.get('Storage') ?? [];
+  const linked = wrapping('Storage', links, realization, (dep) => scope.resolve(dep));
+  const { rowHosts } = assembly;
+  const related = new RelationGuard(entity.name, relationChecksOf(entity.schema, entity.name, rowHosts), releasing(rowHosts))
+    .guard(linked);
+
+  return new StorageGuard(entity.schema.getFields(), entity.name, report).guard(related);
+}
+
+/** One storage per entity, and the default repository that IS it. */
 function registerStorages(
   frond: FrondDescriptor,
   assembly: Assembly,
   scope: Container,
-  hostPorts: Map<string, ProviderEntry[]>,
   owners: Map<string, string>,
   frondLog: Logger,
 ): void {
@@ -231,7 +249,6 @@ function registerStorages(
   if (!options.storageFactory) return;
 
   const unenforced: string[] = [];
-  const release = releasing(assembly.rowHosts);
   for (const entity of frond.entities) {
     // Held as one value: injected by `valuing` once the schema is checked, never rows.
     if (options.values?.sourceOf(entity.name) !== undefined) continue;
@@ -254,16 +271,9 @@ function registerStorages(
       ? baseStorage.output(outputSchema)
       : baseStorage;
 
-    // The declared chain first, then the guard OUTSIDE it: the guard hands on the value
-    // it parsed, so a wrapper reads what the entity says a row is rather than what
-    // arrived. Same order the client facade has held since `StorageGuard` existed.
-    const linked = wrapping('Storage', hostPorts.get('Storage') ?? [], scoped, (dep) => scope.resolve(dep));
-    // Storage is a way out like the client surface — see `StorageGuard`.
     refused.push(...refuseUnwritableNull(entity.entityClass, entity.name, entity.filePath));
-    const relations = relationChecksOf(entity.entityClass, entity.name, assembly.rowHosts);
-    assembly.relations.push(...relations);
-    const guarded = new StorageGuard(entity.entityClass.getFields(), entity.name)
-      .guard(new RelationGuard(entity.name, relations, release).guard(linked));
+    assembly.relations.push(...relationChecksOf(entity.entityClass, entity.name, assembly.rowHosts));
+    const guarded = rowsOf(assembly, frond.name, scope, { name: entity.name, schema: entity.entityClass }, scoped);
     scope.registerValue(key, guarded);
 
     // The default repository IS the guarded port — it already answers every gesture a
@@ -439,9 +449,9 @@ function registerSurfaceStorage(
   entity: EntityEntry,
   handler: HandlerEntry,
   surfaceScope: Container,
-  assembly: Assembly,
-  frondLog: Logger,
+  building: Building,
 ): void {
+  const { assembly, frond, frondLog } = building;
   const { options } = assembly;
   if (!options.storageFactory) return;
 
@@ -451,10 +461,10 @@ function registerSurfaceStorage(
   const scoped = narrowed ? baseStorage.output(outputSchema) : baseStorage;
   // The view is handed over so a filter on a field this facade hides is SAID. The guard holds
   // no logger — a warning is the boot's to voice, as a seed's report is.
-  const guarded = new StorageGuard(entity.entityClass.getFields(), entity.name, {
+  const guarded = rowsOf(assembly, frond.name, surfaceScope, { name: entity.name, schema: entity.entityClass }, scoped, {
     ...(narrowed ? { view: (outputSchema as { getFields(): Fields }).getFields() } : {}),
     outOfView: (message) => frondLog.warn(message),
-  }).guard(new RelationGuard(entity.name, relationChecksOf(entity.entityClass, entity.name, assembly.rowHosts), releasing(assembly.rowHosts)).guard(scoped));
+  });
 
   surfaceScope.registerValue(storageKeyOf(entity.name), guarded);
   surfaceScope.registerValue(repositoryKeyOf(entity.name), guarded);
@@ -583,7 +593,7 @@ function ownershipOf(frond: FrondDescriptor, assembly: Assembly): Map<string, st
 
 /** A frame is read from the same `deps` every port is: asking for one IS declaring it. */
 function registerFramesOf(frond: FrondDescriptor, assembly: Assembly, scope: Container, frondLog: Logger): void {
-  const { entityByName, frondOf, options, rowHosts: hosting, refused } = assembly;
+  const { container, entityByName, frondOf, options, refused } = assembly;
   const wanted = [...frond.handlers, ...frond.providers, ...frond.presenters, ...frond.collectors]
     .flatMap((declared) => declared.deps.map((key) => ({ key, filePath: declared.filePath })));
 
@@ -595,7 +605,11 @@ function registerFramesOf(frond: FrondDescriptor, assembly: Assembly, scope: Con
     sourceOf: options.sourceOf,
     transacts: options.transacts,
     transacted: options.transacted,
-    rowHosts: hosting,
+    rowsOf: (entity, realization) => {
+      const owner = frondOf.get(entity.name) ?? frond.name;
+
+      return rowsOf(assembly, owner, container.resolve<Container>(`frond:${owner}`), entity, realization);
+    },
     log: frondLog,
   }, refused);
 }
@@ -638,7 +652,7 @@ function buildSurfaceFacades(building: Building, handlers: readonly HandlerEntry
   for (const handler of handlers) {
     const entity = building.frond.entities.find((e) => e.name === handler.address);
     const surfaceScope = building.scope.createScope();
-    if (entity) registerSurfaceStorage(entity, handler, surfaceScope, building.assembly, building.frondLog);
+    if (entity) registerSurfaceStorage(entity, handler, surfaceScope, building);
 
     const facadeKey = facadeKeyOf(handler.address, handler.surface);
     buildFacadeInto(building, entity, handler, surfaceScope, facadeKey);
@@ -692,7 +706,7 @@ export async function installFrond(frond: FrondDescriptor, assembly: Assembly): 
   // An ancestor's links stand OUTSIDE this frond's own; a seam has no container key to inherit through.
   const hostPorts = inheritedHostPorts(frond, assembly.hostPortsOf, declared);
   assembly.hostPortsOf.set(frond.name, hostPorts);
-  registerStorages(frond, assembly, scope, hostPorts, owners, frondLog);
+  registerStorages(frond, assembly, scope, owners, frondLog);
   registerFramesOf(frond, assembly, scope, frondLog);
 
   for (const extension of assembly.extensions) extension.install?.(frond, { scope, container, ownLogger, log: frondLog });

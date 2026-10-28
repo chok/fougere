@@ -11,10 +11,6 @@ import { entityOfStorageKey, membersOfTogetherKey, storageKeyOf, type Storage } 
 import { type StorageFactory } from '../../storage/StorageFactory.js';
 import type { Logger } from '../../builtin/Logger.js';
 import type { ProviderEntry } from '../../descriptor/ProviderEntry.js';
-import { StorageGuard } from '../../dispatch/StorageGuard.js';
-import { RelationGuard } from '../relation/RelationGuard.js';
-import { relationChecksOf, releasing } from '../relation/relations.js';
-import type { RowHosts } from '../relation/RowHosts.js';
 import { recording, unwind, type Undo } from './frame.js';
 import type { Diagnostic } from '../../diagnostic.js';
 
@@ -30,8 +26,8 @@ export interface FrameWorld {
   /** Whether that source hands one out — asked before the frame is built, not at the call. */
   transacts?: (source: string) => boolean;
   transacted?: <R>(source: string, fn: (storageFactory: StorageFactory) => Promise<R>) => Promise<R>;
-  /** What a member's references ask before a write — the answer its frond's own storage gets. */
-  rowHosts: RowHosts;
+  /** A member's rows as its own frond hands them out — its links, then the guards. */
+  rowsOf: (entity: { name: string; schema: SchemaView }, realization: Storage) => Storage;
   log: Logger;
 }
 
@@ -145,13 +141,13 @@ async function inScope<R>(
   parent: Container,
   members: Members,
   factory: StorageFactory,
-  wrap: (storage: Storage, name: string, schema: SchemaView) => Storage,
+  wrap: (member: { name: string; schema: SchemaView }, realization: Storage) => Storage,
   fn: (entities: unknown[], providers: unknown[]) => Promise<R>,
 ): Promise<R> {
   const scope = parent.createScope();
   try {
     const storages = members.entities.map((member) => {
-      const storage = wrap(factory(member.schema, member.name), member.name, member.schema);
+      const storage = wrap(member, factory(member.schema, member.name));
       scope.registerValue(storageKeyOf(member.name), storage);
 
       return storage;
@@ -224,9 +220,6 @@ export function registerFrames(
  */
 function frameOver(key: string, members: Members, scope: Container, world: FrameWorld): Frame {
   const sources = new Set(members.entities.map((member) => world.sourceOf?.(member.name) ?? 'default'));
-  const validator = (storage: Storage, name: string, schema: SchemaView) =>
-    new StorageGuard(schema.getFields(), name).guard(new RelationGuard(name, relationChecksOf(schema, name, world.rowHosts), releasing(world.rowHosts)).guard(storage));
-
   const source = sources.size === 1 ? [...sources][0]! : undefined;
   if (world.transacted && source !== undefined && (world.transacts?.(source) ?? true)) {
     world.log.info(`${key} — transaction, source '${source}'`);
@@ -234,13 +227,13 @@ function frameOver(key: string, members: Members, scope: Container, world: Frame
     return {
       run: <R>(fn: (entities: never, providers: never) => Promise<R>) =>
         ambient.enterFrame(key, () =>
-          world.transacted!(source, (factory) => inScope(scope, members, factory, validator, fn as never))),
+          world.transacted!(source, (factory) => inScope(scope, members, factory, world.rowsOf, fn as never))),
     };
   }
 
   // Split, or an engine that hands out no transaction: the frame keeps the before-image of every
-  // write and replays the inverses itself. `validator` stays OUTSIDE `recording`, so a write the
-  // entity refuses never enters the journal.
+  // write and replays the inverses itself. `recording` stands INSIDE the links and the guards, so
+  // the journal holds what reached the rows: never a refused write, and every one a link made.
   const why = sources.size > 1
     ? members.entities.map((one) => `${one.name} in '${world.sourceOf?.(one.name) ?? 'default'}'`).join(', ')
     : 'this storage hands out no transaction';
@@ -249,8 +242,8 @@ function frameOver(key: string, members: Members, scope: Container, world: Frame
   return {
     run: <R>(fn: (entities: never, providers: never) => Promise<R>): Promise<R> => ambient.enterFrame(key, async () => {
       const journal: Undo[] = [];
-      const record = (storage: Storage, name: string, schema: SchemaView) =>
-        validator(recording(storage, name, schema, journal), name, schema);
+      const record = (member: { name: string; schema: SchemaView }, realization: Storage) =>
+        world.rowsOf(member, recording(realization, member.name, member.schema, journal));
       try {
         return await inScope(scope, members, world.storageFactory!, record, fn as never);
       } catch (cause) {
