@@ -12,9 +12,7 @@
     "@fougere/oclif": "latest",
     "@fougere/schema": "latest",
     "@fougere/container": "latest",
-    "@oclif/core": "^5.0.0",
-    "better-sqlite3": "^13.0.3",
-    "kysely": "^0.28.17"
+    "@oclif/core": "^5.0.0"
   },
   "devDependencies": {
     "tsx": "^4.21.0"

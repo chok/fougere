@@ -29,7 +29,6 @@
     "better-sqlite3": "^13.0.3",
     "graphql": "^16.13.1",
     "jiti": "^2.6.1",
-    "kysely": "^0.28.17",
     "markdown-it": "^14.1.0",
     "nuxt": "^4.6.1",
     "roughjs": "^4.6.6",

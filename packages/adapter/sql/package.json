@@ -45,17 +45,14 @@
     "@fougere/core": "workspace:*",
     "@fougere/schema": "workspace:*",
     "dequal": "^2.0.3",
+    "kysely": "^0.28.17",
     "kysely-d1": "^0.4.0"
-  },
-  "peerDependencies": {
-    "kysely": ">=0.28.17"
   },
   "devDependencies": {
     "@fougere/core": "workspace:*",
     "better-sqlite3": "^13.0.3",
     "@types/better-sqlite3": "^7.6.13",
-    "@types/node": "^22.0.0",
-    "kysely": "^0.28.17"
+    "@types/node": "^22.0.0"
   },
   "publishConfig": {
     "access": "public"

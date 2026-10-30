@@ -17,7 +17,6 @@
     "@fougere/core": "workspace:*",
     "@fougere/schema": "workspace:*",
     "@fougere/transport-http": "workspace:*",
-    "kysely": "^0.28.17",
     "@fougere/adapter-rest": "workspace:*",
     "@fougere/app": "workspace:*",
     "hono": "^4.7.0",

@@ -10,10 +10,8 @@ write through the port. `storage.client` meets neither.
 
 ## Installation
 ```bash
-pnpm add @fougere/adapter-sql kysely better-sqlite3   # SQLite — pg, mysql2, or tedious tarn for the others
+pnpm add @fougere/adapter-sql better-sqlite3   # SQLite — pg, mysql2, or tedious tarn for the others
 ```
-
-`kysely` is a peer: your app and the adapter share one copy.
 
 ```ts
 // fougere.config.ts — the import registers the types, and makes them words the config may write
