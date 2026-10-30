@@ -39,6 +39,7 @@ site/content/tutorial/
 # written by site/modules/reference.ts; 01.cli and 02.errors are written by hand
 site/content/reference/0[3-9].*.md
 site/content/reference/1[0-9].*.md
+site/content/reference/packages/
 site/public/demo/
 
 # Rendered by `foundryctl cast` when a demo brings a collector up — local state.

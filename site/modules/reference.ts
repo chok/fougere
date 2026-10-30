@@ -32,11 +32,12 @@ const oneLine = (text: string) => text.replace(/\s+/g, ' ').trim();
 
 /** What a package's sources declare, read once: interfaces, their augmentations, and every other export. */
 async function read(repository: string, ts: TS) {
-  const files = await globby(['packages/*/src/**/*.ts', 'packages/*/*/src/**/*.ts'], { cwd: repository, ignore: ['**/*.d.ts', '**/dist/**'] });
+  const files = await globby(['packages/*/src/**/*.ts', 'packages/*/*/src/**/*.ts', 'packages/cli/fronds/**/*.ts'], { cwd: repository, ignore: ['**/*.d.ts', '**/dist/**'] });
   const interfaces = new Map<string, { file: string; members: Member[]; doc: string }>();
   const augmented = new Map<string, { file: string; members: Member[] }[]>();
   const exported = new Map<string, { file: string; doc: string; kind: string }>();
   const sources = new Map<string, import('@typescript/typescript6').default.SourceFile>();
+  const diagnostics: { code: string; severity: string; message: string; file: string }[] = [];
 
   const membersOf = (node: import('@typescript/typescript6').default.InterfaceDeclaration, source: import('@typescript/typescript6').default.SourceFile) =>
     node.members.filter(ts.isPropertySignature).map((member) => ({
@@ -46,10 +47,36 @@ async function read(repository: string, ts: TS) {
       doc: docOf(ts, member),
     }));
 
+  const textOf = (node: import('@typescript/typescript6').default.Expression, source: import('@typescript/typescript6').default.SourceFile): string => {
+    if (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)) return node.text;
+    if (ts.isTemplateExpression(node)) return node.head.text + node.templateSpans.map((span) => '…' + span.literal.text).join('');
+    if (ts.isBinaryExpression(node) && node.operatorToken.kind === ts.SyntaxKind.PlusToken) return textOf(node.left, source) + textOf(node.right, source);
+    if (ts.isParenthesizedExpression(node)) return textOf(node.expression, source);
+    return '…';
+  };
+  const findDiagnostics = (node: import('@typescript/typescript6').default.Node, source: import('@typescript/typescript6').default.SourceFile, file: string) => {
+    if (ts.isObjectLiteralExpression(node)) {
+      const property = (name: string) => node.properties.find((one) => ts.isPropertyAssignment(one) && one.name.getText(source) === name) as import('@typescript/typescript6').default.PropertyAssignment | undefined;
+      const code = property('code');
+      const severity = property('severity');
+      if (code && severity && ts.isStringLiteral(code.initializer) && /^[a-z]+(-[a-z]+)+$/.test(code.initializer.text)) {
+        const message = property('message');
+        diagnostics.push({
+          code: code.initializer.text,
+          severity: ts.isStringLiteral(severity.initializer) ? severity.initializer.text : 'blocking',
+          message: message ? oneLine(textOf(message.initializer, source)) : '',
+          file,
+        });
+      }
+    }
+    ts.forEachChild(node, (child) => findDiagnostics(child, source, file));
+  };
+
   for (const file of files) {
     const text = await readFile(join(repository, file), 'utf8');
     const source = ts.createSourceFile(file, text, ts.ScriptTarget.Latest, true);
     sources.set(file, source);
+    findDiagnostics(source, source, file);
     const exportedHere = (node: { modifiers?: import('@typescript/typescript6').default.NodeArray<import('@typescript/typescript6').default.ModifierLike> }) =>
       node.modifiers?.some((one) => one.kind === ts.SyntaxKind.ExportKeyword) ?? false;
 
@@ -72,13 +99,15 @@ async function read(repository: string, ts: TS) {
     }
   }
 
-  return { interfaces, augmented, exported, sources };
+  return { interfaces, augmented, exported, sources, diagnostics };
 }
 
+/** A file's package, by the nearest manifest above it — filled once per projection. */
+const packageRoots = new Map<string, string>();
 const packageOf = (file: string) => {
-  const [, first, second] = file.split('/');
+  const root = [...packageRoots.keys()].filter((one) => file.startsWith(`${one}/`)).sort((a, b) => b.length - a.length)[0];
 
-  return second === 'src' ? `@fougere/${first}` : `@fougere/${first === 'adapter' || first === 'state' || first === 'transport' ? `${first}-${second}` : second}`;
+  return root ? packageRoots.get(root)! : file;
 };
 
 /** The keys an entry of a registered type admits, read off the `Format` its augmentation names. */
@@ -111,7 +140,10 @@ const SCANNED = new Set(['FougereHandlers', 'FougereOperations', 'FougereNames',
 
 async function project(repository: string, out: string) {
   const ts = typescript(repository);
-  const { interfaces, augmented, exported, sources } = await read(repository, ts);
+  for (const manifest of await globby(['packages/*/package.json', 'packages/*/*/package.json'], { cwd: repository })) {
+    packageRoots.set(manifest.replace(/\/package\.json$/, ''), JSON.parse(await readFile(join(repository, manifest), 'utf8')).name);
+  }
+  const { interfaces, augmented, exported, sources, diagnostics } = await read(repository, ts);
   const pages: [string, string][] = [];
 
   const interfacePage = (name: string, title: string, description: string, intro: string) => {
@@ -176,11 +208,122 @@ async function project(repository: string, out: string) {
   }
   pages.push(['10.interfaces.md', lines.join('\n')]);
 
+  const seen = new Map<string, typeof diagnostics[number]>();
+  for (const one of diagnostics) if (!seen.has(one.code)) seen.set(one.code, one);
+  const refusals = [...seen.values()].sort((one, other) => one.code.localeCompare(other.code));
+  pages.push(['11.diagnostics.md', [head('Boot and check diagnostics', 'Every code a boot, the scan or fougere check can raise, and what it says.'),
+    `What does not hold is named, with a code, the file to look at, and one sentence. A **blocking** one stops the boot; a **warning** is printed and the app starts. ${refusals.length} codes, read off the code that raises them.`, '',
+    '| code | | what it says | raised by |', '|---|---|---|---|',
+    ...refusals.map((one) => `| \`${one.code}\` | ${one.severity} | ${one.message.replace(/\|/g, '\\|').slice(0, 220) || '—'} | \`${packageOf(one.file)}\` |`), ''].join('\n')]);
+
+  // One page per package: what it is, its entries, and what each exported name says of itself.
+  const manifests = await globby(['packages/*/package.json', 'packages/*/*/package.json'], { cwd: repository });
+  const packagePages: [string, string][] = [];
+  for (const manifest of manifests.sort()) {
+    const json = JSON.parse(await readFile(join(repository, manifest), 'utf8')) as { name: string; description?: string; private?: boolean; exports?: Record<string, unknown> };
+    if (json.private || !json.name.startsWith('@fougere/')) continue;
+    const root = manifest.replace(/\/package\.json$/, '');
+    const index = sources.get(`${root}/src/index.ts`);
+    const names: { name: string; type: boolean }[] = [];
+    const exportedHere = (node: { modifiers?: import('@typescript/typescript6').default.NodeArray<import('@typescript/typescript6').default.ModifierLike> }) =>
+      node.modifiers?.some((one) => one.kind === ts.SyntaxKind.ExportKeyword) ?? false;
+    for (const statement of index?.statements ?? []) {
+      if ((ts.isFunctionDeclaration(statement) || ts.isClassDeclaration(statement)) && statement.name && exportedHere(statement)) {
+        names.push({ name: statement.name.text, type: false });
+      }
+      if ((ts.isInterfaceDeclaration(statement) || ts.isTypeAliasDeclaration(statement)) && exportedHere(statement)) {
+        names.push({ name: statement.name.text, type: true });
+      }
+      if (ts.isVariableStatement(statement) && exportedHere(statement)) {
+        for (const one of statement.declarationList.declarations) if (ts.isIdentifier(one.name)) names.push({ name: one.name.text, type: false });
+      }
+      if (!ts.isExportDeclaration(statement) || !statement.exportClause || !ts.isNamedExports(statement.exportClause)) continue;
+      for (const element of statement.exportClause.elements) {
+        names.push({ name: element.name.text, type: statement.isTypeOnly || element.isTypeOnly });
+      }
+    }
+    const docOfName = (name: string) => {
+      const found = exported.get(name) ?? (interfaces.has(name) ? interfaces.get(name)! : undefined);
+      return found && found.file.startsWith(root) ? found.doc : '';
+    };
+    const entries = Object.keys(json.exports ?? { '.': true }).filter((one) => !one.endsWith('.json'));
+    const slug = json.name.replace('@fougere/', '');
+    const lines = [head(json.name, json.description ?? `What ${json.name} exports.`), json.description ?? '', ''];
+
+    // How it is used: the import, and the line of config, read off what the package augments.
+    const extended = [...augmented.entries()].flatMap(([iface, list]) =>
+      list.filter((one) => packageOf(one.file) === json.name).map((one) => ({ iface, file: one.file, keys: one.members })));
+    const config: string[] = [];
+    const frondConfig: string[] = [];
+    const entityConfig: string[] = [];
+    const sourceEntries: string[] = [];
+    const protocolNames: string[] = [];
+    const stateNames: string[] = [];
+    for (const { iface, file, keys } of extended) {
+      for (const key of keys) {
+        if (iface === 'FougereSources') {
+          const format = formatKeys(sources.get(file)!, key.type);
+          const said = (format?.needs ?? []).filter((one) => one !== 'type').map((one) => `${one}: '…'`).join(', ');
+          sourceEntries.push(`{ type: '${key.name}'${said ? `, ${said}` : ''} }`);
+        }
+        if (iface === 'FougereProtocols') protocolNames.push(key.name);
+        if (iface === 'FougereStates') stateNames.push(key.name);
+        if (iface === 'FougereFrondProtocols') frondConfig.push(`  protocols: { ${key.name}: { … } },`);
+        if (iface === 'FougereOperationProtocols') frondConfig.push(`  operations: { 'post.list': { ${key.name}: { … } } },`);
+        if (iface === 'FougereEntityAdapters') entityConfig.push(`export default class Post extends entity({ … }, { adapters: { ${key.name}: { … } } }) {}`);
+      }
+    }
+    if (sourceEntries.length) {
+      config.push(`  sources: { main: ${sourceEntries[0]} },`, ...sourceEntries.slice(1).map((one) => `  //   or main: ${one}`));
+    }
+    if (protocolNames.length) config.push(`  protocols: { ${protocolNames.map((one) => `${one}: {}`).join(', ')} },`);
+    for (const name of stateNames) config.push(`  state: { cart: { ${name}: {} } },`);
+    const moduleExport = slug.split('/').pop()!.replace(/^(adapter|state|transport|auth)-/, '');
+    const isModule = names.some((one) => !one.type && one.name === slug) || names.some((one) => !one.type && one.name === moduleExport && /^(log|calls|workflow|observability)$/.test(moduleExport));
+    if (isModule) config.push(`  fronds: { '${json.name}': {} },`);
+
+    if (config.length || frondConfig.length || entityConfig.length) {
+      lines.push('## Use it', '');
+      if (config.length) {
+        lines.push('```ts', '// fougere.config.ts', ...(extended.length ? [`import '${json.name}';`, ''] : []), 'export default defineFougere({', ...[...new Set(config)], '});', '```', '');
+        if (isModule) lines.push(`The key names the package, and every process that reads the config calls its \`${moduleExport}()\` export and rises with it. Options that are more than a word go where the extension is built — in a frond's \`extensions/\`, or in \`createApp({ extensions })\`.`, '');
+        if (extended.length) lines.push('The import is what makes the word exist: without it, the editor and the boot both refuse it.', '');
+      }
+      if (frondConfig.length) lines.push('```ts', '// fronds/blog/frond.config.ts', 'export default defineFrond({', ...[...new Set(frondConfig)], '});', '```', '');
+      if (entityConfig.length) lines.push('```ts', ...new Set(entityConfig), '```', '');
+      const linkFor: Record<string, string> = { FougereSources: '/reference/sources', FougereProtocols: '/reference/protocols', FougereStates: '/reference/states' };
+      const each = extended.filter((one) => linkFor[one.iface]);
+      if (each.length) lines.push(`Every key each one admits: ${[...new Set(each.map((one) => `[${one.iface.replace('Fougere', '').toLowerCase()}](${linkFor[one.iface]})`))].join(', ')}.`, '');
+    }
+    if (extended.length) {
+      lines.push('## What it extends', '', 'The interfaces of Fougere this package adds its words to, with `declare module` — see [Interfaces to extend](/reference/interfaces).', '',
+        '| interface | adds |', '|---|---|', ...extended.map(({ iface, keys }) => `| \`${iface}\` | ${keys.map((one) => `\`${one.name}\``).join(', ')} |`), '');
+    }
+
+    lines.push(`Entries: ${entries.map((one) => `\`${one === '.' ? json.name : `${json.name}/${one.replace('./', '')}`}\``).join(' · ')}`, '');
+    const values = names.filter((one) => !one.type);
+    const types = names.filter((one) => one.type);
+    if (values.length) {
+      lines.push('## What you import', '', '| name | |', '|---|---|',
+        ...values.map(({ name }) => `| \`${name}\` | ${oneLine(docOfName(name).split('\n\n')[0] ?? '').replace(/\|/g, '\\|').slice(0, 240)} |`), '');
+    }
+    if (types.length) {
+      lines.push('## Types', '', 'TypeScript types only — they do not run. Import them with `import type` to type your own code: a variable, a parameter, an option object.', '',
+        '| name | |', '|---|---|',
+        ...types.map(({ name }) => `| \`${name}\` | ${oneLine(docOfName(name).split('\n\n')[0] ?? '').replace(/\|/g, '\\|').slice(0, 240)} |`), '');
+    }
+    packagePages.push([join('packages', `${slug}.md`), lines.join('\n')]);
+  }
+
+  await rm(join(out, 'packages'), { recursive: true, force: true });
+  await mkdir(join(out, 'packages'), { recursive: true });
+  for (const [name, text] of packagePages) await writeFile(join(out, name), text.replace(/\n{3,}/g, '\n\n'));
+
   for (const [name] of pages) await rm(join(out, name), { force: true });
   await mkdir(out, { recursive: true });
   for (const [name, text] of pages) await writeFile(join(out, name), text.replace(/\n{3,}/g, '\n\n'));
 
-  return pages.length;
+  return pages.length + packagePages.length;
 }
 
 export default defineNuxtModule({
