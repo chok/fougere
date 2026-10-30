@@ -242,7 +242,10 @@ async function project(repository: string, out: string) {
   const manifests = await globby(['packages/*/package.json', 'packages/*/*/package.json'], { cwd: repository });
   const packagePages: [string, string][] = [];
   for (const manifest of manifests.sort()) {
-    const json = JSON.parse(await readFile(join(repository, manifest), 'utf8')) as { name: string; description?: string; private?: boolean; exports?: Record<string, unknown> };
+    const json = JSON.parse(await readFile(join(repository, manifest), 'utf8')) as {
+      name: string; description?: string; private?: boolean; exports?: Record<string, unknown>;
+      peerDependencies?: Record<string, string>; peerDependenciesMeta?: Record<string, { optional?: boolean }>;
+    };
     if (json.private || !json.name.startsWith('@fougere/')) continue;
     const root = manifest.replace(/\/package\.json$/, '');
     const index = sources.get(`${root}/src/index.ts`);
@@ -307,6 +310,9 @@ async function project(repository: string, out: string) {
 
     if (config.length || frondConfig.length || entityConfig.length) {
       lines.push('## Use it', '');
+      const peers = Object.keys(json.peerDependencies ?? {})
+        .filter((peer) => !peer.startsWith('@fougere/') && !json.peerDependenciesMeta?.[peer]?.optional);
+      lines.push('```bash pm', `npm install ${[json.name, ...peers].join(' ')}`, '```', '');
       if (config.length) {
         lines.push('```ts', '// fougere.config.ts', ...(extended.length ? [`import '${json.name}';`, ''] : []), 'export default defineFougere({', ...[...new Set(config)], '});', '```', '');
         if (isModule) lines.push(`The key names the package, and every process that reads the config calls its \`${moduleExport}()\` export and rises with it. Options that are more than a word go where the extension is built — in a frond's \`extensions/\`, or in \`createApp({ extensions })\`.`, '');

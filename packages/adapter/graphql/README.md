@@ -5,7 +5,7 @@ are honoured: a `writeOnly` field appears in no output type.
 
 ## Installation
 ```bash
-pnpm add @fougere/adapter-graphql
+pnpm add @fougere/adapter-graphql @pothos/core graphql   # both peers: your app holds the one copy
 ```
 
 ---
