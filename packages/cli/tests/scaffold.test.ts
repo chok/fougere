@@ -46,7 +46,7 @@ describe('workspace project scaffold', () => {
       expect(pkg.workspaces).toEqual(['apps/*']);
       expect(pkg.packageManager).toBeUndefined();
       expect(existsSync(join(root, 'pnpm-workspace.yaml'))).toBe(false);
-      expect(pkg.dependencies).toHaveProperty('better-sqlite3');
+      expect(pkg.dependencies).not.toHaveProperty('@fougere/adapter-sql');
       expectFougereCheckWorkflow(root, 'npm run typecheck');
     } finally {
       rmSync(parent, { recursive: true, force: true });

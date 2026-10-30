@@ -1,7 +1,5 @@
-import '@fougere/adapter-sql';
-import type { FougereConfig } from '@fougere/core';
+import { defineFougere } from '@fougere/core';
 
-export default {
-  sources: { main: { type: 'sqlite', path: '.data/app.db' } },
+export default defineFougere({
   fronds: { '@fougere/log': {} },
-} satisfies FougereConfig;
+});

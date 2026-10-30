@@ -7,15 +7,12 @@
   ],
   "scripts": {
     "typecheck": "tsc -p fronds",
-    "migrate": "fougere migrate --latest --apply",
     "test": "vitest run"
   },
   "dependencies": {
-    "@fougere/adapter-sql": "latest",
     "@fougere/core": "latest",
     "@fougere/log": "latest",
-    "@fougere/schema": "latest",
-    "better-sqlite3": "^13.0.3"
+    "@fougere/schema": "latest"
   },
   "devDependencies": {
     "@fougere/cli": "latest",

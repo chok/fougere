@@ -112,7 +112,7 @@ const publishable = (dir: string, found: Publishable[] = []): Publishable[] => {
   return found;
 };
 
-/** Scaffold one host from the tarballs, migrate, boot, and ask the domain — or throw saying where it stopped. */
+/** Scaffold one host from the tarballs, boot, and ask the domain — or throw saying where it stopped. */
 async function open(host: string, name: PackageManager['name'], tarball: Record<string, string>): Promise<void> {
   const agent = agentOf(name);
   const manager = PackageManager.of(agent);
@@ -131,11 +131,6 @@ async function open(host: string, name: PackageManager['name'], tarball: Record<
 
   console.log(`${where}: installing from tarballs`);
   shell(name === 'pnpm' ? 'pnpm install --no-frozen-lockfile' : manager.install(), app);
-
-  // The boot reads the schema and refuses a database behind it, so a newcomer migrates
-  // first — and the `fougere` it runs is the one packed above.
-  console.log(`${where}: migrating`);
-  shell(manager.script('migrate'), app);
 
   console.log(`${where}: booting`);
   const [bin, ...args] = devOf[name];
