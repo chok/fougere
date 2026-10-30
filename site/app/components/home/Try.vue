@@ -7,11 +7,11 @@ const localePath = useLocalePath();
     <h2>{{ $t('home.tryTitle') }} <em>Fougere</em></h2>
     <div class="actions">
       <HomeInstall />
-      <NuxtLink :to="localePath('/docs/getting-started')" class="primary">{{ $t('home.tryButton') }} →</NuxtLink>
+      <NuxtLink :to="localePath('/tutorial/1-crud')" class="primary">{{ $t('home.tryButton') }} →</NuxtLink>
     </div>
     <p class="or">
       {{ $t('home.tryOr') }}
-      <NuxtLink :to="localePath('/docs/existing-app')" class="doc">{{ $t('home.tryExisting') }}</NuxtLink>
+      <NuxtLink :to="localePath('/docs/adopt/existing-app')" class="doc">{{ $t('home.tryExisting') }}</NuxtLink>
     </p>
   </section>
 </template>

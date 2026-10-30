@@ -1,6 +1,7 @@
 import { PackageManager } from '@fougere/cli/package-manager';
 import { DEMO_LANGUAGES } from './modules/demo';
 import { pastel } from './app/code/pastel';
+import redirects from './redirects.json';
 
 const locales = [{ code: 'en', name: 'English', language: 'en-US', file: 'en.json' }];
 
@@ -10,19 +11,28 @@ const locales = [{ code: 'en', name: 'English', language: 'en-US', file: 'en.jso
  */
 const serverOnly = ['/blog/new', '/blog/edit', '/blog/drafts', '/login', '/register'];
 
+/**
+ * A page that moved still answers at its old address. Static hosting has no server to answer a
+ * redirect, so each old address is prerendered too, as the page that sends the reader on.
+ */
+const moved = Object.fromEntries(
+  Object.entries(redirects.pages).map(([from, to]) => [from, { redirect: { to, statusCode: 301 } }]),
+);
+
 export default defineNuxtConfig({
   // A page's data is shared across prerendered pages through JSON, which hands a Date back
   // as a string: the blog's dates arrived as text under `nuxt generate` alone.
   experimental: { sharedPrerenderData: false },
   // `./modules/demo` is named rather than left to the modules/ scan: it writes into
   // content/ and must run before @nuxt/content reads it.
-  modules: ['./modules/demo', './modules/managers', '@nuxt/ui', '@nuxt/content', '@nuxtjs/i18n', '@fougere/nuxt'],
+  modules: ['./modules/demo', './modules/tutorial', './modules/reference', './modules/managers', '@nuxt/ui', '@nuxt/content', '@nuxtjs/i18n', '@fougere/nuxt'],
   css: ['~/assets/css/main.css'],
   fonts: {
     families: [
       { name: 'Fraunces', weights: [400], styles: ['normal', 'italic'] },
       { name: 'IBM Plex Sans', weights: [400, 500, 600, 700], styles: ['normal', 'italic'] },
       { name: 'IBM Plex Mono', weights: [400], styles: ['normal'] },
+      { name: 'Architects Daughter', weights: [400], styles: ['normal'] },
     ],
   },
   compatibilityDate: '2026-07-18',
@@ -78,8 +88,9 @@ export default defineNuxtConfig({
     { path: '~/components/content', global: true, pathPrefix: false },
     '~/components',
   ],
+  routeRules: moved,
   nitro: {
-    prerender: { ignore: serverOnly },
+    prerender: { ignore: serverOnly, routes: Object.keys(moved) },
     hooks: {
       // A blog with no post answers 404, and on static hosting that is a file not written.
       'prerender:generate'(route) {

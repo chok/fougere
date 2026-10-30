@@ -185,6 +185,9 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
   written with its `.ts` keeps it, which no file there answers. Stated 2026-10-20.
 - **`fronds:` names one address per frond**, so the same frond cannot be deployed twice. The
   key is a frond NAME, a type, while a deployment has instances. Not implemented.
+- **A `list` the handler writes itself carries no `total` in the admin** — `@fougere/admin`. An array has
+  nowhere to hold it; a repository's `list` answers a page with `total`. Pagination stays exact (one row
+  more than the page, `pageInfo`), only a row count may be absent.
 - **A named surface serves nothing when the frond is remote** — `boot/bootstrap.ts`,
   `facadeFor` resolves a surface key in the local container only. True of all three doors.
 - **`expose` is a third membership mechanism, and the membership rule is blind to it.** The

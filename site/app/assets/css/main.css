@@ -77,6 +77,8 @@ h1, h2, h3 {
 .prose-body li::marker { color: var(--ui-text-dimmed); }
 .prose-body a { color: var(--ui-primary); text-decoration: underline; text-underline-offset: 3px; text-decoration-color: color-mix(in oklab, var(--ui-primary) 40%, transparent); }
 .prose-body a:hover { text-decoration-color: var(--ui-primary); }
+/* A heading links to itself; it reads as a heading, not as a link. */
+.prose-body :is(h1, h2, h3, h4) a { color: inherit; text-decoration: none; }
 .prose-body strong { color: var(--ui-text-highlighted); }
 
 .prose-body :not(pre) > code {

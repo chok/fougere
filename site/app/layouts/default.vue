@@ -23,7 +23,9 @@ async function logout() {
           Fougere
         </NuxtLink>
         <nav class="ml-auto flex items-center gap-4 text-sm">
+          <NuxtLink :to="localePath('/tutorial')" class="text-muted hover:text-highlighted">{{ $t('nav.tutorial') }}</NuxtLink>
           <NuxtLink :to="localePath('/docs')" class="text-muted hover:text-highlighted">{{ $t('nav.docs') }}</NuxtLink>
+          <NuxtLink :to="localePath('/reference')" class="text-muted hover:text-highlighted">{{ $t('nav.reference') }}</NuxtLink>
           <NuxtLink v-if="posts.length" :to="localePath('/blog')" class="text-muted hover:text-highlighted">{{ $t('nav.blog') }}</NuxtLink>
           <a href="https://github.com/chok/fougere" target="_blank" rel="noopener" class="text-muted hover:text-highlighted">GitHub</a>
         </nav>

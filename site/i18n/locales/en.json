@@ -1,11 +1,13 @@
 {
   "nav": {
+    "tutorial": "Tutorial",
     "docs": "Docs",
     "blog": "Blog",
     "drafts": "Drafts",
     "write": "Write",
     "signIn": "Sign in",
-    "signOut": "Sign out"
+    "signOut": "Sign out",
+    "reference": "Reference"
   },
   "footer": {
     "builtWith": "Built with Fougere and Nuxt, hosted on GitHub Pages."
@@ -52,22 +54,22 @@
     "railDerivation": "Derivation",
     "railChoices": "Choices",
     "railRule": "Rule",
-    "ruleDoc": "Read the philosophy",
+    "ruleDoc": "What is Fougere",
     "tryTitle": "Try",
     "tryButton": "Getting started",
     "tryOr": "Or",
     "tryExisting": "add it to your app",
     "close": "Close",
     "codeDoc": "Handle your business logic",
-    "schemaDoc": "Store your data",
-    "derivationDoc": "Get forms and an API from your schema",
-    "choicesDoc": "Configure how it runs",
+    "schemaDoc": "Describe your data",
+    "derivationDoc": "See what one entity gives you",
+    "choicesDoc": "Split it yourself",
     "auditCopied": "Copied",
     "tryAgent": "Ask your agent",
     "auditCopy": "Copy the prompt"
   },
   "docs": {
-    "overview": "Overview"
+    "overview": "What is Fougere"
   },
   "blog": {
     "title": "Blog",
