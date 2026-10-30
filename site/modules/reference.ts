@@ -153,8 +153,30 @@ async function project(repository: string, out: string) {
     return head(title, description) + intro + '\n\n' + body;
   };
 
-  pages.push(['03.config.md', interfacePage('FougereConfig', 'fougere.config.ts', 'Every key the app config admits, with what the code says of it.',
-    'What the app decides: where each frond runs, what answers each port, where rows live, what is served. See [Configuration](/docs/concepts/configuration).')]);
+  // A key open to packages lists who answers it, each linked to its page — read off the augmentations.
+  const pageOf = (name: string) => `/reference/packages/${name.replace('@fougere/', '')}`;
+  const answeredBy = (iface: string) => (augmented.get(iface) ?? []).flatMap(({ file, members }) =>
+    members.map((member) => `\`${member.name}\` ([${packageOf(file)}](${pageOf(packageOf(file))}))`));
+  const moduleKeys = (await globby(['packages/*/src/index.ts', 'packages/*/*/src/index.ts'], { cwd: repository }))
+    .map((file) => ({ file, name: packageRoots.get(file.replace(/\/src\/index\.ts$/, '')) ?? '' }))
+    .filter(({ file, name }) => {
+      const last = name.split('/').pop() ?? '';
+      return /^@fougere\//.test(name)
+        && new RegExp(`export (async )?function ${last}\\(|export const ${last}\\b|export \\{[^}]*\\b${last}\\b[^}]*\\}`).test(sources.get(file)?.getFullText() ?? '');
+    })
+    .map(({ name }) => `[\`'${name}'\`](${pageOf(name)})`);
+  const answers: Record<string, string> = {
+    sources: `**\`type\` is one of:** ${answeredBy('FougereSources').join(' · ')}. Every key each one admits: [Source types](/reference/sources).`,
+    protocols: `**Serves:** ${answeredBy('FougereProtocols').join(' · ')}. See [Protocols](/reference/protocols).`,
+    state: `**Kept by:** ${answeredBy('FougereStates').join(' · ')}. See [State keepers](/reference/states).`,
+    fronds: `**A package key:** ${moduleKeys.join(' · ')} — or a frond name, \`{ remote: '…' }\` to place it elsewhere.`,
+    ports: `**Fougere's own ports:** see [Ports Fougere opens](/reference/ports).`,
+  };
+  const configPage = interfacePage('FougereConfig', 'fougere.config.ts', 'Every key the app config admits, and which package answers each one.',
+    'What the app decides: where each frond runs, what answers each port, where rows live, what is served. A key open to packages lists who answers it — import the package, and its word exists. See [Configuration](/docs/concepts/configuration).')
+    .replace(/### `(\w+)`\n\n([^\n]+)\n\n([\s\S]*?)(?=\n### |$)/g, (whole, key: string, type: string, body: string) =>
+      answers[key] ? `### \`${key}\`\n\n${type}\n\n${body.trimEnd()}\n\n${answers[key]}\n` : whole);
+  pages.push(['03.config.md', configPage]);
   pages.push(['04.frond-config.md', interfacePage('FrondConfig', 'frond.config.ts', "Every key a frond's own config admits.",
     "What one frond decides for itself, and wins for its own scope.") + '\n## Per operation\n\n' + (interfaces.get('OperationOverride')?.members ?? []).map(memberBlock).join('\n')]);
 
@@ -279,7 +301,8 @@ async function project(repository: string, out: string) {
     if (protocolNames.length) config.push(`  protocols: { ${protocolNames.map((one) => `${one}: {}`).join(', ')} },`);
     for (const name of stateNames) config.push(`  state: { cart: { ${name}: {} } },`);
     const moduleExport = slug.split('/').pop()!.replace(/^(adapter|state|transport|auth)-/, '');
-    const isModule = names.some((one) => !one.type && one.name === slug) || names.some((one) => !one.type && one.name === moduleExport && /^(log|calls|workflow|observability)$/.test(moduleExport));
+    // A package branched by its key exports a function of its last name — the rule ConfigModules reads.
+    const isModule = !extended.length && names.some((one) => !one.type && one.name === moduleExport) && !/^(core|schema|app|cli|compiler|testing|defaults|container|registry|graph|http|decorators)$/.test(slug);
     if (isModule) config.push(`  fronds: { '${json.name}': {} },`);
 
     if (config.length || frondConfig.length || entityConfig.length) {
