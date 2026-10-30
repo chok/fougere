@@ -28,17 +28,13 @@ And what the blog does with it:
 ```ts
 // fronds/blog/handlers/PostHandler.ts
 export default class PostHandler extends Repository<Post> {
-  constructor(private posts: Repository<Post>) {
-    super();
-  }
-
-  async publish(id: Post['id'], user?: User): Promise<Post> {
-    const post = await requireOwn(this.posts, id, user);
+  async publish(id: Post['id'], author: User): Promise<Post> {
+    const post = await requireOwn(this, id, author);
     if (post.status === 'published') {
       throw new FougereError({ code: ErrorCode.CONFLICT, message: 'Already published' });
     }
 
-    return this.posts.update(id, { status: 'published' });
+    return this.update(id, { status: 'published' });
   }
 }
 ```

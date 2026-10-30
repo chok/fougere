@@ -1024,8 +1024,8 @@ the run (a decision redone is the same decision, and a run kept open for one is 
 an interruption leaves it open, which is what a run is for. The row goes LAST, handed in by
 whoever owns the gesture, so a run covers the whole thing. Pinned by `workflow/tests/release.test.ts`.
 
-**The thirteen gestures derive from four** — `core/src/storage/store.ts`, `storageOver(open)` over a
-`Store` (`get`/`has`/`set`/`delete`/`all`/`client`). `adapter/memory` is 37 lines and
+**The thirteen gestures derive from five** — `core/src/storage/store.ts`, `storageOver(open)` over a
+`Store` (`get`/`has`/`set`/`delete`/`all`/`client`). `adapter/memory` is 49 lines and
 `adapter/file` 142, two formats and the values included. `transacted` is deliberately not in the frame: a unit of work belongs to
 an engine that has one. `all()` reading everything is what bounds a file source.
 
