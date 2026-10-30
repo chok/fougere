@@ -70,6 +70,13 @@ export class PackageManager {
     return this.name === 'npm' || this.name === 'bun' ? `${this.name} run ${name}` : `${this.name} ${name}`;
   }
 
+  /** A binary the project installed, run from inside it — `npx` finds it before fetching anything, `dlx` never looks. */
+  bin(command: string): string {
+    const runners: Record<Name, string> = { npm: 'npx', pnpm: 'pnpm exec', bun: 'bunx', yarn: 'yarn' };
+
+    return `${runners[this.name]} ${command}`;
+  }
+
   /** A script of one app, run from the project's root. */
   inApp(app: string, script: string): string {
     const forms: Record<Name, string> = {

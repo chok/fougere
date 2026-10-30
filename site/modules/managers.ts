@@ -35,7 +35,7 @@ export function withManagers(markdown: string): string {
 }
 
 /** One npm line in another tool's words, its comment set aside. A line that is not npm's keeps its own. */
-function saidBy(line: string, manager: PackageManager): [string, string] {
+export function saidBy(line: string, manager: PackageManager): [string, string] {
   const [, command = '', comment = ''] = line.match(/^(.*?)(?:\s+(#.*))?$/) ?? [];
   const forms: [RegExp, (...parts: string[]) => string][] = [
     [/^npm install$/, () => manager.install()],
@@ -43,7 +43,8 @@ function saidBy(line: string, manager: PackageManager): [string, string] {
     [/^npm install (.+)$/, (packages) => manager.add(packages)],
     [/^npm run (\S+)(.*)$/, (script, rest) => manager.script(script) + rest],
     [/^npm test(.*)$/, (rest) => manager.script('test') + rest],
-    [/^npx (?:-y )?(.+)$/, (command) => manager.x(command)],
+    [/^npx -y (.+)$/, (command) => manager.x(command)],
+    [/^npx (.+)$/, (command) => manager.bin(command)],
     [/^npm create (.+)$/, (entry) => manager.create(entry)],
   ];
   for (const [form, say] of forms) {

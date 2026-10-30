@@ -93,14 +93,14 @@ describe('workspace project scaffold', () => {
     expect(PackageManager.of('yarn/1.22.22 npm/? node/v24.12.0 darwin arm64')).toEqual(new PackageManager('npm'));
   });
 
-  it('says what a reader types — a package added, a binary run once — in each tool\u2019s own words', () => {
+  it('says what a reader types — a package added, a binary run once, the project\u2019s own binary — in each tool\u2019s own words', () => {
     const lines = PackageManager.names.map((name) => new PackageManager(name)).map((manager) =>
-      [manager.add('@fougere/testing', true), manager.add('@fougere/adapter-rest'), manager.x('fougere dev blog')]);
+      [manager.add('@fougere/testing', true), manager.add('@fougere/adapter-rest'), manager.x('fougere@alpha --help'), manager.bin('fougere dev blog')]);
     expect(lines).toEqual([
-      ['npm install -D @fougere/testing', 'npm install @fougere/adapter-rest', 'npx fougere dev blog'],
-      ['pnpm add -D @fougere/testing', 'pnpm add @fougere/adapter-rest', 'pnpm dlx fougere dev blog'],
-      ['bun add -d @fougere/testing', 'bun add @fougere/adapter-rest', 'bunx fougere dev blog'],
-      ['yarn add -D @fougere/testing', 'yarn add @fougere/adapter-rest', 'yarn dlx fougere dev blog'],
+      ['npm install -D @fougere/testing', 'npm install @fougere/adapter-rest', 'npx fougere@alpha --help', 'npx fougere dev blog'],
+      ['pnpm add -D @fougere/testing', 'pnpm add @fougere/adapter-rest', 'pnpm dlx fougere@alpha --help', 'pnpm exec fougere dev blog'],
+      ['bun add -d @fougere/testing', 'bun add @fougere/adapter-rest', 'bunx fougere@alpha --help', 'bunx fougere dev blog'],
+      ['yarn add -D @fougere/testing', 'yarn add @fougere/adapter-rest', 'yarn dlx fougere@alpha --help', 'yarn fougere dev blog'],
     ]);
   });
 
