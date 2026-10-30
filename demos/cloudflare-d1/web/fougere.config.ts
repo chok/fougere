@@ -13,6 +13,6 @@ import { defineFougere } from '@fougere/core';
  */
 export default defineFougere({
   fronds: {
-    catalog: process.env.CATALOG_URL ?? 'https://fougere-catalog.maxime-picaud-240.workers.dev',
+    catalog: { remote: process.env.CATALOG_URL ?? 'https://fougere-catalog.maxime-picaud-240.workers.dev' },
   },
 });

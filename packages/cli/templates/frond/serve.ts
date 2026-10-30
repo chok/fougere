@@ -2,7 +2,7 @@
  * This frond, alone in its own process.
  *
  * An app in another repo consumes it with one line:
- *   fronds: { <frond>: 'http://127.0.0.1:4000' }
+ *   fronds: { <frond>: { remote: 'http://127.0.0.1:4000' } }
  * and pulls its contract with:
  *   fougere sync <frond> --from http://127.0.0.1:4000
  * Nothing in the frond changes — only where it runs.

@@ -32,7 +32,7 @@ const config = await loadConfig(process.cwd());
 const address = remotesOf(config).blog;
 if (!address) {
   throw new Error(
-    "No address for 'blog' in fougere.config.ts — `fronds: { blog: 'http://…' }` is what sends calls here.\n"
+    "No address for 'blog' in fougere.config.ts — `fronds: { blog: { remote: 'http://…' } }` is what sends calls here.\n"
     + '  Uncomment it to run the frond split, or drop this process and run the app in-process.',
   );
 }

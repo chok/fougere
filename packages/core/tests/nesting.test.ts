@@ -91,7 +91,7 @@ describe('nestingOf', () => {
   });
 
   it('says nothing about a module key, which the host resolves', async () => {
-    const { refused } = nestingOf({ '@fougere/log': './lines.jsonl' }, await hosted(), undefined);
+    const { refused } = nestingOf({ '@fougere/log': { options: './lines.jsonl' } }, await hosted(), undefined);
 
     expect(refused).toEqual([]);
   });

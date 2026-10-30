@@ -129,11 +129,11 @@ describe('a storage that could not be opened', () => {
     // `fronds:` is the whole reason an app that hosts nothing boots at all, and `boot()`
     // used to re-read it off a disk the Worker does not have.
     const out = generateBootPlugin(
-      { fronds: { catalog: 'https://x.workers.dev' } },
+      { fronds: { catalog: { remote: 'https://x.workers.dev' } } },
       [], '/app/boot', [], '/app/fronds.ts',
     );
 
-    expect(out).toContain('"fronds":{"catalog":"https://x.workers.dev"}');
+    expect(out).toContain('"fronds":{"catalog":{"remote":"https://x.workers.dev"}}');
   });
 
   it('carries `ports:`, or two realizations refuse the boot with the line that settles it written', () => {
@@ -252,7 +252,7 @@ describe('extensionsOf', () => {
 describe('generateBootPlugin — a module key', () => {
   it('is imported by the bundle and handed to the loader, since nothing resolves it at runtime', () => {
     const out = generateBootPlugin(
-      { fronds: { '@fougere/log': 'logs/app.jsonl', './fronds/audit.ts': {} } } as FougereConfig,
+      { fronds: { '@fougere/log': { options: 'logs/app.jsonl' }, './fronds/audit.ts': {} } } as FougereConfig,
       [], '/app/boot', [], undefined, '/app');
 
     expect(out).toContain("import * as module_0 from '@fougere/log';");

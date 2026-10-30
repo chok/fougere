@@ -14,7 +14,7 @@ export default defineFougere({
     '@fougere/log': {},
     // La Frond blog vit dans un autre process (pnpm dev:blog). Commenter cette
     // ligne pour la ravoir in-process — le code ne change pas d'une virgule.
-    blog: 'http://127.0.0.1:4100',
+    blog: { remote: 'http://127.0.0.1:4100' },
     // A frond like any other: `only:` or an address decides which process starts its engine.
     auth: betterAuth({
       user: User,

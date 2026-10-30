@@ -13,18 +13,17 @@ import type { FrondDescriptor } from './descriptor/FrondDescriptor.js';
  * close the record, and a module specifier is a legal key no scan can have seen. `string & {}`
  * is what keeps the union open while an editor still lists the names.
  *
- * Documented: [fronds](https://fougere.dev/docs/infra/fronds).
+ * Documented: [fronds](https://fougere.dev/docs/concepts/configuration).
  */
 export type FrondEntries = {
   readonly [frond in NameOf<'frond'> | (string & {})]?: FrondEntry;
 };
 
 /**
- * Everything an entry says, or the one string that is the whole of it — an address for a frond
- * that answers elsewhere, the argument for a module key — or the frond itself, built by the
- * config's own import: `auth: betterAuth({ … })`.
+ * Everything an entry says — `{ remote }` for a frond that answers elsewhere, `{ options }` for a
+ * module key — or the frond itself, built by the config's own import: `auth: betterAuth({ … })`.
  */
-export type FrondEntry = string | FrondAttributes | FrondDescriptor;
+export type FrondEntry = FrondAttributes | FrondDescriptor;
 
 export interface FrondAttributes {
   /**
@@ -39,7 +38,7 @@ export interface FrondAttributes {
    * this repo has ever wanted a chain, and refusing it is also what keeps a cycle out.
    */
   extends?: NameOf<'frond'> | (string & {});
-  /** Where it answers — the same thing the shorthand says. */
+  /** Where it answers — the address of the process that serves it. */
   remote?: string;
   /** What the host hands a module key when it imports it. */
   options?: string;

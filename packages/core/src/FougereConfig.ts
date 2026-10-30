@@ -98,7 +98,7 @@ export async function loadConfig(root: string, options?: { fresh?: boolean }): P
 }
 
 /**
- * Where each frond answers — a string leaf of `fronds:`, which is the one place a config says
+ * Where each frond answers — the `remote` of its entry in `fronds:`, the one place a config says
  * it. `CreateAppOptions.remotes` still takes this shape: the option is what the whole boot
  * reads, and translating here is what keeps it from learning about the tree.
  */

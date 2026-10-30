@@ -13,8 +13,8 @@ import { defineFougere } from '@fougere/core';
  */
 export default defineFougere({
   fronds: {
-    // pricing: 'http://127.0.0.1:4610',
-    // catalog: 'http://127.0.0.1:4620',
-    ledger: 'http://127.0.0.1:4630',
+    // pricing: { remote: 'http://127.0.0.1:4610' },
+    // catalog: { remote: 'http://127.0.0.1:4620' },
+    ledger: { remote: 'http://127.0.0.1:4630' },
   },
 });

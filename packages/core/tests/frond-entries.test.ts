@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { statesModule } from '../src/FrondEntries.js';
+import { statesModule, type FrondEntries } from '../src/FrondEntries.js';
 import { keyedFrondEntries } from '../src/KeyedFrondEntry.js';
 import { remotesOf } from '../src/FougereConfig.js';
 
@@ -18,8 +18,8 @@ describe('keyedFrondEntries', () => {
     expect(keyedFrondEntries({
       billing: {},
       cart: { extends: 'billing' },
-      blog: 'http://localhost:4100',
-      '@fougere/log': './lines.jsonl',
+      blog: { remote: 'http://localhost:4100' },
+      '@fougere/log': { options: './lines.jsonl' },
     })).toEqual([
       { key: 'billing', path: 'billing' },
       { key: 'blog', path: 'blog', value: 'http://localhost:4100' },
@@ -28,9 +28,18 @@ describe('keyedFrondEntries', () => {
     ]);
   });
 
-  it('says the same thing in the long form', () => {
-    expect(keyedFrondEntries({ blog: { remote: 'http://localhost:4100' } }))
-      .toEqual([{ key: 'blog', path: 'blog', value: 'http://localhost:4100' }]);
+  it('refuses a string, naming the object to write', () => {
+    const entries = { blog: 'http://localhost:4100' } as unknown as FrondEntries;
+
+    expect(() => keyedFrondEntries(entries))
+      .toThrow("the entry 'blog' is a string. Write blog: { remote: 'http://localhost:4100' }.");
+  });
+
+  it('refuses a string under a module key too, naming options', () => {
+    const entries = { '@fougere/log': './lines.jsonl' } as unknown as FrondEntries;
+
+    expect(() => keyedFrondEntries(entries))
+      .toThrow("Write '@fougere/log': { options: './lines.jsonl' }.");
   });
 
   it('answers a frond before the ones inheriting from it, whatever the order written', () => {
@@ -45,17 +54,12 @@ describe('keyedFrondEntries', () => {
 });
 
 describe('remotesOf', () => {
-  it('reads an address off a string leaf of the tree', () => {
-    expect(remotesOf({ fronds: { cart: { extends: 'billing' }, blog: 'http://localhost:4100' } }))
+  it('reads the address of each frond that answers elsewhere', () => {
+    expect(remotesOf({ fronds: { cart: { extends: 'billing' }, blog: { remote: 'http://localhost:4100' } } }))
       .toEqual({ blog: 'http://localhost:4100' });
   });
 
   it('leaves a module argument out — it is not an address', () => {
-    expect(remotesOf({ fronds: { '@fougere/log': './lines.jsonl' } })).toEqual({});
-  });
-
-  it('reads an address in either form', () => {
-    expect(remotesOf({ fronds: { blog: 'http://a', ledger: { remote: 'http://b' } } }))
-      .toEqual({ blog: 'http://a', ledger: 'http://b' });
+    expect(remotesOf({ fronds: { '@fougere/log': { options: './lines.jsonl' } } })).toEqual({});
   });
 });

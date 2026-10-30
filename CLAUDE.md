@@ -16,7 +16,7 @@ to call its two ideas are its two readings:
 1. **Single-schema** — what a definition yields is *derived* from it: one Entity class (`class Post extends entity({...})`) generates validation, DB tables (Kysely), GraphQL types (Pothos), form contracts, API surfaces.
 2. **The gradient** — how it is realized is *chosen apart* from it: a Frond (entities + handlers + collectors + seeds) runs in-process or in its own process behind JSON-RPC, with **identical user code**. `fronds:` in `fougere.config.ts` is the whole statement — an entry per frond, whose `extends:` names the one it inherits code from, whose `remote:` says where it answers, and whose key names a module when a package brings it.
 
-Reference docs: `site/content/`.
+Reference docs: `site/content/` — `docs/` (concepts, then tasks by need, then Extending), `reference/`, and the tutorial, projected from `demos/tutorial/` by `site/modules/tutorial.ts`. An old docs URL is a line of `site/redirects.json`.
 
 ## Commands
 
@@ -718,8 +718,10 @@ right to CALL: two fronds still reach each other through a façade or an announc
 family inherits from may not serve (`frond-parent-serves`), may not be placed at an address
 (`frond-parent-remote`), and may not declare rows (`frond-parent-entities`) — with no façade
 nothing can call it, so nothing can move it, and it stands in every process holding one of its
-children. `remotesOf` folds the tree's string leaves and `fronds:` into one reading, so
-nothing downstream learns there are two graphies; a module key is imported by the HOST, never
+children. An entry is an object, never a string — `{ remote }` for a frond, `{ options }` for a
+module key — and `keyedFrondEntries` refuses a string naming the object to write, since one
+string meant an address under one key and an argument under another. `remotesOf` reads the
+`remote` of each entry; a module key is imported by the HOST, never
 by core, and where it lands is read off its form — `up`/`down` means an extension. The word
 `fronds` had three senses and now has two: the filter is `only:`. Pinned by
 `core/tests/{fronds-stated,nesting,stated-modules}.test.ts`.
@@ -822,7 +824,7 @@ and `demos/log-destinations`.
 EXTENSION, so `fronds: { '@fougere/log': {} }` is mounted by every boot that reads the config
 (`configModules` is not narrowed by `only:`), and `up` installs `callLines`: two lines a call,
 under the frond that answers, `← <caller>` when a signed call came from another process. A path
-(`'@fougere/log': './lines.jsonl'`) brings the file destination as well. It used to be core's
+(`'@fougere/log': { options: './lines.jsonl' }`) brings the file destination as well. It used to be core's
 `loggerMiddleware`, installed by `observability` alone, so an app that did not trace wrote nothing
 about its calls. The starters write the line. `boot()` resolves a PACKAGE key from the project
 (`fromProject`, `defaults/src/boot.ts`): core's own loader took `'@fougere/log'` for a file path,
@@ -888,7 +890,7 @@ since a frond's middleware covers the addresses its handlers SERVE and not the o
 CALL, which is a different subject with no name yet. And HTTP is never held by the boot at all:
 the engine is the host's, the app mounts on it with `answer`, and the engine's own middleware
 stands around it — a host port would be a second way to say it. Both ways in are written down,
-with `Storage`'s, in `site/content/docs/4.business/10.ports.md` and `7.storage.md`:
+with `Storage`'s, in `site/content/docs/1.concepts/7.port.md` and `8.extending/4.extension-points.md`:
 `remoteTransport:` swaps a transport whole, `app.use` wraps the outgoing call, the engine's
 middleware reaches the HTTP side.
 
@@ -1368,7 +1370,7 @@ X), `useFormFor` (contract, not rendering; local validator = remote validator), 
   repo was at 31-37 %. `fougere-notes/docs/notes/style-chok.md` holds the rest — how a tree
   is cut, how a thing is named, and the words to avoid.
 - **A comment names its doc page when one exists** —
-  `Documented: [ports](https://fougere.dev/docs/business/ports).` on the last line of the
+  `Documented: [ports](https://fougere.dev/docs/concepts/port).` on the last line of the
   block. A markdown link on the ABSOLUTE url, because that is the one an editor's hover can
   open: VS Code renders markdown in a JSDoc hover and a site-relative path resolves against
   nothing there. Never a file path — the route survives the file moving, the same reason a

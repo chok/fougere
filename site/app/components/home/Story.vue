@@ -45,7 +45,7 @@ posts (title, body, …)                // the table
 // GraphQL, or any adapter that reads an entity's schema`;
 
 const choicesSnippet = `// fougere.config.ts
-fronds: { blog: 'http://127.0.0.1:4100' },
+fronds: { blog: { remote: 'http://127.0.0.1:4100' } },
 ports: { Moderation: 'ManualModeration' },`;
 
 const { data: highlighted } = await useAsyncData('home-code', async () => {
@@ -64,11 +64,11 @@ interface Clip {
 }
 
 const chapters = computed(() => [
-  { key: 'code', code: codeSnippet, doc: '/docs/guides/business-logic' },
-  { key: 'schema', code: schemaSnippet, doc: '/docs/guides/data' },
-  { key: 'derivation', code: derivationSnippet, doc: '/docs/guides/data#forms', legend: true, clip: { src: '/home/derivation.mp4', wide: '/home/derivation-wide.mp4', label: t('home.derivationVideo'), caption: t('home.derivationCaption') } },
-  { key: 'choices', code: choicesSnippet, doc: '/docs/guides/config', clip: { src: '/home/gradient.mp4', wide: '/home/gradient-wide.mp4', label: t('home.choicesVideo'), caption: t('home.choicesCaption') } },
-  { key: 'rule', doc: '/docs/concepts/philosophy' },
+  { key: 'code', code: codeSnippet, doc: '/tutorial/2-a-rule' },
+  { key: 'schema', code: schemaSnippet, doc: '/docs/concepts/entity' },
+  { key: 'derivation', code: derivationSnippet, doc: '/tutorial/1-crud', legend: true, clip: { src: '/home/derivation.mp4', wide: '/home/derivation-wide.mp4', label: t('home.derivationVideo'), caption: t('home.derivationCaption') } },
+  { key: 'choices', code: choicesSnippet, doc: '/tutorial/6-split', clip: { src: '/home/gradient.mp4', wide: '/home/gradient-wide.mp4', label: t('home.choicesVideo'), caption: t('home.choicesCaption') } },
+  { key: 'rule', doc: '/docs' },
 ].map((chapter) => ({
   ...chapter,
   docLabel: t(`home.${chapter.key}Doc`),
@@ -223,7 +223,7 @@ onBeforeUnmount(() => cancelAnimationFrame(frame));
         </ol>
 
         <div class="shortcuts" :class="{ started: chapter >= 1 }">
-          <NuxtLink :to="localePath('/docs/existing-app#ask-your-agent')">{{ $t('home.tryAgent') }}</NuxtLink>
+          <NuxtLink :to="localePath('/docs/adopt/existing-app#ask-your-agent')">{{ $t('home.tryAgent') }}</NuxtLink>
           <button type="button" @click="jump('try')">{{ $t('home.skip') }}</button>
         </div>
         <p v-if="chapter === 0" class="hint">{{ $t('home.scroll') }}<br>↓</p>

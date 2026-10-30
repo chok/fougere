@@ -23,7 +23,7 @@ describe('configModules', () => {
   it('sends a descriptor to the fronds and a rising shape to the extensions', async () => {
     const { fronds, extensions } = await configModules({
       cart: { extends: 'shop' },
-      '@acme/audit': './lines.jsonl',
+      '@acme/audit': { options: './lines.jsonl' },
       '@acme/watch': {},
     });
 
@@ -43,7 +43,7 @@ describe('configModules', () => {
   });
 
   it('says nothing about the fronds a scan finds on disk', async () => {
-    const { fronds, extensions } = await configModules({ cart: { extends: 'shop' }, blog: 'http://a' });
+    const { fronds, extensions } = await configModules({ cart: { extends: 'shop' }, blog: { remote: 'http://a' } });
 
     expect(fronds).toEqual([]);
     expect(extensions).toEqual([]);
@@ -51,7 +51,7 @@ describe('configModules', () => {
 
   it('hands over a frond the config built in place, with nothing to import', async () => {
     const auth = frond('auth');
-    const { fronds } = await configModules({ blog: 'http://127.0.0.1:4100', auth });
+    const { fronds } = await configModules({ blog: { remote: 'http://127.0.0.1:4100' }, auth });
 
     expect(fronds).toEqual([auth]);
   });

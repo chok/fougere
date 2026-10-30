@@ -15,12 +15,15 @@ export interface KeyedFrondEntry {
   descriptor?: FrondDescriptor;
 }
 
-/** What an entry says, whichever of its two forms it was written in. */
+/** What an entry says. A string is refused here, the one door every reader goes through. */
 function attributesOf(entry: FrondEntry, key: string): FrondAttributes {
-  if (isFrondDescriptor(entry)) return {};
-  if (typeof entry !== 'string') return entry;
+  if (typeof entry === 'string') {
+    const written = statesModule(key) ? `{ options: '${entry}' }` : `{ remote: '${entry}' }`;
+    const named = statesModule(key) ? `'${key}'` : key;
+    throw new Error(`fougere.config.ts: the entry '${key}' is a string. Write ${named}: ${written}.`);
+  }
 
-  return statesModule(key) ? { options: entry } : { remote: entry };
+  return isFrondDescriptor(entry) ? {} : entry;
 }
 
 /**
