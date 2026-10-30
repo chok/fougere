@@ -2,6 +2,7 @@
 definePageMeta({ key: (route) => route.path.replace(/\/$/, '') || '/' });
 
 const route = useRoute();
+const menu = useState('menu', () => false);
 // Static hosting 301s a directory URL onto its trailing slash, so a reload lands on
 // `/docs/` while a document path — and the prerendered payload key built from it —
 // is spelled without one. Everything below reads this, never `route.path`.
@@ -61,11 +62,11 @@ useSeoMeta({ title: `${page.value.title} — Fougere docs`, description: page.va
 </script>
 
 <template>
-  <div class="max-w-6xl mx-auto px-6 py-10 flex gap-12">
-    <aside class="w-60 shrink-0 hidden md:block">
+  <div class="max-w-6xl mx-auto px-6 py-10 flex flex-col md:flex-row gap-8 md:gap-12">
+    <aside class="md:w-60 shrink-0 md:block" :class="menu ? 'block' : 'hidden'">
       <!-- Its own scroll: the tree is taller than a viewport, so a sticky nav alone still
            forces a page scroll to reach the last section. -->
-      <nav class="sticky top-24 max-h-[calc(100vh-7rem)] overflow-y-auto overscroll-contain pr-3 -mr-3 text-sm space-y-4 docs-nav">
+      <nav class="md:sticky top-24 md:max-h-[calc(100vh-7rem)] md:overflow-y-auto md:pr-3 md:-mr-3 text-sm space-y-4 docs-nav">
         <NuxtLink
           :to="docsRoot"
           class="block py-1"

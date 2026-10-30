@@ -200,9 +200,18 @@ onBeforeUnmount(() => removeEventListener('keydown', onKey));
 .rail .on i { background: var(--ui-primary); border-color: var(--ui-primary); transform: scale(1.3); }
 
 .leaves { display: grid; grid-template-columns: 220px minmax(0, 1fr) 290px; gap: 26px; align-items: start; }
+/* On a phone the leaves stack in reading order: the title, the project, what was written, what grew, then on. */
 @media (max-width: 1024px) {
-  .leaves { grid-template-columns: minmax(0, 1fr); }
-  .project { order: 3; }
+  .leaves { display: flex; flex-direction: column; }
+  .center { display: contents; }
+  .label, .center h1, .lede { order: 1; }
+  .project { order: 2; }
+  .cards, .stamp, .fig, .slip, .what-if { order: 3; }
+  .grows { order: 4; }
+  .pills { order: 5; }
+  .leaves > *, .cards, .card, .slip, .slip pre { min-width: 0; max-width: 100%; }
+  .label { margin-bottom: -18px; }
+  .lede { margin-top: -18px; }
 }
 .leaf {
   position: sticky;

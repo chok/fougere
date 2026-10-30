@@ -2,6 +2,7 @@
 definePageMeta({ key: (route) => route.path.replace(/\/$/, '') || '/' });
 
 const route = useRoute();
+const menu = useState('menu', () => false);
 const path = computed(() => route.path.replace(/\/$/, '') || '/');
 
 const [{ data: page }, { data: pages }] = await Promise.all([
@@ -17,9 +18,9 @@ useSeoMeta({ title: `${page.value?.title ?? 'Reference'} — Fougere`, descripti
 </script>
 
 <template>
-  <div class="max-w-6xl mx-auto px-6 py-10 flex gap-12">
-    <aside class="w-56 shrink-0 hidden md:block">
-      <nav class="sticky top-24 text-sm space-y-1">
+  <div class="max-w-6xl mx-auto px-6 py-10 flex flex-col md:flex-row gap-8 md:gap-12">
+    <aside class="md:w-56 shrink-0 md:block" :class="menu ? 'block' : 'hidden'">
+      <nav class="md:sticky top-24 text-sm space-y-1">
         <NuxtLink to="/reference" class="block py-1" :class="path === '/reference' ? 'text-highlighted font-medium' : 'text-muted hover:text-highlighted'">Reference</NuxtLink>
         <NuxtLink
           v-for="one in pages"

@@ -6,6 +6,9 @@ const { items: posts } = await useQuery(postFacade, 'list');
 const localePath = useLocalePath();
 const route = useRoute();
 const onPaper = computed(() => route.path === localePath('/'));
+/** A phone has no room for the links: they fold behind one button, and a docs page adds its tree there. */
+const menu = useState('menu', () => false);
+watch(() => route.fullPath, () => { menu.value = false; });
 
 async function logout() {
   await $fetch('/auth/sign-out', { method: 'POST', body: {} });
@@ -22,7 +25,16 @@ async function logout() {
           <UIcon name="i-noto-herb" class="size-5" />
           Fougere
         </NuxtLink>
-        <nav class="ml-auto flex items-center gap-4 text-sm">
+        <UButton
+          class="ml-auto sm:hidden"
+          variant="ghost"
+          size="sm"
+          :icon="menu ? 'i-lucide-x' : 'i-lucide-menu'"
+          :aria-label="menu ? 'Close the menu' : 'Open the menu'"
+          :aria-expanded="menu"
+          @click="menu = !menu"
+        />
+        <nav class="ml-auto hidden sm:flex items-center gap-4 text-sm">
           <NuxtLink :to="localePath('/tutorial')" class="text-muted hover:text-highlighted">{{ $t('nav.tutorial') }}</NuxtLink>
           <NuxtLink :to="localePath('/docs')" class="text-muted hover:text-highlighted">{{ $t('nav.docs') }}</NuxtLink>
           <NuxtLink :to="localePath('/reference')" class="text-muted hover:text-highlighted">{{ $t('nav.reference') }}</NuxtLink>
@@ -37,6 +49,13 @@ async function logout() {
           </template>
         </div>
       </div>
+      <nav v-if="menu" class="sm:hidden border-t border-default px-6 py-3 flex flex-col gap-1 text-base">
+        <NuxtLink :to="localePath('/tutorial')" class="py-1.5">{{ $t('nav.tutorial') }}</NuxtLink>
+        <NuxtLink :to="localePath('/docs')" class="py-1.5">{{ $t('nav.docs') }}</NuxtLink>
+        <NuxtLink :to="localePath('/reference')" class="py-1.5">{{ $t('nav.reference') }}</NuxtLink>
+        <NuxtLink v-if="posts.length" :to="localePath('/blog')" class="py-1.5">{{ $t('nav.blog') }}</NuxtLink>
+        <a href="https://github.com/chok/fougere" target="_blank" rel="noopener" class="py-1.5">GitHub</a>
+      </nav>
     </header>
 
     <main class="flex-1">
