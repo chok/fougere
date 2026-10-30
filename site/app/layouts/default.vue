@@ -26,7 +26,7 @@ async function logout() {
           Fougere
         </NuxtLink>
         <UButton
-          class="ml-auto sm:hidden"
+          class="ml-auto -mr-2 sm:hidden"
           variant="ghost"
           size="sm"
           :icon="menu ? 'i-lucide-x' : 'i-lucide-menu'"
@@ -41,7 +41,7 @@ async function logout() {
           <NuxtLink v-if="posts.length" :to="localePath('/blog')" class="text-muted hover:text-highlighted">{{ $t('nav.blog') }}</NuxtLink>
           <a href="https://github.com/chok/fougere" target="_blank" rel="noopener" class="text-muted hover:text-highlighted">GitHub</a>
         </nav>
-        <div class="flex items-center gap-2">
+        <div v-if="user" class="flex items-center gap-2">
           <template v-if="user">
             <UButton :to="localePath('/blog/drafts')" variant="ghost" size="sm" icon="i-lucide-notebook-pen" :label="$t('nav.drafts')" />
             <UButton :to="localePath('/blog/new')" variant="soft" size="sm" icon="i-lucide-plus" :label="$t('nav.write')" />

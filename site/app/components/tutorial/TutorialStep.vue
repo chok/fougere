@@ -202,7 +202,7 @@ onBeforeUnmount(() => removeEventListener('keydown', onKey));
 .leaves { display: grid; grid-template-columns: 220px minmax(0, 1fr) 290px; gap: 26px; align-items: start; }
 /* On a phone the leaves stack in reading order: the title, the project, what was written, what grew, then on. */
 @media (max-width: 1024px) {
-  .leaves { display: flex; flex-direction: column; }
+  .leaves { display: flex; flex-direction: column; align-items: stretch; }
   .center { display: contents; }
   .label, .center h1, .lede { order: 1; }
   .project { order: 2; }
