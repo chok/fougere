@@ -1,0 +1,59 @@
+{
+  "name": "Split",
+  "title": "Mail *in its own process*",
+  "concept": "configuration",
+  "lede": "Mail is slow and you want it apart. Move it. Only where it runs changes.",
+  "fig": "Your code says what a thing is. One line of config says where it runs.",
+  "grows": [
+    {
+      "side": "out",
+      "label": "mail answers on :4100",
+      "detail": "fougere serve mail --port 4100",
+      "from": {
+        "file": "fougere.config.ts",
+        "line": "mail: { remote:"
+      }
+    },
+    {
+      "side": "out",
+      "label": "the fact crosses",
+      "detail": "as JSON-RPC, signed",
+      "from": {
+        "file": "fougere.config.ts",
+        "line": "mail: { remote:"
+      }
+    },
+    {
+      "side": "out",
+      "label": "AuditMailer runs there",
+      "detail": "the link went with its frond",
+      "from": {
+        "file": "fougere.config.ts",
+        "line": "mail: { remote:"
+      }
+    },
+    {
+      "side": "in",
+      "label": "one trace, two processes",
+      "detail": "reach: 1 hop in fougere explain",
+      "from": {
+        "file": "fougere.config.ts",
+        "line": "mail: { remote:"
+      }
+    }
+  ],
+  "try": {
+    "command": "fougere serve mail --port 4100   # then publish from the app",
+    "output": "INF [app:mail:AuditMailer] (mail:MailHandler.onPublished) sending Published: Hi"
+  },
+  "links": [
+    {
+      "title": "Configuration",
+      "path": "/docs/concepts/configuration"
+    },
+    {
+      "title": "Deploy a split",
+      "path": "/docs/run/deploy"
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "name": "@fougere/demo-tutorial",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "for step in steps/*/; do tsc -p \"$step/fronds\" || exit 1; done"
+  },
+  "dependencies": {
+    "@fougere/adapter-rest": "workspace:*",
+    "@fougere/core": "workspace:*",
+    "@fougere/schema": "workspace:*"
+  },
+  "devDependencies": {
+    "@fougere/app": "workspace:*",
+    "@fougere/compiler": "workspace:*",
+    "@fougere/defaults": "workspace:*",
+    "@fougere/testing": "workspace:*",
+    "vitest": "^4.1.0"
+  }
+}

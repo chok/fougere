@@ -1,0 +1,71 @@
+{
+  "name": "A rule",
+  "title": "Publishing is *not an update*",
+  "concept": "handler",
+  "lede": "A post is published once. The rule is a method, and status becomes readOnly so that nothing else can write it — not even update.",
+  "fig": "A state changes through an operation, never through a field write.",
+  "grows": [
+    {
+      "side": "in",
+      "label": "POST /api/blog/posts/:id/publish",
+      "detail": "the path read off id: Post['id']",
+      "from": {
+        "file": "fronds/blog/handlers/PostHandler.ts",
+        "line": "async publish("
+      }
+    },
+    {
+      "side": "in",
+      "label": "useCommand(post, 'publish')",
+      "detail": "typed down to its refusals",
+      "from": {
+        "file": "fronds/blog/handlers/PostHandler.ts",
+        "line": "async publish("
+      }
+    },
+    {
+      "side": "out",
+      "label": "status written",
+      "detail": "by the operation, the only one that may",
+      "from": {
+        "file": "fronds/blog/handlers/PostHandler.ts",
+        "line": "return this.update"
+      }
+    },
+    {
+      "side": "refuses",
+      "label": "status: Read-only",
+      "detail": "a PATCH carrying status — readOnly takes it out of every input",
+      "from": {
+        "file": "fronds/blog/entities/Post.ts",
+        "line": "status: readOnly("
+      }
+    },
+    {
+      "side": "refuses",
+      "label": "409 CONFLICT",
+      "detail": "on the card, and in OpenAPI",
+      "from": {
+        "file": "fronds/blog/handlers/PostHandler.ts",
+        "line": "ErrorCode.CONFLICT"
+      }
+    }
+  ],
+  "try": {
+    "command": "curl -X POST localhost:3000/api/blog/posts/$ID/publish   # twice",
+    "output": "409  CONFLICT  Already published",
+    "request": {
+      "method": "POST",
+      "path": "/api/blog/posts/:id/publish",
+      "twice": true
+    },
+    "status": 409,
+    "contains": "Already published"
+  },
+  "links": [
+    {
+      "title": "Handler",
+      "path": "/docs/concepts/handler"
+    }
+  ]
+}

@@ -1,0 +1,56 @@
+{
+  "name": "A fact",
+  "title": "Mail is *its own domain*",
+  "concept": "fact",
+  "lede": "The blog announces that a post was published. A second frond accepts the fact; the mailer and its link move with it.",
+  "fig": "The blog names nobody. Accepting a Fact<T> is the subscription.",
+  "grows": [
+    {
+      "side": "out",
+      "label": "blog → mail",
+      "detail": "an edge in fougere graph",
+      "from": {
+        "file": "fronds/mail/handlers/MailHandler.ts",
+        "line": "Fact<PostPublished>"
+      }
+    },
+    {
+      "side": "in",
+      "label": "no route for onPublished",
+      "detail": "a listener has no caller",
+      "from": {
+        "file": "fronds/mail/handlers/MailHandler.ts",
+        "line": "async onPublished("
+      }
+    },
+    {
+      "side": "refuses",
+      "label": "Unknown field",
+      "detail": "a fact is judged on arrival",
+      "from": {
+        "file": "fronds/blog/entities/PostPublished.ts",
+        "line": "Post.pick('id', 'title')"
+      }
+    }
+  ],
+  "try": {
+    "command": "curl -X POST localhost:3000/api/blog/posts/$ID/publish",
+    "output": "INF [app:mail:AuditMailer] (mail:MailHandler.onPublished) sending Published: Hi\nmail: Published: Hi",
+    "request": {
+      "method": "POST",
+      "path": "/api/blog/posts/:id/publish"
+    },
+    "status": 200,
+    "log": "mail: Published: Hi"
+  },
+  "links": [
+    {
+      "title": "Fact",
+      "path": "/docs/concepts/fact"
+    },
+    {
+      "title": "Facade",
+      "path": "/docs/concepts/facade"
+    }
+  ]
+}

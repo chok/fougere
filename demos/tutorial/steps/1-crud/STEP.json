@@ -1,0 +1,100 @@
+{
+  "name": "CRUD",
+  "title": "One entity, *and a whole CRUD*",
+  "concept": "entity",
+  "lede": "Write a post, the handler that serves its rows, and the line that says which API the app answers on. Rows stay in memory for now.",
+  "fig": "Two classes and one line of config. Everything around them is read from these.",
+  "grows": [
+    {
+      "side": "in",
+      "label": "list · findById · create · update · delete",
+      "detail": "five operations — a page calls them: useQuery(post, 'list')",
+      "from": {
+        "file": "fronds/blog/handlers/PostHandler.ts",
+        "line": "extends Repository<Post>"
+      }
+    },
+    {
+      "side": "in",
+      "label": "5 REST routes under /api/blog/posts",
+      "detail": "one per operation — because protocols: names rest",
+      "from": {
+        "file": "fougere.config.ts",
+        "line": "protocols: { rest: {} }"
+      }
+    },
+    {
+      "side": "in",
+      "label": "type Post",
+      "detail": "in the page's client, typed down to its refusals",
+      "from": {
+        "file": "fronds/blog/entities/Post.ts",
+        "line": "class Post extends entity"
+      }
+    },
+    {
+      "side": "in",
+      "label": "validation",
+      "detail": "title required, 160 at most — the same rule on the server and in the browser",
+      "from": {
+        "file": "fronds/blog/entities/Post.ts",
+        "line": "title: text"
+      }
+    },
+    {
+      "side": "in",
+      "label": "useFormFor(Post)",
+      "detail": "a form's fields and state, nothing to declare again",
+      "from": {
+        "file": "fronds/blog/entities/Post.ts",
+        "line": "class Post extends entity"
+      }
+    },
+    {
+      "side": "out",
+      "label": "posts kept in memory",
+      "detail": "the default with no sources: — the boot says so, and one line moves them to SQLite later",
+      "from": {
+        "file": "fronds/blog/entities/Post.ts",
+        "line": "class Post extends entity"
+      }
+    },
+    {
+      "side": "refuses",
+      "label": "VALIDATION_FAILED",
+      "detail": "what an empty title gets back, field by field",
+      "from": {
+        "file": "fronds/blog/entities/Post.ts",
+        "line": "title: text"
+      }
+    }
+  ],
+  "try": {
+    "command": "curl -X POST localhost:3000/api/blog/posts -d '{\"title\":\"\"}'",
+    "output": "400  VALIDATION_FAILED  title: String is too short (0 < 1).",
+    "request": {
+      "method": "POST",
+      "path": "/api/blog/posts",
+      "body": {
+        "title": ""
+      }
+    },
+    "status": 400,
+    "contains": "String is too short"
+  },
+  "whatIf": "PATCH /api/blog/posts/:id with { status: 'published' } passes here, and publishes without any rule. Step 2 closes it.",
+  "links": [
+    {
+      "title": "Entity",
+      "path": "/docs/concepts/entity"
+    },
+    {
+      "title": "Handler",
+      "path": "/docs/concepts/handler"
+    },
+    {
+      "title": "Repository",
+      "path": "/docs/concepts/repository"
+    }
+  ]
+}
