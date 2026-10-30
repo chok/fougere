@@ -5,9 +5,9 @@
     "/docs/bring-your-schema": "/docs/adopt/bring-your-schema",
     "/docs/cli": "/reference/cli",
     "/docs/demos": "/docs/adopt/demos",
-    "/docs/guides/business-logic": "/tutorial/2-a-rule",
+    "/docs/guides/business-logic": "/tutorial/3-a-rule",
     "/docs/guides/data": "/docs/data/sql",
-    "/docs/guides/topology": "/tutorial/6-split",
+    "/docs/guides/topology": "/tutorial/8-split",
     "/docs/guides/config": "/docs/concepts/configuration",
     "/docs/concepts/philosophy": "/docs",
     "/docs/concepts/shortest-path": "/docs",
@@ -42,7 +42,12 @@
     "/docs/infra/identity": "/docs/run/secure",
     "/docs/infra/observability": "/docs/run/observe",
     "/docs/infra/testing": "/docs/run/test",
-    "/docs/infra/fronds": "/docs/concepts/configuration"
+    "/docs/infra/fronds": "/docs/concepts/configuration",
+    "/tutorial/2-a-rule": "/tutorial/3-a-rule",
+    "/tutorial/3-a-port": "/tutorial/4-a-port",
+    "/tutorial/4-a-link": "/tutorial/5-a-link",
+    "/tutorial/5-a-fact": "/tutorial/6-a-fact",
+    "/tutorial/6-split": "/tutorial/8-split"
   },
   "sections": {
     "/docs/business/collect-and-present#present": "/docs/data/computed-field",

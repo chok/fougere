@@ -105,7 +105,7 @@ thing in the language, and registers nothing behind your back.
 
 ## Read on
 
-- The [tutorial](/tutorial/1-crud) builds a blog in six steps, from a CRUD to a split.
+- The [tutorial](/tutorial/0-start) builds a blog in nine steps, from an empty project to a split.
 - The **concepts**, in order: [Entity](/docs/concepts/entity), [Handler](/docs/concepts/handler),
   [Repository](/docs/concepts/repository), [Frond](/docs/concepts/frond),
   [Facade](/docs/concepts/facade), [Fact](/docs/concepts/fact), [Port](/docs/concepts/port),

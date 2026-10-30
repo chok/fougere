@@ -116,7 +116,7 @@ onBeforeUnmount(() => removeEventListener('keydown', onKey));
             </div>
           </div>
         </div>
-        <div v-if="step.zero" class="stamp"><b>0</b> line of your {{ step.zero }} changed</div>
+        <div v-if="step.zero" class="stamp"><b>0</b> line changed under {{ step.zero }}</div>
 
         <p class="fig"><span>Fig. {{ step.step }}.</span> {{ step.fig }}</p>
 

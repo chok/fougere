@@ -105,13 +105,13 @@ function pageOf(index: number, slug: string, step: Step, files: Map<string, stri
   const changedUnder = (prefix: RegExp) => index > 0 && [...files.keys(), ...gone].some((path) =>
     prefix.test(path) && previous.get(path) !== files.get(path));
   const zero = index === 0 ? undefined
-    : !changedUnder(/^fronds\//) ? 'code'
-      : !changedUnder(/^fronds\/[^/]+\/handlers\//) ? 'handlers' : undefined;
+    : !changedUnder(/^fronds\//) ? 'fronds/'
+      : !changedUnder(/^fronds\/[^/]+\/handlers\//) ? 'handlers/' : undefined;
 
   const data = {
     title: step.title.replace(/\*/g, ''),
     description: step.lede,
-    step: index + 1,
+    step: index,
     name: step.name,
     concept: step.concept,
     lede: step.lede,
