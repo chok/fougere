@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { PackageManager } from '@fougere/cli/package-manager';
+
 /**
  * One step of the tutorial in three leaves: the project as it grew, what this step wrote, and
  * what grew from it. A letter on the right is repeated at the end of the line that produced it,
@@ -10,12 +12,29 @@ interface Step {
   files: { path: string; state: string }[];
   code: { path: string; lines: Line[] }[];
   grows: { key: string; side: string; label: string; detail: string }[];
-  tryIt: { command: string; output: string };
+  tryIt: { command: string; said: Record<string, string>; output: string };
   whatIf?: string; zero?: string;
   links: { title: string; path: string }[];
 }
 
 const props = defineProps<{ step: Step; steps: { path: string; step: number; name: string }[] }>();
+
+// The docs' code groups and the home line keep the reader's package manager under this key, as a tab index.
+const managers = PackageManager.names;
+const tab = useState<string>('code-group-pm', () => '0');
+onMounted(() => {
+  try {
+    tab.value = localStorage.getItem('code-group-pm') ?? tab.value;
+  } catch { /* storage refused: npm, for this visit */ }
+});
+const choose = (index: number) => {
+  tab.value = String(index);
+  try {
+    localStorage.setItem('code-group-pm', tab.value);
+  } catch { /* storage refused: the choice lasts the visit */ }
+};
+const said = computed(() => props.step.tryIt.said[managers[Number(tab.value)] ?? 'npm'] ?? props.step.tryIt.command);
+const variesByManager = computed(() => new Set(Object.values(props.step.tryIt.said)).size > 1);
 
 const lit = ref<{ key?: string; line?: string } | null>(null);
 const isLit = (keys: string[], id: string) =>
@@ -122,7 +141,11 @@ onBeforeUnmount(() => removeEventListener('keydown', onKey));
 
         <div class="slip">
           <span class="hand">try it</span>
-          <pre><span class="prompt">$</span> {{ step.tryIt.command }}
+          <div v-if="variesByManager" class="managers" role="tablist" aria-label="Package manager">
+            <button v-for="(name, index) in managers" :key="name" type="button" role="tab"
+              :aria-selected="managers[Number(tab)] === name" @click="choose(index)">{{ name }}</button>
+          </div>
+          <pre :class="{ tabbed: variesByManager }"><span class="prompt">$</span> {{ said }}
 <span class="output">{{ step.tryIt.output }}</span></pre>
         </div>
         <p v-if="step.whatIf" class="hand what-if">what if — {{ step.whatIf }}</p>
@@ -268,6 +291,10 @@ onBeforeUnmount(() => removeEventListener('keydown', onKey));
 .slip .hand { position: absolute; top: -14px; left: 14px; padding: 0 6px; background: var(--ui-bg); font-size: 17px; color: var(--ui-text-muted); transform: rotate(-2deg); }
 .slip pre { margin: 0; padding: 18px 16px 14px; overflow-x: auto; background: var(--code); color: #d9e4da; border-radius: 10px; font-size: 12.5px; line-height: 1.7; }
 .slip .prompt { color: #7fc488; }
+.slip pre.tabbed { padding-top: 40px; }
+.managers { position: absolute; top: 8px; right: 10px; display: flex; gap: 2px; }
+.managers button { padding: 2px 8px; border-radius: 999px; font-family: var(--font-mono); font-size: 11px; color: #7f927f; }
+.managers button[aria-selected="true"] { background: #1b3320; color: #d9e4da; }
 .slip .output { color: #7f927f; }
 .what-if { margin: 16px 0 0; font-size: 16px; line-height: 1.45; color: var(--ui-text-muted); transform: rotate(-1deg); }
 

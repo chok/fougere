@@ -1,6 +1,8 @@
 import { mkdir, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import { join, relative } from 'node:path';
+import { PackageManager } from '@fougere/cli/package-manager';
 import { defineNuxtModule } from 'nuxt/kit';
+import { saidBy } from './managers';
 
 /**
  * `demos/tutorial/steps/*` → `content/tutorial/<step>.md`, at build — the sibling of `demo.ts`.
@@ -120,7 +122,7 @@ function pageOf(index: number, slug: string, step: Step, files: Map<string, stri
     files: [...files.keys()].sort(byReading).map((path) => ({ path, state: stateOf(path) })),
     code,
     grows: keys.map(({ key, side, label, detail }) => ({ key, side, label, detail })),
-    tryIt: { command: step.try.command, output: step.try.output },
+    tryIt: { command: step.try.command, said: saidIn(step.try.command), output: step.try.output },
     ...(step.whatIf ? { whatIf: step.whatIf } : {}),
     ...(zero ? { zero } : {}),
     links: step.links,
@@ -129,6 +131,14 @@ function pageOf(index: number, slug: string, step: Step, files: Map<string, stri
   const head = Object.entries(data).map(([key, value]) => `${key}: ${JSON.stringify(value)}`);
 
   return ['---', ...head, '---', ''].join('\n');
+}
+
+/** The command of "try it" in each package manager's words, one gesture of a `&&` chain at a time. */
+function saidIn(command: string): Record<string, string> {
+  const [, line = '', comment = ''] = command.match(/^(.*?)(\s+#.*)?$/) ?? [];
+  const say = (manager: PackageManager) => line.split(' && ').map((part) => saidBy(part.trim(), manager)[0]).join(' && ');
+
+  return Object.fromEntries(PackageManager.names.map((name) => [name, say(new PackageManager(name)) + comment]));
 }
 
 export default defineNuxtModule({

@@ -43,7 +43,7 @@
     }
   ],
   "try": {
-    "command": "npm run dev -w apps/nuxt   # then open localhost:3000/posts",
+    "command": "cd apps/nuxt && npm run dev   # then open localhost:3000/posts",
     "output": "a form with one field, title — and the posts, each with Publish"
   },
   "whatIf": "you publish twice from two tabs? The second click shows Already published, the CONFLICT the handler throws.",

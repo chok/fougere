@@ -16,8 +16,8 @@
     },
     {
       "side": "in",
-      "label": "fougere — the CLI",
-      "detail": "dev, check, migrate, graph… — npx fougere --help",
+      "label": "a command line",
+      "detail": "npx fougere dev, check, graph… — @fougere/cli",
       "from": {
         "file": "package.json",
         "line": "\"@fougere/cli\""
@@ -46,7 +46,7 @@
     "command": "npm create fougere my-blog --bare && cd my-blog && npm install",
     "output": "my-blog/ written"
   },
-  "whatIf": "you want pages from the start? npm create fougere my-blog --app nuxt writes the same project with a Nuxt app. Every step below is the same, and step 7 shows how a page calls what you write.",
+  "whatIf": "you want pages from the start? Add --app nuxt to the command: the same project comes with a Nuxt app. Every step below is the same, and step 7 shows how a page calls what you write.",
   "links": [
     {
       "title": "Start a project",
