@@ -24,7 +24,7 @@ export function setMaxBodyBytes(bytes: number): void {
  * envelope's room. Measured against the caller's limit alone, a body just under it passed in
  * process and was refused a hop away.
  *
- * Documented: [gradient](https://fougere.dev/docs/infra/gradient).
+ * Documented: [gradient](https://fougere.dev/docs/concepts/configuration).
  */
 export function maxFrameBytes(): number {
   return limit + ENVELOPE_BYTES;

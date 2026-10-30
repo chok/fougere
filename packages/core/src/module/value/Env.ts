@@ -4,7 +4,7 @@
  * `inner: Env<Meili>`, touches Meili and nothing else. The value is read through it ONCE, at boot,
  * and handed to whoever names `Meili`.
  *
- * Documented: [values](https://fougere.dev/docs/business/values).
+ * Documented: [values](https://fougere.dev/docs/data/values).
  */
 export abstract class Env<T> {
   /** What the source holds for this value, before its defaults and its judge. */

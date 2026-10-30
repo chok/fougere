@@ -34,7 +34,7 @@ export interface RestResponse<Status extends number, Headers extends Record<stri
  * Throwing before `inner.answer` refuses the request, which the door says in its own shape — before
  * the body is read, since the door reads it inside.
  *
- * Documented: [surfaces](https://fougere.dev/docs/infra/surfaces).
+ * Documented: [surfaces](https://fougere.dev/docs/serve/rest-graphql).
  */
 export abstract class Rest<H = never> {
   declare private readonly standsAt?: H;

@@ -2,7 +2,7 @@
  * The source types this adapter answers, each declared once: its format is what an entry may
  * say — the editor reads it as a type, the boot judges the entry by it — and what opens one.
  *
- * Documented: [sources](https://fougere.dev/docs/infra/sources).
+ * Documented: [sources](https://fougere.dev/docs/data/sql).
  */
 import { Format, type Accepted } from '@fougere/schema';
 import { Sources } from '@fougere/core';

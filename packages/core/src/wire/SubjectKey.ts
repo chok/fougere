@@ -3,7 +3,7 @@
  * `Emit<CanBook, Verdict>`, `Together<[Account, Ledger]>`. A class name cannot hold a `<`, so no class
  * of a frond can take one, and the scan reads the same key wherever the type is written.
  *
- * Documented: [ports](https://fougere.dev/docs/business/ports).
+ * Documented: [ports](https://fougere.dev/docs/concepts/port).
  */
 export function subjectKeyOf(port: string, ...subjects: readonly string[]): string {
   return `${port}<${subjects.join(', ')}>`;

@@ -80,7 +80,7 @@ export function reserving(frond: FrondDescriptor, scope: Container, refused: Dia
  * handler's at that handler's addresses. A method of a handler's link naming no op of it is refused —
  * a misspelt op would stand around nothing.
  *
- * Documented: [surfaces](https://fougere.dev/docs/infra/surfaces).
+ * Documented: [surfaces](https://fougere.dev/docs/serve/rest-graphql).
  */
 export function standingAtDoors(
   frond: FrondDescriptor,

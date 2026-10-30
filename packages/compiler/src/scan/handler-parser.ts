@@ -207,7 +207,7 @@ function parseCheckedType(type: ts.Type, raw: string, checker: ts.TypeChecker, d
  * from, where the first callable member (`toString`) names nothing an author wrote. `any` and
  * `unknown` are left alone: nothing was declared to judge.
  *
- * Documented: [handlers](https://fougere.dev/docs/business/handlers).
+ * Documented: [handlers](https://fougere.dev/docs/concepts/handler).
  */
 function notData(
   type: ts.Type,

@@ -12,7 +12,7 @@ import type { Call } from './Call.js';
  * fronds an extension BROUGHT, so keeping the row that says a release began does not begin one.
  * Read from what was brought rather than written down, the way `CARRIES_LINE` is.
  *
- * Documented: [entities](https://fougere.dev/docs/schema/entities).
+ * Documented: [entities](https://fougere.dev/docs/concepts/entity).
  */
 export interface Journal {
   /** Hold this call until `runAt`, so a sweep dispatches it then and nobody waits for it now. */

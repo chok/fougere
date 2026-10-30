@@ -45,7 +45,7 @@ export function orderSeeds(fronds: FrondDescriptor[]): SeedOrder {
  * Plant a set of seeds, in the order given — by the storage, as a handler writes: a seed is the
  * frond's own code, not a client.
  *
- * Documented: [seeds](https://fougere.dev/docs/business/seeds).
+ * Documented: [seeds](https://fougere.dev/docs/data/seeds).
  */
 export async function runSeeds(
   app: App,

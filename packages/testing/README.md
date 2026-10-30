@@ -31,7 +31,7 @@ as omitted (`undefined`) versus explicitly supplied `null`.
 `testApp()` takes no argument: a file under `fronds/catalog/tests/` says its subject is
 `catalog`, the way `entities/` already says what a directory holds.
 
-Full documentation: **[Testing](https://fougere.dev/docs/infra/testing)** ·
+Full documentation: **[Testing](https://fougere.dev/docs/run/test)** ·
 a worked example: `demos/test-gradient`.
 
 ## What it does not do

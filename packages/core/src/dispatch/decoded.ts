@@ -16,7 +16,7 @@ import { asPage } from '../wire/Page.js';
  * knows how to put back. Measured 2026-09-18: 389 ns per row against the 1 277 ns encoding one
  * already costs.
  *
- * Documented: [the gradient](https://fougere.dev/docs/infra/gradient).
+ * Documented: [the gradient](https://fougere.dev/docs/concepts/configuration).
  */
 export function decoded(schema: SchemaView | undefined, answer: unknown): unknown {
   if (!schema || answer === null || answer === undefined) return answer;

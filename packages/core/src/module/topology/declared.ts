@@ -1,7 +1,7 @@
 /**
  * What an app says about its NEIGHBOURS — the dual of the identity card, which says what it IS.
  *
- * Documented: [observability](https://fougere.dev/docs/infra/observability).
+ * Documented: [observability](https://fougere.dev/docs/run/observe).
  */
 import type { FrondDescriptor } from '../../descriptor/FrondDescriptor.js';
 import { facadeKeyOf } from '../../wire/Facade.js';

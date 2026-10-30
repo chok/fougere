@@ -22,7 +22,7 @@ export const MODULES = 'modules.js';
  * The entry is read where TypeScript reads it, because TypeScript is the one reader that cannot be
  * told anything else: a rename stated anywhere besides would be a second statement of it.
  *
- * Documented: [fronds](https://fougere.dev/docs/infra/fronds).
+ * Documented: [fronds](https://fougere.dev/docs/concepts/configuration).
  */
 export function frondNamesOf(root: string, conventions: Conventions = DEFAULT_CONVENTIONS): Map<string, string> {
   const frondsDir = resolve(root, conventions.fronds);

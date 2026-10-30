@@ -17,7 +17,7 @@ import { presenterArguments, presenterPlans } from './presenterArguments.js';
  * to declare it. A computed field's parameters and the collectors in scope are both boot-time facts,
  * so the plans are built here once.
  *
- * Documented: [presenters](https://fougere.dev/docs/business/collect-and-present#present--fields-computed-over-the-page).
+ * Documented: [presenters](https://fougere.dev/docs/data/computed-field).
  */
 export function presented(presenter: PresenterEntry | undefined, fields: readonly string[], scope: Container): AnswerStep[] {
   if (!presenter) return [];

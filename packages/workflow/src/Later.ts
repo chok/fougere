@@ -8,7 +8,7 @@ import { entity, json, number, optional, primary, text } from '@fougere/schema';
  * the same answer `RunRepository` gives, for the same reason a process cannot tell a dead peer
  * from a slow one.
  *
- * Documented: [entities](https://fougere.dev/docs/schema/entities).
+ * Documented: [entities](https://fougere.dev/docs/concepts/entity).
  */
 export default class Later extends entity({
   id: primary(text()),

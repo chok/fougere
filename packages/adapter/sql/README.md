@@ -30,7 +30,7 @@ The entry loads on any runtime: an engine reads its driver, and SQLite `node:fs`
 
 An entity an entry lists in `values:` is ONE row of the table `fougere_values`, keyed by its
 name and holding the value as JSON — created by `fougere migrate` like any other table. See
-[Values](https://fougere.dev/docs/business/values).
+[Values](https://fougere.dev/docs/data/values).
 
 ---
 

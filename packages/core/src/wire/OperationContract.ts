@@ -64,7 +64,7 @@ export function wordsOf(name: string): string[] {
  * after `and`, `or` or `then` — is a read verb. Anything else is a command, which promises nothing:
  * a read taken for a command still answers, a command taken for a read would be cached.
  *
- * Documented: [business logic](https://fougere.dev/docs/guides/business-logic).
+ * Documented: [business logic](https://fougere.dev/tutorial/2-a-rule).
  */
 export function inferOperationKind(name: string): OperationKind {
   const words = wordsOf(name);

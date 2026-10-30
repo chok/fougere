@@ -19,7 +19,7 @@ function processVariables(): Variables {
  * Reading an entity off the environment: one variable per field, named `ENTITY_FIELD`, and for
  * rows `ENTITY_KEY_FIELD` read from the END, since the fields are known and the rest is the key.
  *
- * Documented: [values](https://fougere.dev/docs/business/values).
+ * Documented: [values](https://fougere.dev/docs/data/values).
  */
 export class Env {
   constructor(private readonly variables: Variables = processVariables()) {}

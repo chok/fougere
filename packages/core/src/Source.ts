@@ -16,7 +16,7 @@ export function declares(schema: SchemaView, constraint: Constraint): boolean {
 /**
  * A place rows live, whatever realizes it.
  *
- * Documented: [sources](https://fougere.dev/docs/infra/sources).
+ * Documented: [sources](https://fougere.dev/docs/data/sql).
  */
 export interface Source {
   storageFactory: StorageFactory;

@@ -23,7 +23,7 @@ type Rows<A, B, C, D> = [Storage<A>, ...([B] extends [never] ? [] : [Storage<B>]
  * written by hand says `repository: Post` — and the boot hands the rows over once the class is
  * built, so a constructor of its own does not reach them yet.
  *
- * Documented: [repositories](https://fougere.dev/docs/business/repositories).
+ * Documented: [repositories](https://fougere.dev/docs/concepts/repository).
  */
 export abstract class Repository<A, B = never, C = never, D = never> {
   /** Each entity's rows, in the order the type arguments name them — what an aggregate writes through. */

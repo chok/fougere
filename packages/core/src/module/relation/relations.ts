@@ -40,7 +40,7 @@ function referencesTo(target: string, rowHosts: RowHosts): { entity: string; fie
 /**
  * The references a foreign key cannot hold, each as a read the guard makes before the write.
  *
- * Documented: [entities](https://fougere.dev/docs/schema/entities).
+ * Documented: [entities](https://fougere.dev/docs/concepts/entity).
  */
 export function relationChecksOf(entity: SchemaView, name: string, rowHosts: RowHosts): RelationCheck[] {
   const checks: RelationCheck[] = [];
@@ -77,7 +77,7 @@ export function relationChecksOf(entity: SchemaView, name: string, rowHosts: Row
  * and the target learns of it from nowhere else. What a key already holds is left out: the
  * engine answers it at the rows, inside the delete's own transaction.
  *
- * Documented: [entities](https://fougere.dev/docs/schema/entities).
+ * Documented: [entities](https://fougere.dev/docs/concepts/entity).
  */
 export function dependentsOf(target: string, rowHosts: RowHosts): Dependent[] {
   return referencesTo(target, rowHosts)

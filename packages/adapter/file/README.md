@@ -37,7 +37,7 @@ refused naming both files.
 An entity listed in `values:` is ONE file named after it, beside the directories of rows —
 `config/prod/meili.yaml` for `Meili` under `path: 'config/prod'`, in either format. It is read
 once at boot and injected into the constructor that asks for a `Meili`; see
-[Values](https://fougere.dev/docs/business/values).
+[Values](https://fougere.dev/docs/data/values).
 
 ```ts
 config: { type: 'file', path: `config/${process.env.APP_ENV}`, values: ['Meili', 'Catalog'] },
@@ -56,7 +56,7 @@ A key becomes a filename, so a key that would leave its directory is refused by 
 ## What it does not declare
 
 No `transacted`: a directory has no unit of work. So a
-[frame](https://fougere.dev/docs/business/together) spanning this source and another
+[frame](https://fougere.dev/docs/data/together) spanning this source and another
 compensates rather than transacting, and the boot says so:
 
 ```

@@ -7,7 +7,7 @@ import { PackageManager } from './PackageManager.js';
  * one is created inside — its lockfile or its `packageManager`. Nothing known answers `undefined`, for
  * the caller to ask or to say it chose npm.
  *
- * Documented: [the CLI](https://fougere.dev/docs/cli#which-package-manager).
+ * Documented: [the CLI](https://fougere.dev/reference/cli#which-package-manager).
  */
 export async function writtenFor(stated: string | undefined, cwd: string, agent = process.env.npm_config_user_agent): Promise<PackageManager | undefined> {
   if (stated) {

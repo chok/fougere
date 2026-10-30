@@ -11,7 +11,7 @@
  * The half the FROND owns travels, because nothing else implies it: that `publish` answers
  * `CONFLICT` is a domain decision, and it is read off the code by the scan's walk.
  *
- * Documented: [observability](https://fougere.dev/docs/infra/observability).
+ * Documented: [observability](https://fougere.dev/docs/run/observe).
  */
 import { ErrorCode } from './ErrorCode.js';
 import type { OperationKind } from './OperationKind.js';

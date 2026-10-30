@@ -7,7 +7,7 @@ import type { OnDelete } from '@fougere/schema';
  * a write. Only what no foreign key holds reaches here — a key answers at the rows, inside the
  * delete's own transaction, and nothing in this process would see it happen.
  *
- * Documented: [entities](https://fougere.dev/docs/schema/entities).
+ * Documented: [entities](https://fougere.dev/docs/concepts/entity).
  */
 export interface Dependent {
   /** The entity whose rows name the target — `post`. */

@@ -52,9 +52,9 @@ pnpm create fougere
 With no arguments, it walks you through creating a new app in an interactive terminal UI.
 
 > [!NOTE]
-> It runs `fougere new` from the [CLI](https://fougere.dev/docs/cli).
+> It runs `fougere new` from the [CLI](https://fougere.dev/reference/cli).
 
-→ [Getting started](https://fougere.dev/docs/getting-started)
+→ [Getting started](https://fougere.dev/tutorial/1-crud)
 
 ## Philosophy
 
@@ -62,7 +62,7 @@ Fougere is heavily inspired by DDD and hexagonal architecture, but doesn't follo
 
 The one primitive to know is the Frond, the fractal leaf of a fern (_fougère_ in French). It is like a bounded context: you can't call another frond's services directly, only the public code its handlers expose. In return, calling that code is made simple, with several ways to reach a frond's code.
 
-→ [Philosophy](https://fougere.dev/docs/concepts/philosophy)
+→ [Philosophy](https://fougere.dev/docs)
 
 ## Features
 
@@ -79,6 +79,6 @@ The one primitive to know is the Frond, the fractal leaf of a fern (_fougère_ i
 
 ## Learn more
 
-- [Schema](https://fougere.dev/docs/schema/entities)
-- [The gradient](https://fougere.dev/docs/infra/gradient)
+- [Schema](https://fougere.dev/docs/concepts/entity)
+- [The gradient](https://fougere.dev/docs/concepts/configuration)
 - [`Demos`](./demos)

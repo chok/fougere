@@ -21,7 +21,7 @@ export interface Diff {
  * FR : ce qui a changé entre deux descriptions d'une même entité, lu du seul format du fil.
  * `compare(v1, v2, { renamed: { body: 'content' } })` → one `renamed`, no `ambiguous`
  *
- * Documented: [how a schema moves](https://fougere.dev/docs/schema/evolution).
+ * Documented: [how a schema moves](https://fougere.dev/docs/data/evolve).
  */
 export function compare(
   was: SchemaDescriptor,

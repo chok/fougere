@@ -3,7 +3,7 @@ import type { SchemaView } from '@fougere/schema';
 /**
  * The entities `sources:` holds as ONE value each — the dual of `sourceOf` for rows.
  *
- * Documented: [values](https://fougere.dev/docs/business/values).
+ * Documented: [values](https://fougere.dev/docs/data/values).
  */
 export interface ValueSources {
   /** The source holding it as a value, or nothing when it is rows. */

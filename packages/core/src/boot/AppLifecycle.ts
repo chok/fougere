@@ -62,7 +62,7 @@ export async function closeAll(levels: readonly (() => unknown)[], refusals: str
  * boot that finds it behind refuses rather than writing to it. Writing is `fougere migrate`,
  * or `migrating()` stated by a process whose database is born with it.
  *
- * Documented: [lifecycle](https://fougere.dev/docs/infra/lifecycle).
+ * Documented: [lifecycle](https://fougere.dev/docs/run/lifecycle).
  */
 export function checking(pending?: (app: App) => Promise<readonly string[]>): Extension {
   if (!pending) return { name: 'schema' };

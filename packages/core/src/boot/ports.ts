@@ -17,7 +17,7 @@ import type { Diagnostic } from '../diagnostic.js';
  * process-wide key would break the gradient, since a frond moved behind `remotes:` would
  * silently leave the reach of a link its own code never mentioned.
  *
- * Documented: [ports](https://fougere.dev/docs/business/ports).
+ * Documented: [ports](https://fougere.dev/docs/concepts/port).
  */
 export const HOST_PORTS = new Set(['Storage']);
 

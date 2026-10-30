@@ -8,7 +8,7 @@ import type { Storage } from '../../storage/Storage.js';
 /**
  * Where an entity's rows are hosted, and what the host keeps — what a `ref()` asks the boot.
  *
- * Documented: [entities](https://fougere.dev/docs/schema/entities).
+ * Documented: [entities](https://fougere.dev/docs/concepts/entity).
  */
 export interface RowHosts {
   /** False behind `remotes:` — whose `sourceOf` still answers the default, and means nothing. */

@@ -1,7 +1,7 @@
 /**
  * Building a frame — what a handler asking for `Together<[…]>` receives.
  *
- * Documented: [together](https://fougere.dev/docs/business/together).
+ * Documented: [together](https://fougere.dev/docs/data/together).
  */
 import { ambient } from '#ambient';
 import { lifetimeOf } from '../../lifetime.js';

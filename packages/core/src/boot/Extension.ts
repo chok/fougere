@@ -5,7 +5,7 @@ import type { FrondDescriptor } from '../descriptor/FrondDescriptor.js';
 /**
  * One process-level extension and its reversible lifecycle.
  *
- * Documented: [lifecycle](https://fougere.dev/docs/infra/lifecycle).
+ * Documented: [lifecycle](https://fougere.dev/docs/run/lifecycle).
  */
 export interface Extension {
   name: string;

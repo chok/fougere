@@ -27,7 +27,7 @@ type FieldsOf<T> = { [K in keyof T]-?: Field<T[K]> };
 /**
  * One portable schema description and every decision made about that description.
  *
- * Documented: [the identity card](https://fougere.dev/docs/schema/card).
+ * Documented: [the identity card](https://fougere.dev/docs/extending/card-and-wire).
  */
 export class Card<T = Values<Fields>> {
   private constructor(readonly descriptor: SchemaDescriptor) {}

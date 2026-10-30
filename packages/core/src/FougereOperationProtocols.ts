@@ -3,7 +3,7 @@
  * — one key per protocol, written by the adapter that serves it, never here. How an operation is
  * CALLED belongs beside it, in `frond.config.ts`; where the protocol is mounted is the app's.
  *
- * Documented: [surfaces](https://fougere.dev/docs/infra/surfaces).
+ * Documented: [surfaces](https://fougere.dev/docs/serve/rest-graphql).
  */
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface FougereOperationProtocols {}

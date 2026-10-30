@@ -10,7 +10,7 @@ import type { Refreshed } from './Refreshed.js';
  * The mark is the CALLER's: only it knows whether a pass completed, and a pass that throws must not
  * advance it.
  *
- * Documented: [the base](https://fougere.dev/docs/concepts/the-base).
+ * Documented: [the base](https://fougere.dev/docs).
  */
 export abstract class Mirror<T> extends Repository<T> {
   /** Pages of rows to write. The one thing a mirror's author supplies. */

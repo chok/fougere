@@ -8,7 +8,7 @@ import { entity, number, oneOf, optional, primary, text } from '@fougere/schema'
  * empty — so RESUMING is simply doing it again. What the row has to say is that somebody
  * started and did not finish.
  *
- * Documented: [entities](https://fougere.dev/docs/schema/entities).
+ * Documented: [entities](https://fougere.dev/docs/concepts/entity).
  */
 export default class Run extends entity({
   /** `user:ada` — derived from what is released, so relaunching is the same run, not a second. */

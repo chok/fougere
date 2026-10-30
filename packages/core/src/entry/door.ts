@@ -15,7 +15,7 @@ export type DoorOutcome = { answered: unknown } | { refused: FougereError };
  * A way in, as the package that brings it writes it — its edges, in its own terms. Core names no
  * door: it runs the one cycle over whichever it is handed.
  *
- * Documented: [surfaces](https://fougere.dev/docs/infra/surfaces).
+ * Documented: [surfaces](https://fougere.dev/docs/serve/rest-graphql).
  */
 export interface Door<Received, Decoded, Answer> {
   /** The package's word for it — `rest`, `graphql` — which core never reads but to say where. */

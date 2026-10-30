@@ -44,7 +44,7 @@ return {
 ## What it does not declare
 
 No `transacted`: a Map has no unit of work. A
-[frame](https://fougere.dev/docs/business/together) reads the absence, compensates instead of
+[frame](https://fougere.dev/docs/data/together) reads the absence, compensates instead of
 transacting, and the boot says which of the two it built. No `migrate` either — a Map has no
 shape to bring up to date.
 

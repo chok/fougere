@@ -163,7 +163,7 @@ export function registerFlush(send: () => Promise<void>): () => void {
  * around a query. What both need is the same table — the time a step's children accounted
  * for — so the two sit in one closure rather than reaching for each other.
  *
- * Documented: [observability](https://fougere.dev/docs/infra/observability).
+ * Documented: [observability](https://fougere.dev/docs/run/observe).
  */
 export function tracing(takers: readonly SpanSink[], options: TracingOptions = {}): Tracing {
   /** What a step's children have accounted for, by the step they ran under. */

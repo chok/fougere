@@ -52,7 +52,7 @@ export interface ComposerOptions {
  * piece of the same template. Nothing is written here: the answer is a `Plan`, and whether the
  * directory it names may be replaced.
  *
- * Documented: [the CLI](https://fougere.dev/docs/cli).
+ * Documented: [the CLI](https://fougere.dev/reference/cli).
  */
 export class Composer {
   static WIDTH = 36;

@@ -5,7 +5,7 @@ export type Name = (typeof PackageManager.names)[number];
  * words in the project `fougere new` writes and in the docs a reader copies from. It reads no disk, so
  * a page in a browser says them too; which one a project is written for is `writtenFor`'s.
  *
- * Documented: [getting started](https://fougere.dev/docs/getting-started).
+ * Documented: [getting started](https://fougere.dev/tutorial/1-crud).
  */
 export class PackageManager {
   static readonly names = ['npm', 'pnpm', 'bun', 'yarn'] as const;

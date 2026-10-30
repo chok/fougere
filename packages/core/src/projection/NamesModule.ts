@@ -10,7 +10,7 @@
  * `ports: { Payment: 'FileStorage' }` — both names exist, and nothing would say that one does
  * not answer the other.
  *
- * Documented: [ports](https://fougere.dev/docs/business/ports).
+ * Documented: [ports](https://fougere.dev/docs/concepts/port).
  */
 import { basesOf, realizationsOf } from '../descriptor/bases.js';
 import type { FrondDescriptor } from '../descriptor/FrondDescriptor.js';

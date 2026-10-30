@@ -16,7 +16,7 @@ interface Valuing {
  * scope of the frond declaring it — so `constructor(meili: Meili)` receives it as it is. After the
  * schema, since a source keeping values in a table needs that table first.
  *
- * Documented: [values](https://fougere.dev/docs/business/values).
+ * Documented: [values](https://fougere.dev/docs/data/values).
  */
 export function valuing(values?: ValueSources): Valuing {
   if (!values) return { name: 'values' };

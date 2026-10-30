@@ -8,7 +8,7 @@ import type { Engine } from '../fields/Engine.js';
  * The packages each engine opens with. The APP installs them, never this package, so a
  * project that opens no SQL installs no driver — and nothing native.
  *
- * Documented: [sources](https://fougere.dev/docs/infra/sources).
+ * Documented: [sources](https://fougere.dev/docs/data/sql).
  */
 export const PACKAGES: Record<Engine, string[]> = {
   sqlite: ['better-sqlite3'],

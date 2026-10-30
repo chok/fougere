@@ -6,7 +6,7 @@
  * each reference that falls outside its own source, and none for the rest — a co-located
  * relation costs nothing here, because the key already refuses the same row.
  *
- * Documented: [entities](https://fougere.dev/docs/schema/entities).
+ * Documented: [entities](https://fougere.dev/docs/concepts/entity).
  */
 export interface RelationCheck {
   /** The field carrying the key — `authorId`. */

@@ -33,7 +33,7 @@ export interface Releasing {
  * A row already visited is not visited again, which is what ends a cycle: `Category.parentId`
  * pointing at its own entity walks down and stops when a key repeats.
  *
- * Documented: [entities](https://fougere.dev/docs/schema/entities).
+ * Documented: [entities](https://fougere.dev/docs/concepts/entity).
  */
 export async function release(
   entity: string,

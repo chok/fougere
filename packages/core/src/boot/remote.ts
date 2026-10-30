@@ -1,7 +1,7 @@
 /**
  * Remote façade — what resolve() falls back to.
  *
- * Documented: [the gradient](https://fougere.dev/docs/infra/gradient).
+ * Documented: [the gradient](https://fougere.dev/docs/concepts/configuration).
  */
 import type { FrondCall } from '../wire/FrondCall.js';
 import type { StateShape } from '../wire/StateShape.js';

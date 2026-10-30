@@ -3,7 +3,7 @@
  * built. It reads no disk and holds no container: the scopes it decides are built later, in
  * `install.ts`, and everything here is a fact about names.
  *
- * Documented: [fronds](https://fougere.dev/docs/infra/fronds).
+ * Documented: [fronds](https://fougere.dev/docs/concepts/configuration).
  */
 import type { Diagnostic } from '../diagnostic.js';
 import { frondPackage, resolveConventions, type Conventions } from '../Conventions.js';

@@ -20,7 +20,7 @@ export interface Standing {
  * rest of that step. Bare, it stands around every one of its frond; `Dispatcher<PostHandler>` around that
  * handler's alone. A link hands on the value it was given, and the innermost reaches the rest.
  *
- * Documented: [ports](https://fougere.dev/docs/business/ports).
+ * Documented: [ports](https://fougere.dev/docs/concepts/port).
  */
 export class StepPort {
   private readonly handed = new WeakMap<object, Handed>();

@@ -10,7 +10,7 @@ import type { FougereErrorOptions } from './FougereErrorOptions.js';
  * 'CONFLICT'>`, and a `switch` over `code` with a `never` in its default stops compiling the day
  * the op learns to refuse something else.
  *
- * Documented: [observability](https://fougere.dev/docs/infra/observability).
+ * Documented: [observability](https://fougere.dev/docs/run/observe).
  */
 export class FougereError<Code extends ErrorCode = ErrorCode> extends Error {
   readonly code: Code;
