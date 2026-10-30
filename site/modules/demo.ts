@@ -48,12 +48,13 @@ type Demo = {
 const LOCKED = /(\.lock|-lock\.(yaml|json))$/;
 
 /**
- * What the repository keeps under `demos/`, read through its `.gitignore` files rather than through
+ * What the repository keeps under `demos/` — the tutorial aside, which `tutorial.ts` projects —
+ * read through its `.gitignore` files rather than through
  * git: an image builds from a checkout that holds no `.git`, and `git ls-files` stopped it there.
  */
 const trackedFiles = async (repository: string) =>
   (await globby('demos/**', { cwd: repository, gitignore: true, dot: true }))
-    .filter((path) => !LOCKED.test(path));
+    .filter((path) => !LOCKED.test(path) && !path.startsWith('demos/tutorial/'));
 
 /**
  * A sandbox installs from the registry, so `workspace:*` resolves to nothing there. The
