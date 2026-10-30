@@ -138,7 +138,7 @@ This is not a matter of style; it is what makes the rest possible. An operation 
 ignores transport can be called in memory, put on a JSON-RPC wire, translated into a REST
 route, a GraphQL field or a shell command — with none of those forms privileged.
 `@fougere/core` depends on no server, and an app
-[answers a Web Standard `Request`](/docs/serve/rest-graphql#the-framework-is-not-the-process):
+[answers a Web Standard `Request`](/docs/serve/rest-graphql#any-engine):
 you bring Hono, Express, Nitro, a Worker — or nothing.
 
 The corollary is that JavaScript takes you everywhere it goes. The declaration and its
@@ -216,7 +216,7 @@ derives five whole operations from Post's table.
 | [`entity({…})`](/docs/concepts/entity) | the fields | the type, the validator, the metadata | the field map |
 | [`Repository<Post>`](/docs/concepts/handler) | one entity, or the several it owns | five operations and every gesture of the rows — or none, from two on | nothing, or the ones you redefine |
 | [`Present<Post>`](/docs/data/computed-field) | an entity | the target the scan reads | one method per computed field |
-| [`Collect<User>`](/docs/access/authentication#who-calls-collect) | any class | the target the scan reads | `collect(ctx)` |
+| [`Collect<User>`](/docs/access/authentication#know-who-calls) | any class | the target the scan reads | `collect(ctx)` |
 | `Mirror<BookCard>` | a shape | a repository, the loop and the write | `pull()` |
 
 Only the first is mandatory. A handler that extends nothing is an ordinary handler; a

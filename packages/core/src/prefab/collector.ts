@@ -2,7 +2,7 @@
  * `Collect<User>` — resolves one handler input parameter from the invocation context, by the type it
  * collects: `constructor`-free, a parameter `user: User` of an op receives what `collect` answered.
  *
- * Documented: [collectors](https://fougere.dev/docs/access/authentication#who-calls-collect).
+ * Documented: [collectors](https://fougere.dev/docs/access/authentication#know-who-calls).
  */
 import { subjectKeyOf } from '../wire/SubjectKey.js';
 import { upperFirst } from '@fougere/schema';

@@ -13,7 +13,7 @@ export interface StateDeclaration {
  * absent until a host fills it. Judged at the facade, so a member arriving over the wire is
  * rebuilt by its field exactly as it would have been handed over in-process.
  *
- * Documented: [collectors](https://fougere.dev/docs/access/authentication#who-calls-collect).
+ * Documented: [collectors](https://fougere.dev/docs/access/authentication#know-who-calls).
  */
 export class StateShape {
   static readonly empty = new StateShape(Schema.of({ fields: {} }));
