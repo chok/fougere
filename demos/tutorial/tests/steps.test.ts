@@ -7,9 +7,10 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { cpSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { testApp } from '@fougere/testing';
+import { bootApp } from '@fougere/defaults';
 import { answer } from '@fougere/app/answer';
 import { loadConfig, remotesOf } from '@fougere/core/node';
-import type { App } from '@fougere/core';
+import { identityCardOf, type App } from '@fougere/core';
 
 const STEPS = join(import.meta.dirname, '..', 'steps');
 const names = readdirSync(STEPS).filter((name) => !name.startsWith('.')).sort();
@@ -79,8 +80,8 @@ describe.each(names)('step %s', (name) => {
 });
 
 describe('what the steps say beside "try it"', () => {
-  it('step 1 lets a PATCH publish, which step 2 closes', async () => {
-    for (const [name, status] of [['1-crud', 200], ['2-a-rule', 400]] as const) {
+  it('step 1 lets a PATCH publish, which step 3 closes', async () => {
+    for (const [name, status] of [['1-crud', 200], ['3-a-rule', 400]] as const) {
       const app = await testApp({ root: join(STEPS, name) });
       const created = JSON.parse((await send(app, 'POST', '/api/blog/posts', { title: 'Hi' })).text);
       const patched = await send(app, 'PATCH', `/api/blog/posts/${created.id}`, { status: 'published' });
@@ -91,10 +92,10 @@ describe('what the steps say beside "try it"', () => {
     }
   });
 
-  it('step 3 refuses a second Mailer, naming both', async () => {
+  it('step 4 refuses a second Mailer, naming both', async () => {
     // Among the steps, so the copy resolves the same packages and the same tsconfig.
     const copy = mkdtempSync(join(STEPS, '.what-if-'));
-    cpSync(join(STEPS, '3-a-port'), copy, { recursive: true });
+    cpSync(join(STEPS, '4-a-port'), copy, { recursive: true });
     writeFileSync(join(copy, 'fronds/blog/services/FakeMailer.ts'),
       "import Mailer from './Mailer.js';\n\nexport default class FakeMailer extends Mailer {\n  async send(): Promise<void> {}\n}\n");
 
@@ -105,30 +106,65 @@ describe('what the steps say beside "try it"', () => {
     }
   });
 
-  it('step 4 stands AuditMailer in front of ConsoleMailer', async () => {
-    const app = await testApp({ root: join(STEPS, '4-a-link') });
+  it('step 5 stands AuditMailer in front of ConsoleMailer', async () => {
+    const app = await testApp({ root: join(STEPS, '5-a-link') });
     const mailer = app.extensionPoints().find((one) => one.point === 'Mailer');
 
     expect(mailer?.answers).toEqual(['AuditMailer', 'ConsoleMailer']);
     await app.dispose();
   });
 
-  it('step 5 moves the mailer and its link into mail', async () => {
-    const app = await testApp({ root: join(STEPS, '5-a-fact') });
+  it('step 6 moves the mailer and its link into mail', async () => {
+    const app = await testApp({ root: join(STEPS, '6-a-fact') });
     const mailer = app.extensionPoints().find((one) => one.point === 'Mailer');
 
     expect(mailer).toMatchObject({ frond: 'mail', answers: ['AuditMailer', 'ConsoleMailer'] });
     await app.dispose();
   });
 
-  it('step 4 changes no handler of step 3', () => {
+  it('step 5 changes no handler of step 4', () => {
     const handlers = (name: string) => filesUnder(join(STEPS, name), 'fronds/blog/handlers');
 
-    expect(handlers('4-a-link')).toEqual(handlers('3-a-port'));
+    expect(handlers('5-a-link')).toEqual(handlers('4-a-port'));
   });
 
-  it('step 6 changes no line under fronds/, and places mail elsewhere', async () => {
-    expect(filesUnder(join(STEPS, '6-split'), 'fronds')).toEqual(filesUnder(join(STEPS, '5-a-fact'), 'fronds'));
-    expect(remotesOf(await loadConfig(join(STEPS, '6-split')))).toEqual({ mail: 'http://127.0.0.1:4100' });
+  it('steps 2, 7 and 8 change no line under fronds/', () => {
+    for (const [name, before] of [['2-a-source', '1-crud'], ['7-an-app', '6-a-fact'], ['8-split', '7-an-app']]) {
+      expect(filesUnder(join(STEPS, name), 'fronds'), name).toEqual(filesUnder(join(STEPS, before), 'fronds'));
+    }
+  });
+
+  it('step 0 is what npm create fougere --bare writes', () => {
+    const starter = join(import.meta.dirname, '..', '..', '..', 'packages', 'cli', 'templates', 'workspace');
+    const written = (root: string, file: string) => readFileSync(join(root, file), 'utf8');
+
+    expect(written(join(STEPS, '0-start'), 'fougere.config.ts')).toBe(written(starter, 'fougere.config.ts'));
+    expect(JSON.parse(written(join(STEPS, '0-start'), 'package.json')))
+      .toEqual({ ...JSON.parse(written(starter, 'package.json')), name: 'my-blog' });
+  });
+
+  it('step 2 refuses the boot until the table exists, as "try it" prints', async () => {
+    const copy = mkdtempSync(join(STEPS, '.what-if-'));
+    cpSync(join(STEPS, '2-a-source'), copy, { recursive: true });
+
+    try {
+      await expect(bootApp(copy)).rejects.toThrow(/the database is missing 1 change\(s\) from the entities:[\s\S]*posts — no table/);
+    } finally {
+      rmSync(copy, { recursive: true, force: true });
+    }
+  });
+
+  it('step 7 serves what its page calls', async () => {
+    const page = readFileSync(join(STEPS, '7-an-app', 'apps/nuxt/app/pages/posts.vue'), 'utf8');
+    const app = await testApp({ root: join(STEPS, '7-an-app') });
+    const operations = identityCardOf(app).fronds.flatMap((frond) => frond.facades)
+      .filter((facade) => facade.name === 'post').flatMap((facade) => facade.ops.map((op) => op.name));
+
+    for (const name of page.matchAll(/\(post, '(\w+)'\)/g)) expect(operations).toContain(name[1]);
+    await app.dispose();
+  });
+
+  it('step 8 places mail elsewhere', async () => {
+    expect(remotesOf(await loadConfig(join(STEPS, '8-split')))).toEqual({ mail: 'http://127.0.0.1:4100' });
   });
 });

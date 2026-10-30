@@ -2,7 +2,7 @@
   "name": "CRUD",
   "title": "One entity, *and a whole CRUD*",
   "concept": "entity",
-  "lede": "Write a post, the handler that serves its rows, and the line that says which API the app answers on. Rows stay in memory for now.",
+  "lede": "Write a post and the handler that serves its rows, and name the API the app answers on. Start it with npx fougere dev blog: it answers on :4100, rows in memory.",
   "fig": "Two classes and one line of config. Everything around them is read from these.",
   "grows": [
     {
@@ -53,7 +53,7 @@
     {
       "side": "out",
       "label": "posts kept in memory",
-      "detail": "the default with no sources: — the boot says so, and one line moves them to SQLite later",
+      "detail": "the default with no sources: — the boot warns, and step 2 moves them to SQLite",
       "from": {
         "file": "fronds/blog/entities/Post.ts",
         "line": "class Post extends entity"
@@ -70,7 +70,7 @@
     }
   ],
   "try": {
-    "command": "curl -X POST localhost:3000/api/blog/posts -d '{\"title\":\"\"}'",
+    "command": "curl -X POST localhost:4100/api/blog/posts -d '{\"title\":\"\"}'",
     "output": "400  VALIDATION_FAILED  title: String is too short (0 < 1).",
     "request": {
       "method": "POST",
@@ -82,7 +82,7 @@
     "status": 400,
     "contains": "String is too short"
   },
-  "whatIf": "PATCH /api/blog/posts/:id with { status: 'published' } passes here, and publishes without any rule. Step 2 closes it.",
+  "whatIf": "PATCH /api/blog/posts/:id with { status: 'published' } passes here, and publishes without any rule. Step 3 closes it.",
   "links": [
     {
       "title": "Entity",

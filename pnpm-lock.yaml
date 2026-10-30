@@ -1692,12 +1692,21 @@ importers:
       '@fougere/adapter-rest':
         specifier: workspace:*
         version: link:../../packages/adapter/rest
+      '@fougere/adapter-sql':
+        specifier: workspace:*
+        version: link:../../packages/adapter/sql
       '@fougere/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@fougere/log':
+        specifier: workspace:*
+        version: link:../../packages/log
       '@fougere/schema':
         specifier: workspace:*
         version: link:../../packages/schema
+      better-sqlite3:
+        specifier: ^13.0.3
+        version: 13.0.3
     devDependencies:
       '@fougere/app':
         specifier: workspace:*

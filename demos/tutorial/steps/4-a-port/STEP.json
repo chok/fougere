@@ -1,0 +1,53 @@
+{
+  "name": "A port",
+  "title": "Mail the author, *without naming a provider*",
+  "concept": "port",
+  "lede": "The handler asks for a capability. A class extending it is the whole registration.",
+  "fig": "The handler names the capability; the config, if ever needed, names who answers.",
+  "grows": [
+    {
+      "side": "out",
+      "label": "Mailer → ConsoleMailer",
+      "detail": "bound by its extends",
+      "from": {
+        "file": "fronds/blog/services/ConsoleMailer.ts",
+        "line": "extends Mailer"
+      }
+    },
+    {
+      "side": "in",
+      "label": "stubOf(Mailer)",
+      "detail": "a double, for a test",
+      "from": {
+        "file": "fronds/blog/services/Mailer.ts",
+        "line": "abstract class Mailer"
+      }
+    },
+    {
+      "side": "refuses",
+      "label": "port-implemented-twice",
+      "detail": "a second class extending Mailer: the boot names both, and the line to write",
+      "from": {
+        "file": "fronds/blog/services/ConsoleMailer.ts",
+        "line": "extends Mailer"
+      }
+    }
+  ],
+  "try": {
+    "command": "curl -X POST localhost:4100/api/blog/posts/$ID/publish",
+    "output": "mail: Published: Hi",
+    "request": {
+      "method": "POST",
+      "path": "/api/blog/posts/:id/publish"
+    },
+    "status": 200,
+    "log": "mail: Published: Hi"
+  },
+  "whatIf": "add FakeMailer extends Mailer → the app refuses to start, names both classes, and writes the line that settles it: ports: { Mailer: '…' }",
+  "links": [
+    {
+      "title": "Port",
+      "path": "/docs/concepts/port"
+    }
+  ]
+}

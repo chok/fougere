@@ -1,0 +1,55 @@
+{
+  "name": "A source",
+  "title": "One line, *and the rows stay*",
+  "concept": "configuration",
+  "lede": "Rows in memory are gone at every restart. One entry in sources: puts them in SQLite. The boot then refuses until the table exists, and npm run migrate creates it.",
+  "fig": "The handler asks for its rows as before. Where they live is a line of config.",
+  "grows": [
+    {
+      "side": "out",
+      "label": "posts in .data/blog.db",
+      "detail": "SQLite, kept between restarts",
+      "from": {
+        "file": "fougere.config.ts",
+        "line": "sources: { main: { type: 'sqlite'"
+      }
+    },
+    {
+      "side": "in",
+      "label": "npm run migrate",
+      "detail": "creates the posts table, read from Post",
+      "from": {
+        "file": "package.json",
+        "line": "\"migrate\": \"fougere migrate --latest --apply\""
+      }
+    },
+    {
+      "side": "refuses",
+      "label": "the boot, until you migrate",
+      "detail": "it names what the database is missing, and the command",
+      "from": {
+        "file": "fougere.config.ts",
+        "line": "sources: { main: { type: 'sqlite'"
+      }
+    }
+  ],
+  "try": {
+    "command": "npx fougere dev blog",
+    "output": "Fougere boot refused: the database is missing 1 change(s) from the entities:\n  posts — no table\n  On your machine: fougere migrate --latest --apply"
+  },
+  "whatIf": "Postgres instead? { type: 'pg', url: process.env.DATABASE_URL } — nothing else in the project changes.",
+  "links": [
+    {
+      "title": "SQLite or Postgres",
+      "path": "/docs/data/sql"
+    },
+    {
+      "title": "Evolve a schema",
+      "path": "/docs/data/evolve"
+    },
+    {
+      "title": "Configuration",
+      "path": "/docs/concepts/configuration"
+    }
+  ]
+}

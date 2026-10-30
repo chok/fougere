@@ -1,0 +1,28 @@
+{
+  "name": "my-blog",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "typecheck": "tsc -p fronds",
+    "migrate": "fougere migrate --latest --apply",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@fougere/adapter-rest": "latest",
+    "@fougere/adapter-sql": "latest",
+    "@fougere/core": "latest",
+    "@fougere/log": "latest",
+    "@fougere/schema": "latest",
+    "better-sqlite3": "^13.0.3"
+  },
+  "devDependencies": {
+    "@fougere/cli": "latest",
+    "@fougere/testing": "latest",
+    "@types/node": "^22.19.15",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.0"
+  }
+}

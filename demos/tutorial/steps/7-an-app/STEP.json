@@ -1,0 +1,64 @@
+{
+  "name": "An app",
+  "title": "A page, *and nothing declared twice*",
+  "concept": "facade",
+  "lede": "Add a Nuxt app in apps/nuxt with the @fougere/nuxt module, and write a page. It names the blog's address and calls it; the fronds run inside Nuxt.",
+  "fig": "The page names post and an operation. Its rows, its form and its refusals are read from what you already wrote.",
+  "grows": [
+    {
+      "side": "in",
+      "label": "useQuery(post, 'list')",
+      "detail": "the posts, typed as Post — no row shape written",
+      "from": {
+        "file": "apps/nuxt/app/pages/posts.vue",
+        "line": "useQuery(post, 'list')"
+      }
+    },
+    {
+      "side": "in",
+      "label": "useFormFor(Post)",
+      "detail": "the fields, their rules, an error under each — status is left out, it is readOnly",
+      "from": {
+        "file": "apps/nuxt/app/pages/posts.vue",
+        "line": "useFormFor(Post)"
+      }
+    },
+    {
+      "side": "refuses",
+      "label": "publish.error",
+      "detail": "typed NOT_FOUND | CONFLICT — what publish can refuse, read from its code",
+      "from": {
+        "file": "apps/nuxt/app/pages/posts.vue",
+        "line": "useCommand(post, 'publish')"
+      }
+    },
+    {
+      "side": "in",
+      "label": "the fronds inside Nuxt",
+      "detail": "the module boots them and serves /api and /_fougere/call on :3000",
+      "from": {
+        "file": "apps/nuxt/nuxt.config.ts",
+        "line": "modules: ['@fougere/nuxt']"
+      }
+    }
+  ],
+  "try": {
+    "command": "npm run dev -w apps/nuxt   # then open localhost:3000/posts",
+    "output": "a form with one field, title — and the posts, each with Publish"
+  },
+  "whatIf": "you publish twice from two tabs? The second click shows Already published, the CONFLICT the handler throws.",
+  "links": [
+    {
+      "title": "Pages",
+      "path": "/docs/serve/pages"
+    },
+    {
+      "title": "A form",
+      "path": "/docs/serve/forms"
+    },
+    {
+      "title": "Pick a host",
+      "path": "/docs/adopt/hosts"
+    }
+  ]
+}
