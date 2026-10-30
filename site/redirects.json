@@ -79,8 +79,8 @@
     "/docs/guides/data#one-more-field": "/docs/concepts/entity#one-more-field",
     "/docs/guides/topology#moving-a-frond": "/tutorial/6-split",
     "/docs/guides/topology#fronds": "/docs/concepts/facade",
-    "/docs/getting-started#fougereconfigts": "/docs/adopt/new-project#fougereconfigts-reference",
-    "/docs/getting-started#run": "/docs/adopt/new-project#run",
-    "/docs/getting-started#what-an-app-looks-like": "/docs/adopt/new-project#what-an-app-looks-like"
+    "/docs/getting-started#fougereconfigts": "/reference/config",
+    "/docs/getting-started#run": "/docs/adopt/new-project#create-it",
+    "/docs/getting-started#what-an-app-looks-like": "/docs/adopt/new-project#what-you-get"
   }
 }
