@@ -91,11 +91,11 @@ const tree = computed(() => {
   }
   const rows: { depth: number; name: string; dir: boolean; state: string; path?: string }[] = [];
   const walk = (node: Node, depth: number) => {
-    for (const file of node.files) rows.push({ depth, name: file.name, dir: false, state: file.state, path: file.path });
     for (const [name, child] of node.dirs) {
       rows.push({ depth, name: `${name}/`, dir: true, state: '' });
       walk(child, depth + 1);
     }
+    for (const file of node.files) rows.push({ depth, name: file.name, dir: false, state: file.state, path: file.path });
   };
   walk(root, 0);
 
