@@ -106,8 +106,8 @@ function pageOf(index: number, slug: string, step: Step, files: Map<string, stri
   const keys = [...step.grows]
     .sort((one, other) => SIDES.indexOf(one.side) - SIDES.indexOf(other.side))
     .map((grows, k) => ({ ...grows, key: LETTERS[k]! }));
-  // Every file a reader may open, the ones this step touched among them; the first step only installs.
-  const readable = index === 0 ? [] : [...files.keys()];
+  // Every file a reader may open, the ones this step touched among them.
+  const readable = [...files.keys()];
   const install = step.install ?? (index === 0 ? undefined : installOf(files, previous));
   const code = readable.sort(byReading).map((path) => {
     const lines = linesOf(files.get(path)!);
