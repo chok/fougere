@@ -259,7 +259,7 @@ onBeforeUnmount(() => removeEventListener('keydown', onKey));
 .rail .on a { color: var(--ui-text); }
 .rail .on i { background: var(--ui-primary); border-color: var(--ui-primary); transform: scale(1.3); }
 
-.leaves { display: grid; grid-template-columns: 220px minmax(0, 1fr) 290px; gap: 26px; align-items: start; }
+.leaves { display: grid; grid-template-columns: 220px minmax(0, 1fr) 220px; gap: 26px; align-items: start; }
 /* On a phone the leaves stack in reading order: the title, the project, what was written, what grew, then on. */
 @media (max-width: 1024px) {
   .leaves { display: flex; flex-direction: column; align-items: stretch; }
@@ -347,9 +347,13 @@ onBeforeUnmount(() => removeEventListener('keydown', onKey));
   .grows > h4, .grows .side { display: none; }
 }
 @media (max-width: 1024px) { .bubble, .hint { display: none; } }
-.bubble { position: absolute; left: 10px; right: 0; display: grid; gap: 8px; padding: 12px 14px; background: var(--ui-bg-elevated); border: 1px solid var(--ui-border); border-radius: 12px; box-shadow: 0 12px 28px -16px rgb(40 50 30 / 0.45); transform: translateY(-14px); }
+.bubble { position: absolute; left: 10px; right: 0; display: grid; gap: 7px; padding: 9px 11px; background: var(--ui-bg-elevated); border: 1px solid var(--ui-border); border-radius: 12px; box-shadow: 0 12px 28px -16px rgb(40 50 30 / 0.45); transform: translateY(-14px); }
 .bubble::before { content: ''; position: absolute; top: 18px; left: -7px; width: 12px; height: 12px; background: var(--ui-bg-elevated); border-left: 1px solid var(--ui-border); border-bottom: 1px solid var(--ui-border); transform: rotate(45deg); }
-.bubble .grown { padding: 0; }
+.bubble .grown { padding: 0; gap: 7px; }
+.bubble .grown b { font-size: 13px; }
+.bubble .grown span { font-size: 11.5px; }
+.bubble .grown small { font-size: 11px; line-height: 1.4; }
+.bubble .grown em { font-size: 9.5px; }
 .grown em { display: block; font-style: normal; font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ui-text-muted); }
 .grown.in em { color: var(--terracotta); }
 .grown.out em { color: var(--slate); }
