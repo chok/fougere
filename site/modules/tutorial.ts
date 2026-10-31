@@ -102,8 +102,12 @@ function installOf(files: Map<string, string>, previous: Map<string, string>): s
 const linesOf = (text: string) => text.replace(/\n$/, '').split('\n');
 
 /** The order a reader meets a project in: what a thing is, what it does, then how it runs. */
-const RANK = ['/entities/', '/handlers/', '/services/', 'fougere.config.ts'];
-const rank = (path: string) => RANK.findIndex((part) => path.includes(part));
+const RANK = ['/entities/', '/handlers/', '/services/', '/pages/', 'fougere.config.ts'];
+const rank = (path: string) => {
+  const at = RANK.findIndex((part) => path.includes(part));
+
+  return at === -1 ? RANK.length : at;
+};
 const byReading = (one: string, other: string) => rank(one) - rank(other) || one.localeCompare(other);
 
 function pageOf(index: number, slug: string, step: Step, files: Map<string, string>, previous: Map<string, string>, empty: string[]) {
