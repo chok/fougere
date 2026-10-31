@@ -60,5 +60,6 @@
       "title": "Pick a host",
       "path": "/docs/adopt/hosts"
     }
-  ]
+  ],
+  "install": "npm create nuxt@latest apps/nuxt && cd apps/nuxt && npm install @fougere/nuxt"
 }

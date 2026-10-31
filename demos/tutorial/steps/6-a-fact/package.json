@@ -7,7 +7,6 @@
   ],
   "scripts": {
     "typecheck": "tsc -p fronds",
-    "migrate": "fougere migrate --latest --apply",
     "test": "vitest run"
   },
   "dependencies": {

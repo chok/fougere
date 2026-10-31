@@ -67,6 +67,15 @@
         "file": "fronds/blog/entities/Post.ts",
         "line": "title: text"
       }
+    },
+    {
+      "side": "in",
+      "label": "every call written down",
+      "detail": "two lines per call in the terminal — @fougere/log, written by the starter",
+      "from": {
+        "file": "fougere.config.ts",
+        "line": "'@fougere/log': {}"
+      }
     }
   ],
   "try": {

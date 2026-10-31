@@ -17,7 +17,8 @@ interface Grows { side: string; label: string; detail: string; from: { file: str
 interface Step {
   name: string; title: string; concept: string; lede: string; fig: string;
   grows: Grows[];
-  try: { command: string; output: string };
+  try?: { command: string; output: string };
+  install?: string;
   whatIf?: string;
   links: { title: string; path: string }[];
 }
@@ -68,6 +69,23 @@ function addedLines(before: string[], after: string[]): Set<number> {
   return added;
 }
 
+/** A manifest is read for what it installs, never opened as code. */
+const isManifest = (path: string) => path.endsWith('package.json');
+
+/** What the project's manifest gained since the step before, as the command that adds it. */
+function installOf(files: Map<string, string>, previous: Map<string, string>): string | undefined {
+  const manifest = (from: Map<string, string>) =>
+    JSON.parse(from.get('package.json') ?? '{}') as { dependencies?: Record<string, string>; devDependencies?: Record<string, string> };
+  const gained = (kind: 'dependencies' | 'devDependencies') =>
+    Object.keys(manifest(files)[kind] ?? {}).filter((name) => !(name in (manifest(previous)[kind] ?? {})));
+  const commands = [
+    gained('dependencies').length ? `npm install ${gained('dependencies').join(' ')}` : '',
+    gained('devDependencies').length ? `npm install -D ${gained('devDependencies').join(' ')}` : '',
+  ].filter(Boolean);
+
+  return commands.length ? commands.join(' && ') : undefined;
+}
+
 const linesOf = (text: string) => text.replace(/\n$/, '').split('\n');
 
 /** The order a reader meets a project in: what a thing is, what it does, then how it runs. */
@@ -91,7 +109,8 @@ function pageOf(index: number, slug: string, step: Step, files: Map<string, stri
   const keys = [...step.grows]
     .sort((one, other) => SIDES.indexOf(one.side) - SIDES.indexOf(other.side))
     .map((grows, k) => ({ ...grows, key: LETTERS[k]! }));
-  const touched = [...files.keys()].filter((path) => stateOf(path) === 'new' || stateOf(path) === 'changed');
+  const touched = index === 0 ? [] : [...files.keys()].filter((path) => !isManifest(path) && (stateOf(path) === 'new' || stateOf(path) === 'changed'));
+  const install = step.install ?? (index === 0 ? undefined : installOf(files, previous));
   const code = touched.sort(byReading).map((path) => {
     const lines = linesOf(files.get(path)!);
     const added = index === 0 || !previous.has(path) ? new Set<number>() : addedLines(linesOf(previous.get(path)!), lines);
@@ -122,7 +141,8 @@ function pageOf(index: number, slug: string, step: Step, files: Map<string, stri
     files: [...files.keys()].sort(byReading).map((path) => ({ path, state: stateOf(path) })),
     code,
     grows: keys.map(({ key, side, label, detail }) => ({ key, side, label, detail })),
-    tryIt: { command: step.try.command, said: saidIn(step.try.command), output: step.try.output },
+    ...(step.try ? { tryIt: { command: step.try.command, said: saidIn(step.try.command), output: step.try.output } } : {}),
+    ...(install ? { install: saidIn(install) } : {}),
     ...(step.whatIf ? { whatIf: step.whatIf } : {}),
     ...(zero ? { zero } : {}),
     links: step.links,

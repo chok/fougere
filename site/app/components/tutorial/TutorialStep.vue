@@ -12,7 +12,8 @@ interface Step {
   files: { path: string; state: string }[];
   code: { path: string; lines: Line[] }[];
   grows: { key: string; side: string; label: string; detail: string }[];
-  tryIt: { command: string; said: Record<string, string>; output: string };
+  tryIt?: { command: string; said: Record<string, string>; output: string };
+  install?: Record<string, string>;
   whatIf?: string; zero?: string;
   links: { title: string; path: string }[];
 }
@@ -33,8 +34,10 @@ const choose = (index: number) => {
     localStorage.setItem('code-group-pm', tab.value);
   } catch { /* storage refused: the choice lasts the visit */ }
 };
-const said = computed(() => props.step.tryIt.said[managers[Number(tab.value)] ?? 'npm'] ?? props.step.tryIt.command);
-const variesByManager = computed(() => new Set(Object.values(props.step.tryIt.said)).size > 1);
+const manager = computed(() => managers[Number(tab.value)] ?? 'npm');
+const said = computed(() => props.step.tryIt?.said[manager.value] ?? props.step.tryIt?.command);
+const install = computed(() => props.step.install?.[manager.value]);
+const variesByManager = computed(() => new Set(Object.values(props.step.tryIt?.said ?? {})).size > 1);
 
 const lit = ref<{ key?: string; line?: string } | null>(null);
 const isLit = (keys: string[], id: string) =>
@@ -118,6 +121,15 @@ onBeforeUnmount(() => removeEventListener('keydown', onKey));
         <h1 v-html="heading" />
         <p class="lede">{{ step.lede }}</p>
 
+        <div v-if="install" class="slip install">
+          <span class="hand">install</span>
+          <div class="managers" role="tablist" aria-label="Package manager">
+            <button v-for="(name, index) in managers" :key="name" type="button" role="tab"
+              :aria-selected="manager === name" @click="choose(index)">{{ name }}</button>
+          </div>
+          <pre class="tabbed"><span class="prompt">$</span> {{ install }}</pre>
+        </div>
+
         <div class="cards">
           <div v-for="(file, f) in step.code" :key="file.path" class="card">
             <div class="path">{{ file.path }}</div>
@@ -139,11 +151,11 @@ onBeforeUnmount(() => removeEventListener('keydown', onKey));
 
         <p class="fig"><span>Fig. {{ step.step }}.</span> {{ step.fig }}</p>
 
-        <div class="slip">
+        <div v-if="step.tryIt" class="slip">
           <span class="hand">try it</span>
           <div v-if="variesByManager" class="managers" role="tablist" aria-label="Package manager">
             <button v-for="(name, index) in managers" :key="name" type="button" role="tab"
-              :aria-selected="managers[Number(tab)] === name" @click="choose(index)">{{ name }}</button>
+              :aria-selected="manager === name" @click="choose(index)">{{ name }}</button>
           </div>
           <pre :class="{ tabbed: variesByManager }"><span class="prompt">$</span> {{ said }}
 <span class="output">{{ step.tryIt.output }}</span></pre>
@@ -293,7 +305,8 @@ onBeforeUnmount(() => removeEventListener('keydown', onKey));
 .slip .prompt { color: #7fc488; }
 .slip pre.tabbed { padding-top: 40px; }
 .managers { position: absolute; top: 8px; right: 10px; display: flex; gap: 2px; }
-.managers button { padding: 2px 8px; border-radius: 999px; font-family: var(--font-mono); font-size: 11px; color: #7f927f; }
+.slip.install { margin: 22px 0 6px; }
+.managers button { cursor: pointer; padding: 2px 8px; border-radius: 999px; font-family: var(--font-mono); font-size: 11px; color: #7f927f; }
 .managers button[aria-selected="true"] { background: #1b3320; color: #d9e4da; }
 .slip .output { color: #7f927f; }
 .what-if { margin: 16px 0 0; font-size: 16px; line-height: 1.45; color: var(--ui-text-muted); transform: rotate(-1deg); }

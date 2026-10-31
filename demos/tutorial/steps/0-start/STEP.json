@@ -2,50 +2,9 @@
   "name": "Start",
   "title": "One command, *and an empty project*",
   "concept": "configuration",
-  "lede": "Create the project. It holds one config file and an empty fronds/ — the domains you write next go there.",
-  "fig": "Nothing to declare yet: the config only says that every call is written down.",
-  "grows": [
-    {
-      "side": "in",
-      "label": "every call written down",
-      "detail": "two lines per call in the terminal — @fougere/log",
-      "from": {
-        "file": "fougere.config.ts",
-        "line": "'@fougere/log': {}"
-      }
-    },
-    {
-      "side": "in",
-      "label": "a command line",
-      "detail": "npx fougere dev, check, graph… — @fougere/cli",
-      "from": {
-        "file": "package.json",
-        "line": "\"@fougere/cli\""
-      }
-    },
-    {
-      "side": "in",
-      "label": "a boot test",
-      "detail": "npm test boots the project as the config places it",
-      "from": {
-        "file": "package.json",
-        "line": "\"test\": \"vitest run\""
-      }
-    },
-    {
-      "side": "out",
-      "label": "rows in memory",
-      "detail": "no sources: yet — step 2 names a database",
-      "from": {
-        "file": "fougere.config.ts",
-        "line": "export default defineFougere"
-      }
-    }
-  ],
-  "try": {
-    "command": "npm create fougere my-blog --bare && cd my-blog && npm install",
-    "output": "my-blog/ written"
-  },
+  "lede": "For this tutorial, start from an empty project: --bare writes the config and an empty fronds/, and nothing else. A real project usually starts with a frond and an app — npm create fougere asks.",
+  "fig": "A config, a package.json, an empty fronds/. Step 1 writes the first domain in it.",
+  "grows": [],
   "whatIf": "you want pages from the start? Add --app nuxt to the command: the same project comes with a Nuxt app. Every step below is the same, and step 7 shows how a page calls what you write.",
   "links": [
     {
@@ -56,5 +15,6 @@
       "title": "Configuration",
       "path": "/docs/concepts/configuration"
     }
-  ]
+  ],
+  "install": "npm create fougere my-blog --bare && cd my-blog && npm install"
 }

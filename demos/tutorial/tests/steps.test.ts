@@ -17,7 +17,7 @@ const names = readdirSync(STEPS).filter((name) => !name.startsWith('.')).sort();
 
 interface Step {
   grows: { label: string; from: { file: string; line: string } }[];
-  try: { request?: { method: string; path: string; body?: unknown; twice?: boolean }; status?: number; contains?: string; log?: string };
+  try?: { request?: { method: string; path: string; body?: unknown; twice?: boolean }; status?: number; contains?: string; log?: string };
 }
 
 const stepOf = (name: string): Step => JSON.parse(readFileSync(join(STEPS, name, 'STEP.json'), 'utf8'));
@@ -54,16 +54,17 @@ describe.each(names)('step %s', (name) => {
 
   it('points each letter at a line the step holds', () => {
     for (const { label, from } of step.grows) {
+      expect(from.file, `${label} points at a manifest, which the page never shows`).not.toMatch(/package\.json$/);
       const source = readFileSync(join(STEPS, name, from.file), 'utf8');
       expect(source, `${label} → ${from.file}`).toContain(from.line);
     }
   });
 
-  it.runIf(step.try.request !== undefined)('answers "try it" as the page prints it', async () => {
+  it.runIf(step.try?.request !== undefined)('answers "try it" as the page prints it', async () => {
     const logged: string[] = [];
     vi.spyOn(console, 'log').mockImplementation((...args) => { logged.push(args.join(' ')); });
     const app = await testApp({ root: join(STEPS, name) });
-    const request = step.try.request!;
+    const request = step.try!.request!;
     let path = request.path;
     if (path.includes(':id')) {
       const created = await send(app, 'POST', '/api/blog/posts', { title: 'Hi' });
@@ -72,9 +73,9 @@ describe.each(names)('step %s', (name) => {
     if (request.twice) await send(app, request.method, path, request.body);
     const answered = await send(app, request.method, path, request.body);
 
-    expect(answered.status).toBe(step.try.status);
-    if (step.try.contains) expect(answered.text).toContain(step.try.contains);
-    if (step.try.log) expect(logged).toContain(step.try.log);
+    expect(answered.status).toBe(step.try!.status);
+    if (step.try!.contains) expect(answered.text).toContain(step.try!.contains);
+    if (step.try!.log) expect(logged).toContain(step.try!.log);
     await app.dispose();
   });
 });
