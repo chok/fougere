@@ -117,7 +117,6 @@ onBeforeUnmount(() => removeEventListener('keydown', onKey));
       </aside>
 
       <div class="center">
-        <p class="label">Step {{ step.step }} — {{ step.name }}</p>
         <h1 v-html="heading" />
         <p class="lede">{{ step.lede }}</p>
 
@@ -239,13 +238,12 @@ onBeforeUnmount(() => removeEventListener('keydown', onKey));
 @media (max-width: 1024px) {
   .leaves { display: flex; flex-direction: column; align-items: stretch; }
   .center { display: contents; }
-  .label, .center h1, .lede { order: 1; }
+  .center h1, .lede { order: 1; }
   .project { order: 2; }
   .cards, .stamp, .fig, .slip, .what-if { order: 3; }
   .grows { order: 4; }
   .pills { order: 5; }
   .leaves > *, .cards, .card, .slip, .slip pre { min-width: 0; max-width: 100%; }
-  .label { margin-bottom: -18px; }
   .lede { margin-top: -18px; }
 }
 .leaf {
@@ -274,7 +272,6 @@ onBeforeUnmount(() => removeEventListener('keydown', onKey));
 .legend i { width: 6px; height: 6px; border-radius: 50%; }
 
 .center { min-width: 0; }
-.label { margin: 0; font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ui-primary); }
 .center h1 { margin: 8px 0 6px; font-size: clamp(28px, 3.4vw, 42px); line-height: 1.1; }
 .center h1 :deep(em) { font-style: italic; color: var(--ui-primary); }
 .lede { margin: 0; max-width: 60ch; color: var(--ui-text-muted); }

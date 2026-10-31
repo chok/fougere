@@ -1,6 +1,6 @@
 {
   "name": "Start",
-  "title": "One command, *and an empty project*",
+  "title": "Start by *creating a project*",
   "concept": "configuration",
   "lede": "For this tutorial, start from an empty project: --bare writes the config and an empty fronds/, and nothing else. A real project usually starts with a frond and an app — npm create fougere asks.",
   "fig": "A config, a package.json, an empty fronds/. Step 1 writes the first domain in it.",
