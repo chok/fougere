@@ -112,7 +112,7 @@ onBeforeUnmount(() => removeEventListener('keydown', onKey));
   <div class="tutorial">
     <ol class="rail" aria-label="Steps">
       <li v-for="one in steps" :key="one.path" :class="{ on: one.step === step.step, done: one.step < step.step }">
-        <NuxtLink :to="one.path"><i /><span>{{ one.step }}</span>{{ one.name }}</NuxtLink>
+        <NuxtLink :to="one.path"><i />{{ one.name }}</NuxtLink>
       </li>
     </ol>
 
@@ -253,7 +253,6 @@ onBeforeUnmount(() => removeEventListener('keydown', onKey));
   color: #8a948c;
   text-decoration: none;
 }
-.rail a span { color: var(--ui-text-dimmed); }
 .rail i { width: 8px; height: 8px; border-radius: 50%; border: 1.5px solid #9aa39b; transition: all 0.3s; }
 .rail .done i { background: var(--color-fern-100); border-color: var(--ui-primary); }
 .rail .on a { color: var(--ui-text); }

@@ -53,7 +53,7 @@
     {
       "side": "out",
       "label": "posts kept in memory",
-      "detail": "the default with no sources: — the boot warns, and step 2 moves them to SQLite",
+      "detail": "the default with no sources: — the boot warns, and the next step moves them to SQLite",
       "from": {
         "file": "fronds/blog/entities/Post.ts",
         "line": "class Post extends entity"
@@ -91,7 +91,7 @@
     "status": 400,
     "contains": "String is too short"
   },
-  "whatIf": "PATCH /api/blog/posts/:id with { status: 'published' } passes here, and publishes without any rule. Step 3 closes it.",
+  "whatIf": "PATCH /api/blog/posts/:id with { status: 'published' } passes here, and publishes without any rule. A rule, two steps on, closes it.",
   "links": [
     {
       "title": "Entity",
