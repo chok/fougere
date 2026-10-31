@@ -45,6 +45,7 @@ export default defineContentConfig({
         files: z.array(z.object({ path: z.string(), state: z.string() })),
         code: z.array(z.object({
           path: z.string(),
+          state: z.string(),
           lines: z.array(z.object({ text: z.string(), added: z.boolean(), keys: z.array(z.string()) })),
         })),
         grows: z.array(z.object({ key: z.string(), side: z.string(), label: z.string(), detail: z.string() })),

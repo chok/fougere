@@ -2,15 +2,14 @@
 import { PackageManager } from '@fougere/cli/package-manager';
 
 /**
- * One step of the tutorial in three leaves: the project as it grew, what this step wrote, and
- * what grew from it. A letter on the right is repeated at the end of the line that produced it,
- * and hovering either lights both — the cause and the effect read in one glance.
+ * One step of the tutorial as a small editor: the project on the left, one file open in the middle —
+ * the ones this step touched as tabs — and what grew from the line pointed at on the right.
  */
 interface Line { text: string; added: boolean; keys: string[] }
 interface Step {
   step: number; name: string; heading: string; lede: string; fig: string;
   files: { path: string; state: string }[];
-  code: { path: string; lines: Line[] }[];
+  code: { path: string; state: string; lines: Line[] }[];
   grows: { key: string; side: string; label: string; detail: string }[];
   tryIt?: { command: string; said: Record<string, string>; output: string };
   install?: Record<string, string>;
@@ -56,6 +55,19 @@ function release() {
   bubble.value = null;
 }
 
+/** The file open in the editor: the first this step touched, until the reader opens another. */
+const touched = computed(() => props.step.code.filter((file) => file.state));
+const opened = ref<string | undefined>(touched.value[0]?.path);
+watch(() => props.step.step, () => { opened.value = touched.value[0]?.path; });
+const open = (path: string) => {
+  if (props.step.code.some((file) => file.path === path)) opened.value = path;
+};
+/** On a phone the list stands in for the bubble: choosing an item opens the file its line is in. */
+const openKey = (key: string) => {
+  const file = props.step.code.find((one) => one.lines.some((line) => line.keys.includes(key)));
+  if (file) opened.value = file.path;
+};
+
 const lineKeys = (key: string) => props.step.code.flatMap((file, f) =>
   file.lines.flatMap((line, l) => (line.keys.includes(key) ? [`${f}:${l}`] : [])));
 
@@ -64,7 +76,7 @@ const heading = computed(() =>
 
 /** The files as a tree, folders first in reading order, each file with what this step did to it. */
 const tree = computed(() => {
-  type Node = { dirs: Map<string, Node>; files: { name: string; state: string }[] };
+  type Node = { dirs: Map<string, Node>; files: { name: string; state: string; path: string }[] };
   const root: Node = { dirs: new Map(), files: [] };
   for (const { path, state } of props.step.files) {
     const parts = path.split('/');
@@ -74,11 +86,11 @@ const tree = computed(() => {
       if (!node.dirs.has(part)) node.dirs.set(part, { dirs: new Map(), files: [] });
       node = node.dirs.get(part)!;
     }
-    node.files.push({ name, state });
+    node.files.push({ name, state, path });
   }
-  const rows: { depth: number; name: string; dir: boolean; state: string }[] = [];
+  const rows: { depth: number; name: string; dir: boolean; state: string; path?: string }[] = [];
   const walk = (node: Node, depth: number) => {
-    for (const file of node.files) rows.push({ depth, name: file.name, dir: false, state: file.state });
+    for (const file of node.files) rows.push({ depth, name: file.name, dir: false, state: file.state, path: file.path });
     for (const [name, child] of node.dirs) {
       rows.push({ depth, name: `${name}/`, dir: true, state: '' });
       walk(child, depth + 1);
@@ -117,19 +129,6 @@ onBeforeUnmount(() => removeEventListener('keydown', onKey));
     </ol>
 
     <div class="leaves" :class="{ lit: lit !== null }">
-      <aside class="leaf project">
-        <h4>Your project</h4>
-        <div
-          v-for="(row, r) in tree"
-          :key="r"
-          class="file"
-          :class="[row.state, { dir: row.dir }]"
-          :style="{ paddingLeft: `${row.depth * 14}px` }"
-        >
-          <i v-if="!row.dir" />{{ row.name }}<small v-if="row.state">{{ row.state }}</small>
-        </div>
-        <div class="legend"><span class="new"><i />new</span><span class="changed"><i />changed</span><span class="moved"><i />moved</span></div>
-      </aside>
 
       <div class="center">
         <h1 v-html="heading" />
@@ -144,8 +143,25 @@ onBeforeUnmount(() => removeEventListener('keydown', onKey));
           <pre class="tabbed"><span class="prompt">$</span> {{ install }}</pre>
         </div>
 
-        <div class="cards">
-          <div v-for="(file, f) in step.code" :key="file.path" class="card">
+        <div class="ide">
+          <nav class="explorer" aria-label="Your project">
+            <h4>Your project</h4>
+            <component
+              :is="row.path && step.code.some((file) => file.path === row.path) ? 'button' : 'div'"
+              v-for="(row, r) in tree"
+              :key="r"
+              class="file"
+              :class="[row.state, { dir: row.dir, opened: row.path === opened }]"
+              :type="row.path ? 'button' : undefined"
+              @click="row.path && open(row.path)"
+            >
+              <span v-for="d in row.depth" :key="d" class="guide" />
+              <i v-if="!row.dir" />{{ row.name }}
+            </component>
+            <div class="legend"><span class="new"><i />new</span><span class="changed"><i />changed</span><span class="moved"><i />moved</span></div>
+          </nav>
+          <div v-if="step.code.length" class="pane">
+            <div v-for="(file, f) in step.code" v-show="file.path === opened" :key="file.path" class="card">
             <div class="path">{{ file.path }}</div>
             <div
               v-for="(line, l) in file.lines"
@@ -163,6 +179,7 @@ onBeforeUnmount(() => removeEventListener('keydown', onKey));
               <sup v-if="line.keys.length">{{ line.keys.join(' ') }}</sup>
             </div>
           </div>
+        </div>
         </div>
         <p v-if="step.grows.length" class="hand hint">point at a lettered line to see what grows from it</p>
         <div v-if="step.zero" class="stamp"><b>0</b> line changed under {{ step.zero }}</div>
@@ -213,6 +230,7 @@ onBeforeUnmount(() => removeEventListener('keydown', onKey));
               @mouseenter="lit = { keys: [one.key], line: lineKeys(one.key)[0] }"
               @mouseleave="lit = null"
               @focus="lit = { keys: [one.key], line: lineKeys(one.key)[0] }"
+              @click="openKey(one.key)"
               @blur="lit = null"
             >
               <b>{{ one.key }}</b>
@@ -258,18 +276,18 @@ onBeforeUnmount(() => removeEventListener('keydown', onKey));
 .rail .on a { color: var(--ui-text); }
 .rail .on i { background: var(--ui-primary); border-color: var(--ui-primary); transform: scale(1.3); }
 
-.leaves { display: grid; grid-template-columns: 220px minmax(0, 1fr) 220px; gap: 84px; align-items: start; }
+.leaves { display: grid; grid-template-columns: minmax(0, 1fr) 220px; gap: 64px; align-items: start; }
 /* On a phone the leaves stack in reading order: the title, the project, what was written, what grew, then on. */
 @media (max-width: 1024px) {
   .leaves { display: flex; flex-direction: column; align-items: stretch; }
   .center { display: contents; }
   .center h1, .lede { order: 1; }
-  .project { order: 2; }
-  .cards, .stamp, .fig, .slip, .what-if { order: 3; }
+  .ide, .hint, .stamp, .fig, .slip, .what-if { order: 3; }
   .grows { order: 4; }
   .deeper { order: 5; }
   .pills { order: 6; }
-  .leaves > *, .cards, .card, .slip, .slip pre { min-width: 0; max-width: 100%; }
+  .leaves > *, .ide, .card, .slip, .slip pre { min-width: 0; max-width: 100%; }
+  .ide { grid-template-columns: minmax(0, 1fr); }
   .lede { margin-top: -18px; }
 }
 .leaf {
@@ -285,15 +303,29 @@ onBeforeUnmount(() => removeEventListener('keydown', onKey));
 @media (max-width: 1024px) { .leaf { position: static; } }
 .leaf h4 { margin: 0 0 12px; font-family: var(--font-serif); font-style: italic; font-weight: 400; font-size: 17px; color: var(--ui-text); }
 
-.file { display: flex; align-items: center; gap: 7px; font-family: var(--font-mono); font-size: 12px; line-height: 1.9; color: var(--ui-text-muted); white-space: nowrap; }
-.file.dir { color: var(--ui-text-dimmed); padding-left: 13px; }
+.explorer {
+  --kraft: #efe4cb;
+  --kraft-ink: #5a4627;
+  --kraft-rule: rgb(120 88 40 / 0.11);
+  --kraft-guide: rgb(120 88 40 / 0.22);
+  background: var(--kraft);
+}
+:global(.dark) .explorer { --kraft: #2b251b; --kraft-ink: #d8c9a8; --kraft-rule: rgb(230 200 140 / 0.06); --kraft-guide: rgb(230 200 140 / 0.14); }
+.explorer h4 { margin: 0 4px 8px; font-family: var(--font-mono); font-size: 10.5px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: color-mix(in srgb, var(--kraft-ink) 70%, transparent); }
+.file { display: flex; align-items: center; gap: 7px; width: 100%; overflow: hidden; padding: 0 4px; border-radius: 4px; background: none; font-family: var(--font-mono); font-size: 12px; line-height: 24px; color: color-mix(in srgb, var(--kraft-ink) 72%, transparent); white-space: nowrap; text-align: left; box-shadow: inset 0 -1px var(--kraft-rule); }
+button.file { cursor: pointer; }
+button.file:hover { background: rgb(120 88 40 / 0.08); }
+.file.opened { background: rgb(120 88 40 / 0.14); color: var(--kraft-ink); }
+.file.dir { color: color-mix(in srgb, var(--kraft-ink) 55%, transparent); }
+.guide { align-self: stretch; width: 5px; margin-left: 4px; border-left: 1px solid var(--kraft-guide); flex: none; }
+
 .file i { width: 6px; height: 6px; border-radius: 50%; background: var(--ui-border-accented); flex: none; }
 .file small { font-family: var(--hand); font-size: 12.5px; color: var(--ui-text-dimmed); }
-.file.new, .file.changed { color: var(--ui-text); }
+.file.new, .file.changed { color: var(--kraft-ink); }
 .file.new i, .legend .new i { background: var(--ui-primary); }
 .file.changed i, .legend .changed i { background: var(--saffron); }
 .file.moved i, .legend .moved i { background: var(--slate); }
-.legend { display: flex; gap: 12px; margin-top: 14px; padding-top: 10px; border-top: 1px dashed var(--ui-border); font-size: 11.5px; color: var(--ui-text-dimmed); }
+.legend { display: flex; gap: 12px; margin-top: 14px; padding-top: 10px; border-top: 1px dashed var(--kraft-guide); color: var(--kraft-ink); font-size: 11.5px; color: var(--ui-text-dimmed); }
 .legend span { display: inline-flex; gap: 5px; align-items: center; }
 .legend i { width: 6px; height: 6px; border-radius: 50%; }
 
@@ -302,7 +334,10 @@ onBeforeUnmount(() => removeEventListener('keydown', onKey));
 .center h1 :deep(em) { font-style: italic; color: var(--ui-primary); }
 .lede { margin: 6px 0 0; max-width: 60ch; color: var(--ui-text-muted); }
 
-.cards { display: grid; gap: 26px; margin-top: 34px; }
+.ide { display: grid; grid-template-columns: 224px minmax(0, 1fr); margin-top: 34px; border: 1px solid rgb(120 88 40 / 0.22); border-radius: 12px; overflow: hidden; box-shadow: 0 14px 30px -24px rgb(40 50 30 / 0.5); }
+.explorer { padding: 14px 10px 12px; }
+.pane { min-width: 0; background: var(--code); }
+.pane .card { border-radius: 0; padding-bottom: 14px; }
 .card { overflow-x: auto; padding-bottom: 12px; background: var(--code); color: #d9e4da; border-radius: 10px; font-family: var(--font-mono); font-size: 12.5px; line-height: 1.75; }
 .path { padding: 9px 16px 7px; margin-bottom: 6px; border-bottom: 1px solid rgb(255 255 255 / 0.08); font-size: 11px; color: #9fb09f; }
 .line { display: flex; gap: 12px; padding: 0 16px 0 10px; white-space: pre; transition: background 0.2s, opacity 0.2s; }

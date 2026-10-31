@@ -109,9 +109,10 @@ function pageOf(index: number, slug: string, step: Step, files: Map<string, stri
   const keys = [...step.grows]
     .sort((one, other) => SIDES.indexOf(one.side) - SIDES.indexOf(other.side))
     .map((grows, k) => ({ ...grows, key: LETTERS[k]! }));
-  const touched = index === 0 ? [] : [...files.keys()].filter((path) => !isManifest(path) && (stateOf(path) === 'new' || stateOf(path) === 'changed'));
+  // Every file a reader may open, the ones this step touched among them; the first step only installs.
+  const readable = index === 0 ? [] : [...files.keys()].filter((path) => !isManifest(path));
   const install = step.install ?? (index === 0 ? undefined : installOf(files, previous));
-  const code = touched.sort(byReading).map((path) => {
+  const code = readable.sort(byReading).map((path) => {
     const lines = linesOf(files.get(path)!);
     const added = index === 0 || !previous.has(path) ? new Set<number>() : addedLines(linesOf(previous.get(path)!), lines);
     const pointed = new Map<number, string[]>();
@@ -120,7 +121,7 @@ function pageOf(index: number, slug: string, step: Step, files: Map<string, stri
       pointed.set(at, [...(pointed.get(at) ?? []), grows.key]);
     }
 
-    return { path, lines: lines.map((text, at) => ({ text, added: added.has(at), keys: pointed.get(at) ?? [] })) };
+    return { path, state: stateOf(path), lines: lines.map((text, at) => ({ text, added: added.has(at), keys: pointed.get(at) ?? [] })) };
   });
 
   const changedUnder = (prefix: RegExp) => index > 0 && [...files.keys(), ...gone].some((path) =>
