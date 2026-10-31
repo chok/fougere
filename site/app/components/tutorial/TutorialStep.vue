@@ -56,7 +56,8 @@ function release() {
 }
 
 /** The file open in the editor: the first this step touched, until the reader opens another. */
-const touched = computed(() => props.step.code.filter((file) => file.state));
+// A manifest opens on demand, never first: what it gained is the install line above.
+const touched = computed(() => props.step.code.filter((file) => file.state && !file.path.endsWith('package.json')));
 const opened = ref<string | undefined>(touched.value[0]?.path);
 watch(() => props.step.step, () => { opened.value = touched.value[0]?.path; });
 const open = (path: string) => {
