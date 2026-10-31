@@ -42,6 +42,20 @@ const variesByManager = computed(() => new Set(Object.values(props.step.tryIt?.s
 const lit = ref<{ keys: string[]; line?: string } | null>(null);
 const isLit = (keys: string[], id: string) =>
   lit.value !== null && (lit.value.line === id || keys.some((key) => lit.value!.keys.includes(key)));
+/** On a wide screen, what grew from the line pointed at — a bubble in the column, at that line's height. */
+const column = ref<HTMLElement | null>(null);
+const bubble = ref<{ grows: Step['grows']; top: number } | null>(null);
+function point(event: Event, keys: string[], id: string) {
+  lit.value = keys.length ? { line: id, keys } : null;
+  if (!keys.length || !column.value) return;
+  const top = (event.currentTarget as HTMLElement).getBoundingClientRect().top - column.value.getBoundingClientRect().top;
+  bubble.value = { grows: props.step.grows.filter((one) => keys.includes(one.key)), top };
+}
+function release() {
+  lit.value = null;
+  bubble.value = null;
+}
+
 const lineKeys = (key: string) => props.step.code.flatMap((file, f) =>
   file.lines.flatMap((line, l) => (line.keys.includes(key) ? [`${f}:${l}`] : [])));
 
@@ -76,6 +90,7 @@ const tree = computed(() => {
 });
 
 const SIDES = [['in', 'Incoming'], ['out', 'Outgoing'], ['refuses', 'Refuses']] as const;
+const titleOf = Object.fromEntries(SIDES) as Record<string, string>;
 const KEYWORDS = /\b(export|default|class|extends|implements|abstract|async|await|const|return|throw|if|private|constructor|import|from|type|new)\b/g;
 const highlight = (text: string) =>
   text.replace(/[&<>]/g, (c) => `&#${c.charCodeAt(0)};`).replace(KEYWORDS, '<span class="kw">$1</span>');
@@ -137,8 +152,11 @@ onBeforeUnmount(() => removeEventListener('keydown', onKey));
               :key="l"
               class="line"
               :class="{ added: line.added, on: isLit(line.keys, `${f}:${l}`) }"
-              @mouseenter="lit = line.keys.length ? { line: `${f}:${l}`, keys: line.keys } : null"
-              @mouseleave="lit = null"
+              :tabindex="line.keys.length ? 0 : undefined"
+              @mouseenter="point($event, line.keys, `${f}:${l}`)"
+              @mouseleave="release"
+              @focus="point($event, line.keys, `${f}:${l}`)"
+              @blur="release"
             >
               <span class="no">{{ line.added ? '+' : l + 1 }}</span>
               <code v-html="highlight(line.text) || ' '" />
@@ -146,6 +164,7 @@ onBeforeUnmount(() => removeEventListener('keydown', onKey));
             </div>
           </div>
         </div>
+        <p v-if="step.grows.length" class="hand hint">point at a lettered line to see what grows from it</p>
         <div v-if="step.zero" class="stamp"><b>0</b> line changed under {{ step.zero }}</div>
 
         <p class="fig"><span>Fig. {{ step.step }}.</span> {{ step.fig }}</p>
@@ -161,6 +180,11 @@ onBeforeUnmount(() => removeEventListener('keydown', onKey));
         </div>
         <p v-if="step.whatIf" class="hand what-if">what if — {{ step.whatIf }}</p>
 
+        <div v-if="step.links.length" class="deeper">
+          <span>Go deeper</span>
+          <NuxtLink v-for="link in step.links" :key="link.path" :to="link.path">{{ link.title }}</NuxtLink>
+        </div>
+
         <nav class="pills">
           <NuxtLink v-if="previous" :to="previous.path" class="pill">← {{ previous.name }}</NuxtLink>
           <span v-else />
@@ -169,7 +193,13 @@ onBeforeUnmount(() => removeEventListener('keydown', onKey));
         </nav>
       </div>
 
-      <aside class="leaf grows">
+      <aside ref="column" class="leaf grows">
+        <div v-if="bubble" class="bubble" :style="{ top: `${bubble.top}px` }" role="tooltip">
+          <div v-for="one in bubble.grows" :key="one.key" class="grown" :class="one.side">
+            <b>{{ one.key }}</b>
+            <span><em>{{ titleOf[one.side] }}</em>{{ one.label }}<small>{{ one.detail }}</small></span>
+          </div>
+        </div>
         <h4>What grows from it</h4>
         <template v-for="[side, title] in SIDES" :key="side">
           <section v-if="step.grows.some((one) => one.side === side)" class="side">
@@ -190,11 +220,6 @@ onBeforeUnmount(() => removeEventListener('keydown', onKey));
             </button>
           </section>
         </template>
-        <p v-if="step.grows.length" class="hand idle">point at a lettered line of the code</p>
-        <div class="deeper">
-          <span>Go deeper</span>
-          <NuxtLink v-for="link in step.links" :key="link.path" :to="link.path">{{ link.title }}</NuxtLink>
-        </div>
       </aside>
     </div>
   </div>
@@ -243,7 +268,8 @@ onBeforeUnmount(() => removeEventListener('keydown', onKey));
   .project { order: 2; }
   .cards, .stamp, .fig, .slip, .what-if { order: 3; }
   .grows { order: 4; }
-  .pills { order: 5; }
+  .deeper { order: 5; }
+  .pills { order: 6; }
   .leaves > *, .cards, .card, .slip, .slip pre { min-width: 0; max-width: 100%; }
   .lede { margin-top: -18px; }
 }
@@ -315,13 +341,20 @@ onBeforeUnmount(() => removeEventListener('keydown', onKey));
 
 .grows h5 { margin: 14px 0 6px; font-family: var(--font-mono); font-size: 10.5px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; }
 .grows .side:first-of-type h5 { margin-top: 0; }
-/* On a wide screen the column answers the line pointed at, and only it; a phone lists everything. */
+/* On a wide screen the column holds nothing but the bubble of the line pointed at; a phone lists everything. */
 @media (min-width: 1025px) {
-  .grows .grown:not(.on), .grows .side:not(:has(.grown.on)) { display: none; }
-  .grows:has(.grown.on) .idle { display: none; }
+  .grows { position: relative; align-self: stretch; padding: 0; background: none; border: 0; box-shadow: none; }
+  .grows > h4, .grows .side { display: none; }
 }
-.idle { margin: 0; font-size: 15px; color: var(--ui-text-dimmed); }
-@media (max-width: 1024px) { .idle { display: none; } }
+@media (max-width: 1024px) { .bubble, .hint { display: none; } }
+.bubble { position: absolute; left: 10px; right: 0; display: grid; gap: 8px; padding: 12px 14px; background: var(--ui-bg-elevated); border: 1px solid var(--ui-border); border-radius: 12px; box-shadow: 0 12px 28px -16px rgb(40 50 30 / 0.45); transform: translateY(-14px); }
+.bubble::before { content: ''; position: absolute; top: 18px; left: -7px; width: 12px; height: 12px; background: var(--ui-bg-elevated); border-left: 1px solid var(--ui-border); border-bottom: 1px solid var(--ui-border); transform: rotate(45deg); }
+.bubble .grown { padding: 0; }
+.grown em { display: block; font-style: normal; font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ui-text-muted); }
+.grown.in em { color: var(--terracotta); }
+.grown.out em { color: var(--slate); }
+.hint { margin: 8px 0 0; font-size: 14px; color: var(--ui-text-dimmed); }
+.line[tabindex] { cursor: help; outline: none; }
 .grows h5.in { color: var(--terracotta); }
 .grows h5.out { color: var(--slate); }
 .grows h5.refuses { color: var(--ui-text-muted); }
@@ -332,7 +365,7 @@ onBeforeUnmount(() => removeEventListener('keydown', onKey));
 .grown.out b { color: var(--slate); }
 .grown span { display: grid; gap: 1px; font-family: var(--font-mono); font-size: 12.5px; color: var(--ui-text); }
 .grown small { font-family: var(--font-sans); font-size: 12px; color: var(--ui-text-dimmed); }
-.deeper { display: grid; gap: 4px; margin-top: 16px; padding-top: 12px; border-top: 1px dashed var(--ui-border); font-size: 13px; }
+.deeper { display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: baseline; margin-top: 24px; padding-top: 12px; border-top: 1px dashed var(--ui-border); font-size: 13px; }
 .deeper span { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ui-text-dimmed); }
 .deeper a { color: var(--ui-primary); }
 </style>
