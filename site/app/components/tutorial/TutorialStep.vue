@@ -39,9 +39,9 @@ const said = computed(() => props.step.tryIt?.said[manager.value] ?? props.step.
 const install = computed(() => props.step.install?.[manager.value]);
 const variesByManager = computed(() => new Set(Object.values(props.step.tryIt?.said ?? {})).size > 1);
 
-const lit = ref<{ key?: string; line?: string } | null>(null);
+const lit = ref<{ keys: string[]; line?: string } | null>(null);
 const isLit = (keys: string[], id: string) =>
-  lit.value !== null && (lit.value.line === id || (lit.value.key !== undefined && keys.includes(lit.value.key)));
+  lit.value !== null && (lit.value.line === id || keys.some((key) => lit.value!.keys.includes(key)));
 const lineKeys = (key: string) => props.step.code.flatMap((file, f) =>
   file.lines.flatMap((line, l) => (line.keys.includes(key) ? [`${f}:${l}`] : [])));
 
@@ -76,22 +76,6 @@ const tree = computed(() => {
 });
 
 const SIDES = [['in', 'Incoming'], ['out', 'Outgoing'], ['refuses', 'Refuses']] as const;
-const titleOf = Object.fromEntries(SIDES) as Record<string, string>;
-
-/** What grew from a lettered line, opened beside it while it is pointed at — the column it replaces is a phone's. */
-const bloom = ref<{ grows: Step['grows']; top: number; left: number } | null>(null);
-function point(event: Event, keys: string[], id: string) {
-  lit.value = keys.length ? { line: id, key: keys[0] } : null;
-  if (!keys.length) return;
-  const box = (event.currentTarget as HTMLElement).getBoundingClientRect();
-  bloom.value = { grows: props.step.grows.filter((one) => keys.includes(one.key)), top: box.bottom + 6, left: box.left + 36 };
-}
-function release() {
-  lit.value = null;
-  bloom.value = null;
-}
-onMounted(() => addEventListener('scroll', release, { passive: true }));
-onBeforeUnmount(() => removeEventListener('scroll', release));
 const KEYWORDS = /\b(export|default|class|extends|implements|abstract|async|await|const|return|throw|if|private|constructor|import|from|type|new)\b/g;
 const highlight = (text: string) =>
   text.replace(/[&<>]/g, (c) => `&#${c.charCodeAt(0)};`).replace(KEYWORDS, '<span class="kw">$1</span>');
@@ -152,12 +136,9 @@ onBeforeUnmount(() => removeEventListener('keydown', onKey));
               v-for="(line, l) in file.lines"
               :key="l"
               class="line"
-              :class="{ added: line.added, on: isLit(line.keys, `${f}:${l}`), keyed: line.keys.length }"
-              :tabindex="line.keys.length ? 0 : undefined"
-              @mouseenter="point($event, line.keys, `${f}:${l}`)"
-              @mouseleave="release"
-              @focus="point($event, line.keys, `${f}:${l}`)"
-              @blur="release"
+              :class="{ added: line.added, on: isLit(line.keys, `${f}:${l}`) }"
+              @mouseenter="lit = line.keys.length ? { line: `${f}:${l}`, keys: line.keys } : null"
+              @mouseleave="lit = null"
             >
               <span class="no">{{ line.added ? '+' : l + 1 }}</span>
               <code v-html="highlight(line.text) || ' '" />
@@ -165,7 +146,6 @@ onBeforeUnmount(() => removeEventListener('keydown', onKey));
             </div>
           </div>
         </div>
-        <p v-if="step.grows.length" class="hand hint">point at a lettered line to see what grows from it</p>
         <div v-if="step.zero" class="stamp"><b>0</b> line changed under {{ step.zero }}</div>
 
         <p class="fig"><span>Fig. {{ step.step }}.</span> {{ step.fig }}</p>
@@ -181,11 +161,6 @@ onBeforeUnmount(() => removeEventListener('keydown', onKey));
         </div>
         <p v-if="step.whatIf" class="hand what-if">what if — {{ step.whatIf }}</p>
 
-        <div v-if="step.links.length" class="deeper">
-          <span>Go deeper</span>
-          <NuxtLink v-for="link in step.links" :key="link.path" :to="link.path">{{ link.title }}</NuxtLink>
-        </div>
-
         <nav class="pills">
           <NuxtLink v-if="previous" :to="previous.path" class="pill">← {{ previous.name }}</NuxtLink>
           <span v-else />
@@ -197,7 +172,7 @@ onBeforeUnmount(() => removeEventListener('keydown', onKey));
       <aside class="leaf grows">
         <h4>What grows from it</h4>
         <template v-for="[side, title] in SIDES" :key="side">
-          <template v-if="step.grows.some((one) => one.side === side)">
+          <section v-if="step.grows.some((one) => one.side === side)" class="side">
             <h5 :class="side">{{ title }}</h5>
             <button
               v-for="one in step.grows.filter((g) => g.side === side)"
@@ -205,24 +180,22 @@ onBeforeUnmount(() => removeEventListener('keydown', onKey));
               type="button"
               class="grown"
               :class="[side, { on: isLit([one.key], '') }]"
-              @mouseenter="lit = { key: one.key, line: lineKeys(one.key)[0] }"
+              @mouseenter="lit = { keys: [one.key], line: lineKeys(one.key)[0] }"
               @mouseleave="lit = null"
-              @focus="lit = { key: one.key, line: lineKeys(one.key)[0] }"
+              @focus="lit = { keys: [one.key], line: lineKeys(one.key)[0] }"
               @blur="lit = null"
             >
               <b>{{ one.key }}</b>
               <span>{{ one.label }}<small>{{ one.detail }}</small></span>
             </button>
-          </template>
+          </section>
         </template>
+        <p v-if="step.grows.length" class="hand idle">point at a lettered line of the code</p>
+        <div class="deeper">
+          <span>Go deeper</span>
+          <NuxtLink v-for="link in step.links" :key="link.path" :to="link.path">{{ link.title }}</NuxtLink>
+        </div>
       </aside>
-    </div>
-
-    <div v-if="bloom" class="bloom" :style="{ top: `${bloom.top}px`, left: `${bloom.left}px` }" role="tooltip">
-      <div v-for="one in bloom.grows" :key="one.key" class="grown" :class="one.side">
-        <b>{{ one.key }}</b>
-        <span><em>{{ titleOf[one.side] }}</em>{{ one.label }}<small>{{ one.detail }}</small></span>
-      </div>
     </div>
   </div>
 </template>
@@ -261,8 +234,7 @@ onBeforeUnmount(() => removeEventListener('keydown', onKey));
 .rail .on a { color: var(--ui-text); }
 .rail .on i { background: var(--ui-primary); border-color: var(--ui-primary); transform: scale(1.3); }
 
-.leaves { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 26px; align-items: start; }
-.grows { display: none; }
+.leaves { display: grid; grid-template-columns: 220px minmax(0, 1fr) 290px; gap: 26px; align-items: start; }
 /* On a phone the leaves stack in reading order: the title, the project, what was written, what grew, then on. */
 @media (max-width: 1024px) {
   .leaves { display: flex; flex-direction: column; align-items: stretch; }
@@ -270,10 +242,8 @@ onBeforeUnmount(() => removeEventListener('keydown', onKey));
   .center h1, .lede { order: 1; }
   .project { order: 2; }
   .cards, .stamp, .fig, .slip, .what-if { order: 3; }
-  .grows { display: block; order: 4; }
-  .hint, .bloom { display: none; }
-  .deeper { order: 5; }
-  .pills { order: 6; }
+  .grows { order: 4; }
+  .pills { order: 5; }
   .leaves > *, .cards, .card, .slip, .slip pre { min-width: 0; max-width: 100%; }
   .lede { margin-top: -18px; }
 }
@@ -318,7 +288,6 @@ onBeforeUnmount(() => removeEventListener('keydown', onKey));
 .line.added { background: #1b3320; }
 .line.added .no { color: #7fc488; }
 .line.on { background: #2a4a2c; }
-.line.keyed { cursor: help; outline: none; }
 .leaves.lit .line:not(.on) { opacity: 0.55; }
 
 .stamp { display: inline-flex; align-items: center; gap: 10px; margin-top: 12px; padding: 8px 12px; border: 1.5px solid var(--ui-primary); border-radius: 6px; color: var(--ui-primary); background: var(--ui-bg-elevated); font-family: var(--font-mono); font-size: 11.5px; letter-spacing: 0.04em; transform: rotate(-1.5deg); }
@@ -345,7 +314,14 @@ onBeforeUnmount(() => removeEventListener('keydown', onKey));
 .pill.ink { background: var(--ui-text); color: var(--ui-bg); }
 
 .grows h5 { margin: 14px 0 6px; font-family: var(--font-mono); font-size: 10.5px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; }
-.grows h5:first-of-type { margin-top: 0; }
+.grows .side:first-of-type h5 { margin-top: 0; }
+/* On a wide screen the column answers the line pointed at, and only it; a phone lists everything. */
+@media (min-width: 1025px) {
+  .grows .grown:not(.on), .grows .side:not(:has(.grown.on)) { display: none; }
+  .grows:has(.grown.on) .idle { display: none; }
+}
+.idle { margin: 0; font-size: 15px; color: var(--ui-text-dimmed); }
+@media (max-width: 1024px) { .idle { display: none; } }
 .grows h5.in { color: var(--terracotta); }
 .grows h5.out { color: var(--slate); }
 .grows h5.refuses { color: var(--ui-text-muted); }
@@ -356,13 +332,7 @@ onBeforeUnmount(() => removeEventListener('keydown', onKey));
 .grown.out b { color: var(--slate); }
 .grown span { display: grid; gap: 1px; font-family: var(--font-mono); font-size: 12.5px; color: var(--ui-text); }
 .grown small { font-family: var(--font-sans); font-size: 12px; color: var(--ui-text-dimmed); }
-.hint { margin: 8px 0 0; font-size: 14px; color: var(--ui-text-dimmed); }
-.bloom { position: fixed; z-index: 30; display: grid; gap: 6px; max-width: 360px; padding: 10px 12px; background: var(--ui-bg-elevated); border: 1px solid var(--ui-border); border-radius: 10px; box-shadow: 0 12px 28px -14px rgb(40 50 30 / 0.45); pointer-events: none; }
-.bloom .grown { padding: 0; }
-.grown em { font-style: normal; font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ui-text-muted); }
-.grown.in em { color: var(--terracotta); }
-.grown.out em { color: var(--slate); }
-.deeper { display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: baseline; margin-top: 24px; padding-top: 12px; border-top: 1px dashed var(--ui-border); font-size: 13px; }
+.deeper { display: grid; gap: 4px; margin-top: 16px; padding-top: 12px; border-top: 1px dashed var(--ui-border); font-size: 13px; }
 .deeper span { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ui-text-dimmed); }
 .deeper a { color: var(--ui-primary); }
 </style>
