@@ -43,6 +43,22 @@ async function filesOf(root: string): Promise<Map<string, string>> {
   return files;
 }
 
+/** The folders a reader would see empty — every file in them is tooling — written as `fronds/`. */
+async function emptyFoldersOf(root: string, files: Map<string, string>): Promise<string[]> {
+  const folders: string[] = [];
+  const walk = async (here: string) => {
+    for (const name of await readdir(here)) {
+      const path = join(here, name);
+      if (name.startsWith('.') || !(await stat(path)).isDirectory()) continue;
+      folders.push(relative(root, path));
+      await walk(path);
+    }
+  };
+  await walk(root);
+
+  return folders.filter((folder) => ![...files.keys()].some((file) => file.startsWith(`${folder}/`))).map((folder) => `${folder}/`);
+}
+
 /** The lines of `after` absent from `before`, by longest common subsequence — files here are short. */
 function addedLines(before: string[], after: string[]): Set<number> {
   const table = before.map(() => after.map(() => 0));
@@ -90,7 +106,7 @@ const RANK = ['/entities/', '/handlers/', '/services/', 'fougere.config.ts'];
 const rank = (path: string) => RANK.findIndex((part) => path.includes(part));
 const byReading = (one: string, other: string) => rank(one) - rank(other) || one.localeCompare(other);
 
-function pageOf(index: number, slug: string, step: Step, files: Map<string, string>, previous: Map<string, string>) {
+function pageOf(index: number, slug: string, step: Step, files: Map<string, string>, previous: Map<string, string>, empty: string[]) {
   const gone = [...previous.keys()].filter((path) => !files.has(path));
   const stateOf = (path: string) => {
     if (index === 0) return 'new';
@@ -136,7 +152,7 @@ function pageOf(index: number, slug: string, step: Step, files: Map<string, stri
     lede: step.lede,
     fig: step.fig,
     heading: step.title,
-    files: [...files.keys()].sort(byReading).map((path) => ({ path, state: stateOf(path) })),
+    files: [...[...files.keys()].sort(byReading).map((path) => ({ path, state: stateOf(path) })), ...empty.map((path) => ({ path, state: '' }))],
     code,
     grows: keys.map(({ key, side, label, detail }) => ({ key, side, label, detail })),
     ...(step.try ? { tryIt: { command: step.try.command, said: saidIn(step.try.command), output: step.try.output } } : {}),
@@ -174,7 +190,7 @@ export default defineNuxtModule({
         const root = join(steps, name);
         const step = JSON.parse(await readFile(join(root, 'STEP.json'), 'utf8')) as Step;
         const files = await filesOf(root);
-        await writeFile(join(pages, `${name}.md`), pageOf(index, name, step, files, previous));
+        await writeFile(join(pages, `${name}.md`), pageOf(index, name, step, files, previous, await emptyFoldersOf(root, files)));
         previous = files;
       }
 

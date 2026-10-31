@@ -87,7 +87,7 @@ const tree = computed(() => {
       if (!node.dirs.has(part)) node.dirs.set(part, { dirs: new Map(), files: [] });
       node = node.dirs.get(part)!;
     }
-    node.files.push({ name, state, path });
+    if (name) node.files.push({ name, state, path });
   }
   const rows: { depth: number; name: string; dir: boolean; state: string; path?: string }[] = [];
   const walk = (node: Node, depth: number) => {
@@ -136,7 +136,7 @@ onBeforeUnmount(() => removeEventListener('keydown', onKey));
         <p class="lede">{{ step.lede }}</p>
 
         <div v-if="install" class="slip install">
-          <span class="hand">install</span>
+          <span class="tag">Install</span>
           <div class="managers" role="tablist" aria-label="Package manager">
             <button v-for="(name, index) in managers" :key="name" type="button" role="tab"
               :aria-selected="manager === name" @click="choose(index)">{{ name }}</button>
@@ -188,7 +188,7 @@ onBeforeUnmount(() => removeEventListener('keydown', onKey));
         <p class="fig"><span>Fig. {{ step.step }}.</span> {{ step.fig }}</p>
 
         <div v-if="step.tryIt" class="slip">
-          <span class="hand">try it</span>
+          <span class="tag">Try it</span>
           <div v-if="variesByManager" class="managers" role="tablist" aria-label="Package manager">
             <button v-for="(name, index) in managers" :key="name" type="button" role="tab"
               :aria-selected="manager === name" @click="choose(index)">{{ name }}</button>
@@ -277,7 +277,15 @@ onBeforeUnmount(() => removeEventListener('keydown', onKey));
 .rail .on a { color: var(--ui-text); }
 .rail .on i { background: var(--ui-primary); border-color: var(--ui-primary); transform: scale(1.3); }
 
-.leaves { display: grid; grid-template-columns: minmax(0, 1fr) 220px; gap: 64px; align-items: start; }
+.leaves { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 880px) minmax(0, 1fr); gap: 32px; align-items: start; }
+.leaves > .center { grid-column: 2; }
+.leaves > .grows { grid-column: 3; }
+/* Too narrow for the code to sit centred with the bubble beside it: the bubble keeps a column of its own. */
+@media (max-width: 1360px) {
+  .leaves { grid-template-columns: minmax(0, 1fr) 220px; gap: 48px; }
+  .leaves > .center { grid-column: 1; }
+  .leaves > .grows { grid-column: 2; }
+}
 /* On a phone the leaves stack in reading order: the title, the project, what was written, what grew, then on. */
 @media (max-width: 1024px) {
   .leaves { display: flex; flex-direction: column; align-items: stretch; }
@@ -359,7 +367,7 @@ button.file:hover { background: rgb(120 88 40 / 0.08); }
 
 .slip { position: relative; margin-top: 44px; }
 .hand { font-family: var(--hand); }
-.slip .hand { position: absolute; top: -14px; left: 14px; padding: 0 6px; background: var(--ui-bg); font-size: 17px; color: var(--ui-text-muted); transform: rotate(-2deg); }
+.slip .tag { position: absolute; top: -11px; left: 14px; padding: 3px 10px; border-radius: 999px; background: var(--ui-primary); color: var(--ui-bg); font-family: var(--font-sans); font-size: 12px; font-weight: 600; letter-spacing: 0.02em; }
 .slip pre { margin: 0; padding: 18px 16px 14px; overflow-x: auto; background: var(--code); color: #d9e4da; border-radius: 10px; font-size: 12.5px; line-height: 1.7; }
 .slip .prompt { color: #7fc488; }
 .slip pre.tabbed { padding-top: 40px; }
@@ -382,7 +390,7 @@ button.file:hover { background: rgb(120 88 40 / 0.08); }
   .grows > h4, .grows .side { display: none; }
 }
 @media (max-width: 1024px) { .bubble, .hint { display: none; } }
-.bubble { position: absolute; left: -30px; right: 0; display: grid; gap: 7px; padding: 9px 11px; background: var(--ui-bg-elevated); border: 1px solid var(--ui-border); border-radius: 12px; box-shadow: 0 12px 28px -16px rgb(40 50 30 / 0.45); transform: translateY(-14px); }
+.bubble { position: absolute; left: -12px; width: 220px; display: grid; gap: 7px; padding: 9px 11px; background: var(--ui-bg-elevated); border: 1px solid var(--ui-border); border-radius: 12px; box-shadow: 0 12px 28px -16px rgb(40 50 30 / 0.45); transform: translateY(-14px); }
 .bubble::before { content: ''; position: absolute; top: 18px; left: -7px; width: 12px; height: 12px; background: var(--ui-bg-elevated); border-left: 1px solid var(--ui-border); border-bottom: 1px solid var(--ui-border); transform: rotate(45deg); }
 .bubble .grown { padding: 0; gap: 7px; }
 .bubble .grown b { font-size: 13px; }
