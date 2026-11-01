@@ -142,6 +142,8 @@ function onKey(event: KeyboardEvent) {
   if (event.key === 'ArrowRight' && next.value) navigateTo(next.value.path);
 }
 onMounted(() => addEventListener('keydown', onKey));
+// On a phone the path scrolls: the step being read is brought into view, not left past the edge.
+onMounted(() => document.querySelector('.rail .on')?.scrollIntoView({ inline: 'center', block: 'nearest' }));
 onBeforeUnmount(() => removeEventListener('keydown', onKey));
 </script>
 
@@ -269,30 +271,16 @@ onBeforeUnmount(() => removeEventListener('keydown', onKey));
   --code: #10180f;
   --hand: 'Architects Daughter', 'Bradley Hand', cursive;
 }
-.rail {
-  list-style: none;
-  margin: 0 0 28px;
-  padding: 0 0 14px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 22px;
-  border-bottom: 1px solid var(--ui-text);
-}
-.rail a {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: #8a948c;
-  text-decoration: none;
-}
-.rail i { width: 8px; height: 8px; border-radius: 50%; border: 1.5px solid #9aa39b; transition: all 0.3s; }
-.rail .done i { background: var(--color-fern-100); border-color: var(--ui-primary); }
-.rail .on a { color: var(--ui-text); }
-.rail .on i { background: var(--ui-primary); border-color: var(--ui-primary); transform: scale(1.3); }
+.rail { list-style: none; display: flex; margin: 0 0 36px; padding: 8px 0 6px; overflow-x: auto; scrollbar-width: none; }
+.rail li { position: relative; flex: 1 0 84px; }
+.rail li + li::before { content: ''; position: absolute; top: 5px; left: -50%; width: 100%; height: 2px; background: #dcdfd6; }
+.rail li.done + li::before, .rail li.done::before, .rail li.on::before { background: var(--ui-primary); }
+.rail a { position: relative; display: flex; flex-direction: column; align-items: center; gap: 9px; font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.06em; text-transform: uppercase; color: #8a948c; text-decoration: none; white-space: nowrap; }
+.rail i { width: 12px; height: 12px; border-radius: 50%; border: 2px solid #c3c9bf; background: var(--ui-bg); transition: all 0.3s; }
+.rail .done i { background: var(--ui-primary); border-color: var(--ui-primary); }
+.rail .done a { color: var(--ui-text-muted); }
+.rail .on a { color: var(--ui-text); font-weight: 600; }
+.rail .on i { border-color: var(--ui-primary); box-shadow: 0 0 0 4px color-mix(in srgb, var(--ui-primary) 18%, transparent); transform: scale(1.15); }
 
 .leaves { max-width: 880px; margin: 0 auto; }
 
