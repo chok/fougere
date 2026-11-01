@@ -312,7 +312,7 @@ button.file:hover { background: rgb(120 88 40 / 0.08); }
 .center { min-width: 0; }
 .center h1 { margin: 8px 0 6px; font-size: clamp(28px, 3.4vw, 42px); line-height: 1.1; }
 .center h1 :deep(em) { font-style: italic; color: var(--ui-primary); }
-.lede { margin: 6px 0 0; max-width: 60ch; color: var(--ui-text-muted); }
+.lede { margin: 6px 0 0; color: var(--ui-text-muted); }
 
 .ide { display: grid; grid-template-columns: 224px minmax(0, 1fr); margin-top: 34px; border: 1px solid rgb(120 88 40 / 0.22); border-radius: 12px; box-shadow: 0 14px 30px -24px rgb(40 50 30 / 0.5); }
 .explorer { padding: 14px 10px 12px; border-radius: 12px 0 0 12px; }
