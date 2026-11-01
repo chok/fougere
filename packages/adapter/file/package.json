@@ -1,7 +1,7 @@
 {
   "name": "@fougere/adapter-file",
-  "version": "0.28.0-alpha.0",
-  "description": "Rows as files \u2014 one JSON or YAML file per row, in a directory per entity.",
+  "version": "0.28.0-alpha.1",
+  "description": "Rows as files — one JSON or YAML file per row, in a directory per entity.",
   "keywords": [
     "fougere",
     "typescript",
@@ -17,7 +17,9 @@
     "directory": "packages/adapter/file"
   },
   "type": "module",
-  "sideEffects": ["./dist/index.js"],
+  "sideEffects": [
+    "./dist/index.js"
+  ],
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {

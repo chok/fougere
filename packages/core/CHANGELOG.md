@@ -1,5 +1,96 @@
 # @fougere/core
 
+## 1.0.0-alpha.1
+
+### Major Changes
+
+- aea7c71: What stands around a REST request is a link in front of `Rest`, the port REST's door declares
+  (`ProtocolType.port`): `implements Partial<Rest>` around every route of a frond, `extends Rest<PostHandler>`
+  with `super(inner)` around one handler's, one method per op. A refusal at a door is an answer, so a link
+  outside it still decorates it. A port with a subject is keyed as written — `Rest<PostHandler>` — which no
+  class name can take, and the scan reads it on every side. `DoorMiddleware`, `RestMiddleware()`, the
+  `middlewares/` directory and the `middlewares:` order are gone.
+- 5f1c3ca: A handler extends a repository and exposes what it extends: `class PostHandler extends
+Repository<Post>`, or a `PostRepository` that names its queries, serves the five CRUD operations beside
+  its own. `Repository` is a generic base now — `Repository<Account, Ledger>` an aggregate, four at most —
+  and `Crud(…)`, `Repository(…)` called as a function, `CrudOps`, `CrudViews` and the per-op view map are
+  gone. TypeScript erases the type argument, so the scan reads it, the statement writes it as a value and
+  a `frond()` written by hand states it — `{ ctor: PostHandler, repository: Post }`, refused at boot when
+  missing. The boot hands the rows over after a constructor's own dependencies, so `super(posts)` is gone.
+  An op answering a view (`Page<PostCard>`) closes its output; `Repository<PostPublic>` reads a whole
+  handler through one. A list a storage answered crosses as a page whatever the op returned, and a page
+  reads its type as one.
+- 5f1c3ca: `Mirror<BookCard>` is a `Repository<BookCard>` that fills itself: write `pull`, call `refresh(since)`, and
+  read the copy like any rows. `Mirror(BookCard)` called as a function is gone with `MirrorConstructor` and
+  `MirrorOf`, and so is the `Storage<T>` its constructor took — it is seated on its rows like any repository.
+  The scan reads the entity through a generic base in between, `Mirror<T> extends Repository<T>`.
+- 5f1c3ca: An extension states `up`, `down`, `fronds` and `state`: `install` and `steps` leave the public `Extension`,
+  which nothing outside core read. They stay the doors a module of the kernel plugs in through
+  (`ModuleExtension`, `presenters()` among them), and a module stating only them is no longer taken for an
+  extension.
+- 5f1c3ca: A collector extends `Collect<User>` and a presenter `Present<Post>`, generic bases like `Repository<Post>`:
+  `Collector(User)` and `Presenter(Post)`, called as functions, are gone with the views argument. The scan
+  reads the erased argument, the statement writes it as a value, and a `frond()` written by hand states it —
+  `{ ctor: CurrentUserCollector, collects: User }`, `{ ctor: PostPresenter, presents: Post }` — refused at
+  boot when missing. What `collect()` refuses is read like `missing()`, and joins every op the collector serves.
+- 87a261d: What stands around a frond's calls is a link in front of `Dispatcher`: `class Wrote implements
+Partial<Dispatcher>`, asking for `inner: Dispatcher`, in `services/`, handed each call as its `Call`.
+  Two are ordered by `ports: { Dispatcher: [...] }` in `frond.config.ts`, outside in. `Middleware`, the
+  `middlewares:` order and `middleware-not-extended` are gone.
+
+### Minor Changes
+
+- f1d2704: A chain is read whole. What a link in front of `Collect<User>` refuses joins the `errors` of every op asking for a `User`, beside the collector's. GraphQL types the fields of a `Present<Post>` chain, the link's included (`presentedFields`). The names file quotes a port with a subject (`'Collect<User>'`), so `ports:` may choose one. A seated class is no longer reported as a port of itself. The CLI resolves its commands by address again, which the new facade keys had broken.
+- 5b1ad11: `Dispatcher<PostHandler>` stands around that handler's calls alone, inside the frond's `Dispatcher`:
+  `class PostAudit implements Partial<Dispatcher<PostHandler>>`, asking for `inner: Dispatcher<PostHandler>`.
+- 5f1c3ca: A handler is a container key in its own frond: a class beside it asking for `PostHandler` is handed the
+  instance its facade calls. Asked for from another frond, the boot refuses (`handler-of-another-frond`),
+  pointing at `Facade<PostHandler>` — the bare handler skips validation, middlewares and placement.
+- 10df4b0: Every container key with a subject is spelled as the type is written: `Repository<Post>`, `Storage<Post>`, `Facade<PostHandler>`, `Emit<PostPublished>`, `Emit<CanBook, Verdict>`, `Together<[Account, Ledger]>`, `Collect<User>`, `Present<Post>`. They used to be `PostRepository`, `PostStorage`, `postHandler`, `postPublishedEmit`, `canBookAwait`, `Account+LedgerTogether`, `UserCollector` and `PostPresenter`. A `fronds.ts` written by hand renames its `deps:` the same way. A class named `PostStorage` can no longer take a storage's key, so the `storage-key-is-provider` refusal is gone. A listener in a refusal is named by its address, `index.reindex`.
+- 9d69fcd: A link may stand in front of a port without being one: `implements Partial<Payment>` with
+  `constructor(private inner: Payment)` writes only what it changes, and every method it leaves out is
+  the inner's, forwarded as it is built. The scan reads the clause TypeScript erases, the statement
+  carries it as `implements`, and a `frond()` written by hand states it. Without the clause a class
+  asking for a port is an ordinary service: a link is declared, never guessed. A class implementing a
+  port without asking for it is still warned, `Partial<X>` included, naming the inner to take.
+- 4da370e: `new Logger(inner)` takes the logger it stands in front of and writes with its line, carry and operation,
+  so `class Masking extends Logger { constructor(inner: Logger) { super(inner) } }` loses nothing it leaves
+  out. A name still makes a fresh one — `new Logger('app')`.
+- 97fbc58: `sources:` lists `rows:` and `values:`, where it listed `entities:`. An entity in `values:` is
+  injected as ONE value — `constructor(meili: Meili)` — read, completed by its defaults and judged at
+  boot. `@fougere/adapter-env` reads it from `MEILI_URL`; a source holding rows keeps it as a
+  `FougereValue` row, a file source as one file. The default source is the writable entry with no
+  `rows:`; when every entry lists its rows, an entity left out refuses the boot.
+- 08c7bc1: A value is read through `Env<Meili>`, the port a link stands in front of to change what a source gave:
+  `class MeiliFromVault implements Partial<Env<Meili>>`, asking for `inner: Env<Meili>`, touches Meili
+  alone. It is read once, at boot, and judged like what the source holds.
+- 1ea472e: An app reads the nearest `fougere.config.ts`, up from where it runs, and its host's options
+  override it — a workspace's file and an app's are no longer folded into one (`loadCascadedConfig`
+  is gone, `loadNearestConfig` and `configFileNear` take its place). The `Config` builtin is gone too:
+  a value the app reads is an entity listed in `values:`, injected and judged at boot.
+- 6d694d1: An entry of `fronds:` is an object, never a string: `blog: { remote: 'http://…' }` for a frond that answers elsewhere, `'@fougere/log': { options: './lines.jsonl' }` for a module key. The string used to mean an address under one key and an argument under another; it now refuses, naming the object to write.
+- d7cde0c: `Collect<User>` and `Present<Post>` are ports. A collector or a presenter realizes its key, and a link stands in front of either: `implements Partial<Collect<User>>` with `inner: Collect<User>`, or `implements Partial<Present<Post>>` with `inner`, whose methods are fields of its own. Two collectors of one type refuse with `port-implemented-twice` (`collector-ambiguous` is gone) and `ports:` settles them. A field two classes of one chain compute refuses with `presenter-field-twice`. `ModuleExtension`, its `install` and `steps`, and the `presenters` extension are gone: `app.extensions()` no longer lists `presenters`.
+- 57ddbb7: A service extending `Repository<Post>` answers `Repository<Post>` whatever its name, beside its own — the way
+  `StripePayment` answers `Payment`. It used to answer only when it was called `PostRepository`. Two such
+  services refuse the boot (`repository-twice`).
+- 9e17181: `fougere points` is `fougere ports`: each port of a frond with its links outside in and the realization they
+  reach — `the rest of the call`, `the source`, said where no class is it — the class answering
+  `Repository<Post>`, `Collect<User>` and `Present<Post>`, and `served at` for a frond another process serves.
+- d4eab03: Two fronds may each declare an entity of one name: in one source they are two views of one table, its
+  union, each reading and writing its own fields; a field declared two ways refuses the boot
+  (`table-contradicted`). A GraphQL type is named after its frond first — `BlogPost`, `BlogPostList`,
+  `CreateBlogPostInput` — always, so two fronds' `Author` are two types; root fields keep their names.
+- 6b84cec: `collectors/`, `presenters/` and `repositories/` are no longer convention directories: every class a frond injects sits in `services/`, and what it extends says what it is — `Collect<User>`, `Present<Post>`, `Repository<Post>`. Move the files there; a class left in one of the three is not scanned, and `fougere check` names the directory. `conventions: { dirs }` loses the three keys, and `providerDirsOf` is gone.
+- f7ccbed: `server: { use: [cors()] }` in `fougere.config.ts` stands srvx middlewares around what `fougere serve`
+  answers beside its envelope — REST, GraphQL, and a request none of them claims, which a middleware
+  may answer itself. Outside in, and never around the envelope its peers call. `serve()` takes the
+  same list as `use`.
+
+### Patch Changes
+
+- Updated dependencies [97fbc58]
+  - @fougere/schema@0.28.0-alpha.1
+
 ## 0.8.4-alpha.0
 
 ### Minor Changes

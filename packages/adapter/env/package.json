@@ -1,6 +1,6 @@
 {
   "name": "@fougere/adapter-env",
-  "version": "0.28.0-alpha.0",
+  "version": "0.28.0-alpha.1",
   "description": "The process environment as a source — MEILI_URL read as Meili's url, judged at boot.",
   "keywords": [
     "fougere",
@@ -16,7 +16,9 @@
     "directory": "packages/adapter/env"
   },
   "type": "module",
-  "sideEffects": ["./dist/index.js"],
+  "sideEffects": [
+    "./dist/index.js"
+  ],
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {

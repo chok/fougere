@@ -1,5 +1,41 @@
 # @fougere/adapter-memory
 
+## 0.28.0-alpha.1
+
+### Minor Changes
+
+- d4eab03: Two fronds may each declare an entity of one name: in one source they are two views of one table, its
+  union, each reading and writing its own fields; a field declared two ways refuses the boot
+  (`table-contradicted`). A GraphQL type is named after its frond first — `BlogPost`, `BlogPostList`,
+  `CreateBlogPostInput` — always, so two fronds' `Author` are two types; root fields keep their names.
+
+### Patch Changes
+
+- Updated dependencies [f1d2704]
+- Updated dependencies [aea7c71]
+- Updated dependencies [5f1c3ca]
+- Updated dependencies [5b1ad11]
+- Updated dependencies [5f1c3ca]
+- Updated dependencies [10df4b0]
+- Updated dependencies [9d69fcd]
+- Updated dependencies [4da370e]
+- Updated dependencies [5f1c3ca]
+- Updated dependencies [97fbc58]
+- Updated dependencies [08c7bc1]
+- Updated dependencies [1ea472e]
+- Updated dependencies [6d694d1]
+- Updated dependencies [5f1c3ca]
+- Updated dependencies [5f1c3ca]
+- Updated dependencies [d7cde0c]
+- Updated dependencies [57ddbb7]
+- Updated dependencies [9e17181]
+- Updated dependencies [d4eab03]
+- Updated dependencies [6b84cec]
+- Updated dependencies [87a261d]
+- Updated dependencies [f7ccbed]
+  - @fougere/core@1.0.0-alpha.1
+  - @fougere/schema@0.28.0-alpha.1
+
 ## 0.8.4-alpha.0
 
 ### Patch Changes

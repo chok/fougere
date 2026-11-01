@@ -1,5 +1,15 @@
 # fougere-demo-anchor-chain
 
+## 0.0.3-alpha.4
+
+### Patch Changes
+
+- Updated dependencies [97fbc58]
+- Updated dependencies [a6ea665]
+- Updated dependencies [d4eab03]
+  - @fougere/schema@0.28.0-alpha.1
+  - @fougere/adapter-sql@0.28.0-alpha.1
+
 ## 0.0.3-alpha.3
 
 ### Patch Changes

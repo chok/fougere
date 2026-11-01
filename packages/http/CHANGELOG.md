@@ -1,5 +1,18 @@
 # @fougere/http
 
+## 0.28.0-alpha.1
+
+### Minor Changes
+
+- 49cbfde: An engine is already a router, so Fougere ships none: `HttpRouter`, `createHonoRouter`,
+  `createFastifyRouter`, `createExpressRouter`, `Middleware`, `PASSTHROUGH`, `httpLogger`,
+  `readExpressBody` and `HttpError` leave `@fougere/http`, which keeps the words the doors share —
+  `HttpMethod`, `ResponseResult`, `HttpCarrier`. `registerRoutes`, `registerDescribed` and
+  `registerGraphQL` are gone with them: an app mounts on any engine with `answer(app, request)`, now
+  its own subpath, `@fougere/app/answer`, which loads no boot and runs on a Worker. It answers GraphQL
+  over GET too, a mutation there refused. `pageDoor` is exported from `@fougere/transport-http/receive`,
+  `useFougereAuth` moves beside the boot, and `stateFor` takes the app it reads.
+
 ## 0.7.0-alpha.0
 
 ## 0.6.0-alpha.0

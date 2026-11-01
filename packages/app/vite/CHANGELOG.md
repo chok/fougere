@@ -1,5 +1,54 @@
 # @fougere/vite
 
+## 1.0.0-alpha.1
+
+### Patch Changes
+
+- c3da0be: Every host answers through `answer` (`@fougere/app/web`). Express mounts one middleware,
+  `fougere()`, read through srvx's `NodeRequest` — `call()`, `rest()`, `session()` and `graphql()` are
+  gone, and what is served is `protocols:` alone. Nuxt mounts one handler on each of its routes, and a
+  REST or GraphQL refusal answers the same body there as on every other host. Next has one route
+  subpath, `@fougere/next/route`, in place of `/call`, `/rest` and `/session`. `serveRest`, `serveRpc`,
+  `refusedRpc`, `rpcParseError`, `serveGraphQL` and their `Outcome` are gone from `@fougere/app`:
+  a host hands a `Request` and receives a `Response`.
+- a6b601b: `@fougere/app/web` answers a Web `Request` through one function: `answer(app, request)` routes it to
+  the call envelope, the session, REST or GraphQL by its path and answers `undefined` when none is its
+  own, and `fougere(request)` is the same for a host that routes by file — it boots the app, and a
+  request no door answers is a 404 that says why. `call`, `rest`, `session`, `graphql` and
+  `restAnswer` are gone. `fougere serve` now answers the session and GraphQL beside REST.
+- Updated dependencies [f1d2704]
+- Updated dependencies [aea7c71]
+- Updated dependencies [5f1c3ca]
+- Updated dependencies [5b1ad11]
+- Updated dependencies [5f1c3ca]
+- Updated dependencies [10df4b0]
+- Updated dependencies [9d69fcd]
+- Updated dependencies [4da370e]
+- Updated dependencies [5f1c3ca]
+- Updated dependencies [00b592c]
+- Updated dependencies [97fbc58]
+- Updated dependencies [08c7bc1]
+- Updated dependencies [1ea472e]
+- Updated dependencies [49cbfde]
+- Updated dependencies [6d694d1]
+- Updated dependencies [5f1c3ca]
+- Updated dependencies [2a6116c]
+- Updated dependencies [5f1c3ca]
+- Updated dependencies [d7cde0c]
+- Updated dependencies [c3da0be]
+- Updated dependencies [57ddbb7]
+- Updated dependencies [9e17181]
+- Updated dependencies [890af9b]
+- Updated dependencies [a6b601b]
+- Updated dependencies [d4eab03]
+- Updated dependencies [6b84cec]
+- Updated dependencies [87a261d]
+- Updated dependencies [f7ccbed]
+- Updated dependencies [487f25b]
+  - @fougere/core@1.0.0-alpha.1
+  - @fougere/compiler@1.0.0-alpha.1
+  - @fougere/app@1.0.0-alpha.1
+
 ## 0.8.4-alpha.0
 
 ### Patch Changes

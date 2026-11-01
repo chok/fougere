@@ -1,5 +1,81 @@
 # @fougere/app
 
+## 1.0.0-alpha.1
+
+### Minor Changes
+
+- 1ea472e: An app reads the nearest `fougere.config.ts`, up from where it runs, and its host's options
+  override it — a workspace's file and an app's are no longer folded into one (`loadCascadedConfig`
+  is gone, `loadNearestConfig` and `configFileNear` take its place). The `Config` builtin is gone too:
+  a value the app reads is an entity listed in `values:`, injected and judged at boot.
+- 49cbfde: An engine is already a router, so Fougere ships none: `HttpRouter`, `createHonoRouter`,
+  `createFastifyRouter`, `createExpressRouter`, `Middleware`, `PASSTHROUGH`, `httpLogger`,
+  `readExpressBody` and `HttpError` leave `@fougere/http`, which keeps the words the doors share —
+  `HttpMethod`, `ResponseResult`, `HttpCarrier`. `registerRoutes`, `registerDescribed` and
+  `registerGraphQL` are gone with them: an app mounts on any engine with `answer(app, request)`, now
+  its own subpath, `@fougere/app/answer`, which loads no boot and runs on a Worker. It answers GraphQL
+  over GET too, a mutation there refused. `pageDoor` is exported from `@fougere/transport-http/receive`,
+  `useFougereAuth` moves beside the boot, and `stateFor` takes the app it reads.
+- c3da0be: Every host answers through `answer` (`@fougere/app/web`). Express mounts one middleware,
+  `fougere()`, read through srvx's `NodeRequest` — `call()`, `rest()`, `session()` and `graphql()` are
+  gone, and what is served is `protocols:` alone. Nuxt mounts one handler on each of its routes, and a
+  REST or GraphQL refusal answers the same body there as on every other host. Next has one route
+  subpath, `@fougere/next/route`, in place of `/call`, `/rest` and `/session`. `serveRest`, `serveRpc`,
+  `refusedRpc`, `rpcParseError`, `serveGraphQL` and their `Outcome` are gone from `@fougere/app`:
+  a host hands a `Request` and receives a `Response`.
+- a6b601b: `@fougere/app/web` answers a Web `Request` through one function: `answer(app, request)` routes it to
+  the call envelope, the session, REST or GraphQL by its path and answers `undefined` when none is its
+  own, and `fougere(request)` is the same for a host that routes by file — it boots the app, and a
+  request no door answers is a 404 that says why. `call`, `rest`, `session`, `graphql` and
+  `restAnswer` are gone. `fougere serve` now answers the session and GraphQL beside REST.
+- 487f25b: Who is signed in is an operation of the auth frond, `session.get`, answering the user a call
+  carries or `null`; `useCurrentUser` and the server hydrations ask it through the call envelope, and
+  an app with no auth answers nobody. `/_fougere/session`, Nuxt's `/api/me` and `sessionViewOf` are
+  gone — the view used to strip a `passwordHash` field by name, which better-auth's user does not
+  have. `sessionOf(fetcher)` and `sessionOn(app, state)` read it from a page and from a server.
+
+### Patch Changes
+
+- 2a6116c: `beside` is handed srvx's `NodeRequest` — read only as far as it is asked — instead of a copy of the
+  Node request, and its answer is written by `sendNodeResponse`. The envelope stays read off the Node
+  stream: through a Web `Request` a peer's call answered 29 % less. A POST that declares no body —
+  what `curl -X POST` writes — reads as no body before its type is judged.
+- 890af9b: `session.get` answers `{ user }`, `{ user: null }` when nobody is signed in — an answer, where a bare
+  `null` read as a missing row and REST answered 404 for every anonymous caller.
+- Updated dependencies [f1d2704]
+- Updated dependencies [aea7c71]
+- Updated dependencies [5f1c3ca]
+- Updated dependencies [5b1ad11]
+- Updated dependencies [5f1c3ca]
+- Updated dependencies [10df4b0]
+- Updated dependencies [9d69fcd]
+- Updated dependencies [4da370e]
+- Updated dependencies [5f1c3ca]
+- Updated dependencies [00b592c]
+- Updated dependencies [97fbc58]
+- Updated dependencies [08c7bc1]
+- Updated dependencies [1ea472e]
+- Updated dependencies [49cbfde]
+- Updated dependencies [6d694d1]
+- Updated dependencies [5f1c3ca]
+- Updated dependencies [2a6116c]
+- Updated dependencies [5f1c3ca]
+- Updated dependencies [d7cde0c]
+- Updated dependencies [57ddbb7]
+- Updated dependencies [9e17181]
+- Updated dependencies [d4eab03]
+- Updated dependencies [6b84cec]
+- Updated dependencies [87a261d]
+- Updated dependencies [f7ccbed]
+  - @fougere/core@1.0.0-alpha.1
+  - @fougere/compiler@1.0.0-alpha.1
+  - @fougere/adapter-graphql@1.0.0-alpha.1
+  - @fougere/adapter-rest@1.0.0-alpha.1
+  - @fougere/defaults@1.0.0-alpha.1
+  - @fougere/schema@0.28.0-alpha.1
+  - @fougere/transport-http@0.28.0-alpha.1
+  - @fougere/adapter-memory@0.28.0-alpha.1
+
 ## 0.8.4-alpha.0
 
 ### Patch Changes

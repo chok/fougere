@@ -1,5 +1,63 @@
 # @fougere/nuxt
 
+## 1.0.0-alpha.1
+
+### Minor Changes
+
+- 1ea472e: An app reads the nearest `fougere.config.ts`, up from where it runs, and its host's options
+  override it — a workspace's file and an app's are no longer folded into one (`loadCascadedConfig`
+  is gone, `loadNearestConfig` and `configFileNear` take its place). The `Config` builtin is gone too:
+  a value the app reads is an entity listed in `values:`, injected and judged at boot.
+- c3da0be: Every host answers through `answer` (`@fougere/app/web`). Express mounts one middleware,
+  `fougere()`, read through srvx's `NodeRequest` — `call()`, `rest()`, `session()` and `graphql()` are
+  gone, and what is served is `protocols:` alone. Nuxt mounts one handler on each of its routes, and a
+  REST or GraphQL refusal answers the same body there as on every other host. Next has one route
+  subpath, `@fougere/next/route`, in place of `/call`, `/rest` and `/session`. `serveRest`, `serveRpc`,
+  `refusedRpc`, `rpcParseError`, `serveGraphQL` and their `Outcome` are gone from `@fougere/app`:
+  a host hands a `Request` and receives a `Response`.
+- 487f25b: Who is signed in is an operation of the auth frond, `session.get`, answering the user a call
+  carries or `null`; `useCurrentUser` and the server hydrations ask it through the call envelope, and
+  an app with no auth answers nobody. `/_fougere/session`, Nuxt's `/api/me` and `sessionViewOf` are
+  gone — the view used to strip a `passwordHash` field by name, which better-auth's user does not
+  have. `sessionOf(fetcher)` and `sessionOn(app, state)` read it from a page and from a server.
+
+### Patch Changes
+
+- 88a9890: An app's starter no longer installs `better-sqlite3` and `kysely`. A project keeps its rows in memory until it names a source, and the project that names one installs `@fougere/adapter-sql` and its driver.
+- Updated dependencies [f1d2704]
+- Updated dependencies [aea7c71]
+- Updated dependencies [5f1c3ca]
+- Updated dependencies [5b1ad11]
+- Updated dependencies [5f1c3ca]
+- Updated dependencies [10df4b0]
+- Updated dependencies [9d69fcd]
+- Updated dependencies [4da370e]
+- Updated dependencies [5f1c3ca]
+- Updated dependencies [00b592c]
+- Updated dependencies [97fbc58]
+- Updated dependencies [08c7bc1]
+- Updated dependencies [1ea472e]
+- Updated dependencies [49cbfde]
+- Updated dependencies [6d694d1]
+- Updated dependencies [5f1c3ca]
+- Updated dependencies [2a6116c]
+- Updated dependencies [5f1c3ca]
+- Updated dependencies [d7cde0c]
+- Updated dependencies [c3da0be]
+- Updated dependencies [57ddbb7]
+- Updated dependencies [9e17181]
+- Updated dependencies [890af9b]
+- Updated dependencies [a6b601b]
+- Updated dependencies [d4eab03]
+- Updated dependencies [6b84cec]
+- Updated dependencies [87a261d]
+- Updated dependencies [f7ccbed]
+- Updated dependencies [487f25b]
+  - @fougere/core@1.0.0-alpha.1
+  - @fougere/compiler@1.0.0-alpha.1
+  - @fougere/defaults@1.0.0-alpha.1
+  - @fougere/app@1.0.0-alpha.1
+
 ## 0.8.4-alpha.0
 
 ### Patch Changes

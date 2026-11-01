@@ -1,5 +1,52 @@
 # @fougere/transport-http
 
+## 0.28.0-alpha.1
+
+### Minor Changes
+
+- f7ccbed: `server: { use: [cors()] }` in `fougere.config.ts` stands srvx middlewares around what `fougere serve`
+  answers beside its envelope — REST, GraphQL, and a request none of them claims, which a middleware
+  may answer itself. Outside in, and never around the envelope its peers call. `serve()` takes the
+  same list as `use`.
+
+### Patch Changes
+
+- 49cbfde: An engine is already a router, so Fougere ships none: `HttpRouter`, `createHonoRouter`,
+  `createFastifyRouter`, `createExpressRouter`, `Middleware`, `PASSTHROUGH`, `httpLogger`,
+  `readExpressBody` and `HttpError` leave `@fougere/http`, which keeps the words the doors share —
+  `HttpMethod`, `ResponseResult`, `HttpCarrier`. `registerRoutes`, `registerDescribed` and
+  `registerGraphQL` are gone with them: an app mounts on any engine with `answer(app, request)`, now
+  its own subpath, `@fougere/app/answer`, which loads no boot and runs on a Worker. It answers GraphQL
+  over GET too, a mutation there refused. `pageDoor` is exported from `@fougere/transport-http/receive`,
+  `useFougereAuth` moves beside the boot, and `stateFor` takes the app it reads.
+- 2a6116c: `beside` is handed srvx's `NodeRequest` — read only as far as it is asked — instead of a copy of the
+  Node request, and its answer is written by `sendNodeResponse`. The envelope stays read off the Node
+  stream: through a Web `Request` a peer's call answered 29 % less. A POST that declares no body —
+  what `curl -X POST` writes — reads as no body before its type is judged.
+- Updated dependencies [f1d2704]
+- Updated dependencies [aea7c71]
+- Updated dependencies [5f1c3ca]
+- Updated dependencies [5b1ad11]
+- Updated dependencies [5f1c3ca]
+- Updated dependencies [10df4b0]
+- Updated dependencies [9d69fcd]
+- Updated dependencies [4da370e]
+- Updated dependencies [5f1c3ca]
+- Updated dependencies [97fbc58]
+- Updated dependencies [08c7bc1]
+- Updated dependencies [1ea472e]
+- Updated dependencies [6d694d1]
+- Updated dependencies [5f1c3ca]
+- Updated dependencies [5f1c3ca]
+- Updated dependencies [d7cde0c]
+- Updated dependencies [57ddbb7]
+- Updated dependencies [9e17181]
+- Updated dependencies [d4eab03]
+- Updated dependencies [6b84cec]
+- Updated dependencies [87a261d]
+- Updated dependencies [f7ccbed]
+  - @fougere/core@1.0.0-alpha.1
+
 ## 0.8.4-alpha.0
 
 ### Patch Changes

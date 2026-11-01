@@ -1,5 +1,15 @@
 # @fougere/schema
 
+## 0.28.0-alpha.1
+
+### Minor Changes
+
+- 97fbc58: `sources:` lists `rows:` and `values:`, where it listed `entities:`. An entity in `values:` is
+  injected as ONE value — `constructor(meili: Meili)` — read, completed by its defaults and judged at
+  boot. `@fougere/adapter-env` reads it from `MEILI_URL`; a source holding rows keeps it as a
+  `FougereValue` row, a file source as one file. The default source is the writable entry with no
+  `rows:`; when every entry lists its rows, an entity left out refuses the boot.
+
 ## 0.8.4-alpha.0
 
 ### Minor Changes

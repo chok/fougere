@@ -1,7 +1,7 @@
 {
   "name": "@fougere/adapter-graphql",
-  "version": "0.28.0-alpha.0",
-  "description": "Entity \u2192 GraphQL types, inputs and CRUD, through Pothos.",
+  "version": "1.0.0-alpha.1",
+  "description": "Entity → GraphQL types, inputs and CRUD, through Pothos.",
   "keywords": [
     "fougere",
     "typescript",
@@ -17,7 +17,10 @@
     "directory": "packages/adapter/graphql"
   },
   "type": "module",
-  "sideEffects": ["./dist/index.js", "./dist/GraphQLProtocol.js"],
+  "sideEffects": [
+    "./dist/index.js",
+    "./dist/GraphQLProtocol.js"
+  ],
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {

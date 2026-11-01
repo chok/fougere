@@ -1,5 +1,48 @@
 # @fougere/demo-sveltekit-blog
 
+## 0.0.3-alpha.4
+
+### Patch Changes
+
+- Updated dependencies [f1d2704]
+- Updated dependencies [aea7c71]
+- Updated dependencies [5f1c3ca]
+- Updated dependencies [5b1ad11]
+- Updated dependencies [5f1c3ca]
+- Updated dependencies [10df4b0]
+- Updated dependencies [9d69fcd]
+- Updated dependencies [4da370e]
+- Updated dependencies [5f1c3ca]
+- Updated dependencies [88a9890]
+- Updated dependencies [97fbc58]
+- Updated dependencies [08c7bc1]
+- Updated dependencies [1ea472e]
+- Updated dependencies [49cbfde]
+- Updated dependencies [6d694d1]
+- Updated dependencies [5f1c3ca]
+- Updated dependencies [2a6116c]
+- Updated dependencies [5f1c3ca]
+- Updated dependencies [d7cde0c]
+- Updated dependencies [c3da0be]
+- Updated dependencies [57ddbb7]
+- Updated dependencies [9e17181]
+- Updated dependencies [a6ea665]
+- Updated dependencies [890af9b]
+- Updated dependencies [a6b601b]
+- Updated dependencies [d4eab03]
+- Updated dependencies [6b84cec]
+- Updated dependencies [87a261d]
+- Updated dependencies [f7ccbed]
+- Updated dependencies [487f25b]
+  - @fougere/core@1.0.0-alpha.1
+  - @fougere/adapter-rest@1.0.0-alpha.1
+  - @fougere/svelte@0.28.0-alpha.1
+  - @fougere/schema@0.28.0-alpha.1
+  - @fougere/app@1.0.0-alpha.1
+  - @fougere/vite@1.0.0-alpha.1
+  - @fougere/adapter-sql@0.28.0-alpha.1
+  - @fougere/log@1.0.0-alpha.1
+
 ## 0.0.3-alpha.3
 
 ### Patch Changes

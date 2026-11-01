@@ -1,7 +1,7 @@
 {
   "name": "@fougere/adapter-rest",
-  "version": "0.28.0-alpha.0",
-  "description": "Entity \u2192 REST routes.",
+  "version": "1.0.0-alpha.1",
+  "description": "Entity → REST routes.",
   "keywords": [
     "fougere",
     "typescript",
@@ -16,7 +16,10 @@
     "directory": "packages/adapter/rest"
   },
   "type": "module",
-  "sideEffects": ["./dist/index.js", "./dist/RestProtocol.js"],
+  "sideEffects": [
+    "./dist/index.js",
+    "./dist/RestProtocol.js"
+  ],
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {

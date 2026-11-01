@@ -1,5 +1,56 @@
 # @fougere/schema-rest
 
+## 1.0.0-alpha.1
+
+### Major Changes
+
+- aea7c71: What stands around a REST request is a link in front of `Rest`, the port REST's door declares
+  (`ProtocolType.port`): `implements Partial<Rest>` around every route of a frond, `extends Rest<PostHandler>`
+  with `super(inner)` around one handler's, one method per op. A refusal at a door is an answer, so a link
+  outside it still decorates it. A port with a subject is keyed as written — `Rest<PostHandler>` — which no
+  class name can take, and the scan reads it on every side. `DoorMiddleware`, `RestMiddleware()`, the
+  `middlewares/` directory and the `middlewares:` order are gone.
+
+### Minor Changes
+
+- 49cbfde: An engine is already a router, so Fougere ships none: `HttpRouter`, `createHonoRouter`,
+  `createFastifyRouter`, `createExpressRouter`, `Middleware`, `PASSTHROUGH`, `httpLogger`,
+  `readExpressBody` and `HttpError` leave `@fougere/http`, which keeps the words the doors share —
+  `HttpMethod`, `ResponseResult`, `HttpCarrier`. `registerRoutes`, `registerDescribed` and
+  `registerGraphQL` are gone with them: an app mounts on any engine with `answer(app, request)`, now
+  its own subpath, `@fougere/app/answer`, which loads no boot and runs on a Worker. It answers GraphQL
+  over GET too, a mutation there refused. `pageDoor` is exported from `@fougere/transport-http/receive`,
+  `useFougereAuth` moves beside the boot, and `stateFor` takes the app it reads.
+
+### Patch Changes
+
+- Updated dependencies [f1d2704]
+- Updated dependencies [aea7c71]
+- Updated dependencies [5f1c3ca]
+- Updated dependencies [5b1ad11]
+- Updated dependencies [5f1c3ca]
+- Updated dependencies [10df4b0]
+- Updated dependencies [9d69fcd]
+- Updated dependencies [4da370e]
+- Updated dependencies [5f1c3ca]
+- Updated dependencies [97fbc58]
+- Updated dependencies [08c7bc1]
+- Updated dependencies [1ea472e]
+- Updated dependencies [49cbfde]
+- Updated dependencies [6d694d1]
+- Updated dependencies [5f1c3ca]
+- Updated dependencies [5f1c3ca]
+- Updated dependencies [d7cde0c]
+- Updated dependencies [57ddbb7]
+- Updated dependencies [9e17181]
+- Updated dependencies [d4eab03]
+- Updated dependencies [6b84cec]
+- Updated dependencies [87a261d]
+- Updated dependencies [f7ccbed]
+  - @fougere/core@1.0.0-alpha.1
+  - @fougere/schema@0.28.0-alpha.1
+  - @fougere/http@0.28.0-alpha.1
+
 ## 0.8.4-alpha.0
 
 ### Patch Changes

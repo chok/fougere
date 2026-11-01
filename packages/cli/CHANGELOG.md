@@ -1,5 +1,75 @@
 # @fougere/cli
 
+## 0.28.0-alpha.1
+
+### Minor Changes
+
+- b98befb: A new project names no database: `fougere new` writes no `sources:`, no `@fougere/adapter-sql`, no `better-sqlite3` and no `migrate` script, so its rows stay in memory and the boot warns. One entry in `sources:` and the `migrate` script keep them in SQLite.
+- 9e17181: `fougere points` is `fougere ports`: each port of a frond with its links outside in and the realization they
+  reach — `the rest of the call`, `the source`, said where no class is it — the class answering
+  `Repository<Post>`, `Collect<User>` and `Present<Post>`, and `served at` for a frond another process serves.
+- f7ccbed: `server: { use: [cors()] }` in `fougere.config.ts` stands srvx middlewares around what `fougere serve`
+  answers beside its envelope — REST, GraphQL, and a request none of them claims, which a middleware
+  may answer itself. Outside in, and never around the envelope its peers call. `serve()` takes the
+  same list as `use`.
+
+### Patch Changes
+
+- f1d2704: A chain is read whole. What a link in front of `Collect<User>` refuses joins the `errors` of every op asking for a `User`, beside the collector's. GraphQL types the fields of a `Present<Post>` chain, the link's included (`presentedFields`). The names file quotes a port with a subject (`'Collect<User>'`), so `ports:` may choose one. A seated class is no longer reported as a port of itself. The CLI resolves its commands by address again, which the new facade keys had broken.
+- 5f1c3ca: A handler extends a repository and exposes what it extends: `class PostHandler extends
+Repository<Post>`, or a `PostRepository` that names its queries, serves the five CRUD operations beside
+  its own. `Repository` is a generic base now — `Repository<Account, Ledger>` an aggregate, four at most —
+  and `Crud(…)`, `Repository(…)` called as a function, `CrudOps`, `CrudViews` and the per-op view map are
+  gone. TypeScript erases the type argument, so the scan reads it, the statement writes it as a value and
+  a `frond()` written by hand states it — `{ ctor: PostHandler, repository: Post }`, refused at boot when
+  missing. The boot hands the rows over after a constructor's own dependencies, so `super(posts)` is gone.
+  An op answering a view (`Page<PostCard>`) closes its output; `Repository<PostPublic>` reads a whole
+  handler through one. A list a storage answered crosses as a page whatever the op returned, and a page
+  reads its type as one.
+- a6ea665: `kysely` is a dependency of `@fougere/adapter-sql`, no longer a peer: an app installs the adapter and the driver of its engine, nothing else. The oclif and frond starters stop listing it, and the oclif starter no longer installs `better-sqlite3`.
+- a6b601b: `@fougere/app/web` answers a Web `Request` through one function: `answer(app, request)` routes it to
+  the call envelope, the session, REST or GraphQL by its path and answers `undefined` when none is its
+  own, and `fougere(request)` is the same for a host that routes by file — it boots the app, and a
+  request no door answers is a 404 that says why. `call`, `rest`, `session`, `graphql` and
+  `restAnswer` are gone. `fougere serve` now answers the session and GraphQL beside REST.
+- Updated dependencies [f1d2704]
+- Updated dependencies [aea7c71]
+- Updated dependencies [5f1c3ca]
+- Updated dependencies [5b1ad11]
+- Updated dependencies [5f1c3ca]
+- Updated dependencies [10df4b0]
+- Updated dependencies [9d69fcd]
+- Updated dependencies [4da370e]
+- Updated dependencies [5f1c3ca]
+- Updated dependencies [00b592c]
+- Updated dependencies [97fbc58]
+- Updated dependencies [08c7bc1]
+- Updated dependencies [1ea472e]
+- Updated dependencies [49cbfde]
+- Updated dependencies [6d694d1]
+- Updated dependencies [5f1c3ca]
+- Updated dependencies [2a6116c]
+- Updated dependencies [5f1c3ca]
+- Updated dependencies [d7cde0c]
+- Updated dependencies [c3da0be]
+- Updated dependencies [57ddbb7]
+- Updated dependencies [9e17181]
+- Updated dependencies [890af9b]
+- Updated dependencies [a6b601b]
+- Updated dependencies [d4eab03]
+- Updated dependencies [6b84cec]
+- Updated dependencies [87a261d]
+- Updated dependencies [f7ccbed]
+- Updated dependencies [487f25b]
+  - @fougere/core@1.0.0-alpha.1
+  - @fougere/compiler@1.0.0-alpha.1
+  - @fougere/adapter-rest@1.0.0-alpha.1
+  - @fougere/defaults@1.0.0-alpha.1
+  - @fougere/schema@0.28.0-alpha.1
+  - @fougere/app@1.0.0-alpha.1
+  - @fougere/transport-http@0.28.0-alpha.1
+  - @fougere/testing@1.0.0-alpha.1
+
 ## 0.8.4-alpha.0
 
 ### Patch Changes

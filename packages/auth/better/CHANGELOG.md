@@ -1,5 +1,49 @@
 # @fougere/auth-better
 
+## 0.28.0-alpha.1
+
+### Minor Changes
+
+- 487f25b: Who is signed in is an operation of the auth frond, `session.get`, answering the user a call
+  carries or `null`; `useCurrentUser` and the server hydrations ask it through the call envelope, and
+  an app with no auth answers nobody. `/_fougere/session`, Nuxt's `/api/me` and `sessionViewOf` are
+  gone — the view used to strip a `passwordHash` field by name, which better-auth's user does not
+  have. `sessionOf(fetcher)` and `sessionOn(app, state)` read it from a page and from a server.
+
+### Patch Changes
+
+- 5f1c3ca: A collector extends `Collect<User>` and a presenter `Present<Post>`, generic bases like `Repository<Post>`:
+  `Collector(User)` and `Presenter(Post)`, called as functions, are gone with the views argument. The scan
+  reads the erased argument, the statement writes it as a value, and a `frond()` written by hand states it —
+  `{ ctor: CurrentUserCollector, collects: User }`, `{ ctor: PostPresenter, presents: Post }` — refused at
+  boot when missing. What `collect()` refuses is read like `missing()`, and joins every op the collector serves.
+- 890af9b: `session.get` answers `{ user }`, `{ user: null }` when nobody is signed in — an answer, where a bare
+  `null` read as a missing row and REST answered 404 for every anonymous caller.
+- Updated dependencies [f1d2704]
+- Updated dependencies [aea7c71]
+- Updated dependencies [5f1c3ca]
+- Updated dependencies [5b1ad11]
+- Updated dependencies [5f1c3ca]
+- Updated dependencies [10df4b0]
+- Updated dependencies [9d69fcd]
+- Updated dependencies [4da370e]
+- Updated dependencies [5f1c3ca]
+- Updated dependencies [97fbc58]
+- Updated dependencies [08c7bc1]
+- Updated dependencies [1ea472e]
+- Updated dependencies [6d694d1]
+- Updated dependencies [5f1c3ca]
+- Updated dependencies [5f1c3ca]
+- Updated dependencies [d7cde0c]
+- Updated dependencies [57ddbb7]
+- Updated dependencies [9e17181]
+- Updated dependencies [d4eab03]
+- Updated dependencies [6b84cec]
+- Updated dependencies [87a261d]
+- Updated dependencies [f7ccbed]
+  - @fougere/core@1.0.0-alpha.1
+  - @fougere/schema@0.28.0-alpha.1
+
 ## 0.8.4-alpha.0
 
 ### Patch Changes
