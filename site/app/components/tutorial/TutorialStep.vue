@@ -36,24 +36,52 @@ const choose = (index: number) => {
 const manager = computed(() => managers[Number(tab.value)] ?? 'npm');
 const said = computed(() => props.step.tryIt?.said[manager.value] ?? props.step.tryIt?.command);
 const install = computed(() => props.step.install?.[manager.value]);
+/** What the reader copies: a command in their package manager's words, or the file open in the editor. */
+const copied = ref<string | null>(null);
+async function copy(what: string, text: string) {
+  await navigator.clipboard.writeText(text);
+  copied.value = what;
+  setTimeout(() => { if (copied.value === what) copied.value = null; }, 1600);
+}
+const openedText = () => props.step.code.find((file) => file.path === opened.value)?.lines.map((line) => line.text).join('\n') ?? '';
 const variesByManager = computed(() => new Set(Object.values(props.step.tryIt?.said ?? {})).size > 1);
 
-const lit = ref<{ keys: string[]; line?: string } | null>(null);
+const lit = ref<{ keys: string[]; line: string } | null>(null);
 const isLit = (keys: string[], id: string) =>
   lit.value !== null && (lit.value.line === id || keys.some((key) => lit.value!.keys.includes(key)));
-/** On a wide screen, what grew from the line pointed at — a bubble in the column, at that line's height. */
-const column = ref<HTMLElement | null>(null);
+
+/** What grew from a lettered line, opened under it: pointed at for a glance, clicked or tapped to stay. */
+const pane = ref<HTMLElement | null>(null);
+const pinned = ref<string | null>(null);
 const bubble = ref<{ grows: Step['grows']; top: number } | null>(null);
-function point(event: Event, keys: string[], id: string) {
-  lit.value = keys.length ? { line: id, keys } : null;
-  if (!keys.length || !column.value) return;
-  const top = (event.currentTarget as HTMLElement).getBoundingClientRect().top - column.value.getBoundingClientRect().top;
+function show(line: HTMLElement, keys: string[], id: string) {
+  lit.value = { keys, line: id };
+  const top = line.getBoundingClientRect().bottom - pane.value!.getBoundingClientRect().top + 6;
   bubble.value = { grows: props.step.grows.filter((one) => keys.includes(one.key)), top };
 }
-function release() {
+function point(event: Event, keys: string[], id: string) {
+  if (keys.length && !pinned.value) show(event.currentTarget as HTMLElement, keys, id);
+}
+function leave() {
+  if (pinned.value) return;
   lit.value = null;
   bubble.value = null;
 }
+function close() {
+  pinned.value = null;
+  leave();
+}
+function pin(event: Event, keys: string[], id: string) {
+  if (!keys.length) return;
+  if (pinned.value === id) return close();
+  pinned.value = id;
+  show(event.currentTarget as HTMLElement, keys, id);
+}
+function closeOutside(event: MouseEvent) {
+  if (pinned.value && !(event.target as HTMLElement).closest('.line, .bubble')) close();
+}
+onMounted(() => addEventListener('click', closeOutside));
+onBeforeUnmount(() => removeEventListener('click', closeOutside));
 
 /** The file open in the editor: the first this step touched, until the reader opens another. */
 // A manifest opens on demand, never first: what it gained is the install line above.
@@ -61,16 +89,11 @@ const touched = computed(() => props.step.code.filter((file) => file.state && !f
 const opened = ref<string | undefined>(touched.value[0]?.path);
 watch(() => props.step.step, () => { opened.value = touched.value[0]?.path; });
 const open = (path: string) => {
-  if (props.step.code.some((file) => file.path === path)) opened.value = path;
+  if (!props.step.code.some((file) => file.path === path)) return;
+  opened.value = path;
+  close();
 };
-/** On a phone the list stands in for the bubble: choosing an item opens the file its line is in. */
-const openKey = (key: string) => {
-  const file = props.step.code.find((one) => one.lines.some((line) => line.keys.includes(key)));
-  if (file) opened.value = file.path;
-};
-
-const lineKeys = (key: string) => props.step.code.flatMap((file, f) =>
-  file.lines.flatMap((line, l) => (line.keys.includes(key) ? [`${f}:${l}`] : [])));
+watch(() => props.step.step, close);
 
 const heading = computed(() =>
   props.step.heading.replace(/[&<>]/g, (c) => `&#${c.charCodeAt(0)};`).replace(/\*([^*]+)\*/g, '<em>$1</em>'));
@@ -114,6 +137,7 @@ const next = computed(() => props.steps[index.value + 1]);
 
 function onKey(event: KeyboardEvent) {
   if (event.target instanceof HTMLElement && /input|textarea/i.test(event.target.tagName)) return;
+  if (event.key === 'Escape') close();
   if (event.key === 'ArrowLeft' && previous.value) navigateTo(previous.value.path);
   if (event.key === 'ArrowRight' && next.value) navigateTo(next.value.path);
 }
@@ -130,16 +154,20 @@ onBeforeUnmount(() => removeEventListener('keydown', onKey));
     </ol>
 
     <div class="leaves" :class="{ lit: lit !== null }">
-
       <div class="center">
         <h1 v-html="heading" />
         <p class="lede">{{ step.lede }}</p>
 
         <div v-if="install" class="slip install">
           <span class="tag">Install</span>
-          <div class="managers" role="tablist" aria-label="Package manager">
-            <button v-for="(name, index) in managers" :key="name" type="button" role="tab"
-              :aria-selected="manager === name" @click="choose(index)">{{ name }}</button>
+          <div class="tools">
+            <div class="managers" role="tablist" aria-label="Package manager">
+              <button v-for="(name, index) in managers" :key="name" type="button" role="tab"
+                :aria-selected="manager === name" @click="choose(index)">{{ name }}</button>
+            </div>
+            <button type="button" class="copy" :aria-label="copied === 'install' ? 'Copied' : 'Copy'" @click="copy('install', install!)">
+              <UIcon :name="copied === 'install' ? 'i-lucide-check' : 'i-lucide-copy'" />
+            </button>
           </div>
           <pre class="tabbed"><span class="prompt">$</span> {{ install }}</pre>
         </div>
@@ -161,39 +189,57 @@ onBeforeUnmount(() => removeEventListener('keydown', onKey));
             </component>
             <div class="legend"><span class="new"><i />new</span><span class="changed"><i />changed</span><span class="moved"><i />moved</span></div>
           </nav>
-          <div v-if="step.code.length" class="pane">
+          <div v-if="step.code.length" ref="pane" class="pane">
             <div v-for="(file, f) in step.code" v-show="file.path === opened" :key="file.path" class="card">
-            <div class="path">{{ file.path }}</div>
-            <div
-              v-for="(line, l) in file.lines"
-              :key="l"
-              class="line"
-              :class="{ added: line.added, on: isLit(line.keys, `${f}:${l}`) }"
-              :tabindex="line.keys.length ? 0 : undefined"
-              @mouseenter="point($event, line.keys, `${f}:${l}`)"
-              @mouseleave="release"
-              @focus="point($event, line.keys, `${f}:${l}`)"
-              @blur="release"
-            >
-              <span class="no">{{ line.added ? '+' : l + 1 }}</span>
-              <code v-html="highlight(line.text) || ' '" />
-              <sup v-if="line.keys.length">{{ line.keys.join(' ') }}</sup>
+              <div class="path">
+                <span>{{ file.path }}</span>
+                <button type="button" class="copy" :aria-label="copied === file.path ? 'Copied' : 'Copy'" @click="copy(file.path, openedText())">
+                  <UIcon :name="copied === file.path ? 'i-lucide-check' : 'i-lucide-copy'" />
+                </button>
+              </div>
+              <div
+                v-for="(line, l) in file.lines"
+                :key="l"
+                class="line"
+                :class="{ added: line.added, on: isLit(line.keys, `${f}:${l}`) }"
+                :tabindex="line.keys.length ? 0 : undefined"
+                @mouseenter="point($event, line.keys, `${f}:${l}`)"
+                @mouseleave="leave"
+                @focus="point($event, line.keys, `${f}:${l}`)"
+                @blur="leave"
+                @click="pin($event, line.keys, `${f}:${l}`)"
+                @keydown.enter="pin($event, line.keys, `${f}:${l}`)"
+              >
+                <span class="no">{{ line.added ? '+' : l + 1 }}</span>
+                <code v-html="highlight(line.text) || ' '" />
+                <sup v-if="line.keys.length">{{ line.keys.join(' ') }}</sup>
+              </div>
+            </div>
+            <div v-if="bubble" class="bubble" :class="{ pinned }" :style="{ top: `${bubble.top}px` }" role="tooltip">
+              <div v-for="one in bubble.grows" :key="one.key" class="grown" :class="one.side">
+                <b>{{ one.key }}</b>
+                <span><em>{{ titleOf[one.side] }}</em>{{ one.label }}<small>{{ one.detail }}</small></span>
+              </div>
             </div>
           </div>
         </div>
-        </div>
-        <p v-if="step.grows.length" class="hand hint">point at a lettered line to see what grows from it</p>
+        <p v-if="step.grows.length" class="hand hint">point at a lettered line, or tap it, to see what grows from it</p>
         <div v-if="step.zero" class="stamp"><b>0</b> line changed under {{ step.zero }}</div>
 
         <p class="fig"><span>Fig. {{ step.step }}.</span> {{ step.fig }}</p>
 
         <div v-if="step.tryIt" class="slip">
           <span class="tag">Try it</span>
-          <div v-if="variesByManager" class="managers" role="tablist" aria-label="Package manager">
-            <button v-for="(name, index) in managers" :key="name" type="button" role="tab"
-              :aria-selected="manager === name" @click="choose(index)">{{ name }}</button>
+          <div class="tools">
+            <div v-if="variesByManager" class="managers" role="tablist" aria-label="Package manager">
+              <button v-for="(name, index) in managers" :key="name" type="button" role="tab"
+                :aria-selected="manager === name" @click="choose(index)">{{ name }}</button>
+            </div>
+            <button type="button" class="copy" :aria-label="copied === 'try' ? 'Copied' : 'Copy'" @click="copy('try', said!)">
+              <UIcon :name="copied === 'try' ? 'i-lucide-check' : 'i-lucide-copy'" />
+            </button>
           </div>
-          <pre :class="{ tabbed: variesByManager }"><span class="prompt">$</span> {{ said }}
+          <pre class="tabbed"><span class="prompt">$</span> {{ said }}
 <span class="output">{{ step.tryIt.output }}</span></pre>
         </div>
         <p v-if="step.whatIf" class="hand what-if">what if — {{ step.whatIf }}</p>
@@ -211,35 +257,6 @@ onBeforeUnmount(() => removeEventListener('keydown', onKey));
         </nav>
       </div>
 
-      <aside ref="column" class="leaf grows">
-        <div v-if="bubble" class="bubble" :style="{ top: `${bubble.top}px` }" role="tooltip">
-          <div v-for="one in bubble.grows" :key="one.key" class="grown" :class="one.side">
-            <b>{{ one.key }}</b>
-            <span><em>{{ titleOf[one.side] }}</em>{{ one.label }}<small>{{ one.detail }}</small></span>
-          </div>
-        </div>
-        <h4>What grows from it</h4>
-        <template v-for="[side, title] in SIDES" :key="side">
-          <section v-if="step.grows.some((one) => one.side === side)" class="side">
-            <h5 :class="side">{{ title }}</h5>
-            <button
-              v-for="one in step.grows.filter((g) => g.side === side)"
-              :key="one.key"
-              type="button"
-              class="grown"
-              :class="[side, { on: isLit([one.key], '') }]"
-              @mouseenter="lit = { keys: [one.key], line: lineKeys(one.key)[0] }"
-              @mouseleave="lit = null"
-              @focus="lit = { keys: [one.key], line: lineKeys(one.key)[0] }"
-              @click="openKey(one.key)"
-              @blur="lit = null"
-            >
-              <b>{{ one.key }}</b>
-              <span>{{ one.label }}<small>{{ one.detail }}</small></span>
-            </button>
-          </section>
-        </template>
-      </aside>
     </div>
   </div>
 </template>
@@ -277,40 +294,7 @@ onBeforeUnmount(() => removeEventListener('keydown', onKey));
 .rail .on a { color: var(--ui-text); }
 .rail .on i { background: var(--ui-primary); border-color: var(--ui-primary); transform: scale(1.3); }
 
-.leaves { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 880px) minmax(0, 1fr); gap: 32px; align-items: start; }
-.leaves > .center { grid-column: 2; }
-.leaves > .grows { grid-column: 3; }
-/* Too narrow for the code to sit centred with the bubble beside it: the bubble keeps a column of its own. */
-@media (max-width: 1360px) {
-  .leaves { grid-template-columns: minmax(0, 1fr) 220px; gap: 48px; }
-  .leaves > .center { grid-column: 1; }
-  .leaves > .grows { grid-column: 2; }
-}
-/* On a phone the leaves stack in reading order: the title, the project, what was written, what grew, then on. */
-@media (max-width: 1024px) {
-  .leaves { display: flex; flex-direction: column; align-items: stretch; }
-  .center { display: contents; }
-  .center h1, .lede { order: 1; }
-  .ide, .hint, .stamp, .fig, .slip, .what-if { order: 3; }
-  .grows { order: 4; }
-  .deeper { order: 5; }
-  .pills { order: 6; }
-  .leaves > *, .ide, .card, .slip, .slip pre { min-width: 0; max-width: 100%; }
-  .ide { grid-template-columns: minmax(0, 1fr); }
-  .lede { margin-top: -18px; }
-}
-.leaf {
-  position: sticky;
-  top: 88px;
-  min-width: 0;
-  padding: 16px 16px 18px;
-  background: var(--ui-bg-elevated);
-  border: 1px solid var(--ui-border);
-  border-radius: 14px;
-  box-shadow: 0 1px 0 var(--ui-border), 0 10px 24px -18px rgb(40 50 30 / 0.35);
-}
-@media (max-width: 1024px) { .leaf { position: static; } }
-.leaf h4 { margin: 0 0 12px; font-family: var(--font-serif); font-style: italic; font-weight: 400; font-size: 17px; color: var(--ui-text); }
+.leaves { max-width: 880px; margin: 0 auto; }
 
 .explorer {
   --kraft: #efe4cb;
@@ -319,7 +303,6 @@ onBeforeUnmount(() => removeEventListener('keydown', onKey));
   --kraft-guide: rgb(120 88 40 / 0.22);
   background: var(--kraft);
 }
-:global(.dark) .explorer { --kraft: #2b251b; --kraft-ink: #d8c9a8; --kraft-rule: rgb(230 200 140 / 0.06); --kraft-guide: rgb(230 200 140 / 0.14); }
 .explorer h4 { margin: 0 4px 8px; font-family: var(--font-mono); font-size: 10.5px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: color-mix(in srgb, var(--kraft-ink) 70%, transparent); }
 .file { display: flex; align-items: center; gap: 7px; width: 100%; overflow: hidden; padding: 0 4px; border-radius: 4px; background: none; font-family: var(--font-mono); font-size: 12px; line-height: 24px; color: color-mix(in srgb, var(--kraft-ink) 72%, transparent); white-space: nowrap; text-align: left; box-shadow: inset 0 -1px var(--kraft-rule); }
 button.file { cursor: pointer; }
@@ -343,9 +326,14 @@ button.file:hover { background: rgb(120 88 40 / 0.08); }
 .center h1 :deep(em) { font-style: italic; color: var(--ui-primary); }
 .lede { margin: 6px 0 0; max-width: 60ch; color: var(--ui-text-muted); }
 
-.ide { display: grid; grid-template-columns: 224px minmax(0, 1fr); margin-top: 34px; border: 1px solid rgb(120 88 40 / 0.22); border-radius: 12px; overflow: hidden; box-shadow: 0 14px 30px -24px rgb(40 50 30 / 0.5); }
-.explorer { padding: 14px 10px 12px; }
-.pane { min-width: 0; background: var(--code); }
+.ide { display: grid; grid-template-columns: 224px minmax(0, 1fr); margin-top: 34px; border: 1px solid rgb(120 88 40 / 0.22); border-radius: 12px; box-shadow: 0 14px 30px -24px rgb(40 50 30 / 0.5); }
+.explorer { padding: 14px 10px 12px; border-radius: 12px 0 0 12px; }
+.pane { position: relative; min-width: 0; background: var(--code); border-radius: 0 12px 12px 0; }
+@media (max-width: 760px) {
+  .ide { grid-template-columns: minmax(0, 1fr); }
+  .explorer { border-radius: 12px 12px 0 0; }
+  .pane { border-radius: 0 0 12px 12px; }
+}
 .pane .card { border-radius: 0; padding-bottom: 14px; }
 .card { overflow-x: auto; padding-bottom: 12px; background: var(--code); color: #d9e4da; border-radius: 10px; font-family: var(--font-mono); font-size: 12.5px; line-height: 1.75; }
 .path { padding: 9px 16px 7px; margin-bottom: 6px; border-bottom: 1px solid rgb(255 255 255 / 0.08); font-size: 11px; color: #9fb09f; }
@@ -367,11 +355,16 @@ button.file:hover { background: rgb(120 88 40 / 0.08); }
 
 .slip { position: relative; margin-top: 44px; }
 .hand { font-family: var(--hand); }
-.slip .tag { position: absolute; top: -11px; left: 14px; padding: 3px 10px; border-radius: 999px; background: var(--ui-primary); color: var(--ui-bg); font-family: var(--font-sans); font-size: 12px; font-weight: 600; letter-spacing: 0.02em; }
+.slip .tag { position: absolute; top: -13px; left: 14px; padding: 3px 9px; border-radius: 3px; background: #fff; box-shadow: 0 1px 3px rgb(0 0 0 / 0.18); color: var(--ui-text); font-family: var(--font-sans); font-size: 12.5px; font-weight: 600; transform: rotate(-2deg); }
 .slip pre { margin: 0; padding: 18px 16px 14px; overflow-x: auto; background: var(--code); color: #d9e4da; border-radius: 10px; font-size: 12.5px; line-height: 1.7; }
 .slip .prompt { color: #7fc488; }
 .slip pre.tabbed { padding-top: 40px; }
-.managers { position: absolute; top: 8px; right: 10px; display: flex; gap: 2px; }
+.tools { position: absolute; top: 8px; right: 10px; display: flex; align-items: center; gap: 6px; }
+.managers { display: flex; gap: 2px; }
+.copy { display: inline-flex; padding: 4px; font-size: 15px; border-radius: 6px; color: #8fa08f; cursor: pointer; }
+.copy:hover { color: #e3ece2; background: rgb(255 255 255 / 0.06); }
+.path { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.path .copy { margin: -4px -6px -4px 0; }
 .slip.install { margin: 40px 0 6px; }
 .managers button { cursor: pointer; padding: 2px 8px; border-radius: 999px; font-family: var(--font-mono); font-size: 11px; color: #7f927f; }
 .managers button[aria-selected="true"] { background: #1b3320; color: #d9e4da; }
@@ -382,36 +375,20 @@ button.file:hover { background: rgb(120 88 40 / 0.08); }
 .pill { display: inline-flex; align-items: center; min-height: 40px; padding: 0 16px; border: 1px solid var(--ui-text); border-radius: 999px; font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.04em; color: var(--ui-text); text-decoration: none; }
 .pill.ink { background: var(--ui-text); color: var(--ui-bg); }
 
-.grows h5 { margin: 14px 0 6px; font-family: var(--font-mono); font-size: 10.5px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; }
-.grows .side:first-of-type h5 { margin-top: 0; }
-/* On a wide screen the column holds nothing but the bubble of the line pointed at; a phone lists everything. */
-@media (min-width: 1025px) {
-  .grows { position: relative; align-self: stretch; padding: 0; background: none; border: 0; box-shadow: none; }
-  .grows > h4, .grows .side { display: none; }
-}
-@media (max-width: 1024px) { .bubble, .hint { display: none; } }
-.bubble { position: absolute; left: -12px; width: 220px; display: grid; gap: 7px; padding: 9px 11px; background: var(--ui-bg-elevated); border: 1px solid var(--ui-border); border-radius: 12px; box-shadow: 0 12px 28px -16px rgb(40 50 30 / 0.45); transform: translateY(-14px); }
-.bubble::before { content: ''; position: absolute; top: 18px; left: -7px; width: 12px; height: 12px; background: var(--ui-bg-elevated); border-left: 1px solid var(--ui-border); border-bottom: 1px solid var(--ui-border); transform: rotate(45deg); }
-.bubble .grown { padding: 0; gap: 7px; }
-.bubble .grown b { font-size: 13px; }
-.bubble .grown span { font-size: 11.5px; }
-.bubble .grown small { font-size: 11px; line-height: 1.4; }
-.bubble .grown em { font-size: 9.5px; }
-.grown em { display: block; font-style: normal; font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ui-text-muted); }
+.bubble { position: absolute; z-index: 5; right: 12px; width: min(300px, calc(100% - 24px)); display: grid; gap: 8px; padding: 10px 12px; background: var(--ui-bg-elevated); border: 1px solid var(--ui-border); border-radius: 12px; box-shadow: 0 14px 30px -14px rgb(0 0 0 / 0.55); pointer-events: none; }
+.bubble.pinned { pointer-events: auto; }
+.bubble::before { content: ''; position: absolute; top: -7px; right: 18px; width: 12px; height: 12px; background: var(--ui-bg-elevated); border-left: 1px solid var(--ui-border); border-top: 1px solid var(--ui-border); transform: rotate(45deg); }
+.grown { display: flex; gap: 8px; align-items: baseline; }
+.grown b { flex: none; font-family: var(--hand); font-size: 14px; font-weight: 400; color: var(--ui-text-dimmed); }
+.grown.in b { color: var(--terracotta); }
+.grown.out b { color: var(--slate); }
+.grown span { display: grid; gap: 1px; font-family: var(--font-mono); font-size: 12px; color: var(--ui-text); }
+.grown small { font-family: var(--font-sans); font-size: 11.5px; line-height: 1.4; color: var(--ui-text-dimmed); }
+.grown em { display: block; font-style: normal; font-size: 9.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ui-text-muted); }
 .grown.in em { color: var(--terracotta); }
 .grown.out em { color: var(--slate); }
 .hint { margin: 8px 0 0; font-size: 14px; color: var(--ui-text-dimmed); }
-.line[tabindex] { cursor: help; outline: none; }
-.grows h5.in { color: var(--terracotta); }
-.grows h5.out { color: var(--slate); }
-.grows h5.refuses { color: var(--ui-text-muted); }
-.grown { display: flex; gap: 10px; align-items: baseline; width: 100%; padding: 4px 8px; border: 0; border-radius: 6px; background: transparent; text-align: left; cursor: default; transition: background 0.2s; }
-.grown.on { background: var(--ui-bg-muted); }
-.grown b { flex: none; font-family: var(--hand); font-size: 15px; font-weight: 400; color: var(--ui-text-dimmed); }
-.grown.in b { color: var(--terracotta); }
-.grown.out b { color: var(--slate); }
-.grown span { display: grid; gap: 1px; font-family: var(--font-mono); font-size: 12.5px; color: var(--ui-text); }
-.grown small { font-family: var(--font-sans); font-size: 12px; color: var(--ui-text-dimmed); }
+.line[tabindex] { cursor: pointer; outline: none; }
 .deeper { display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: baseline; margin-top: 24px; padding-top: 12px; border-top: 1px dashed var(--ui-border); font-size: 13px; }
 .deeper span { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ui-text-dimmed); }
 .deeper a { color: var(--ui-primary); }
