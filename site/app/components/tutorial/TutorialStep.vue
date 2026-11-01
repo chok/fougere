@@ -275,12 +275,12 @@ onBeforeUnmount(() => removeEventListener('keydown', onKey));
 .rail li { position: relative; flex: 1 0 84px; }
 .rail li + li::before { content: ''; position: absolute; top: 5px; left: -50%; width: 100%; height: 2px; background: #dcdfd6; }
 .rail li.done + li::before, .rail li.done::before, .rail li.on::before { background: var(--ui-primary); }
-.rail a { position: relative; display: flex; flex-direction: column; align-items: center; gap: 9px; font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.06em; text-transform: uppercase; color: #8a948c; text-decoration: none; white-space: nowrap; }
+.rail a { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; gap: 9px; font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.06em; text-transform: uppercase; color: #8a948c; text-decoration: none; white-space: nowrap; }
 .rail i { width: 12px; height: 12px; border-radius: 50%; border: 2px solid #c3c9bf; background: var(--ui-bg); transition: all 0.3s; }
 .rail .done i { background: var(--ui-primary); border-color: var(--ui-primary); }
 .rail .done a { color: var(--ui-text-muted); }
 .rail .on a { color: var(--ui-text); font-weight: 600; }
-.rail .on i { border-color: var(--ui-primary); box-shadow: 0 0 0 4px color-mix(in srgb, var(--ui-primary) 18%, transparent); transform: scale(1.15); }
+.rail .on i { background: var(--ui-primary); border-color: var(--ui-primary); box-shadow: 0 0 0 4px color-mix(in srgb, var(--ui-primary) 18%, transparent); transform: scale(1.15); }
 
 .leaves { max-width: 880px; margin: 0 auto; }
 
