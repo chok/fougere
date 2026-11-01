@@ -1,6 +1,6 @@
 {
   "name": "@fougere/adapter-env",
-  "version": "0.28.0-alpha.2",
+  "version": "0.29.0-alpha.0",
   "description": "The process environment as a source — MEILI_URL read as Meili's url, judged at boot.",
   "keywords": [
     "fougere",

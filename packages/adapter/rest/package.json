@@ -1,6 +1,6 @@
 {
   "name": "@fougere/adapter-rest",
-  "version": "0.28.0-alpha.2",
+  "version": "0.29.0-alpha.0",
   "description": "Entity → REST routes.",
   "keywords": [
     "fougere",
