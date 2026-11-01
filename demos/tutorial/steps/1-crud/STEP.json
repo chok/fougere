@@ -1,5 +1,5 @@
 {
-  "name": "CRUD",
+  "name": "An entity",
   "title": "One entity, *and a whole CRUD*",
   "concept": "entity",
   "lede": "Write a post and the handler that serves its rows, and name the API the app answers on. Start it with npx fougere dev blog: it answers on :4100, rows in memory.",
