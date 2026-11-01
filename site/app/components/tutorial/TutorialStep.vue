@@ -280,7 +280,7 @@ onBeforeUnmount(() => removeEventListener('keydown', onKey));
 .rail .done i { background: var(--ui-primary); border-color: var(--ui-primary); }
 .rail .done a { color: var(--ui-text-muted); }
 .rail .on a { color: var(--ui-text); font-weight: 600; }
-.rail .on i { background: var(--ui-primary); border-color: var(--ui-primary); box-shadow: 0 0 0 4px color-mix(in srgb, var(--ui-primary) 18%, transparent); transform: scale(1.15); }
+.rail .on i { border-color: var(--ui-primary); box-shadow: 0 0 0 4px color-mix(in srgb, var(--ui-primary) 18%, transparent); transform: scale(1.15); }
 
 .leaves { max-width: 880px; margin: 0 auto; }
 
