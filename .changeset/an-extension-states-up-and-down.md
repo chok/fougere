@@ -1,5 +1,5 @@
 ---
-'@fougere/core': major
+'@fougere/core': minor
 ---
 
 An extension states `up`, `down`, `fronds` and `state`: `install` and `steps` leave the public `Extension`,

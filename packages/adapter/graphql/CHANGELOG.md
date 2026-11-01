@@ -1,8 +1,8 @@
 # @fougere/schema-graphql
 
-## 1.0.0-alpha.1
+## 0.28.0-alpha.2
 
-### Major Changes
+### Minor Changes
 
 - d4eab03: Two fronds may each declare an entity of one name: in one source they are two views of one table, its
   union, each reading and writing its own fields; a field declared two ways refuses the boot

@@ -1,5 +1,5 @@
 ---
-'@fougere/core': major
+'@fougere/core': minor
 '@fougere/compiler': minor
 '@fougere/auth-better': patch
 ---

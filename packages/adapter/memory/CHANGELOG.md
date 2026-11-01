@@ -1,6 +1,6 @@
 # @fougere/adapter-memory
 
-## 0.28.0-alpha.1
+## 0.28.0-alpha.2
 
 ### Minor Changes
 

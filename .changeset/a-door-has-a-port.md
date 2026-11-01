@@ -1,7 +1,7 @@
 ---
-'@fougere/core': major
+'@fougere/core': minor
 '@fougere/compiler': minor
-'@fougere/adapter-rest': major
+'@fougere/adapter-rest': minor
 ---
 
 What stands around a REST request is a link in front of `Rest`, the port REST's door declares

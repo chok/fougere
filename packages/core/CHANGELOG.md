@@ -1,8 +1,8 @@
 # @fougere/core
 
-## 1.0.0-alpha.1
+## 0.28.0-alpha.2
 
-### Major Changes
+### Minor Changes
 
 - aea7c71: What stands around a REST request is a link in front of `Rest`, the port REST's door declares
   (`ProtocolType.port`): `implements Partial<Rest>` around every route of a frond, `extends Rest<PostHandler>`

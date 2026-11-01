@@ -2,7 +2,7 @@
 '@fougere/core': minor
 '@fougere/adapter-sql': minor
 '@fougere/adapter-memory': minor
-'@fougere/adapter-graphql': major
+'@fougere/adapter-graphql': minor
 '@fougere/testing': patch
 ---
 
