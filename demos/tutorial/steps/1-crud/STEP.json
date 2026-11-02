@@ -80,7 +80,7 @@
   ],
   "try": {
     "command": "curl -X POST localhost:4100/api/blog/posts -d '{\"title\":\"\"}'",
-    "output": "400  VALIDATION_FAILED  title: String is too short (0 < 1).",
+    "output": "422  VALIDATION_FAILED  title: String is too short (0 < 1).",
     "request": {
       "method": "POST",
       "path": "/api/blog/posts",
@@ -88,7 +88,7 @@
         "title": ""
       }
     },
-    "status": 400,
+    "status": 422,
     "contains": "String is too short"
   },
   "whatIf": "PATCH /api/blog/posts/:id with { status: 'published' } passes here, and publishes without any rule. A rule, two steps on, closes it.",

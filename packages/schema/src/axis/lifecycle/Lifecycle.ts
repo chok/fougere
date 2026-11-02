@@ -52,7 +52,7 @@ export class Lifecycle {
     return { value: Generators.resolve(rule.generate)() };
   }
 
-  /** The generator a create names, when it names one — `primary()` names `cuid2`. */
+  /** The generator a create names, when it names one — `primary()` names `uuidv7`. */
   generator(): string | undefined {
     const rule = this.create;
 

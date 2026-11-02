@@ -28,13 +28,13 @@ import {
 } from '../src/index.js';
 
 describe('helpers', () => {
-  it('primary() creates an auto-generated id field (cuid2 default)', () => {
+  it('primary() creates an auto-generated id field (uuidv7 default)', () => {
     const f = primary();
     expect(Field.is(f)).toBe(true);
     expect(f.shape).toEqual({ type: 'string' });
     expect(f.role?.primary).toBe(true);
     // identity in the graph implies immutability in time (default 2026-07-15)
-    expect(f.lifecycle).toEqual({ create: { generate: 'cuid2' }, update: 'forbidden' });
+    expect(f.lifecycle).toEqual({ create: { generate: 'uuidv7' }, update: 'forbidden' });
   });
 
   it('primary({ generate }) replaces the default', () => {
@@ -103,7 +103,7 @@ describe('helpers', () => {
     expect(f.lifecycle?.update).toBe('forbidden');
     expect(f.shape?.type).toBe('string');
     const id = immutable(primary());
-    expect(id.lifecycle).toEqual({ create: { generate: 'cuid2' }, update: 'forbidden' });
+    expect(id.lifecycle).toEqual({ create: { generate: 'uuidv7' }, update: 'forbidden' });
   });
 
   it('oneOf() creates a string field constrained to an enum', () => {

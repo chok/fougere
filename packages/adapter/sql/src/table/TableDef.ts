@@ -1,5 +1,5 @@
-import { Lifecycle, Role } from '@fougere/schema';
-import { SchemaError, Shapes, dotted, lowerFirst, type Field, type SchemaView } from '@fougere/schema';
+import { Lifecycle, Role, UUID_GENERATORS } from '@fougere/schema';
+import { SchemaError, Shapes, dotted, lowerFirst, pluralOf, type Field, type SchemaView } from '@fougere/schema';
 import { boundsOf } from '../check.js';
 import { type SqlField } from '../fields/SqlField.js';
 import { sqlEntries } from '../fields/SqlFields.js';
@@ -84,6 +84,23 @@ function referenceFor(
   return role.onDelete ? { table, column, onDelete: role.onDelete } : { table, column };
 }
 
+/**
+ * A key whose generator makes UUIDs, or a reference to one. The target is found by NAME among the
+ * tables being built, the way `referenceFor` finds it, so a class and a card answer alike.
+ */
+function holdsUuids(field: Field, tableNameOf?: Map<SchemaView, string>): boolean {
+  const generator = Lifecycle.of(field).generator();
+  if (generator !== undefined) return UUID_GENERATORS.has(generator);
+
+  const role = Role.of(field);
+  if (!role.isReference() || !tableNameOf) return false;
+  const name = (role.target as { name?: string } | undefined)?.name;
+  const target = [...tableNameOf.keys()].find((schema) => schema.name === name);
+  const key = target && Object.values(target.getFields()).find((one) => Role.of(one).isPrimary());
+
+  return key !== undefined && holdsUuids(key);
+}
+
 function toColumn(
   fieldName: string,
   field: Field,
@@ -114,6 +131,7 @@ function toColumn(
   // constraint, emitted once from `uniqueGroups` rather than once per member column.
   if (Role.of(field).isUnique() && !column.primary) column.unique = true;
   if (Role.of(field).isIndexed() && !column.primary && !column.unique) column.index = true;
+  if (holdsUuids(field, tableNameOf)) column.uuid = true;
   const references = referenceFor(field, resolve, tableNameOf, hosted);
   if (references) column.references = references;
   if (stated) column.stated = stated;
@@ -172,9 +190,9 @@ export function isKeyed(table: TableDef, column: ColumnDef): boolean {
 
 // ─── App-wide entity collection — shared by generateSQL and desiredTables ──
 
-/** camelCase → snake_case + plural */
+/** `orderItem` → `order_items`: the plural, then snake_case. */
 export function toTableName(name: string): string {
-  return name.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`) + 's';
+  return toSnakeCase(pluralOf(lowerFirst(name)));
 }
 
 /** A schema says whether it holds rows; this adapter decides what to emit for it. */

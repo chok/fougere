@@ -127,7 +127,7 @@ export class HandlerFacade {
     if (!contract.binding) return [];
     if (invocation.args !== undefined) return this.arguments.given(contract.binding, contract.input, invocation);
 
-    return this.arguments.resolve(contract.binding, invocation);
+    return this.arguments.resolve(contract.binding, invocation, contract.output);
   }
 
   /** The facade's steps over the answer, in order, each handed what the one before it answered. */

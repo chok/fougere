@@ -1,12 +1,13 @@
 import { ErrorCode } from '../../wire/ErrorCode.js';
 import { FougereError } from '../../wire/FougereError.js';
 import type { RelationCheck } from './RelationCheck.js';
+import { isChange, type Change } from '../../storage/Change.js';
 import { release, type Releasing } from './Release.js';
 
 /** The gestures a relation reads before they land. */
 interface Writer {
   create(...args: [Record<string, unknown>, ...unknown[]]): Promise<unknown>;
-  update(...args: [unknown, Record<string, unknown>, ...unknown[]]): Promise<unknown>;
+  update(...args: [unknown, Record<string, unknown> | Change<Record<string, unknown>>, ...unknown[]]): Promise<unknown>;
   upsert?(...args: [Record<string, unknown>, ...unknown[]]): Promise<unknown>;
   upsertAll?(...args: [readonly Record<string, unknown>[], ...unknown[]]): Promise<unknown>;
   delete?(id: string): Promise<boolean>;
@@ -65,7 +66,15 @@ export class RelationGuard {
     };
 
     guarded.update = async function (...args) {
-      await checking.targetsOf([args[1]], 'update');
+      const input = args[1];
+      if (isChange(input)) {
+        args[1] = async (current) => {
+          const patch = await input(current);
+          await checking.targetsOf([patch], 'update');
+
+          return patch;
+        };
+      } else await checking.targetsOf([input], 'update');
 
       return writer.update.apply(this, args);
     };

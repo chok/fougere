@@ -9,7 +9,7 @@ import { Logger } from '../builtin/Logger.js';
 const log = new Logger('error');
 
 const HTTP_STATUS: Record<ErrorCode, number> = {
-  [ErrorCode.VALIDATION_FAILED]: 400,
+  [ErrorCode.VALIDATION_FAILED]: 422,
   [ErrorCode.BAD_REQUEST]: 400,
   [ErrorCode.UNAUTHORIZED]: 401,
   [ErrorCode.FORBIDDEN]: 403,

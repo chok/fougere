@@ -84,8 +84,6 @@ async function rest(app: App, request: Request, state: () => Promise<Record<stri
   }
 
   const segments = url.pathname.split('/').filter(Boolean);
-  if (segments.length < 2) return undefined;
-
   const match = matchRoute(tableOf(app), method, segments);
   if (!match) return undefined;
 

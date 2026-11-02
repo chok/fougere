@@ -1,5 +1,5 @@
 import type { Fields } from '@fougere/schema';
-import { Card, Visibility } from '@fougere/schema';
+import { Card, Visibility, pluralOf } from '@fougere/schema';
 import type { HttpMethod } from '@fougere/http';
 import { listens, RouteAddress, wordsOf, type Cardinality, type FougereFrondProtocols, type HandlerEntry as CoreHandlerEntry, type ProtocolConfig } from '@fougere/core';
 import type { BindingPlan } from '@fougere/core/descriptor';
@@ -77,12 +77,6 @@ type HandlerFacade = Record<string, Function>;
 /** The five a Crud handler brings answer at the collection or the row, never under their own name. */
 const CRUD = new Set(['list', 'findById', 'create', 'update', 'delete']);
 
-function pluralize(name: string): string {
-  return name.endsWith('y')
-    ? name.slice(0, -1) + 'ies'
-    : name + 's';
-}
-
 /** The verbs whose op makes the row it designates disappear — the one method still read off the name. */
 const REMOVING = new Set(['delete', 'remove']);
 
@@ -151,7 +145,7 @@ function derivePath(address: string, opName: string, binding: BindingPlan = [], 
   const following = required.filter((param) => !param.identifies);
   const named = CRUD.has(opName) ? [] : [opName.replace(/[A-Z]/g, (letter) => '-' + letter.toLowerCase())];
 
-  return ['', pluralize(address), ...designating.map(segmentOf), ...named, ...following.map(segmentOf)].join('/');
+  return ['', pluralOf(address), ...designating.map(segmentOf), ...named, ...following.map(segmentOf)].join('/');
 }
 
 function designates(binding: BindingPlan = []): boolean {

@@ -1,10 +1,10 @@
 import { Role } from '@fougere/schema';
 import { sql, type Kysely } from 'kysely';
 import { applyCreate, applyUpdate, type Fields, type SchemaView } from '@fougere/schema';
-import { toTable, toTableName, type TableDef } from '../table/TableDef.js';
-import { resolveDialect, type Dialect } from '../dialect/Dialect.js';
+import { isKeyed, toTable, toTableName, type TableDef } from '../table/TableDef.js';
+import { columnTypeFor, resolveDialect, type Dialect } from '../dialect/Dialect.js';
 import { type DialectName } from '../dialect/DialectName.js';
-import { comparisonOf, comparisonsIn, ErrorCode, FougereError, type Comparison } from '@fougere/core/contract';
+import { comparisonOf, comparisonsIn, ErrorCode, FougereError, isChange, type Change, type Comparison } from '@fougere/core/contract';
 import { codecsOf, type ValueCodec } from '../values.js';
 import type { StorageFactoryOptions } from './StorageFactoryOptions.js';
 
@@ -87,6 +87,8 @@ export class SqlStorage {
   private dialect: Dialect;
   /** How many keys one statement may carry here — see `Dialect.maxBindings`. */
   private maxBindings: number;
+  /** Fields whose column this engine types `uuid`, which refuses to compare with any other text. */
+  private uuids = new Set<string>();
   /** How this engine spells an upsert, or `false` when it cannot — see `Dialect.upsert`. */
   private upsertClause: 'on conflict' | 'on duplicate key' | false;
 
@@ -107,6 +109,9 @@ export class SqlStorage {
       this.toField.set(column.name, column.field);
     }
     this.codecs = codecsOf(this.table.columns);
+    for (const column of this.table.columns) {
+      if (columnTypeFor(resolved, column, isKeyed(this.table, column)) === 'uuid') this.uuids.add(column.field);
+    }
     this.pk = analyzeFields(entity).pk;
     this.fields = entity.getFields();
     this.selectFields = selectFields;
@@ -163,16 +168,30 @@ export class SqlStorage {
     return data;
   }
 
+  /**
+   * A value a filter compares against. On a `uuid` column, text that is no UUID designates no row,
+   * so it becomes the nil UUID, which no generator makes: `GET /posts/missing` finds nothing rather
+   * than failing on `invalid input syntax for type uuid`.
+   */
+  private sought(field: string, value: unknown): unknown {
+    if (this.uuids.has(field) && !(typeof value === 'string' && SqlStorage.UUID.test(value))) return SqlStorage.NIL;
+
+    return this.write(field, value);
+  }
+
+  private static readonly UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  private static readonly NIL = '00000000-0000-0000-0000-000000000000';
+
   /** Apply a primary-key filter (simple or composite). */
   private wherePk<Q extends { where(a: any, b: any, c: any): Q }>(query: Q, id: string | Record<string, unknown>): Q {
     if (this.pk.isComposite) {
       const composite = id as Record<string, unknown>;
 
-      return this.pk.names.reduce((q, name) => q.where(this.column(name), '=', this.write(name, composite[name])), query);
+      return this.pk.names.reduce((q, name) => q.where(this.column(name), '=', this.sought(name, composite[name])), query);
     }
     const name = this.pk.names[0];
 
-    return query.where(this.column(name), '=', this.write(name, id));
+    return query.where(this.column(name), '=', this.sought(name, id));
   }
 
   // A filter compares against the COLUMN, so its value crosses the same way a write
@@ -189,8 +208,8 @@ export class SqlStorage {
       if (comparison) return this.compared(q, key, comparison);
 
       return Array.isArray(value)
-        ? q.where(this.column(key), 'in', [...new Set(value)].map((v) => this.write(key, v)))
-        : q.where(this.column(key), '=', this.write(key, value));
+        ? q.where(this.column(key), 'in', [...new Set(value)].map((v) => this.sought(key, v)))
+        : q.where(this.column(key), '=', this.sought(key, value));
     }, query);
   }
 
@@ -205,7 +224,7 @@ export class SqlStorage {
     comparison: Comparison,
   ): Q {
     const column = this.column(key);
-    const bound = (value: unknown) => this.write(key, value);
+    const bound = (value: unknown) => this.sought(key, value);
 
     return comparisonsIn(comparison).reduce((q, [name, value]) => {
       switch (name) {
@@ -323,7 +342,7 @@ export class SqlStorage {
       const rows = await this.db
         .selectFrom(this.table.name)
         .selectAll()
-        .where(this.column(name), 'in', slice.map((id) => this.write(name, id)))
+        .where(this.column(name), 'in', slice.map((id) => this.sought(name, id)))
         .execute();
       for (const row of rows as any[]) {
         const data = this.fromRow(row);
@@ -495,31 +514,84 @@ export class SqlStorage {
     // `createdAt`, a declared default. The column DEFAULT below still holds for a
     // writer that is not us, the way a CHECK does; nothing depends on it any more.
     const data = applyCreate(this.fields, input);
+    const insert = this.db.insertInto(this.table.name).values(this.toRow(data));
 
-    await this.refusal(() => this.db.insertInto(this.table.name).values(this.toRow(data)).execute());
-
-    // Contract: create returns the COMPLETE row (validation validates absence, it
-    // never fills) — re-read so SQL-realised defaults appear. Same move as update().
-    const id = this.pk.isComposite
-      ? Object.fromEntries(this.pk.names.map((n) => [n, data[n]]))
-      : (data[this.pk.names[0]] as string | undefined);
-    const created = id !== undefined ? await this.findById(id) : undefined;
+    // Contract: create returns the COMPLETE row, SQL-realised defaults included — in the same
+    // statement where the engine can say it, read again where it cannot.
+    const created = this.dialect.supportsReturning
+      ? await this.refusal(() => insert.returningAll().executeTakeFirst()).then((row) => row && this.fromRow(row))
+      : await this.refusal(() => insert.execute()).then(() => this.reread(data));
     const result = created ?? data;
     const sel = this.resolveSelect(options);
 
     return sel ? pick(result, sel) : result;
   }
 
-  async update(id: string | Record<string, unknown>, input: Record<string, unknown>, options?: SelectOption): Promise<Record<string, unknown>> {
+  async update(
+    id: string | Record<string, unknown>,
+    input: Record<string, unknown> | Change<Record<string, unknown>>,
+    options?: SelectOption,
+  ): Promise<Record<string, unknown>> {
+    if (isChange(input)) return this.changed(id, input, options);
+
     const data = applyUpdate(this.fields, input);
+    const write = this.wherePk(this.db.updateTable(this.table.name).set(this.toRow(data)) as any, id);
 
-    await this.refusal(() => this.wherePk(this.db.updateTable(this.table.name).set(this.toRow(data)) as any, id).execute());
-
-    const updated = await this.findById(id);
+    const updated = this.dialect.supportsReturning
+      ? await this.refusal(() => write.returningAll().executeTakeFirst()).then((row: any) => row && this.fromRow(row))
+      : await this.refusal(() => write.execute()).then(() => this.findById(id));
     if (!updated) throw new FougereError({ code: ErrorCode.NOT_FOUND, message: `No row in ${this.table.name} for ${JSON.stringify(id)}.` });
     const sel = this.resolveSelect(options);
 
     return sel ? pick(updated, sel) : updated;
+  }
+
+  /** The row a create just wrote, read back by its key. */
+  private async reread(data: Record<string, unknown>): Promise<Record<string, unknown> | undefined> {
+    const id = this.pk.isComposite
+      ? Object.fromEntries(this.pk.names.map((name) => [name, data[name]]))
+      : (data[this.pk.names[0]] as string | undefined);
+
+    return id === undefined ? undefined : this.findById(id);
+  }
+
+  /** The row read under a lock its transaction holds to the end, so the change it hands back lands on what it read. */
+  private async changed(
+    id: string | Record<string, unknown>,
+    change: Change<Record<string, unknown>>,
+    options?: SelectOption,
+  ): Promise<Record<string, unknown>> {
+    if (!this.db.isTransaction) {
+      return this.db.transaction().execute((transaction) => this.within(transaction).changed(id, change, options));
+    }
+
+    const current = await this.refusal(() => this.locked(id));
+    if (!current) throw new FougereError({ code: ErrorCode.NOT_FOUND, message: `No row in ${this.table.name} for ${JSON.stringify(id)}.` });
+    const shown = this.selectFields ? pick(current, this.selectFields) : current;
+
+    return this.update(id, await change(shown), options);
+  }
+
+  private async locked(id: string | Record<string, unknown>): Promise<Record<string, unknown> | undefined> {
+    const read = this.wherePk(this.db.selectFrom(this.table.name).selectAll() as any, id);
+    if (this.dialect.rowLock === 'for update') {
+      const row = await read.forUpdate().executeTakeFirst();
+
+      return row && this.fromRow(row);
+    }
+
+    const key = this.column(this.pk.names[0]!);
+    await this.wherePk(this.db.updateTable(this.table.name).set({ [key]: sql.ref(key) }) as any, id).execute();
+    const row = await read.executeTakeFirst();
+
+    return row && this.fromRow(row);
+  }
+
+  within(db: Kysely<any>): SqlStorage {
+    const bound = Object.create(this) as SqlStorage;
+    bound.db = db;
+
+    return bound;
   }
 
   /**
@@ -530,6 +602,13 @@ export class SqlStorage {
     try {
       return await write();
     } catch (cause) {
+      if (this.dialect.isContention(cause)) {
+        throw new FougereError({
+          code: ErrorCode.CONFLICT,
+          message: `Another write held these rows of ${this.table.name}; try again.`,
+          cause,
+        });
+      }
       if (!this.dialect.isUniqueViolation(cause)) throw cause;
       throw new FougereError({
         code: ErrorCode.CONFLICT,
@@ -548,9 +627,25 @@ export class SqlStorage {
   }
 }
 
+/**
+ * What a storage reads off its entity — the table, its columns and codecs — is the same for every
+ * connection, so it is built once per entity, table and engine. A transaction only binds it.
+ */
+const built = new WeakMap<SchemaView, Map<string, SqlStorage>>();
+
+function storageOf(db: Kysely<any>, entity: SchemaView, tableName: string, dialect: DialectName): SqlStorage {
+  const byTable = built.get(entity) ?? new Map<string, SqlStorage>();
+  built.set(entity, byTable);
+  const key = `${dialect} ${tableName}`;
+  const storage = byTable.get(key) ?? new SqlStorage(db, entity, tableName, undefined, dialect);
+  byTable.set(key, storage);
+
+  return storage.within(db);
+}
+
 /** Create a StorageFactory backed by Kysely — same call shape on every engine. */
 export function createStorageFactory(db: Kysely<any>, options?: StorageFactoryOptions, dialect: DialectName = 'sqlite') {
   const resolve = options?.tableName ?? toTableName;
 
-  return (entity: SchemaView, name: string) => new SqlStorage(db, entity, resolve(name), undefined, dialect);
+  return (entity: SchemaView, name: string) => storageOf(db, entity, resolve(name), dialect);
 }

@@ -34,7 +34,7 @@ the URL from the file name. React Router declares its paths in `app/routes.ts`, 
 GET  /api/blog/posts          → {"items":[…]}                              200
 POST /_fougere/call           → {"jsonrpc":"2.0","id":1,"result":[…]}      200
 DELETE /api/blog/posts        → Method DELETE not allowed — try GET, POST  405
-POST /api/blog/posts {status} → VALIDATION_FAILED — status: Read-only      400
+POST /api/blog/posts {status} → VALIDATION_FAILED — status: Read-only      422
 / · /drafts · /new                                                         200
 ```
 

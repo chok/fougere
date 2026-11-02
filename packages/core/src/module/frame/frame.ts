@@ -6,6 +6,7 @@ import { FieldSet, type SchemaView } from '@fougere/schema';
 import { dequal } from 'dequal';
 import { declares } from '../../Source.js';
 import type { Logger } from '../../builtin/Logger.js';
+import { isChange, type Change } from '../../storage/Change.js';
 
 /** One write that landed, and how to take it back. */
 export interface Undo {
@@ -20,7 +21,7 @@ export interface Undo {
  */
 interface Undoable {
   create(input: Record<string, unknown>, ...rest: unknown[]): Promise<Record<string, unknown>>;
-  update(id: string, patch: Record<string, unknown>, ...rest: unknown[]): Promise<Record<string, unknown>>;
+  update(id: string, patch: Record<string, unknown> | Change<Record<string, unknown>>, ...rest: unknown[]): Promise<Record<string, unknown>>;
   delete(id: string): Promise<boolean>;
   findById(id: string, ...rest: unknown[]): Promise<Record<string, unknown> | undefined>;
   findByKeys(ids: readonly string[], ...rest: unknown[]): Promise<Map<string, Record<string, unknown>>>;
@@ -91,7 +92,15 @@ function recordCreate({ base, recorded, entity, key, journal }: Recording): void
  */
 function recordUpdate({ base, recorded, entity, journal }: Recording): void {
   recorded.update = async function (...args) {
-    const [id, patch] = args;
+    const [id, input] = args;
+    let patch = isChange(input) ? {} : input;
+    if (isChange(input)) {
+      args[1] = async (current) => {
+        patch = await input(current);
+
+        return patch;
+      };
+    }
     const before = await base.findById.call(this, id);
     const row = await base.update.apply(this, args);
     if (!before) return row;

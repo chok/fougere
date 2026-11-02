@@ -30,12 +30,17 @@ const json: ValueCodec = {
 };
 
 /**
- * A driver may answer a number as a BigInt — Postgres does it for `count(*)` and for `bigint`
- * columns, DuckDB for every count.
+ * A driver may answer a number as a BigInt — DuckDB for every count — or as text: `pg` reads a
+ * `bigint` and a `numeric` column that way, so `total` came back `'300'`.
  */
 const numeric: ValueCodec = {
   write: (v) => (typeof v === 'bigint' ? fits(v) : v),
-  read: (v) => (typeof v === 'bigint' ? fits(v) : v),
+  read: (v) => {
+    if (typeof v === 'bigint') return fits(v);
+    if (typeof v !== 'string') return v;
+
+    return /^-?\d+$/.test(v) ? fits(BigInt(v)) : Number(v);
+  },
 };
 
 function fits(value: bigint): number {

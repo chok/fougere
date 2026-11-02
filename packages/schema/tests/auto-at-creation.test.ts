@@ -85,6 +85,6 @@ describe('auto-at-creation', () => {
     // The overload that takes a field states the identity role and immutability, and
     // deliberately no `create`: the value is supplied, not generated.
     expect(primary(text()).lifecycle?.create).toBeUndefined();
-    expect(primary().lifecycle?.create).toEqual({ generate: 'cuid2' });
+    expect(primary().lifecycle?.create).toEqual({ generate: 'uuidv7' });
   });
 });

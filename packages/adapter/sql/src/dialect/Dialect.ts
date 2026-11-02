@@ -16,6 +16,13 @@ export interface Dialect {
   upsert: 'on conflict' | 'on duplicate key' | false;
   /** Is this the engine refusing a duplicate, rather than failing? */
   isUniqueViolation(error: unknown): boolean;
+  /**
+   * How a transaction keeps a row from every other writer until it ends: `for update` on the read,
+   * or `touch` — an update writing the key onto itself, which every engine locks.
+   */
+  rowLock: 'for update' | 'touch';
+  /** Did the engine give up on this transaction for another one — a deadlock, a lock it waited too long for? */
+  isContention(error: unknown): boolean;
 }
 
 /** The message a driver hands up, however it wrapped it. */
@@ -40,6 +47,8 @@ export const sqliteDialect: Dialect = {
   // SQLite: `UNIQUE constraint failed: products.sku` — and D1 relays it verbatim.
   isUniqueViolation: (error) => /UNIQUE constraint failed/i.test(messageOf(error)),
   upsert: 'on conflict',
+  rowLock: 'touch',
+  isContention: (error) => /SQLITE_BUSY|database is locked/i.test(messageOf(error)),
   // SQLITE_MAX_VARIABLE_NUMBER is 32766 on any build since 3.32 (measured on better-sqlite3).
   maxBindings: 30000,
   name: 'sqlite',
@@ -64,6 +73,9 @@ export const pgDialect: Dialect = {
   // in a way no translation can blur.
   isUniqueViolation: (error) => /23505/.test(messageOf(error)),
   upsert: 'on conflict',
+  rowLock: 'for update',
+  // 40P01 a deadlock, 40001 a serialization failure.
+  isContention: (error) => /\b40P01\b|\b40001\b/.test(messageOf(error)),
   // the wire protocol counts parameters in an int16 — 65535.
   maxBindings: 60000,
   name: 'pg',
@@ -71,6 +83,7 @@ export const pgDialect: Dialect = {
   // Postgres has real types for everything, and `text` is indexable — so a key
   // needs no narrowing.
   columnType(column) {
+    if (column.uuid) return 'uuid';
     switch (column.type) {
       case 'integer':
         return 'integer';
@@ -93,6 +106,8 @@ export const mysqlDialect: Dialect = {
   // MySQL: ER_DUP_ENTRY / 1062, `Duplicate entry '…' for key '…'`.
   isUniqueViolation: (error) => /ER_DUP_ENTRY|Duplicate entry/i.test(messageOf(error)),
   upsert: 'on duplicate key',
+  rowLock: 'for update',
+  isContention: (error) => /ER_LOCK_DEADLOCK|ER_LOCK_WAIT_TIMEOUT/.test(messageOf(error)),
   // no parameter ceiling of its own; max_allowed_packet is what gives way, and it grows with the VALUES not the count.
   maxBindings: 60000,
   name: 'mysql',
@@ -119,6 +134,9 @@ export const mssqlDialect: Dialect = {
   // SQL Server: 2627 for a constraint, 2601 for a unique index — two numbers, one fact.
   isUniqueViolation: (error) => /\b(2627|2601)\b|Violation of UNIQUE KEY/i.test(messageOf(error)),
   upsert: false,
+  rowLock: 'touch',
+  // 1205: chosen as the deadlock victim.
+  isContention: (error) => /\b1205\b|deadlocked/i.test(messageOf(error)),
   // 2100 parameters per statement, the lowest of the four by a wide margin.
   maxBindings: 2000,
   name: 'mssql',

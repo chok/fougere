@@ -122,7 +122,7 @@ describe('createTableSQL — across dialects', () => {
   it('narrows the key column where text is not indexable', () => {
     expect(ddl('posts', Post, 'mysql')).toContain('`id` varchar(255) not null primary key');
     expect(ddl('posts', Post, 'mssql')).toContain('"id" nvarchar(255) not null primary key');
-    expect(ddl('posts', Post, 'pg')).toContain('"id" text not null primary key');
+    expect(ddl('posts', Post, 'pg')).toContain('"id" uuid not null primary key');
   });
 
   it('omits if not exists on SQL Server, which has no such clause', () => {
@@ -161,10 +161,10 @@ describe('generateSQL', () => {
 
 describe('createTableSQL — foreign keys', () => {
   it('emits an inline reference for every dialect', () => {
-    const table = toTable('products', Product, { resolve: (n) => `${n}s`, tableNameOf: new Map<any, string>([[Category, 'categorys']]) });
+    const table = toTable('products', Product, { resolve: (n) => `${n}s`, tableNameOf: new Map<any, string>([[Category, 'categories']]) });
     for (const dialect of ['sqlite', 'pg', 'mysql', 'mssql'] as const) {
       const sql = createTableSQL(table, dialect);
-      expect(sql).toMatch(/references [`"]categorys[`"] \([`"]id[`"]\)/);
+      expect(sql).toMatch(/references [`"]categories[`"] \([`"]id[`"]\)/);
     }
   });
 
@@ -190,7 +190,7 @@ describe('createTableSQL — foreign keys', () => {
   });
 
   it('skipReferences renders the column without its inline FK', () => {
-    const table = toTable('products', Product, { resolve: (n) => `${n}s`, tableNameOf: new Map<any, string>([[Category, 'categorys']]) });
+    const table = toTable('products', Product, { resolve: (n) => `${n}s`, tableNameOf: new Map<any, string>([[Category, 'categories']]) });
     const sql = createTableSQL(table, 'pg', { skipReferences: new Set(['category_id']) });
     expect(sql).not.toContain('references');
   });
@@ -198,10 +198,10 @@ describe('createTableSQL — foreign keys', () => {
 
 describe('addForeignKeyConstraintSQL', () => {
   it('renders ALTER TABLE ADD CONSTRAINT, per dialect', () => {
-    const table = toTable('products', Product, { resolve: (n) => `${n}s`, tableNameOf: new Map<any, string>([[Category, 'categorys']]) });
+    const table = toTable('products', Product, { resolve: (n) => `${n}s`, tableNameOf: new Map<any, string>([[Category, 'categories']]) });
     const column = table.columns.find((c) => c.field === 'categoryId')!;
     expect(addForeignKeyConstraintSQL(table, column, 'pg')).toBe(
-      'alter table "products" add constraint "products_category_id_fk" foreign key ("category_id") references "categorys" ("id")',
+      'alter table "products" add constraint "products_category_id_fk" foreign key ("category_id") references "categories" ("id")',
     );
     expect(addForeignKeyConstraintSQL(table, column, 'mysql')).toContain('add constraint `products_category_id_fk`');
   });
@@ -220,7 +220,7 @@ describe('generateSQL — FK ordering', () => {
     ]));
     expect(statements).toHaveLength(2);
     expect(statements[0]).toContain('"products"');
-    expect(statements[1]).toContain('"categorys"');
+    expect(statements[1]).toContain('"categories"');
   });
 
   it.each(['pg', 'mysql', 'mssql'] as const)('%s reorders so the referenced table is created first', (dialect) => {
@@ -229,7 +229,7 @@ describe('generateSQL — FK ordering', () => {
       { name: 'category', entityClass: Category },
     ]), { dialect });
     expect(statements).toHaveLength(2);
-    expect(statements[0]).toContain('categorys');
+    expect(statements[0]).toContain('categories');
     expect(statements[1]).toContain('products');
   });
 

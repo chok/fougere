@@ -44,9 +44,9 @@ describe('REST answers one status set, read off the contract', () => {
     expect(await rest('findById', { id: 'missing' })).toMatchObject({ status: 404, body: { code: 'NOT_FOUND' } });
   });
 
-  it('on create: 201, and 400 for a refused input', async () => {
+  it('on create: 201, and 422 for a refused input', async () => {
     expect((await rest('create', { input: article })).status).toBe(201);
-    expect((await rest('create', { input: { ...article, title: 'x' } })).status).toBe(400);
+    expect((await rest('create', { input: { ...article, title: 'x' } })).status).toBe(422);
   });
 
   it('on update: 200', async () => {

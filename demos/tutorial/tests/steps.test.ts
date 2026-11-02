@@ -82,13 +82,13 @@ describe.each(names)('step %s', (name) => {
 
 describe('what the steps say beside "try it"', () => {
   it('step 1 lets a PATCH publish, which step 3 closes', async () => {
-    for (const [name, status] of [['1-crud', 200], ['3-a-rule', 400]] as const) {
+    for (const [name, status] of [['1-crud', 200], ['3-a-rule', 422]] as const) {
       const app = await testApp({ root: join(STEPS, name) });
       const created = JSON.parse((await send(app, 'POST', '/api/blog/posts', { title: 'Hi' })).text);
       const patched = await send(app, 'PATCH', `/api/blog/posts/${created.id}`, { status: 'published' });
 
       expect(patched.status, name).toBe(status);
-      if (status === 400) expect(patched.text).toContain('status: Read-only');
+      if (status === 422) expect(patched.text).toContain('status: Read-only');
       await app.dispose();
     }
   });

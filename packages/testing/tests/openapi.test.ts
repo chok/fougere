@@ -42,7 +42,8 @@ describe('the OpenAPI document', () => {
     expect(responses['404']!.content['application/json'].example.code).toBe('NOT_FOUND');
     expect(codesOf(responses['503'])).toEqual(['SERVICE_UNAVAILABLE']);
     expect(created['404']).toBeUndefined();
-    expect(codesOf(created['400'])).toEqual(expect.arrayContaining(['VALIDATION_FAILED', 'BAD_REQUEST']));
+    expect(codesOf(created['400'])).toEqual(['BAD_REQUEST']);
+    expect(codesOf(created['422'])).toEqual(['VALIDATION_FAILED']);
   });
 
   it('writes a schema once, as the card writes it, and says who writes each field', () => {

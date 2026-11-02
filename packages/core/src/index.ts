@@ -131,6 +131,8 @@ export type { ListOptions } from './storage/ListOptions.js';
 export type { ListResult } from './storage/ListResult.js';
 export type { StorageFactory } from './storage/StorageFactory.js';
 export type { Together } from './storage/Together.js';
+export { isChange } from './storage/Change.js';
+export type { Change } from './storage/Change.js';
 // A VALUE as well as a type: it is what a wrapper extends, which is the whole of declaring one.
 export { Storage, togetherKeyOf } from './storage/Storage.js';
 export type { Constraint } from './Constraint.js';

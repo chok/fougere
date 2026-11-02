@@ -40,7 +40,7 @@ describe('applyCreate — what the system writes at creation', () => {
   it('fills the three rules and leaves the rest alone', () => {
     const row = applyCreate(fields, { sku: 'ABC-123' });
 
-    expect(row.id).toMatch(/^[a-z][a-z0-9]{23}$/);   // { generate }
+    expect(row.id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);   // { generate }
     expect(row.status).toBe('draft');             // { value } — the one only SQL kept
     expect(row.stock).toBe(0);                    // a falsy default is still a default
     expect(row.createdAt).toBeInstanceOf(Date);   // 'now'

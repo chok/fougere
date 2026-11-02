@@ -73,7 +73,7 @@ GET  /api/health              → {"ok":true,"from":"the app, not fougere"}   20
 GET  /api/blog/posts          → {"items":[…]}                               200
 POST /_fougere/call           → {"jsonrpc":"2.0","id":1,"result":[…]}       200
 DELETE /api/blog/posts        → Method DELETE not allowed — try GET, POST   405
-POST /api/blog/posts {status} → VALIDATION_FAILED — status: Read-only       400
+POST /api/blog/posts {status} → VALIDATION_FAILED — status: Read-only       422
 GET  /                        → the published post, rendered by Express
 ```
 

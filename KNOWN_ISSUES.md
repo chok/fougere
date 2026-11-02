@@ -168,6 +168,18 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
   number LITERAL and skips `status: number`, which is also what `next()` hands back
   (`ResponseResult`). Telling a `RestResponse<number>` written on purpose from it would need the
   type's name, and the compiler knows no door. Stated 2026-10-20.
+- **`update(id, change)` cannot run on D1** — `SqlStorage.changed` (`adapter/sql/src/crud/SqlStorage.ts`)
+  opens a transaction when none is open, and `kysely-d1` refuses every one: `Transactions are not
+  supported yet.`, read in its source 2026-11-02. A value computed from the row there needs a single
+  conditional statement, which no gesture names yet.
+- **The row lock of `update(id, change)` is not measured on SQL Server** — `mssqlDialect.rowLock` is
+  `touch`, the same update-onto-itself SQLite runs, and `1205` is read as contention. Postgres and
+  SQLite are pinned by `adapter/sql/tests/change.test.ts` (Postgres when `FOUGERE_TEST_PG` is set),
+  MySQL and SQL Server by nothing. Stated 2026-11-02.
+- **A UUID key is `uuid` on Postgres only** — `columnType` (`adapter/sql/src/dialect/Dialect.ts`).
+  MySQL keeps it as `varchar(255)`, SQLite and SQL Server as text: MySQL has no `uuid` type (the
+  practice is `BINARY(16)`, a codec each way), and MariaDB, which has one since 10.7, is read as
+  `mysql` — no engine tells the two apart. Stated 2026-11-02.
 - **A session row is never swept** — `@fougere/state-session` deletes a row once its names are all
   forgotten, and keeps every other one: a caller who never comes back leaves its row behind. Nothing
   expires it yet, which is why `session: {}` admits no `maxAge`. Stated 2026-10-20.

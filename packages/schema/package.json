@@ -44,13 +44,17 @@
     "@fougere/registry": "workspace:*",
     "@paralleldrive/cuid2": "^3.3.0",
     "@standard-schema/spec": "^1.1.0",
+    "@types/json-schema": "^7.0.15",
     "dequal": "^2.0.3",
-    "@types/json-schema": "^7.0.15"
+    "nanoid": "^5.1.16",
+    "pluralize": "8.0.0",
+    "uuidv7": "1.2.1"
   },
   "devDependencies": {
     "@tanstack/form-core": "^1.33.5",
     "@trpc/server": "^11.18.0",
-    "@types/json-schema": "^7.0.15"
+    "@types/json-schema": "^7.0.15",
+    "@types/pluralize": "^0.0.33"
   },
   "publishConfig": {
     "access": "public"

@@ -232,7 +232,7 @@ describe('foreign keys, enforced', () => {
       parentId: optional(ref(Category)),
     }) {}
     const { statements } = await planMigration(shopApp([{ name: 'category', entityClass: CategoryV2 }]), setup.db);
-    expect(statements[0]).toContain('references "categorys" ("id")');
+    expect(statements[0]).toContain('references "categories" ("id")');
   });
 });
 
@@ -306,6 +306,6 @@ describe('orderChanges', () => {
     ]);
     const changes = delta(desiredTables(app), new Map());
     const ordered = orderChanges(changes, 'pg');
-    expect(ordered.map((c) => (c as any).table.name)).toEqual(['categorys', 'products']);
+    expect(ordered.map((c) => (c as any).table.name)).toEqual(['categories', 'products']);
   });
 });

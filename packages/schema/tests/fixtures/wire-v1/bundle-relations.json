@@ -11,7 +11,7 @@
             },
             "lifecycle": {
               "create": {
-                "generate": "cuid2"
+                "generate": "uuidv7"
               },
               "update": "forbidden"
             }
@@ -55,7 +55,7 @@
             },
             "lifecycle": {
               "create": {
-                "generate": "cuid2"
+                "generate": "uuidv7"
               },
               "update": "forbidden"
             }

@@ -7,6 +7,7 @@ import type { Container } from '@fougere/container';
 import type { EntityLookup } from './EntityLookup.js';
 import { BindingSources } from '../BindingSources.js';
 import { validateInput } from './validateInput.js';
+import { ListQuery } from './ListQuery.js';
 
 type ParamSource = Extract<BindingPlan[number]['source'], { kind: 'param' }>;
 
@@ -17,7 +18,7 @@ export class ArgumentResolver {
     private readonly entities?: EntityLookup,
   ) {}
 
-  async resolve(plan: BindingPlan, ctx: InvocationContext): Promise<unknown[]> {
+  async resolve(plan: BindingPlan, ctx: InvocationContext, output?: SchemaView): Promise<unknown[]> {
     const args: unknown[] = [];
     const body = ArgumentResolver.bodyOf(plan, ctx);
 
@@ -37,7 +38,7 @@ export class ArgumentResolver {
           break;
         }
         case 'query': {
-          args.push(ctx.query);
+          args.push(ListQuery.read(ctx.query, output?.getFields()));
           break;
         }
         default: {

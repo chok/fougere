@@ -9,7 +9,7 @@
         },
         "lifecycle": {
           "create": {
-            "generate": "cuid2"
+            "generate": "uuidv7"
           },
           "update": "forbidden"
         }

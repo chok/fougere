@@ -12,7 +12,8 @@ export function primary(opts?: PrimaryOptions): Field<string>;
 export function primary<T>(field: Field<T>): Field<T>;
 /**
  * `primary()` for a generated id; `primary(number())` to make a declared field the key.
- * `primary()` → `create: { generate: 'cuid2' }`, `update: 'forbidden'`
+ * `primary()` → `create: { generate: 'uuidv7' }`, `update: 'forbidden'` — an id that carries its
+ * creation time; `primary({ generate: 'uuid' })` for one that carries nothing.
  */
 export function primary(fieldOrOptions?: Field | PrimaryOptions): Field {
   if (Field.is(fieldOrOptions)) {
@@ -35,7 +36,7 @@ export function primary(fieldOrOptions?: Field | PrimaryOptions): Field {
 
     generate = name;
   } else {
-    generate = opts.generate ?? 'cuid2';
+    generate = opts.generate ?? 'uuidv7';
   }
 
   return new Field<string>({

@@ -13,6 +13,8 @@ export { FougereError, validationErrorsOf } from './wire/FougereError.js';
 // adapter reads it to compile a query, and an adapter carries no boot.
 export { comparisonOf, comparisonsIn } from './storage/Comparison.js';
 export type { Comparison } from './storage/Comparison.js';
+export { isChange } from './storage/Change.js';
+export type { Change } from './storage/Change.js';
 // A receiver turns a refusal into what may cross a process boundary, and it is not
 // core's boot — reaching it through the main entry dragged the scanner into a bundle.
 export { toPublicError } from './wire/http-error.js';

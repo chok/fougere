@@ -10,7 +10,7 @@
  * invents a segment the validator never made.
  */
 import { describe, it, expect } from 'vitest';
-import { entity, json, number, primary, text, dotted } from '../src/index.js';
+import { entity, json, list, number, primary, text, dotted } from '../src/index.js';
 
 class Address extends entity({ street: text({ min: 3 }), zip: number() }) {}
 class Contact extends entity({ id: primary(), addr: json(Address) }) {}
@@ -59,5 +59,16 @@ describe('a field whose name holds a dot', () => {
   it('stays one segment — the path is never re-parsed', () => {
     const result = Odd.validate({ id: '1', 'a.b': 'x' });
     expect(result.success === false && result.errors[0]!.path).toEqual(['a.b']);
+  });
+});
+
+describe('a key the inner entity does not declare', () => {
+  class Order extends entity({ id: primary(), lines: list(json(Address)) }) {}
+
+  it('is refused under its own path, in a json() and in a list of them', () => {
+    expect(refusalOf({ id: '1', addr: { street: 'rue Vaugirard', zip: 75000, floor: 3 } }).path).toEqual(['addr', 'floor']);
+
+    const refused = Order.validate({ id: '1', lines: [{ street: 'rue Vaugirard', zip: 75000, price: 0 }] });
+    expect(refused.success).toBe(false);
   });
 });

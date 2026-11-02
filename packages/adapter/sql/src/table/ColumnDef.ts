@@ -24,6 +24,11 @@ export interface ColumnDef {
    * `CHECK`, so the rule holds on every write and not only at the façade.
    */
   bounds?: ShapeBounds;
+  /**
+   * The values are UUIDs — a key `uuidv7` or `uuid` generates, or a `ref()` to one. An engine
+   * with a `uuid` type stores them in 16 bytes rather than as text.
+   */
+  uuid?: boolean;
   /** The FK target, from `role.relation` when it's a `ref()` (kind `'one'`). */
   references?: ColumnReference;
   /**

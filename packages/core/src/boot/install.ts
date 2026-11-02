@@ -229,11 +229,23 @@ function rowsOf(
 ): Storage {
   const links = assembly.hostPortsOf.get(owner)?.get('Storage') ?? [];
   const linked = wrapping('Storage', links, realization, (dep) => scope.resolve(dep));
-  const { rowHosts } = assembly;
-  const related = new RelationGuard(entity.name, relationChecksOf(entity.schema, entity.name, rowHosts), releasing(rowHosts))
-    .guard(linked);
+  const related = relationGuardOf(assembly, entity).guard(linked);
 
   return new StorageGuard(entity.schema.getFields(), entity.name, report).guard(related);
+}
+
+/** What a `ref()` of this entity asks before a write — read once per app, since a frame asks it per run. */
+const relationGuards = new WeakMap<Assembly, Map<SchemaView, RelationGuard>>();
+
+function relationGuardOf(assembly: Assembly, entity: { name: string; schema: SchemaView }): RelationGuard {
+  const held = relationGuards.get(assembly) ?? new Map<SchemaView, RelationGuard>();
+  relationGuards.set(assembly, held);
+  const { rowHosts } = assembly;
+  const guard = held.get(entity.schema)
+    ?? new RelationGuard(entity.name, relationChecksOf(entity.schema, entity.name, rowHosts), releasing(rowHosts));
+  held.set(entity.schema, guard);
+
+  return guard;
 }
 
 /** One storage per entity, and the default repository that IS it. */

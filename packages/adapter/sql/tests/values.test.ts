@@ -111,3 +111,15 @@ describe('which shapes get a conversion', () => {
     expect(codecFor('object').read({ a: 1 })).toEqual({ a: 1 });
   });
 });
+
+describe('a number a driver answers in another form', () => {
+  it('reads a bigint as text, the way pg answers it, and a decimal as one', () => {
+    expect(codecFor('integer').read('300')).toBe(300);
+    expect(codecFor('number').read('1.5')).toBe(1.5);
+    expect(codecFor('integer').read(300n)).toBe(300);
+  });
+
+  it('refuses one that a JavaScript number would round', () => {
+    expect(() => codecFor('integer').read('9007199254740993')).toThrow(/too large/);
+  });
+});

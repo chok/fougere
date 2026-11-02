@@ -8,18 +8,7 @@ import type { SourceView } from '@fougere/core';
 import { type ColumnDef } from '../table/ColumnDef.js';
 import { isKeyed, toTableName, toTables, type TableDef } from '../table/TableDef.js';
 import { orderTables } from '../order/TableOrder.js';
-import type { SchemaState } from './SchemaState.js';
-
-/** Read the live schema. Only names are needed — an additive pass never inspects types. */
-export async function actualState(db: Kysely<any>): Promise<SchemaState> {
-  const state: SchemaState = new Map();
-  for (const table of await db.introspection.getTables()) {
-    if (table.isView) continue;
-    state.set(table.name, new Set(table.columns.map((column) => column.name)));
-  }
-
-  return state;
-}
+import { actualState, actualTypes, namesOf, type ColumnTypes, type SchemaState } from './SchemaState.js';
 
 /** Project a source's entities into the tables they ask for. */
 export function desiredTables(view: SourceView, options?: GenerateOptions): TableDef[] {
@@ -174,13 +163,34 @@ export async function pendingOf(view: SourceView, db: Kysely<any>, options?: Gen
   // a process carrying only its own frond refers to entities it has never seen — which a
   // question about names has no reason to refuse.
   const desired = desiredTables({ entities: view.entities }, options);
-
-  return delta(desired, await actualState(db)).flatMap((change) => {
+  const live = await actualTypes(db);
+  const missing = delta(desired, namesOf(live)).flatMap((change) => {
     if (change.kind === 'createTable') return [`${change.table.name} — no table`];
     if (change.kind === 'addColumn') return [`${change.table.name}.${change.column.name} — no column`];
 
     return [];
   });
+
+  return [...missing, ...untypedUuids(desired, live, options?.dialect)];
+}
+
+/**
+ * A column the entity stores as `uuid` that the live table still keeps as text — a key created
+ * before `primary()` generated UUIDs. Read as it is, every id it holds would designate no row.
+ */
+function untypedUuids(desired: TableDef[], live: ColumnTypes, dialect: DialectName = 'sqlite'): string[] {
+  const engine = resolveDialect(dialect);
+
+  return desired.flatMap((table) => table.columns.flatMap((column) => {
+    const held = live.get(table.name)?.get(column.name);
+    if (held === undefined || held === 'uuid') return [];
+    if (columnTypeFor(engine, column, isKeyed(table, column)) !== 'uuid') return [];
+
+    return [
+      `${table.name}.${column.name} — ${held}, where the entity stores a uuid: convert the column, `
+      + "or keep the ids it holds with primary({ generate: 'cuid2' })",
+    ];
+  }));
 }
 
 /**

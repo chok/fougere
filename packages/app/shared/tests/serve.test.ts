@@ -27,11 +27,12 @@ const facade = {
 const byId = [{ name: 'id', source: { kind: 'param', name: 'id', identifies: 'Post' }, optional: false }];
 const bindings: Record<string, unknown> = { findById: byId, update: byId, delete: byId };
 
-function appOf(protocols: Record<string, object> = { rest: {} }) {
+function appOf(protocols: Record<string, object> = { rest: {} }, frondProtocols?: Record<string, object>) {
   return {
     protocols,
     fronds: [{
       name: 'blog',
+      protocols: frondProtocols,
       entities: [{ name: 'post', entityClass: Post }],
       handlers: [{ address: 'post', operations: new Map(), surface: undefined }],
       presenters: [],
@@ -68,6 +69,14 @@ describe('surfaceOf', () => {
 
   it('ignores a query string — the audience is a path segment, not a parameter', () => {
     expect(surfaceOf('/_fougere/call/public?trace=1')).toBe('public');
+  });
+});
+
+describe('a route with no prefix and no frond segment', () => {
+  it('answers at the root, one segment deep', async () => {
+    const bare = appOf({ rest: { prefix: '' } }, { rest: { path: '' } });
+
+    expect((await answer(bare, asked('GET', '/posts'), { state: {} }))?.status).toBe(200);
   });
 });
 

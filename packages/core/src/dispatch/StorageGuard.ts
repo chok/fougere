@@ -1,6 +1,7 @@
 import { FieldSet, FieldValueValidator, InputRefusal, Role, type Fields, type Verdict } from '@fougere/schema';
 import { COMPARISONS, comparisonOf, unknownIn } from '../storage/Comparison.js';
 import { assertListOptions } from '../storage/Storage.js';
+import { isChange, type Change } from '../storage/Change.js';
 import { ErrorCode } from '../wire/ErrorCode.js';
 import { FougereError } from '../wire/FougereError.js';
 import type { GuardReport } from './GuardReport.js';
@@ -8,7 +9,7 @@ import type { GuardReport } from './GuardReport.js';
 /** The gestures this guard grafts onto. */
 interface Writer {
   create(...args: [Record<string, unknown>, ...unknown[]]): Promise<unknown>;
-  update(...args: [unknown, Record<string, unknown>, ...unknown[]]): Promise<unknown>;
+  update(...args: [unknown, Record<string, unknown> | Change<Record<string, unknown>>, ...unknown[]]): Promise<unknown>;
   upsert?(...args: [Record<string, unknown>, ...unknown[]]): Promise<unknown>;
   upsertAll?(...args: [readonly Record<string, unknown>[], ...unknown[]]): Promise<unknown>;
   list?(...args: unknown[]): unknown;
@@ -48,7 +49,10 @@ export class StorageGuard {
     };
 
     guarded.update = async function (...args) {
-      args[1] = validation.validated(args[1], 'update');
+      const input = args[1];
+      args[1] = isChange(input)
+        ? async (current) => validation.validated(await input(current), 'update')
+        : validation.validated(input, 'update');
 
       return writer.update.apply(this, args);
     };

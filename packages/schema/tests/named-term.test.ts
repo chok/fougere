@@ -7,7 +7,7 @@ class Card extends entity({ id: primary(), mail: text({ format: 'email' }), code
 describe('NamedTerm.in', () => {
   it('reads every format and generator the fields name', () => {
     expect(NamedTerm.in(Card).map((term) => [term.field, term.kind, term.name])).toEqual([
-      ['id', 'generator', 'cuid2'],
+      ['id', 'generator', 'uuidv7'],
       ['mail', 'format', 'email'],
       ['code', 'format', 'isbn13'],
     ]);

@@ -3,11 +3,12 @@ import { upperFirst, lowerFirst, type SchemaView } from '@fougere/schema';
 import type { ListOptions } from './ListOptions.js';
 import type { ListResult } from './ListResult.js';
 import type { SelectOption } from './SelectOption.js';
+import type { Change } from './Change.js';
 import { ErrorCode } from '../wire/ErrorCode.js';
 import { FougereError } from '../wire/FougereError.js';
 
 /** The keys `list()` answers to, checked against `ListOptions` so neither can drift. */
-const LIST_OPTION_KEYS = Object.keys({
+export const LIST_OPTION_KEYS = Object.keys({
   limit: true, offset: true, page: true, after: true, orderBy: true, order: true, count: true, where: true, select: true,
 } satisfies Record<keyof (ListOptions & SelectOption), true>);
 
@@ -71,7 +72,11 @@ export interface Storage<T = Record<string, unknown>> {
   upsert(input: Partial<T>, options?: SelectOption): Promise<T>;
   /** A whole page in one statement — what an import writes through. */
   upsertAll(inputs: readonly Partial<T>[], options?: SelectOption): Promise<number>;
-  update(id: string, input: Partial<T>, options?: SelectOption): Promise<T>;
+  /**
+   * Write these values, or the ones `change` computes from the row as it stands — read and
+   * written with no other write in between: `update(id, (row) => ({ stock: row.stock - 1 }))`.
+   */
+  update(id: string, input: Partial<T> | Change<T>, options?: SelectOption): Promise<T>;
   delete(id: string): Promise<boolean>;
   /** Returns a scoped storage that restricts all read results to the fields of the given schema. */
   output(schema: SchemaView): Storage<T>;
@@ -143,7 +148,7 @@ export abstract class Storage<T = Record<string, unknown>> {
   upsertAll(inputs: readonly Partial<T>[], options?: SelectOption): Promise<number> {
     return behind<T>(this).upsertAll(inputs, options);
   }
-  update(id: string, input: Partial<T>, options?: SelectOption): Promise<T> {
+  update(id: string, input: Partial<T> | Change<T>, options?: SelectOption): Promise<T> {
     return behind<T>(this).update(id, input, options);
   }
   delete(id: string): Promise<boolean> { return behind<T>(this).delete(id); }

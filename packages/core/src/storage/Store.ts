@@ -1,6 +1,8 @@
 import { applyCreate, applyUpdate, Role, type SchemaView } from '@fougere/schema';
 import { comparisonOf, comparisonsIn, type Comparison } from './Comparison.js';
 import type { Storage } from './Storage.js';
+import { isChange, type Change } from './Change.js';
+import { Turns } from './Turns.js';
 import { ErrorCode } from '../wire/ErrorCode.js';
 import { FougereError } from '../wire/FougereError.js';
 import type { StorageFactory } from './StorageFactory.js';
@@ -23,6 +25,7 @@ export function storageOver(open: (entity: SchemaView, name: string) => Store): 
   return (entity: SchemaView, name: string): Storage => {
     const fields = entity.getFields();
     const store = open(entity, name);
+    const turns = Turns.of(store);
     const pk = Object.entries(fields).find(([, field]) => Role.of(field).isPrimary())?.[0] ?? 'id';
     // `Storage.findById(id: string)` — but a key can hold a number, and a Map keyed on
     // `1` does not answer `'1'`. SQL never had the question; here the divergence was
@@ -137,13 +140,17 @@ export function storageOver(open: (entity: SchemaView, name: string) => Store): 
 
           return pick(values);
         },
-        async update(id: string, input: Partial<Record<string, unknown>>) {
-          const existing = await store.get(keyOf(id));
-          if (!existing) throw new FougereError({ code: ErrorCode.NOT_FOUND, message: `No row in ${name} for ${JSON.stringify(id)}.` });
-          const updated = { ...existing, ...applyUpdate(fields, input), [pk]: existing[pk] };
-          await store.set(keyOf(id), updated);
+        // Its turn on the key covers the read and the write, so a change reads what it replaces.
+        async update(id: string, input: Values | Change<Values>) {
+          return turns.take(keyOf(id), async () => {
+            const existing = await store.get(keyOf(id));
+            if (!existing) throw new FougereError({ code: ErrorCode.NOT_FOUND, message: `No row in ${name} for ${JSON.stringify(id)}.` });
+            const patch = isChange(input) ? await input(pick(existing)) : input;
+            const updated = { ...existing, ...applyUpdate(fields, patch), [pk]: existing[pk] };
+            await store.set(keyOf(id), updated);
 
-          return pick(updated);
+            return pick(updated);
+          });
         },
         async delete(id: string) { return await store.delete(keyOf(id)); },
         output(schema: SchemaView) { return scoped(new Set(Object.keys(schema.getFields()))); },

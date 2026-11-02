@@ -109,7 +109,7 @@ describe('references', () => {
     // No `relations` option — the default resolver (camelCase → snake_case + 's')
     // applied to the class name is all that's left.
     const table = toTable('products', Product);
-    expect(column(table, 'categoryId').references).toEqual({ table: 'categorys', column: 'id' });
+    expect(column(table, 'categoryId').references).toEqual({ table: 'categories', column: 'id' });
   });
 
   it('an identity map miss still derives a name, even off a custom resolver', () => {
@@ -207,9 +207,9 @@ describe('columnType', () => {
     expect(typeOf('mssql', 'name')).toBe('nvarchar(max)');
     expect(typeOf('mysql', 'id')).toBe('varchar(255)');
     expect(typeOf('mssql', 'id')).toBe('nvarchar(255)');
-    // SQLite and Postgres index text directly — no narrowing.
+    // SQLite indexes text directly; Postgres stores a generated UUID in its own type.
     expect(typeOf('sqlite', 'id')).toBe('text');
-    expect(typeOf('pg', 'id')).toBe('text');
+    expect(typeOf('pg', 'id')).toBe('uuid');
   });
 });
 

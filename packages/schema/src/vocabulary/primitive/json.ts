@@ -15,7 +15,8 @@ export function json<E extends Entity>(
 ): Field<InstanceType<E>>;
 
 /**
- * `json(Address)` → the entity's properties, and its required keys
+ * `json(Address)` → the entity's properties, its required keys, and nothing else: a key the
+ * entity does not declare is refused here as it is on the entity's own input.
  */
 export function json(
   of?: Entity | Shared<unknown>,
@@ -43,6 +44,6 @@ export function json(
   }
 
   return new Field({
-    shape: { type: 'object', properties, ...(required.length ? { required } : {}) },
+    shape: { type: 'object', properties, ...(required.length ? { required } : {}), propertyNames: { type: 'string', enum: Object.keys(fields) } },
   }).setShared(shared);
 }

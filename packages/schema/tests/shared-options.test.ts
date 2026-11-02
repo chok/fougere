@@ -31,7 +31,7 @@ describe('what every word admits', () => {
   });
 
   it('leaves what the word already stated alone', () => {
-    expect(primary({ description: 'a' }).lifecycle?.create).toEqual({ generate: 'cuid2' });
+    expect(primary({ description: 'a' }).lifecycle?.create).toEqual({ generate: 'uuidv7' });
     expect(ref(Target, { description: 'a' }).role?.relation?.kind).toBe('one');
   });
 
