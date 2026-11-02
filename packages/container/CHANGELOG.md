@@ -1,5 +1,11 @@
 # @fougere/container
 
+## 0.29.0-alpha.1
+
+### Patch Changes
+
+- Released with every other package, so a project scaffolded at this version finds all of them.
+
 ## 0.8.4-alpha.0
 
 ### Patch Changes
