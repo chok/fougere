@@ -150,11 +150,6 @@ export function settle(dir: string, manager: PackageManager): void {
       'allowBuilds:',
       ...builds.map(([name, allow]) => `  ${name}: ${allow}`),
       '',
-      '# A project is created the day a version is published: the delay pnpm can apply to a fresh',
-      '# release would hold back the very version the scaffold was written for.',
-      'minimumReleaseAgeExclude:',
-      "  - '@fougere/*'",
-      '',
     ].join('\n'));
   }
   if (manager.name === 'bun') pkg.trustedDependencies = builds.filter(([, allow]) => allow).map(([name]) => name);
