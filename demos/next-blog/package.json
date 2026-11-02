@@ -3,10 +3,10 @@
   "private": true,
   "//": "No \"type\": \"module\" — Next emits CommonJS into .next/server, and declaring ESM here makes it fail to load its own _document.js.",
   "scripts": {
-    "dev": "next dev apps/next -p 3100",
-    "start": "next start apps/next -p 3100",
+    "dev": "cd apps/next && next dev -p 3100",
+    "start": "cd apps/next && next start -p 3100",
     "typecheck": "tsc -p .",
-    "build": "next build apps/next",
+    "build": "cd apps/next && next build",
     "migrate": "fougere migrate --latest --apply"
   },
   "dependencies": {

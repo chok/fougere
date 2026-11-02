@@ -7,8 +7,11 @@
  */
 import { fougere } from '@fougere/app/web';
 
-export const GET = fougere;
-export const POST = fougere;
-export const PUT = fougere;
-export const PATCH = fougere;
-export const DELETE = fougere;
+// Next hands a route its own `{ params }` second, which is not the caller's state.
+const handle = (request: Request) => fougere(request);
+
+export const GET = handle;
+export const POST = handle;
+export const PUT = handle;
+export const PATCH = handle;
+export const DELETE = handle;
