@@ -2408,9 +2408,6 @@ importers:
       dequal:
         specifier: ^2.0.3
         version: 2.0.3
-      nanoid:
-        specifier: ^5.1.16
-        version: 5.1.16
       pluralize:
         specifier: 8.0.0
         version: 8.0.0
@@ -9926,11 +9923,6 @@ packages:
   nanoid@3.3.18:
     resolution: {integrity: sha512-DTg4MJbGMWkfi6VZFdNt2/caMbQy4Ou+Op/hJQvGEWcnVfoA1QA+xzRKAzw9jD6+GVOOeYr/mIcuDSdug6F6+w==}
     engines: {node: ^10 || ^12 || ^13.7 || ^14 || >=15.0.1}
-    hasBin: true
-
-  nanoid@5.1.16:
-    resolution: {integrity: sha512-kVrnsrJqMR8+oLJnGEmSWw9BivK5mt7H3FZatVRjrc5wGqFYuBxX1yG7+A7Gi5AefkX6t/oCkizcQgpu0cY1dQ==}
-    engines: {node: ^18 || >=20}
     hasBin: true
 
   nanostores@1.2.0:
@@ -22657,8 +22649,6 @@ snapshots:
       thenify-all: 1.6.0
 
   nanoid@3.3.18: {}
-
-  nanoid@5.1.16: {}
 
   nanostores@1.2.0: {}
 

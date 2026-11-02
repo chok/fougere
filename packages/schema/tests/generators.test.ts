@@ -13,9 +13,8 @@ describe('the generators a key can name', () => {
     expect([...ids].sort()).toEqual(ids);
   });
 
-  it('answers uuid with a v4, nanoid with 21 characters, and keeps cuid2', () => {
+  it('answers uuid with a v4, and keeps cuid2', () => {
     expect(UUID.exec(Generators.resolve('uuid')())?.[1]).toBe('4');
-    expect(Generators.resolve('nanoid')()).toMatch(/^[A-Za-z0-9_-]{21}$/);
     expect(Generators.resolve('cuid2')()).toMatch(/^[a-z][a-z0-9]{23}$/);
   });
 });

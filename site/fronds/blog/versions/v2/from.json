@@ -1,0 +1,30 @@
+{
+  "previous": "v1",
+  "renamed": {},
+  "entitiesAdded": [],
+  "entitiesRemoved": [],
+  "entities": {
+    "post": {
+      "changes": [
+        {
+          "kind": "restated",
+          "field": "id",
+          "axis": "lifecycle",
+          "from": {
+            "create": {
+              "generate": "cuid2"
+            },
+            "update": "forbidden"
+          },
+          "to": {
+            "create": {
+              "generate": "uuidv7"
+            },
+            "update": "forbidden"
+          }
+        }
+      ],
+      "ambiguous": []
+    }
+  }
+}

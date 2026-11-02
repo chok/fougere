@@ -13,7 +13,7 @@ import { generateSQL } from '../src/ddl/SqlSink.js';
 import { dialectFor } from '../src/driver/Driver.js';
 
 class Ticket extends entity({ id: primary(), title: text() }) {}
-class Reply extends entity({ id: primary({ generate: 'nanoid' }), ticket: ref(Ticket), body: text() }) {}
+class Reply extends entity({ id: primary({ generate: 'cuid2' }), ticket: ref(Ticket), body: text() }) {}
 class Label extends entity({ code: primary(text()), name: text() }) {}
 
 const view = sourceViewOf([{ entities: [
