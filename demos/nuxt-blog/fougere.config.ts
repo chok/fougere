@@ -3,7 +3,7 @@ import '@fougere/adapter-graphql';
 import '@fougere/adapter-sql';
 import { defineFougere } from '@fougere/core';
 import { betterAuth } from '@fougere/auth-better';
-import User from './fronds/user/entities/User';
+import User from './fronds/user/entities/User.js';
 
 export default defineFougere({
   sources: { main: { type: 'sqlite', path: 'fougere.db' } },

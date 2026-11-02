@@ -3,11 +3,11 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "nuxt dev",
-    "typecheck": "tsc -p fronds && tsc -p tsconfig.node.json",
+    "dev": "nuxt dev apps/nuxt",
+    "typecheck": "tsc -p .",
     "graphql": "tsx graphql.ts",
-    "build": "nuxt build",
-    "preview": "nuxt preview",
+    "build": "nuxt build apps/nuxt",
+    "preview": "nuxt preview apps/nuxt",
     "dev:blog": "node serve-blog.ts",
     "migrate": "fougere migrate --latest --apply"
   },
