@@ -4,10 +4,10 @@
   "version": "0.0.3-alpha.4",
   "type": "module",
   "scripts": {
-    "dev": "vite dev --port 3500",
-    "typecheck": "tsc -p fronds",
-    "build": "vite build",
-    "start": "node build",
+    "dev": "cd apps/sveltekit && vite dev --port 3500",
+    "typecheck": "tsc -p .",
+    "build": "cd apps/sveltekit && vite build",
+    "start": "node apps/sveltekit/build",
     "migrate": "fougere migrate --latest --apply"
   },
   "devDependencies": {

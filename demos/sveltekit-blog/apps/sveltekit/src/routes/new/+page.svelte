@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { useFormFor } from '@fougere/svelte';
-	import Post from '../../../fronds/blog/entities/Post';
+	import Post from '@fronds/blog/entities/Post.js';
 
 	const form = useFormFor(Post);
 	const { fields, values, errors, command } = form;

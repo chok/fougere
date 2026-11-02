@@ -4,9 +4,9 @@
   "type": "module",
   "scripts": {
     "sync": "tsx sync-remote.ts",
-    "dev": "nuxt dev --port 3002",
-    "build:synced": "nuxt build",
-    "typecheck": "tsc -p fronds"
+    "dev": "nuxt dev apps/nuxt --port 3002",
+    "build:synced": "nuxt build apps/nuxt",
+    "typecheck": "tsc -p ."
   },
   "dependencies": {
     "@fougere/core": "workspace:*",

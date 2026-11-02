@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router';
 import { useFormFor } from '@fougere/react';
-import Post from '../../fronds/blog/entities/Post';
+import Post from '@fronds/blog/entities/Post.js';
 
 export default function NewPost() {
   const navigate = useNavigate();

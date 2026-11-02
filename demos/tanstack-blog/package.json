@@ -3,9 +3,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite dev --port 3200",
-    "typecheck": "tsc -p fronds",
-    "build": "vite build",
+    "dev": "cd apps/tanstack && vite dev --port 3200",
+    "typecheck": "tsc -p .",
+    "build": "cd apps/tanstack && vite build",
     "migrate": "fougere migrate --latest --apply"
   },
   "dependencies": {

@@ -1,3 +1,9 @@
 {
-  "extends": "./.nuxt/tsconfig.json"
+  // The fronds and the config — the app under apps/ keeps the tsconfig its own tool wrote.
+  "extends": ["@fougere/core/tsconfig", "../../../tsconfig.base.json"],
+  "compilerOptions": {
+    "noEmit": true,
+    "rootDir": "."
+  },
+  "include": ["fronds"]
 }

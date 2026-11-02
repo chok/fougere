@@ -3,9 +3,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "react-router dev --port 3400",
-    "typecheck": "tsc -p fronds",
-    "build": "react-router build",
+    "dev": "cd apps/react-router && react-router dev --port 3400",
+    "typecheck": "tsc -p .",
+    "build": "cd apps/react-router && react-router build",
     "migrate": "fougere migrate --latest --apply"
   },
   "dependencies": {
