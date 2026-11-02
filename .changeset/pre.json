@@ -152,6 +152,7 @@
     "one-judge-for-every-format",
     "one-rule-one-owner",
     "one-table-a-view-per-frond",
+    "one-tsconfig-at-the-root",
     "one-word-one-concept",
     "proud-ranges-ask",
     "quick-pans-play",
@@ -164,6 +165,7 @@
     "sources-is-the-one-key",
     "sqlite-on-bun",
     "tame-tables-speak",
+    "test-app-follows-the-project",
     "testapp-boots-a-topology",
     "the-boot-leaves-the-compiler",
     "the-boot-owns-the-unregistered-check",
@@ -180,6 +182,7 @@
     "what-stands-around-a-call-is-a-link",
     "what-stands-around-fougere-serve",
     "who-is-signed-in-is-an-operation",
-    "wise-filters-judge"
+    "wise-filters-judge",
+    "workspace-with-the-first-app"
   ]
 }

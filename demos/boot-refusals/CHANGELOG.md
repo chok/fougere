@@ -1,5 +1,14 @@
 # fougere-demo-boot-refusals
 
+## 0.0.3-alpha.2
+
+### Patch Changes
+
+- Updated dependencies [081f171]
+  - @fougere/core@0.29.0-alpha.1
+  - @fougere/compiler@0.29.0-alpha.0
+  - @fougere/defaults@0.29.0-alpha.1
+
 ## 0.0.3-alpha.1
 
 ### Patch Changes

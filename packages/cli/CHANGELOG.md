@@ -1,5 +1,25 @@
 # @fougere/cli
 
+## 0.29.0-alpha.1
+
+### Minor Changes
+
+- 081f171: A project types its fronds from the `tsconfig.json` at its root, which covers `fougere.config.ts` too; each app under `apps/` keeps the one its tool wrote. A frond renamed by a `paths` entry is read there, no longer from `fronds/tsconfig.json`, and the starter's `typecheck` is `tsc`. `@fougere/next/route` hands Fougere the request alone: Next's own `{ params }` second argument was taken for the caller's state, and `next build` refused the route's type.
+- e4112d2: A new project is a workspace only once it has an app: `--bare` writes no `workspaces` and no pnpm `packages:`, and adding an app writes `apps/*`, so the root and the app install one `@fougere/core`. The starter's pnpm config no longer exempts `@fougere/*` from a release delay the user set.
+
+### Patch Changes
+
+- 0a4dce7: `testApp()` keeps a project's rows the way the project does: one naming no source is tested in memory, and no longer needs a SQLite driver it never installed — the starter's own boot test failed on every new project. The starter's vitest config lives in `tests/`, beside the test it runs.
+- Updated dependencies [081f171]
+- Updated dependencies [0a4dce7]
+  - @fougere/core@0.29.0-alpha.1
+  - @fougere/testing@0.29.0-alpha.1
+  - @fougere/adapter-rest@0.29.0-alpha.1
+  - @fougere/app@0.29.0-alpha.1
+  - @fougere/compiler@0.29.0-alpha.0
+  - @fougere/defaults@0.29.0-alpha.1
+  - @fougere/transport-http@0.29.0-alpha.1
+
 ## 0.28.0-alpha.2
 
 ### Minor Changes

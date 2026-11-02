@@ -1,5 +1,17 @@
 # fougere-demo-crud-auto
 
+## 0.0.3-alpha.5
+
+### Patch Changes
+
+- Updated dependencies [081f171]
+  - @fougere/core@0.29.0-alpha.1
+  - @fougere/adapter-graphql@0.29.0-alpha.1
+  - @fougere/adapter-rest@0.29.0-alpha.1
+  - @fougere/adapter-sql@0.29.0-alpha.1
+  - @fougere/app@0.29.0-alpha.1
+  - @fougere/log@0.29.0-alpha.0
+
 ## 0.0.3-alpha.4
 
 ### Patch Changes

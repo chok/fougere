@@ -1,5 +1,14 @@
 # @fougere/runtime
 
+## 0.29.0-alpha.1
+
+### Patch Changes
+
+- Updated dependencies [081f171]
+  - @fougere/core@0.29.0-alpha.1
+  - @fougere/adapter-memory@0.29.0-alpha.1
+  - @fougere/transport-http@0.29.0-alpha.1
+
 ## 0.28.0-alpha.2
 
 ### Minor Changes

@@ -1,5 +1,17 @@
 # fougere-demo-crossing-cost
 
+## 0.0.1-alpha.2
+
+### Patch Changes
+
+- Updated dependencies [081f171]
+  - @fougere/core@0.29.0-alpha.1
+  - @fougere/compiler@0.29.0-alpha.0
+  - @fougere/defaults@0.29.0-alpha.1
+  - @fougere/log@0.29.0-alpha.0
+  - @fougere/observability@0.29.0-alpha.0
+  - @fougere/transport-http@0.29.0-alpha.1
+
 ## 0.0.1-alpha.1
 
 ### Patch Changes

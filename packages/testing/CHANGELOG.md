@@ -1,5 +1,17 @@
 # @fougere/testing
 
+## 0.29.0-alpha.1
+
+### Patch Changes
+
+- 0a4dce7: `testApp()` keeps a project's rows the way the project does: one naming no source is tested in memory, and no longer needs a SQLite driver it never installed — the starter's own boot test failed on every new project. The starter's vitest config lives in `tests/`, beside the test it runs.
+- Updated dependencies [081f171]
+  - @fougere/core@0.29.0-alpha.1
+  - @fougere/app@0.29.0-alpha.1
+  - @fougere/compiler@0.29.0-alpha.0
+  - @fougere/defaults@0.29.0-alpha.1
+  - @fougere/transport-http@0.29.0-alpha.1
+
 ## 0.28.0-alpha.2
 
 ### Patch Changes

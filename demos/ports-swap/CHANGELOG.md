@@ -1,5 +1,15 @@
 # fougere-demo-ports-swap
 
+## 0.0.3-alpha.5
+
+### Patch Changes
+
+- Updated dependencies [081f171]
+  - @fougere/core@0.29.0-alpha.1
+  - @fougere/compiler@0.29.0-alpha.0
+  - @fougere/defaults@0.29.0-alpha.1
+  - @fougere/log@0.29.0-alpha.0
+
 ## 0.0.3-alpha.4
 
 ### Patch Changes

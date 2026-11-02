@@ -1,5 +1,13 @@
 # @fougere/react
 
+## 0.29.0-alpha.1
+
+### Patch Changes
+
+- Updated dependencies [081f171]
+  - @fougere/core@0.29.0-alpha.1
+  - @fougere/app@0.29.0-alpha.1
+
 ## 0.28.0-alpha.2
 
 ### Patch Changes

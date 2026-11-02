@@ -1,5 +1,15 @@
 # fougere-demo-auth-better
 
+## 0.0.3-alpha.5
+
+### Patch Changes
+
+- Updated dependencies [081f171]
+  - @fougere/core@0.29.0-alpha.1
+  - @fougere/adapter-sql@0.29.0-alpha.1
+  - @fougere/auth-better@0.29.0-alpha.1
+  - @fougere/log@0.29.0-alpha.0
+
 ## 0.0.3-alpha.4
 
 ### Patch Changes
