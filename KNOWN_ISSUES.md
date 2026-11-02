@@ -311,7 +311,7 @@ One line each, kept because a past version of this file asserted the opposite.
 
 - **An error names itself with a LITERAL, not `new.target.name`** — `SchemaError`,
   `ContainerError`, `FougereError`. A bundler mangles a class name: measured 2026-09-18 in
-  `site/.output`, `SchemaError` ships as `class e extends Error`, so every refusal the browser
+  `site/apps/web/.output`, `SchemaError` ships as `class e extends Error`, so every refusal the browser
   raised was named `e`. The same mangling already bit an entity — `Product` became `f` and the
   call left as `f.list` (`app/nuxt/src/module.ts`). A subclass would now report the base's name,
   and there is none in the tree.

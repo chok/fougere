@@ -361,7 +361,7 @@ async function project(repository: string, out: string) {
 export default defineNuxtModule({
   meta: { name: 'reference' },
   async setup(_options, nuxt) {
-    const repository = join(nuxt.options.rootDir, '..');
+    const repository = join(nuxt.options.rootDir, '..', '..', '..');
     const out = join(nuxt.options.rootDir, 'content', 'reference');
     console.info(`[reference] ${await project(repository, out)} pages read off packages/*/src`);
     nuxt.hook('builder:watch', async (_event, path) => {

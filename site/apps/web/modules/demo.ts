@@ -155,7 +155,7 @@ export default defineNuxtModule({
   meta: { name: 'demo' },
 
   async setup(_options, nuxt) {
-    const repository = join(nuxt.options.rootDir, '..');
+    const repository = join(nuxt.options.rootDir, '..', '..', '..');
     const pages = join(nuxt.options.rootDir, 'content', 'demo');
     const sources = join(nuxt.options.rootDir, 'public', 'demo');
 

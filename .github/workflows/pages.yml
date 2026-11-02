@@ -76,11 +76,11 @@ jobs:
           NITRO_PRESET: github_pages
           NUXT_APP_BASE_URL: /
           SITE_URL: ${{ steps.pages.outputs.base_url }}
-        run: ./node_modules/.bin/nuxt generate
+        run: ./node_modules/.bin/nuxt generate apps/web
 
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: site/.output/public
+          path: site/apps/web/.output/public
 
   deploy:
     needs: build

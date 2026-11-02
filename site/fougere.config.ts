@@ -2,7 +2,7 @@ import { defineFougere } from '@fougere/core';
 import { betterAuth } from '@fougere/auth-better';
 import '@fougere/adapter-sql';
 import '@fougere/adapter-file';
-import User from './fronds/user/entities/User';
+import User from './fronds/user/entities/User.js';
 
 export default defineFougere({
   // File-backed on purpose: posts and accounts must survive reloads and deploys.

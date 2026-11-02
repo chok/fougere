@@ -33,14 +33,14 @@ benchmarks/
 
 # `scripts/*.py` bytecode
 **/__pycache__/
-# demos/ projected into the site at build — site/modules/demo.ts
-site/content/demo/
-site/content/tutorial/
-# written by site/modules/reference.ts; 01.cli and 02.errors are written by hand
-site/content/reference/0[3-9].*.md
-site/content/reference/1[0-9].*.md
-site/content/reference/packages/
-site/public/demo/
+# demos/ projected into the site at build — site/apps/web/modules/demo.ts
+site/apps/web/content/demo/
+site/apps/web/content/tutorial/
+# written by site/apps/web/modules/reference.ts; 01.cli and 02.errors are written by hand
+site/apps/web/content/reference/0[3-9].*.md
+site/apps/web/content/reference/1[0-9].*.md
+site/apps/web/content/reference/packages/
+site/apps/web/public/demo/
 
 # Rendered by `foundryctl cast` when a demo brings a collector up — local state.
 demos/*/signoz/casting.yaml.lock

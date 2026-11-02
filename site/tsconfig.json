@@ -1,3 +1,12 @@
 {
-  "extends": "./.nuxt/tsconfig.json"
+  // The fronds and the config — the Nuxt app under apps/web keeps the tsconfig Nuxt writes.
+  "extends": ["@fougere/core/tsconfig", "../tsconfig.base.json"],
+  "compilerOptions": {
+    "noEmit": true,
+    "rootDir": ".",
+    "declaration": false,
+    "declarationMap": false,
+    "sourceMap": false
+  },
+  "include": ["fronds", "fougere.config.ts"]
 }

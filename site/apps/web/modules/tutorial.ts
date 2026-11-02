@@ -184,7 +184,7 @@ function saidIn(command: string): Record<string, string> {
 export default defineNuxtModule({
   meta: { name: 'tutorial' },
   async setup(_options, nuxt) {
-    const steps = join(nuxt.options.rootDir, '..', 'demos', 'tutorial', 'steps');
+    const steps = join(nuxt.options.rootDir, '..', '..', '..', 'demos', 'tutorial', 'steps');
     const pages = join(nuxt.options.rootDir, 'content', 'tutorial');
 
     const project = async () => {

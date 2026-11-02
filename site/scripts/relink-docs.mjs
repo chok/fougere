@@ -1,4 +1,4 @@
-// Rewrites every link to a docs page that moved, from site/redirects.json — the same table the
+// Rewrites every link to a docs page that moved, from site/apps/web/redirects.json — the same table the
 // site's redirects are built from. A section that moved to a page of its own is the one case a
 // server redirect cannot reach (the anchor never leaves the browser), which is why it lives here.
 //
@@ -9,7 +9,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 const repository = join(import.meta.dirname, '..', '..');
-const { pages, sections } = JSON.parse(readFileSync(join(repository, 'site', 'redirects.json'), 'utf8'));
+const { pages, sections } = JSON.parse(readFileSync(join(repository, 'site', 'apps', 'web', 'redirects.json'), 'utf8'));
 const check = process.argv.includes('--check');
 
 const LINK = /(?<=[(\s'"`]|fougere\.dev)(\/docs(?:\/[a-z0-9-]+)*)(#[a-z0-9-]*)?(?![a-z0-9/-])/g;

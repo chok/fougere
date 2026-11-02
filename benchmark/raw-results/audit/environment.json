@@ -1,0 +1,91 @@
+{
+  "timestamp": "2026-11-02T09:58:56.001170+00:00",
+  "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+  "commands": [
+    {
+      "command": [
+        "node",
+        "--version"
+      ],
+      "cwd": "/Volumes/Personnel/fougere-public",
+      "exit_code": 0,
+      "output": "v24.12.0\n"
+    },
+    {
+      "command": [
+        "npm",
+        "--version"
+      ],
+      "cwd": "/Volumes/Personnel/fougere-public",
+      "exit_code": 0,
+      "output": "npm warn Unknown project config \"public-hoist-pattern\". This will stop working in the next major version of npm.\n11.6.2\n"
+    },
+    {
+      "command": [
+        "pnpm",
+        "--version"
+      ],
+      "cwd": "/Volumes/Personnel/fougere-public",
+      "exit_code": 0,
+      "output": "12.6.0\n"
+    },
+    {
+      "command": [
+        "postgres",
+        "--version"
+      ],
+      "cwd": "/Volumes/Personnel/fougere-public",
+      "exit_code": 0,
+      "output": "postgres (PostgreSQL) 18.3 (Homebrew)\n"
+    },
+    {
+      "command": [
+        "encore",
+        "version"
+      ],
+      "cwd": "/Volumes/Personnel/fougere-public",
+      "exit_code": 0,
+      "output": "encore version v1.58.6\n\u001b[33mUpdate available: v1.58.6 -> v1.58.8\nUpdate with: encore version update\u001b[0m\n"
+    },
+    {
+      "command": [
+        "sysctl",
+        "-n",
+        "machdep.cpu.brand_string"
+      ],
+      "cwd": "/Volumes/Personnel/fougere-public",
+      "exit_code": 0,
+      "output": "Apple M5\n"
+    },
+    {
+      "command": [
+        "sysctl",
+        "-n",
+        "hw.memsize"
+      ],
+      "cwd": "/Volumes/Personnel/fougere-public",
+      "exit_code": 0,
+      "output": "17179869184\n"
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "HEAD"
+      ],
+      "cwd": "/Volumes/Personnel/fougere-public",
+      "exit_code": 0,
+      "output": "081f17148c7b9852522912335cd48cc580304ede\n"
+    },
+    {
+      "command": [
+        "git",
+        "status",
+        "--porcelain"
+      ],
+      "cwd": "/Volumes/Personnel/fougere-public",
+      "exit_code": 0,
+      "output": " M demos/next-blog/apps/next/tsconfig.tsbuildinfo\n?? benchmark/\n"
+    }
+  ]
+}

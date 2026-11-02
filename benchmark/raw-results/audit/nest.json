@@ -1,0 +1,46 @@
+{
+  "url": "https://github.com/nestjs/nest.git",
+  "results": [
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "HEAD"
+      ],
+      "cwd": "/Volumes/Personnel/fougere-public/benchmark/vendor/nest",
+      "exit_code": 0,
+      "output": "cabdedf10bdef4cd5b8ba882f8d6ea583e43a8a7\n"
+    },
+    {
+      "command": [
+        "git",
+        "remote",
+        "-v"
+      ],
+      "cwd": "/Volumes/Personnel/fougere-public/benchmark/vendor/nest",
+      "exit_code": 0,
+      "output": "origin\thttps://github.com/nestjs/nest.git (fetch)\norigin\thttps://github.com/nestjs/nest.git (push)\n"
+    },
+    {
+      "command": [
+        "git",
+        "status",
+        "--porcelain"
+      ],
+      "cwd": "/Volumes/Personnel/fougere-public/benchmark/vendor/nest",
+      "exit_code": 0,
+      "output": ""
+    },
+    {
+      "command": [
+        "git",
+        "log",
+        "-1",
+        "--format=%cI %s"
+      ],
+      "cwd": "/Volumes/Personnel/fougere-public/benchmark/vendor/nest",
+      "exit_code": 0,
+      "output": "2026-11-02T08:33:33+01:00 fix(testing): keep provider and enhancer overrides of the same class apart (#18351)\n"
+    }
+  ]
+}

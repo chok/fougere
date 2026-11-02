@@ -3,11 +3,11 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "nuxt dev",
-    "typecheck": "tsc -p fronds",
-    "build": "nuxt build",
-    "generate": "nuxt generate",
-    "preview": "nuxt preview",
+    "dev": "nuxt dev apps/web",
+    "typecheck": "tsc -p .",
+    "build": "nuxt build apps/web",
+    "generate": "nuxt generate apps/web",
+    "preview": "nuxt preview apps/web",
     "migrate": "fougere migrate --apply"
   },
   "dependencies": {

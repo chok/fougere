@@ -1,0 +1,5 @@
+2026-11-02 12:36:49.319 CET [31619] LOG:  starting PostgreSQL 18.3 (Homebrew) on aarch64-apple-darwin25.2.0, compiled by Apple clang version 17.0.0 (clang-1700.6.3.2), 64-bit
+2026-11-02 12:36:49.320 CET [31619] LOG:  listening on IPv4 address "127.0.0.1", port 55432
+2026-11-02 12:36:49.321 CET [31619] LOG:  listening on Unix socket "/tmp/.s.PGSQL.55432"
+2026-11-02 12:36:49.326 CET [31625] LOG:  database system was shut down at 2026-11-02 12:36:29 CET
+2026-11-02 12:36:49.329 CET [31619] LOG:  database system is ready to accept connections

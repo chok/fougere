@@ -27,7 +27,7 @@ RUN mkdir -p /deploy && cd /deploy \
 # ── Run ──────────────────────────────────────────────────────────────────────
 FROM node:22-bookworm-slim
 WORKDIR /app
-COPY --from=build /repo/site/.output ./.output
+COPY --from=build /repo/site/apps/web/.output ./.output
 # The rows a file source keeps — `posts:` in fougere.config.ts — are data, read from /app.
 COPY --from=build /repo/site/posts ./posts
 # The native driver the SQLite source opens beside the app.

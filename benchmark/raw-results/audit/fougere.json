@@ -1,0 +1,59 @@
+{
+  "url": "https://github.com/chok/fougere.git",
+  "results": [
+    {
+      "command": [
+        "git",
+        "clone",
+        "--depth",
+        "1",
+        "https://github.com/chok/fougere.git",
+        "/Volumes/Personnel/fougere-public/benchmark/vendor/fougere"
+      ],
+      "cwd": "/Volumes/Personnel/fougere-public/benchmark",
+      "exit_code": 0,
+      "output": "Cloning into '/Volumes/Personnel/fougere-public/benchmark/vendor/fougere'...\n"
+    },
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "HEAD"
+      ],
+      "cwd": "/Volumes/Personnel/fougere-public/benchmark/vendor/fougere",
+      "exit_code": 0,
+      "output": "2bd26666645d3f12b72780353d7c705b87947730\n"
+    },
+    {
+      "command": [
+        "git",
+        "remote",
+        "-v"
+      ],
+      "cwd": "/Volumes/Personnel/fougere-public/benchmark/vendor/fougere",
+      "exit_code": 0,
+      "output": "origin\thttps://github.com/chok/fougere.git (fetch)\norigin\thttps://github.com/chok/fougere.git (push)\n"
+    },
+    {
+      "command": [
+        "git",
+        "status",
+        "--porcelain"
+      ],
+      "cwd": "/Volumes/Personnel/fougere-public/benchmark/vendor/fougere",
+      "exit_code": 0,
+      "output": ""
+    },
+    {
+      "command": [
+        "git",
+        "log",
+        "-1",
+        "--format=%cI %s"
+      ],
+      "cwd": "/Volumes/Personnel/fougere-public/benchmark/vendor/fougere",
+      "exit_code": 0,
+      "output": "2026-11-02T09:51:54+01:00 fix(ci): transport-chain writes its frond as an object, and the smoke knows the tutorial\n"
+    }
+  ]
+}

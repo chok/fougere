@@ -38,11 +38,11 @@ NOT_THE_CODE = (
 
 
 def resolve(cited: str) -> str | None:
-    # Three entries cite `site/content/` — always for the DOC half ("documented at…",
+    # Three entries cite `site/apps/web/content/` — always for the DOC half ("documented at…",
     # "nothing there documents `expose`"), never for the code they describe. That tree moves
     # on every translation pass, so ranking by it puts an entry at the top for a reason that
     # has nothing to do with whether it is still true.
-    if cited.startswith('site/content'):
+    if cited.startswith('site/apps/web/content'):
         return None
     for prefix in PREFIXES:
         candidate = REPO / (prefix + cited)

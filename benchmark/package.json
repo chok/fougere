@@ -1,0 +1,38 @@
+{
+  "name": "typescript-framework-benchmark",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "audit": "python3 scripts/audit.py",
+    "check": "node scripts/conformance.mjs",
+    "bench": "node scripts/load.mjs",
+    "metrics": "node scripts/metrics.mjs"
+  },
+  "dependencies": {
+    "@adonisjs/core": "7.6.0",
+    "@deepkit/app": "1.1.0",
+    "@deepkit/framework": "1.1.0",
+    "@deepkit/http": "1.1.0",
+    "@deepkit/postgres": "1.1.0",
+    "@deepkit/type": "1.1.0",
+    "@deepkit/type-compiler": "1.1.0",
+    "@effect/platform-node": "4.1.2",
+    "@effect/sql-pg": "4.1.2",
+    "@nestjs/common": "12.3.2",
+    "@nestjs/core": "12.3.2",
+    "@nestjs/platform-fastify": "12.3.2",
+    "@types/node": "26.6.6",
+    "@types/pg": "8.23.1",
+    "@vinejs/vine": "4.4.0",
+    "autocannon": "8.0.0",
+    "class-transformer": "0.5.1",
+    "class-validator": "0.15.1",
+    "effect": "4.1.2",
+    "encore.dev": "1.58.8",
+    "pg": "8.23.1",
+    "reflect-metadata": "0.2.2",
+    "rxjs": "7.8.2",
+    "tsx": "4.23.15",
+    "typescript": "5.9.3"
+  }
+}

@@ -1,0 +1,890 @@
+[
+  {
+    "path": "package.json",
+    "name": null,
+    "version": null,
+    "engines": null,
+    "dependencies": null,
+    "peerDependencies": null,
+    "scripts": {
+      "prepare": "node scripts/setup-agents.mjs && effect-tsgo patch",
+      "clean": "node scripts/clean.mjs",
+      "codegen": "pnpm --recursive --parallel --filter \"./packages/**/*\" run codegen",
+      "codemod": "node scripts/codemod.mjs",
+      "build": "tsc -b tsconfig.packages.json && pnpm --recursive --parallel --filter \"./packages/**/*\" run build && node scripts/copy-ai-docs.mjs",
+      "bundle-analyze": "bash scripts/bundle-analyze.sh",
+      "bundle-compare": "bash scripts/bundle-compare.sh",
+      "bundle-compare-selected": "bash scripts/bundle-compare-selected.sh",
+      "circular": "node scripts/circular.mjs",
+      "test": "vitest",
+      "test-cluster": "vitest run --project cluster-integration",
+      "doctest": "vitest --config vitest.docs.ts",
+      "coverage": "vitest --coverage",
+      "check": "tsc -b tsconfig.json",
+      "typeperf": "pnpm --dir packages/effect exec node typeperf/run.mjs",
+      "typeperf-compare": "pnpm --dir packages/effect exec node typeperf/compare.mjs",
+      "runtimeperf": "pnpm --dir packages/effect exec node runtimeperf/run.mts",
+      "runtimeperf-compare": "pnpm --dir packages/effect exec node runtimeperf/compare.mts",
+      "check-recursive": "pnpm --recursive --filter \"./packages/**/*\" exec tsc -b tsconfig.json",
+      "check-dist-types": "node scripts/check-dist-types.mjs",
+      "jsdocs": "effect-jsdocs",
+      "lint": "oxlint -f unix && dprint check",
+      "lint-fix": "oxlint --fix && dprint fmt",
+      "ai-docgen": "effect-ai-docgen ai-docs/src -o LLMS.md",
+      "ai-docgen:watch": "pnpm ai-docgen --watch",
+      "api-diff": "pnpm --dir packages/tools/api-diff exec node src/bin.ts",
+      "test-types": "tstyche --target '>=5.9'",
+      "changeset-version": "changeset version && node scripts/version.mjs",
+      "changeset-publish": "node scripts/set-strip-internal.mjs && pnpm codemod && pnpm build && changeset publish --tag staging"
+    }
+  },
+  {
+    "path": "scratchpad/package.json",
+    "name": "scratchpad",
+    "version": "0.0.0",
+    "engines": null,
+    "dependencies": {
+      "@effect/ai-anthropic": "workspace:*",
+      "@effect/ai-openai": "workspace:*",
+      "@effect/ai-openai-compat": "workspace:*",
+      "@effect/ai-openrouter": "workspace:*",
+      "@effect/ai-typesafe": "workspace:*",
+      "@effect/opentelemetry": "workspace:*",
+      "@effect/platform-bun": "workspace:*",
+      "@effect/platform-node": "workspace:*",
+      "@effect/sql-clickhouse": "workspace:*",
+      "@effect/sql-d1": "workspace:*",
+      "@effect/sql-libsql": "workspace:*",
+      "@effect/sql-mssql": "workspace:*",
+      "@effect/sql-mysql2": "workspace:*",
+      "@effect/sql-pg": "workspace:*",
+      "@effect/sql-sqlite-bun": "workspace:*",
+      "@effect/sql-sqlite-do": "workspace:*",
+      "@effect/sql-sqlite-node": "workspace:*",
+      "@effect/sql-sqlite-react-native": "workspace:*",
+      "@effect/sql-sqlite-wasm": "workspace:*",
+      "effect": "workspace:*"
+    },
+    "peerDependencies": null,
+    "scripts": null
+  },
+  {
+    "path": "scripts/package.json",
+    "name": "scripts",
+    "version": "0.0.0",
+    "engines": null,
+    "dependencies": {
+      "effect": "workspace:*",
+      "@effect/platform-bun": "workspace:*",
+      "@effect/platform-node": "workspace:*",
+      "@effect/sql-clickhouse": "workspace:*",
+      "@effect/sql-d1": "workspace:*",
+      "@effect/sql-libsql": "workspace:*",
+      "@effect/sql-mysql2": "workspace:*",
+      "@effect/sql-mssql": "workspace:*",
+      "@effect/sql-pg": "workspace:*",
+      "@effect/sql-sqlite-bun": "workspace:*",
+      "@effect/sql-sqlite-do": "workspace:*",
+      "@effect/sql-sqlite-node": "workspace:*",
+      "@effect/sql-sqlite-react-native": "workspace:*",
+      "@effect/sql-sqlite-wasm": "workspace:*"
+    },
+    "peerDependencies": null,
+    "scripts": null
+  },
+  {
+    "path": "ai-docs/package.json",
+    "name": "ai-docs",
+    "version": "0.0.0",
+    "engines": null,
+    "dependencies": {
+      "@effect/ai-anthropic": "workspace:*",
+      "@effect/ai-openai": "workspace:*",
+      "@effect/ai-openai-compat": "workspace:*",
+      "@effect/ai-openrouter": "workspace:*",
+      "@effect/atom-react": "workspace:*",
+      "@effect/atom-solid": "workspace:*",
+      "@effect/atom-vue": "workspace:*",
+      "@effect/opentelemetry": "workspace:*",
+      "@effect/platform-bun": "workspace:*",
+      "@effect/platform-node": "workspace:*",
+      "@effect/sql-clickhouse": "workspace:*",
+      "@effect/sql-d1": "workspace:*",
+      "@effect/sql-libsql": "workspace:*",
+      "@effect/sql-mssql": "workspace:*",
+      "@effect/sql-mysql2": "workspace:*",
+      "@effect/sql-pg": "workspace:*",
+      "@effect/sql-sqlite-bun": "workspace:*",
+      "@effect/sql-sqlite-do": "workspace:*",
+      "@effect/sql-sqlite-node": "workspace:*",
+      "@effect/sql-sqlite-react-native": "workspace:*",
+      "@effect/sql-sqlite-wasm": "workspace:*",
+      "@effect/vitest": "workspace:*",
+      "effect": "workspace:*",
+      "hono": "^4.13.14",
+      "nodemailer": "^10.3.1"
+    },
+    "peerDependencies": null,
+    "scripts": null
+  },
+  {
+    "path": "packages/opentelemetry/package.json",
+    "name": "@effect/opentelemetry",
+    "version": "4.1.2",
+    "engines": {
+      "node": ">=22.19.0"
+    },
+    "dependencies": null,
+    "peerDependencies": {
+      "@opentelemetry/api": ">=1.9.0 <2.0.0",
+      "@opentelemetry/api-logs": ">=0.203.0 <0.300.0",
+      "@opentelemetry/resources": ">=2.0.0 <3.0.0",
+      "@opentelemetry/sdk-logs": ">=0.203.0 <0.300.0",
+      "@opentelemetry/sdk-metrics": ">=2.0.0 <3.0.0",
+      "@opentelemetry/sdk-trace-base": ">=2.0.0 <3.0.0",
+      "@opentelemetry/sdk-trace-node": ">=2.0.0 <3.0.0",
+      "@opentelemetry/sdk-trace-web": ">=2.0.0 <3.0.0",
+      "@opentelemetry/semantic-conventions": ">=1.33.0 <2.0.0",
+      "effect": "workspace:^"
+    },
+    "scripts": {
+      "codegen": "effect-utils codegen",
+      "build": "tsc -b tsconfig.json && pnpm babel",
+      "babel": "babel dist --plugins annotate-pure-calls --out-dir dist --source-maps",
+      "check": "tsc -b tsconfig.json"
+    }
+  },
+  {
+    "path": "packages/vitest/package.json",
+    "name": "@effect/vitest",
+    "version": "4.1.2",
+    "engines": null,
+    "dependencies": null,
+    "peerDependencies": {
+      "effect": "workspace:^",
+      "vitest": ">=5.0.0 <6.0.0"
+    },
+    "scripts": {
+      "build": "tsc -b tsconfig.json && pnpm babel",
+      "babel": "babel dist --plugins annotate-pure-calls --out-dir dist --source-maps",
+      "check": "tsc -b tsconfig.json"
+    }
+  },
+  {
+    "path": "packages/effect/package.json",
+    "name": "effect",
+    "version": "4.1.2",
+    "engines": null,
+    "dependencies": null,
+    "peerDependencies": null,
+    "scripts": {
+      "codegen": "effect-utils codegen",
+      "build": "tsc -b tsconfig.json && pnpm babel",
+      "babel": "babel dist --plugins annotate-pure-calls --out-dir dist --source-maps",
+      "check": "tsc -b tsconfig.json"
+    }
+  },
+  {
+    "path": "packages/sql/sqlite-bun/package.json",
+    "name": "@effect/sql-sqlite-bun",
+    "version": "4.1.2",
+    "engines": null,
+    "dependencies": null,
+    "peerDependencies": {
+      "effect": "workspace:^"
+    },
+    "scripts": {
+      "codegen": "effect-utils codegen",
+      "build": "tsc -b tsconfig.json && pnpm babel",
+      "babel": "babel dist --plugins annotate-pure-calls --out-dir dist --source-maps",
+      "check": "tsc -b tsconfig.json"
+    }
+  },
+  {
+    "path": "packages/sql/clickhouse/package.json",
+    "name": "@effect/sql-clickhouse",
+    "version": "4.1.2",
+    "engines": null,
+    "dependencies": {
+      "@clickhouse/client": "^1.24.1"
+    },
+    "peerDependencies": {
+      "@effect/platform-node": "workspace:^",
+      "effect": "workspace:^"
+    },
+    "scripts": {
+      "codegen": "effect-utils codegen",
+      "build": "tsc -b tsconfig.json && pnpm babel",
+      "babel": "babel dist --plugins annotate-pure-calls --out-dir dist --source-maps",
+      "check": "tsc -b tsconfig.json"
+    }
+  },
+  {
+    "path": "packages/sql/sqlite-do/package.json",
+    "name": "@effect/sql-sqlite-do",
+    "version": "4.1.2",
+    "engines": null,
+    "dependencies": null,
+    "peerDependencies": {
+      "effect": "workspace:^"
+    },
+    "scripts": {
+      "codegen": "effect-utils codegen",
+      "build": "tsc -b tsconfig.json && pnpm babel",
+      "babel": "babel dist --plugins annotate-pure-calls --out-dir dist --source-maps",
+      "check": "tsc -b tsconfig.json"
+    }
+  },
+  {
+    "path": "packages/sql/mysql2/package.json",
+    "name": "@effect/sql-mysql2",
+    "version": "4.1.2",
+    "engines": null,
+    "dependencies": {
+      "mysql2": "^3.24.6"
+    },
+    "peerDependencies": {
+      "effect": "workspace:^"
+    },
+    "scripts": {
+      "codegen": "effect-utils codegen",
+      "build": "tsc -b tsconfig.json && pnpm babel",
+      "babel": "babel dist --plugins annotate-pure-calls --out-dir dist --source-maps",
+      "check": "tsc -b tsconfig.json"
+    }
+  },
+  {
+    "path": "packages/sql/d1/package.json",
+    "name": "@effect/sql-d1",
+    "version": "4.1.2",
+    "engines": null,
+    "dependencies": {
+      "@cloudflare/workers-types": "^5.20261031.1"
+    },
+    "peerDependencies": {
+      "effect": "workspace:^"
+    },
+    "scripts": {
+      "codegen": "effect-utils codegen",
+      "build": "tsc -b tsconfig.json && pnpm babel",
+      "babel": "babel dist --plugins annotate-pure-calls --out-dir dist --source-maps",
+      "check": "tsc -b tsconfig.json"
+    }
+  },
+  {
+    "path": "packages/sql/sqlite-wasm/package.json",
+    "name": "@effect/sql-sqlite-wasm",
+    "version": "4.1.2",
+    "engines": null,
+    "dependencies": null,
+    "peerDependencies": {
+      "@effect/wa-sqlite": ">=0.1.2 <0.2.0",
+      "effect": "workspace:^"
+    },
+    "scripts": {
+      "codegen": "effect-utils codegen",
+      "build": "tsc -b tsconfig.json && pnpm babel",
+      "babel": "babel dist --plugins annotate-pure-calls --out-dir dist --source-maps",
+      "check": "tsc -b tsconfig.json"
+    }
+  },
+  {
+    "path": "packages/sql/pg/package.json",
+    "name": "@effect/sql-pg",
+    "version": "4.1.2",
+    "engines": null,
+    "dependencies": null,
+    "peerDependencies": {
+      "effect": "workspace:^"
+    },
+    "scripts": {
+      "benchmark:client": "node benchmark/PgClient.ts",
+      "benchmark:codec": "node benchmark/PgCodec.ts",
+      "codegen": "effect-utils codegen",
+      "build": "tsc -b tsconfig.json && pnpm babel",
+      "babel": "babel dist --plugins annotate-pure-calls --out-dir dist --source-maps",
+      "check": "tsc -b tsconfig.json"
+    }
+  },
+  {
+    "path": "packages/sql/pglite/package.json",
+    "name": "@effect/sql-pglite",
+    "version": "4.1.2",
+    "engines": null,
+    "dependencies": {
+      "@electric-sql/pglite": "^0.5.14"
+    },
+    "peerDependencies": {
+      "effect": "workspace:^"
+    },
+    "scripts": {
+      "codegen": "effect-utils codegen",
+      "build": "tsc -b tsconfig.json && pnpm babel",
+      "babel": "babel dist --plugins annotate-pure-calls --out-dir dist --source-maps",
+      "check": "tsc -b tsconfig.json"
+    }
+  },
+  {
+    "path": "packages/sql/libsql/package.json",
+    "name": "@effect/sql-libsql",
+    "version": "4.1.2",
+    "engines": null,
+    "dependencies": {
+      "@libsql/client": "^0.18.0"
+    },
+    "peerDependencies": {
+      "effect": "workspace:^"
+    },
+    "scripts": {
+      "codegen": "effect-utils codegen",
+      "build": "tsc -b tsconfig.json && pnpm babel",
+      "babel": "babel dist --plugins annotate-pure-calls --out-dir dist --source-maps",
+      "check": "tsc -b tsconfig.json"
+    }
+  },
+  {
+    "path": "packages/sql/sqlite-react-native/package.json",
+    "name": "@effect/sql-sqlite-react-native",
+    "version": "4.1.2",
+    "engines": null,
+    "dependencies": null,
+    "peerDependencies": {
+      "@op-engineering/op-sqlite": ">=17.1.2 <19.0.0",
+      "effect": "workspace:^"
+    },
+    "scripts": {
+      "codegen": "effect-utils codegen",
+      "build": "tsc -b tsconfig.json && pnpm babel",
+      "babel": "babel dist --plugins annotate-pure-calls --out-dir dist --source-maps",
+      "check": "tsc -b tsconfig.json"
+    }
+  },
+  {
+    "path": "packages/sql/mssql/package.json",
+    "name": "@effect/sql-mssql",
+    "version": "4.1.2",
+    "engines": null,
+    "dependencies": {
+      "tedious": "^20.3.8"
+    },
+    "peerDependencies": {
+      "effect": "workspace:^"
+    },
+    "scripts": {
+      "codegen": "effect-utils codegen",
+      "build": "tsc -b tsconfig.json && pnpm babel",
+      "babel": "babel dist --plugins annotate-pure-calls --out-dir dist --source-maps",
+      "check": "tsc -b tsconfig.json"
+    }
+  },
+  {
+    "path": "packages/sql/sqlite-node/package.json",
+    "name": "@effect/sql-sqlite-node",
+    "version": "4.1.2",
+    "engines": null,
+    "dependencies": null,
+    "peerDependencies": {
+      "effect": "workspace:^"
+    },
+    "scripts": {
+      "codegen": "effect-utils codegen",
+      "build": "tsc -b tsconfig.json && pnpm babel",
+      "babel": "babel dist --plugins annotate-pure-calls --out-dir dist --source-maps",
+      "check": "tsc -b tsconfig.json"
+    }
+  },
+  {
+    "path": "packages/ai/openrouter/package.json",
+    "name": "@effect/ai-openrouter",
+    "version": "4.1.2",
+    "engines": null,
+    "dependencies": null,
+    "peerDependencies": {
+      "effect": "workspace:^"
+    },
+    "scripts": {
+      "codegen": "effect-utils codegen",
+      "build": "tsc -b tsconfig.json && pnpm babel",
+      "babel": "babel dist --plugins annotate-pure-calls --out-dir dist --source-maps",
+      "check": "tsc -b tsconfig.json"
+    }
+  },
+  {
+    "path": "packages/ai/cloudflare/package.json",
+    "name": "@effect/ai-cloudflare",
+    "version": "4.1.2",
+    "engines": null,
+    "dependencies": null,
+    "peerDependencies": {
+      "effect": "workspace:^"
+    },
+    "scripts": {
+      "codegen": "effect-utils codegen",
+      "build": "tsc -b tsconfig.json && pnpm babel",
+      "babel": "babel dist --plugins annotate-pure-calls --out-dir dist --source-maps",
+      "check": "tsc -b tsconfig.json"
+    }
+  },
+  {
+    "path": "packages/ai/typesafe/package.json",
+    "name": "@effect/ai-typesafe",
+    "version": "4.1.2",
+    "engines": null,
+    "dependencies": null,
+    "peerDependencies": {
+      "effect": "workspace:^"
+    },
+    "scripts": {
+      "codegen": "effect-utils codegen",
+      "build": "tsc -b tsconfig.json && pnpm babel",
+      "babel": "babel dist --plugins annotate-pure-calls --out-dir dist --source-maps",
+      "check": "tsc -b tsconfig.json"
+    }
+  },
+  {
+    "path": "packages/ai/openai-compat/package.json",
+    "name": "@effect/ai-openai-compat",
+    "version": "4.1.2",
+    "engines": null,
+    "dependencies": null,
+    "peerDependencies": {
+      "effect": "workspace:^"
+    },
+    "scripts": {
+      "codegen": "effect-utils codegen",
+      "build": "tsc -b tsconfig.json && pnpm babel",
+      "babel": "babel dist --plugins annotate-pure-calls --out-dir dist --source-maps",
+      "check": "tsc -b tsconfig.json"
+    }
+  },
+  {
+    "path": "packages/ai/anthropic/package.json",
+    "name": "@effect/ai-anthropic",
+    "version": "4.1.2",
+    "engines": null,
+    "dependencies": null,
+    "peerDependencies": {
+      "effect": "workspace:^"
+    },
+    "scripts": {
+      "codegen": "effect-utils codegen",
+      "build": "tsc -b tsconfig.json && pnpm babel",
+      "babel": "babel dist --plugins annotate-pure-calls --out-dir dist --source-maps",
+      "check": "tsc -b tsconfig.json"
+    }
+  },
+  {
+    "path": "packages/ai/openai/package.json",
+    "name": "@effect/ai-openai",
+    "version": "4.1.2",
+    "engines": null,
+    "dependencies": null,
+    "peerDependencies": {
+      "effect": "workspace:^"
+    },
+    "scripts": {
+      "codegen": "effect-utils codegen",
+      "build": "tsc -b tsconfig.json && pnpm babel",
+      "babel": "babel dist --plugins annotate-pure-calls --out-dir dist --source-maps",
+      "check": "tsc -b tsconfig.json"
+    }
+  },
+  {
+    "path": "packages/platform/deno/package.json",
+    "name": "@effect/platform-deno",
+    "version": "4.1.2",
+    "engines": {
+      "deno": ">=2.9.3"
+    },
+    "dependencies": {
+      "@db/redis": "jsr:^0.42.0",
+      "@effect/platform-node-shared": "workspace:*",
+      "@std/fs": "jsr:^1.0.24",
+      "@std/media-types": "jsr:^1.1.0",
+      "@std/path": "jsr:^1.1.6",
+      "@std/streams": "jsr:^1.2.0"
+    },
+    "peerDependencies": {
+      "effect": "workspace:^"
+    },
+    "scripts": {
+      "codegen": "effect-utils codegen",
+      "check": "deno check",
+      "benchmark:datagram": "deno run -A --unstable-net benchmark/DatagramSocket.ts"
+    }
+  },
+  {
+    "path": "packages/platform/bun/package.json",
+    "name": "@effect/platform-bun",
+    "version": "4.1.2",
+    "engines": null,
+    "dependencies": {
+      "@effect/platform-node-shared": "workspace:*"
+    },
+    "peerDependencies": {
+      "effect": "workspace:^"
+    },
+    "scripts": {
+      "codegen": "effect-utils codegen",
+      "build": "tsc -b tsconfig.json && pnpm babel",
+      "babel": "babel dist --plugins annotate-pure-calls --out-dir dist --source-maps",
+      "check": "tsc -b tsconfig.json",
+      "benchmark:datagram": "bun benchmark/DatagramSocket.ts"
+    }
+  },
+  {
+    "path": "packages/platform/browser/package.json",
+    "name": "@effect/platform-browser",
+    "version": "4.1.2",
+    "engines": null,
+    "dependencies": null,
+    "peerDependencies": {
+      "effect": "workspace:^"
+    },
+    "scripts": {
+      "codegen": "effect-utils codegen",
+      "build": "tsc -b tsconfig.json && pnpm babel",
+      "babel": "babel dist --plugins annotate-pure-calls --out-dir dist --source-maps",
+      "check": "tsc -b tsconfig.json"
+    }
+  },
+  {
+    "path": "packages/platform/node-shared/package.json",
+    "name": "@effect/platform-node-shared",
+    "version": "4.1.2",
+    "engines": {
+      "node": ">=22.19.0"
+    },
+    "dependencies": {
+      "@types/ws": "^8.18.2",
+      "ws": "^8.22.1"
+    },
+    "peerDependencies": {
+      "effect": "workspace:^"
+    },
+    "scripts": {
+      "benchmark:datagram": "node benchmark/DatagramSocket.ts",
+      "benchmark:socket": "node benchmark/Socket.ts",
+      "codegen": "effect-utils codegen",
+      "build": "tsc -b tsconfig.json && pnpm babel",
+      "babel": "babel dist --plugins annotate-pure-calls --out-dir dist --source-maps",
+      "check": "tsc -b tsconfig.json"
+    }
+  },
+  {
+    "path": "packages/platform/node/package.json",
+    "name": "@effect/platform-node",
+    "version": "4.1.2",
+    "engines": {
+      "node": ">=22.19.0"
+    },
+    "dependencies": {
+      "@effect/platform-node-shared": "workspace:*",
+      "undici": "^8.12.3"
+    },
+    "peerDependencies": {
+      "effect": "workspace:^",
+      "redis": ">=5.1.0 <7.0.0"
+    },
+    "scripts": {
+      "codegen": "effect-utils codegen",
+      "build": "tsc -b tsconfig.json && pnpm babel",
+      "babel": "babel dist --plugins annotate-pure-calls --out-dir dist --source-maps",
+      "check": "tsc -b tsconfig.json"
+    }
+  },
+  {
+    "path": "packages/atom/vue/package.json",
+    "name": "@effect/atom-vue",
+    "version": "4.1.2",
+    "engines": null,
+    "dependencies": null,
+    "peerDependencies": {
+      "effect": "workspace:^",
+      "vue": ">=3.5.39 <4.0.0"
+    },
+    "scripts": {
+      "build": "tsc -b tsconfig.json && pnpm babel",
+      "babel": "babel dist --plugins annotate-pure-calls --out-dir dist --source-maps",
+      "check": "tsc -b tsconfig.json"
+    }
+  },
+  {
+    "path": "packages/atom/solid/package.json",
+    "name": "@effect/atom-solid",
+    "version": "4.1.2",
+    "engines": null,
+    "dependencies": null,
+    "peerDependencies": {
+      "effect": "workspace:^",
+      "solid-js": ">=1.9.14 <2.0.0"
+    },
+    "scripts": {
+      "build": "tsc -b tsconfig.json && pnpm babel",
+      "babel": "babel dist --plugins annotate-pure-calls --out-dir dist --source-maps",
+      "check": "tsc -b tsconfig.json"
+    }
+  },
+  {
+    "path": "packages/atom/react/package.json",
+    "name": "@effect/atom-react",
+    "version": "4.1.2",
+    "engines": null,
+    "dependencies": null,
+    "peerDependencies": {
+      "effect": "workspace:^",
+      "react": ">=19.0.0 <20.0.0",
+      "scheduler": ">=0.25.0 <0.29.0"
+    },
+    "scripts": {
+      "build": "tsc -b tsconfig.json && pnpm babel",
+      "babel": "babel dist --plugins annotate-pure-calls --out-dir dist --source-maps",
+      "check": "tsc -b tsconfig.json"
+    }
+  },
+  {
+    "path": "packages/tools/eventlog-server/package.json",
+    "name": "@effect/eventlog-server",
+    "version": "0.0.0",
+    "engines": null,
+    "dependencies": {
+      "@effect/platform-node": "workspace:^",
+      "@effect/sql-sqlite-node": "workspace:^",
+      "effect": "workspace:^"
+    },
+    "peerDependencies": null,
+    "scripts": {
+      "start": "node src/main.ts",
+      "bundle": "esbuild src/main.ts --bundle --platform=node --format=esm --target=node26 --outfile=build/main.js --external:bufferutil --external:utf-8-validate --banner:js=\"import { createRequire as __createRequire } from 'node:module'; const require = __createRequire(import.meta.url);\"",
+      "check": "tsc -b tsconfig.json"
+    }
+  },
+  {
+    "path": "packages/tools/jsdocs/package.json",
+    "name": "@effect/jsdocs",
+    "version": "0.0.0",
+    "engines": null,
+    "dependencies": {
+      "effect": "workspace:^",
+      "glob": "^14.0.3"
+    },
+    "peerDependencies": {
+      "typescript": ">=5.0.0 <7.0.0"
+    },
+    "scripts": {
+      "build": "tsc -b tsconfig.json && pnpm babel",
+      "babel": "babel dist --plugins annotate-pure-calls --out-dir dist --source-maps",
+      "check": "tsc -b tsconfig.json"
+    }
+  },
+  {
+    "path": "packages/tools/doctest/package.json",
+    "name": "@effect/doctest",
+    "version": "4.1.2",
+    "engines": null,
+    "dependencies": {
+      "rolldown": "^1.2.16"
+    },
+    "peerDependencies": {
+      "effect": "workspace:^",
+      "vite": ">=8.1.5 <9.0.0",
+      "vitest": ">=5.0.0 <6.0.0"
+    },
+    "scripts": {
+      "codegen": "effect-utils codegen",
+      "build": "tsc -b tsconfig.json && pnpm babel",
+      "babel": "babel dist --plugins annotate-pure-calls --out-dir dist --source-maps",
+      "check": "tsc -b tsconfig.json"
+    }
+  },
+  {
+    "path": "packages/tools/bundle/package.json",
+    "name": "@effect/bundle",
+    "version": "0.0.0",
+    "engines": null,
+    "dependencies": {
+      "@effect/platform-node": "workspace:^",
+      "@rollup/plugin-node-resolve": "^16.0.3",
+      "@rollup/plugin-replace": "^6.0.3",
+      "@rollup/plugin-terser": "^1.0.2",
+      "effect": "workspace:^",
+      "glob": "^14.0.3",
+      "rollup": "^4.67.3",
+      "rollup-plugin-esbuild": "^6.2.1",
+      "rollup-plugin-visualizer": "^7.1.1"
+    },
+    "peerDependencies": null,
+    "scripts": {
+      "build": "tsc -b tsconfig.src.json && pnpm babel",
+      "babel": "babel dist --plugins annotate-pure-calls --out-dir dist --source-maps",
+      "check": "tsc -b tsconfig.json",
+      "compare": "node src/bin.ts compare",
+      "report": "node src/bin.ts report",
+      "visualize": "node src/bin.ts visualize"
+    }
+  },
+  {
+    "path": "packages/tools/utils/package.json",
+    "name": "@effect/utils",
+    "version": "0.0.0",
+    "engines": null,
+    "dependencies": {
+      "@effect/platform-node": "workspace:^",
+      "effect": "workspace:^",
+      "glob": "^14.0.3"
+    },
+    "peerDependencies": null,
+    "scripts": {
+      "build": "tsc -b tsconfig.json && pnpm babel",
+      "babel": "babel dist --plugins annotate-pure-calls --out-dir dist --source-maps",
+      "check": "tsc -b tsconfig.json"
+    }
+  },
+  {
+    "path": "packages/tools/ai-docgen/package.json",
+    "name": "@effect/ai-docgen",
+    "version": "0.0.0",
+    "engines": null,
+    "dependencies": {
+      "@effect/platform-node": "workspace:^",
+      "effect": "workspace:^",
+      "glob": "^14.0.3",
+      "yaml": "^2.9.1"
+    },
+    "peerDependencies": null,
+    "scripts": {
+      "build": "tsc -b tsconfig.json && pnpm babel",
+      "babel": "babel dist --plugins annotate-pure-calls --out-dir dist --source-maps",
+      "check": "tsc -b tsconfig.json"
+    }
+  },
+  {
+    "path": "packages/tools/graphql-generator/package.json",
+    "name": "@effect/graphql-generator",
+    "version": "4.1.2",
+    "engines": null,
+    "dependencies": null,
+    "peerDependencies": {
+      "@effect/platform-node": "workspace:^",
+      "effect": "workspace:^"
+    },
+    "scripts": {
+      "build": "tsc -b tsconfig.json && pnpm babel",
+      "babel": "babel dist --plugins annotate-pure-calls --out-dir dist --source-maps",
+      "check": "tsc -b tsconfig.json"
+    }
+  },
+  {
+    "path": "packages/tools/openapi-generator/package.json",
+    "name": "@effect/openapi-generator",
+    "version": "4.1.2",
+    "engines": null,
+    "dependencies": {
+      "swagger2openapi": "^7.0.8"
+    },
+    "peerDependencies": {
+      "@effect/platform-node": "workspace:^",
+      "effect": "workspace:^"
+    },
+    "scripts": {
+      "build": "tsc -b tsconfig.json && pnpm babel",
+      "babel": "babel dist --plugins annotate-pure-calls --out-dir dist --source-maps",
+      "check": "tsc -b tsconfig.json"
+    }
+  },
+  {
+    "path": "packages/tools/ai-codegen/package.json",
+    "name": "@effect/ai-codegen",
+    "version": "0.0.0",
+    "engines": null,
+    "dependencies": {
+      "@effect/openapi-generator": "workspace:^",
+      "@effect/platform-node": "workspace:^",
+      "effect": "workspace:^",
+      "glob": "^14.0.3",
+      "yaml": "^2.9.1"
+    },
+    "peerDependencies": null,
+    "scripts": {
+      "build": "tsc -b tsconfig.json && pnpm babel",
+      "babel": "babel dist --plugins annotate-pure-calls --out-dir dist --source-maps",
+      "check": "tsc -b tsconfig.json"
+    }
+  },
+  {
+    "path": "packages/tools/docgen/package.json",
+    "name": "@effect/docgen",
+    "version": "4.1.2",
+    "engines": {
+      "node": ">=22.19.0"
+    },
+    "dependencies": {
+      "@babel/code-frame": "^8.0.6",
+      "@effect/markdown-toc": "^0.1.0",
+      "@effect/platform-node": "workspace:^",
+      "chalk": "^6.0.1",
+      "doctrine": "^3.0.0",
+      "effect": "workspace:^",
+      "glob": "^14.0.3",
+      "prettier": "^3.9.10",
+      "ts-morph": "^28.0.0",
+      "tsconfck": "^3.1.6"
+    },
+    "peerDependencies": {
+      "tsx": ">=4.19.3 <5.0.0",
+      "typescript": ">=5.8.2 <7.0.0"
+    },
+    "scripts": {
+      "build": "tsc -b tsconfig.json && pnpm babel",
+      "babel": "babel dist --plugins annotate-pure-calls --out-dir dist --source-maps",
+      "check": "tsc -b tsconfig.json"
+    }
+  },
+  {
+    "path": "packages/tools/oxc/package.json",
+    "name": "@effect/oxc",
+    "version": "0.0.0",
+    "engines": null,
+    "dependencies": {
+      "@oxlint/plugins": "^1.90.0"
+    },
+    "peerDependencies": {
+      "typescript": ">=5.0.0 <7.0.0"
+    },
+    "scripts": {
+      "build": "tsc -b tsconfig.json && pnpm babel",
+      "babel": "babel dist --plugins annotate-pure-calls --out-dir dist --source-maps",
+      "check": "tsc -b tsconfig.json"
+    }
+  },
+  {
+    "path": "packages/tools/api-diff/package.json",
+    "name": "@effect/api-diff",
+    "version": "0.0.0",
+    "engines": null,
+    "dependencies": {
+      "@effect/platform-node": "workspace:^",
+      "effect": "workspace:^",
+      "yaml": "^2.9.1"
+    },
+    "peerDependencies": null,
+    "scripts": {
+      "check": "tsc -b tsconfig.json"
+    }
+  },
+  {
+    "path": "packages/tools/npm-promote/package.json",
+    "name": "@effect/npm-promote",
+    "version": "0.0.0",
+    "engines": null,
+    "dependencies": {
+      "@effect/platform-node": "workspace:^",
+      "effect": "workspace:^",
+      "semver": "^7.8.5"
+    },
+    "peerDependencies": null,
+    "scripts": {
+      "check": "tsc -b tsconfig.json"
+    }
+  }
+]

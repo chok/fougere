@@ -16,7 +16,7 @@ to call its two ideas are its two readings:
 1. **Single-schema** — what a definition yields is *derived* from it: one Entity class (`class Post extends entity({...})`) generates validation, DB tables (Kysely), GraphQL types (Pothos), form contracts, API surfaces.
 2. **The gradient** — how it is realized is *chosen apart* from it: a Frond (entities + handlers + collectors + seeds) runs in-process or in its own process behind JSON-RPC, with **identical user code**. `fronds:` in `fougere.config.ts` is the whole statement — an entry per frond, whose `extends:` names the one it inherits code from, whose `remote:` says where it answers, and whose key names a module when a package brings it.
 
-Reference docs: `site/content/` — `docs/` (concepts, then tasks by need, then Extending), `reference/`, and the tutorial, projected from `demos/tutorial/` by `site/modules/tutorial.ts`. An old docs URL is a line of `site/redirects.json`.
+Reference docs: `site/apps/web/content/` — `docs/` (concepts, then tasks by need, then Extending), `reference/`, and the tutorial, projected from `demos/tutorial/` by `site/apps/web/modules/tutorial.ts`. An old docs URL is a line of `site/apps/web/redirects.json`.
 
 ## Commands
 
@@ -662,7 +662,7 @@ written for is read, never asked when it can be told (`writtenFor`,
 the project around (`package-manager-detector`), then a question, then npm said aloud. yarn 1 writes
 an npm project. What each one SAYS is `PackageManager` (`@fougere/cli/package-manager`), which reads
 no disk: the docs write a command once, as an npm block marked `pm`, and the site's tabs
-(`site/modules/managers.ts`) and its home line say it in the reader's tool through the same table. Measured 2026-10-20: a frond created during `nuxt dev` answers at its first import,
+(`site/apps/web/modules/managers.ts`) and its home line say it in the reader's tool through the same table. Measured 2026-10-20: a frond created during `nuxt dev` answers at its first import,
 and `door:check` runs every host under npm, pnpm, bun and yarn 4. Pinned by `cli/tests/scaffold.test.ts`
 and `compiler/tests/scanner.test.ts` (the rename).
 
@@ -890,7 +890,7 @@ since a frond's middleware covers the addresses its handlers SERVE and not the o
 CALL, which is a different subject with no name yet. And HTTP is never held by the boot at all:
 the engine is the host's, the app mounts on it with `answer`, and the engine's own middleware
 stands around it — a host port would be a second way to say it. Both ways in are written down,
-with `Storage`'s, in `site/content/docs/1.concepts/7.port.md` and `8.extending/4.extension-points.md`:
+with `Storage`'s, in `site/apps/web/content/docs/1.concepts/7.port.md` and `8.extending/4.extension-points.md`:
 `remoteTransport:` swaps a transport whole, `app.use` wraps the outgoing call, the engine's
 middleware reaches the HTTP side.
 

@@ -1,0 +1,2307 @@
+[
+  {
+    "path": "package.json",
+    "name": "fougere",
+    "version": null,
+    "engines": {
+      "node": ">=24"
+    },
+    "dependencies": null,
+    "peerDependencies": null,
+    "scripts": {
+      "build": "pnpm -r --filter './packages/**' build",
+      "typecheck": "pnpm -r typecheck",
+      "typecheck:tools": "tsc -p tools",
+      "test": "pnpm -r test",
+      "lint": "oxlint .",
+      "knip": "knip",
+      "publish:check": "node tools/publish-check.ts",
+      "door:check": "node tools/door-check.ts",
+      "import:check": "node tools/import-check.ts",
+      "concept:check": "node tools/concept-check.ts",
+      "story:check": "node tools/story-check.ts",
+      "smoke": "node tools/smoke.ts",
+      "arch": "depcruise packages --output-type err",
+      "arch:cycles": "node tools/cycle-check.ts",
+      "frond:check": "node tools/frond-check.ts",
+      "coverage": "pnpm -r --filter './packages/**' exec vitest run --passWithNoTests --coverage --coverage.provider=v8 --coverage.reporter=text --coverage.include=src/**",
+      "changeset": "changeset",
+      "version-packages": "changeset version",
+      "build:apps": "pnpm -r --filter \"./demos/**\" --filter ./site build",
+      "clip": "tools/clip/clip.sh"
+    }
+  },
+  {
+    "path": "site/package.json",
+    "name": "@fougere/site",
+    "version": null,
+    "engines": null,
+    "dependencies": {
+      "@fougere/adapter-graphql": "workspace:*",
+      "@fougere/adapter-file": "workspace:*",
+      "@fougere/adapter-sql": "workspace:*",
+      "@fougere/auth-better": "workspace:*",
+      "@fougere/container": "workspace:*",
+      "@fougere/core": "workspace:*",
+      "@fougere/http": "workspace:*",
+      "@fougere/nuxt": "workspace:*",
+      "@fougere/schema": "workspace:*",
+      "@fougere/transport-http": "workspace:*",
+      "@nuxt/content": "^3.6.0",
+      "@nuxt/ui": "^4.6.0",
+      "@nuxtjs/i18n": "^10.0.0",
+      "@pothos/core": "^4.12.0",
+      "@tailwindcss/vite": "^4.2.2",
+      "better-sqlite3": "^13.0.3",
+      "graphql": "^16.13.1",
+      "jiti": "^2.6.1",
+      "markdown-it": "^14.1.0",
+      "nuxt": "^4.6.1",
+      "roughjs": "^4.6.6",
+      "shiki": "^4.3.1",
+      "tailwindcss": "^4.2.2",
+      "vite": "^7.3.1",
+      "vue": "^3.5.16"
+    },
+    "peerDependencies": null,
+    "scripts": {
+      "dev": "nuxt dev",
+      "typecheck": "tsc -p fronds",
+      "build": "nuxt build",
+      "generate": "nuxt generate",
+      "preview": "nuxt preview",
+      "migrate": "fougere migrate --apply"
+    }
+  },
+  {
+    "path": "demos/together-frame/package.json",
+    "name": "fougere-demo-together-frame",
+    "version": "0.0.3-alpha.4",
+    "engines": null,
+    "dependencies": {
+      "@fougere/log": "workspace:*",
+      "@fougere/adapter-sql": "workspace:*",
+      "@fougere/container": "workspace:*",
+      "@fougere/core": "workspace:*",
+      "@fougere/defaults": "workspace:*",
+      "@fougere/schema": "workspace:*",
+      "@fougere/adapter-file": "workspace:*",
+      "@fougere/compiler": "workspace:*",
+      "better-sqlite3": "^13.0.3"
+    },
+    "peerDependencies": null,
+    "scripts": {
+      "dev": "tsx src/main.ts",
+      "typecheck": "tsc -p fronds"
+    }
+  },
+  {
+    "path": "demos/cloudflare-d1/package.json",
+    "name": "fougere-demo-cloudflare-d1",
+    "version": "0.0.3-alpha.4",
+    "engines": null,
+    "dependencies": {
+      "@fougere/defaults": "workspace:*",
+      "@fougere/adapter-sql": "workspace:*",
+      "@fougere/container": "workspace:*",
+      "@fougere/core": "workspace:*",
+      "@fougere/schema": "workspace:*",
+      "@fougere/transport-http": "workspace:*",
+      "@fougere/adapter-rest": "workspace:*",
+      "@fougere/app": "workspace:*",
+      "hono": "^4.7.0",
+      "@fougere/observability": "workspace:*",
+      "@fougere/compiler": "workspace:*"
+    },
+    "peerDependencies": null,
+    "scripts": {
+      "build": "node build.ts",
+      "schema": "node scripts/schema.ts",
+      "dev": "pnpm build && wrangler dev",
+      "deploy": "pnpm build && wrangler deploy",
+      "typecheck": "pnpm build && tsc --noEmit && tsc --noEmit -p tsconfig.node.json"
+    }
+  },
+  {
+    "path": "demos/sse-live/package.json",
+    "name": "sse-live",
+    "version": null,
+    "engines": null,
+    "dependencies": {
+      "@fougere/defaults": "workspace:*",
+      "@fougere/core": "workspace:*",
+      "@fougere/schema": "workspace:*",
+      "@fougere/container": "workspace:*",
+      "jiti": "^2.0.0",
+      "@fougere/adapter-memory": "workspace:*",
+      "@fougere/compiler": "workspace:*"
+    },
+    "peerDependencies": null,
+    "scripts": {
+      "dev": "tsx main.ts",
+      "typecheck": "tsc --noEmit -p ."
+    }
+  },
+  {
+    "path": "demos/anchor-chain/package.json",
+    "name": "fougere-demo-anchor-chain",
+    "version": "0.0.3-alpha.4",
+    "engines": null,
+    "dependencies": {
+      "@fougere/adapter-sql": "workspace:*",
+      "@fougere/schema": "workspace:*"
+    },
+    "peerDependencies": null,
+    "scripts": {
+      "dev": "tsx src/main.ts",
+      "typecheck": "tsc --noEmit -p ."
+    }
+  },
+  {
+    "path": "demos/admin-panel/package.json",
+    "name": "@fougere/demo-admin-panel",
+    "version": null,
+    "engines": null,
+    "dependencies": {
+      "@fontsource-variable/inter": "^5.3.0",
+      "@fougere/admin": "workspace:*",
+      "@fougere/app": "workspace:*",
+      "@fougere/core": "workspace:*",
+      "@fougere/schema": "workspace:*",
+      "ra-i18n-polyglot": "^5.15.0",
+      "ra-language-french": "^5.15.0",
+      "react": "^19.2.8",
+      "react-admin": "^5.15.1",
+      "react-dom": "^19.2.8"
+    },
+    "peerDependencies": null,
+    "scripts": {
+      "dev": "vite --port 3410",
+      "build": "vite build",
+      "typecheck": "tsc --noEmit"
+    }
+  },
+  {
+    "path": "demos/log-destinations/package.json",
+    "name": "log-destinations",
+    "version": null,
+    "engines": null,
+    "dependencies": {
+      "@fougere/defaults": "workspace:*",
+      "@fougere/compiler": "workspace:*",
+      "@fougere/container": "workspace:*",
+      "@fougere/core": "workspace:*",
+      "@fougere/log": "workspace:*",
+      "@fougere/schema": "workspace:*",
+      "jiti": "^2.0.0"
+    },
+    "peerDependencies": null,
+    "scripts": {
+      "dev": "tsx src/main.ts",
+      "typecheck": "tsc --noEmit -p ."
+    }
+  },
+  {
+    "path": "demos/test-gradient/package.json",
+    "name": "@fougere/demo-test-gradient",
+    "version": null,
+    "engines": null,
+    "dependencies": {
+      "@fougere/adapter-rest": "workspace:*",
+      "@fougere/adapter-sql": "workspace:*",
+      "@fougere/core": "workspace:*",
+      "@fougere/log": "workspace:*",
+      "@fougere/schema": "workspace:*",
+      "better-sqlite3": "^13.0.3"
+    },
+    "peerDependencies": null,
+    "scripts": {
+      "test": "vitest run",
+      "test:watch": "vitest",
+      "typecheck": "tsc --noEmit -p .",
+      "load:gen": "tsx gen-load.ts",
+      "e2e": "playwright test",
+      "dev": "tsx server.ts",
+      "migrate": "fougere migrate --latest --apply"
+    }
+  },
+  {
+    "path": "demos/tutorial/package.json",
+    "name": "@fougere/demo-tutorial",
+    "version": null,
+    "engines": null,
+    "dependencies": {
+      "@fougere/adapter-rest": "workspace:*",
+      "@fougere/adapter-sql": "workspace:*",
+      "@fougere/core": "workspace:*",
+      "@fougere/log": "workspace:*",
+      "@fougere/schema": "workspace:*",
+      "better-sqlite3": "^13.0.3"
+    },
+    "peerDependencies": null,
+    "scripts": {
+      "test": "vitest run",
+      "typecheck": "for step in steps/*/; do [ -n \"$(find \"$step/fronds\" -name '*.ts')\" ] || continue; tsc -p \"$step/fronds\" || exit 1; done"
+    }
+  },
+  {
+    "path": "demos/container-basics/package.json",
+    "name": "fougere-demo-container-basics",
+    "version": "0.0.3-alpha.0",
+    "engines": null,
+    "dependencies": {
+      "@fougere/container": "workspace:*"
+    },
+    "peerDependencies": null,
+    "scripts": {
+      "dev": "tsx src/main.ts",
+      "typecheck": "tsc --noEmit -p ."
+    }
+  },
+  {
+    "path": "demos/config-reload/package.json",
+    "name": "fougere-demo-config-reload",
+    "version": "0.0.3-alpha.4",
+    "engines": null,
+    "dependencies": {
+      "@fougere/defaults": "workspace:*",
+      "@fougere/log": "workspace:*",
+      "@fougere/container": "workspace:*",
+      "@fougere/core": "workspace:*",
+      "@fougere/compiler": "workspace:*",
+      "better-sqlite3": "^13.0.3"
+    },
+    "peerDependencies": null,
+    "scripts": {
+      "dev": "tsx src/main.ts",
+      "typecheck": "tsc -p . --noEmit && tsc -p fronds"
+    }
+  },
+  {
+    "path": "demos/transport-chain/package.json",
+    "name": "fougere-demo-transport-chain",
+    "version": "0.0.1-alpha.1",
+    "engines": null,
+    "dependencies": {
+      "@fougere/defaults": "workspace:*",
+      "@fougere/log": "workspace:*",
+      "@fougere/compiler": "workspace:*",
+      "@fougere/container": "workspace:*",
+      "@fougere/core": "workspace:*",
+      "@fougere/schema": "workspace:*"
+    },
+    "peerDependencies": null,
+    "scripts": {
+      "dev": "FOUGERE_LOG_LEVEL=warn tsx src/main.ts",
+      "typecheck": "tsc -p fronds"
+    }
+  },
+  {
+    "path": "demos/pipe-split/package.json",
+    "name": "pipe-split",
+    "version": null,
+    "engines": null,
+    "dependencies": {
+      "@fougere/defaults": "workspace:*",
+      "@fougere/compiler": "workspace:*",
+      "@fougere/container": "workspace:*",
+      "@fougere/core": "workspace:*",
+      "@fougere/schema": "workspace:*",
+      "@fougere/transport-http": "workspace:*",
+      "jiti": "^2.0.0"
+    },
+    "peerDependencies": null,
+    "scripts": {
+      "dev": "tsx src/main.ts",
+      "typecheck": "tsc --noEmit -p .",
+      "link:tenant": "tsx src/link.ts tenant 4600",
+      "link:privacy": "tsx src/link.ts privacy 4601"
+    }
+  },
+  {
+    "path": "demos/mirror-catalog/package.json",
+    "name": "fougere-demo-mirror-catalog",
+    "version": "0.0.3-alpha.4",
+    "engines": null,
+    "dependencies": {
+      "@fougere/adapter-env": "workspace:*",
+      "@fougere/adapter-sql": "workspace:*",
+      "@fougere/container": "workspace:*",
+      "@fougere/core": "workspace:*",
+      "@fougere/compiler": "workspace:*",
+      "@fougere/defaults": "workspace:*",
+      "@fougere/log": "workspace:*",
+      "@fougere/schema": "workspace:*",
+      "better-sqlite3": "^13.0.3"
+    },
+    "peerDependencies": null,
+    "scripts": {
+      "dev": "tsx src/main.ts",
+      "typecheck": "tsc -p . --noEmit && tsc -p fronds"
+    }
+  },
+  {
+    "path": "demos/no-compiler/package.json",
+    "name": "fougere-demo-no-compiler",
+    "version": "0.0.1-alpha.0",
+    "engines": null,
+    "dependencies": {
+      "@fougere/core": "workspace:*",
+      "@fougere/defaults": "workspace:*",
+      "@fougere/schema": "workspace:*"
+    },
+    "peerDependencies": null,
+    "scripts": {
+      "dev": "node src/main.ts",
+      "typecheck": "tsc -p . --noEmit"
+    }
+  },
+  {
+    "path": "demos/emit-fleet/package.json",
+    "name": "emit-fleet",
+    "version": null,
+    "engines": null,
+    "dependencies": {
+      "@fougere/adapter-env": "workspace:*",
+      "@fougere/defaults": "workspace:*",
+      "@fougere/core": "workspace:*",
+      "@fougere/schema": "workspace:*",
+      "jiti": "^2.0.0",
+      "@fougere/container": "workspace:*",
+      "@fougere/compiler": "workspace:*"
+    },
+    "peerDependencies": null,
+    "scripts": {
+      "hub": "tsx hub.ts",
+      "node": "tsx node.ts",
+      "typecheck": "tsc --noEmit -p ."
+    }
+  },
+  {
+    "path": "demos/on-delete/package.json",
+    "name": "fougere-demo-on-delete",
+    "version": "0.0.3-alpha.4",
+    "engines": null,
+    "dependencies": {
+      "@fougere/log": "workspace:*",
+      "@fougere/adapter-sql": "workspace:*",
+      "@fougere/compiler": "workspace:*",
+      "@fougere/container": "workspace:*",
+      "@fougere/core": "workspace:*",
+      "@fougere/defaults": "workspace:*",
+      "@fougere/schema": "workspace:*",
+      "@fougere/workflow": "workspace:*",
+      "better-sqlite3": "^13.0.3"
+    },
+    "peerDependencies": null,
+    "scripts": {
+      "dev": "tsx src/main.ts",
+      "typecheck": "tsc -p . --noEmit && tsc -p fronds"
+    }
+  },
+  {
+    "path": "demos/crossing-cost/package.json",
+    "name": "fougere-demo-crossing-cost",
+    "version": "0.0.1-alpha.1",
+    "engines": null,
+    "dependencies": {
+      "@fougere/defaults": "workspace:*",
+      "@fougere/log": "workspace:*",
+      "@fougere/compiler": "workspace:*",
+      "@fougere/container": "workspace:*",
+      "@fougere/core": "workspace:*",
+      "@fougere/observability": "workspace:*",
+      "@fougere/schema": "workspace:*",
+      "@fougere/transport-http": "workspace:*"
+    },
+    "peerDependencies": null,
+    "scripts": {
+      "dev": "tsx src/main.ts",
+      "typecheck": "tsc -p fronds"
+    }
+  },
+  {
+    "path": "demos/auth-better/package.json",
+    "name": "fougere-demo-auth-better",
+    "version": "0.0.3-alpha.4",
+    "engines": null,
+    "dependencies": {
+      "@fougere/log": "workspace:*",
+      "@fougere/core": "workspace:*",
+      "@fougere/schema": "workspace:*",
+      "@fougere/adapter-sql": "workspace:*",
+      "@fougere/auth-better": "workspace:*",
+      "hono": "^4.7.0",
+      "@hono/node-server": "^1.14.0",
+      "better-sqlite3": "^13.0.3",
+      "@fougere/container": "workspace:*"
+    },
+    "peerDependencies": null,
+    "scripts": {
+      "dev": "tsx src/server.ts",
+      "typecheck": "tsc --noEmit -p ."
+    }
+  },
+  {
+    "path": "demos/schema-ecommerce/package.json",
+    "name": "fougere-demo-schema-ecommerce",
+    "version": "0.0.3-alpha.4",
+    "engines": null,
+    "dependencies": {
+      "@fougere/core": "workspace:*",
+      "@fougere/schema": "workspace:*",
+      "@fougere/adapter-sql": "workspace:*",
+      "@fougere/adapter-graphql": "workspace:*",
+      "hono": "^4.7.0",
+      "@hono/node-server": "^1.14.0",
+      "@pothos/core": "^4.12.0",
+      "better-sqlite3": "^13.0.3",
+      "graphql": "^16.13.1"
+    },
+    "peerDependencies": null,
+    "scripts": {
+      "dev": "tsx src/server.ts",
+      "seed": "tsx src/seed.ts",
+      "typecheck": "tsc --noEmit -p ."
+    }
+  },
+  {
+    "path": "demos/multi-frond/package.json",
+    "name": "multi-frond-demo",
+    "version": null,
+    "engines": null,
+    "dependencies": {
+      "@fougere/core": "workspace:*",
+      "@fougere/schema": "workspace:*",
+      "@fougere/adapter-rest": "workspace:*",
+      "hono": "^4.0.0",
+      "@hono/node-server": "^1.0.0",
+      "jiti": "^2.0.0",
+      "@fougere/container": "workspace:*"
+    },
+    "peerDependencies": null,
+    "scripts": {
+      "remote": "cd remote-blog && tsx server.ts",
+      "sync": "cd consumer && REMOTE_URL=http://localhost:4001 tsx sync-remote.ts",
+      "dev": "cd consumer && pnpm exec nuxt dev --port 3002",
+      "test": "tsx test.ts",
+      "typecheck": "tsc --noEmit -p ."
+    }
+  },
+  {
+    "path": "demos/observability/package.json",
+    "name": "fougere-demo-observability",
+    "version": "0.0.3-alpha.4",
+    "engines": null,
+    "dependencies": {
+      "@fougere/defaults": "workspace:*",
+      "@fougere/calls": "workspace:*",
+      "@fougere/container": "workspace:*",
+      "@fougere/core": "workspace:*",
+      "@fougere/log": "workspace:*",
+      "@fougere/observability": "workspace:*",
+      "@fougere/schema": "workspace:*",
+      "@fougere/transport-http": "workspace:*",
+      "jiti": "^2.0.0",
+      "@fougere/compiler": "workspace:*"
+    },
+    "peerDependencies": null,
+    "scripts": {
+      "dev": "tsx src/main.ts",
+      "load": "k6 run load.js",
+      "signoz": "cd signoz && foundryctl cast -f casting.yaml",
+      "typecheck": "tsc -p . && tsc -p catalog/fronds && tsc -p shipping/fronds && tsc -p shop/fronds"
+    }
+  },
+  {
+    "path": "demos/express-blog/package.json",
+    "name": "@fougere/demo-express-blog",
+    "version": null,
+    "engines": null,
+    "dependencies": {
+      "@fougere/adapter-graphql": "workspace:*",
+      "@fougere/adapter-rest": "workspace:*",
+      "@fougere/adapter-sql": "workspace:*",
+      "@fougere/app": "workspace:*",
+      "@fougere/core": "workspace:*",
+      "@fougere/log": "workspace:*",
+      "@fougere/schema": "workspace:*",
+      "@pothos/core": "^4.12.0",
+      "better-sqlite3": "^13.0.3",
+      "express": "^5.2.1",
+      "graphql": "^16.13.1",
+      "jiti": "^2.6.1"
+    },
+    "peerDependencies": null,
+    "scripts": {
+      "dev": "node --experimental-strip-types server.ts",
+      "typecheck": "tsc -p fronds",
+      "migrate": "fougere migrate --latest --apply"
+    }
+  },
+  {
+    "path": "demos/core-scanner/package.json",
+    "name": "fougere-demo-core-scanner",
+    "version": "0.0.3-alpha.4",
+    "engines": null,
+    "dependencies": {
+      "@fougere/defaults": "workspace:*",
+      "@fougere/container": "workspace:*",
+      "@fougere/core": "workspace:*",
+      "@fougere/compiler": "workspace:*"
+    },
+    "peerDependencies": null,
+    "scripts": {
+      "dev": "tsx src/main.ts",
+      "typecheck": "tsc -p . --noEmit && tsc -p fronds"
+    }
+  },
+  {
+    "path": "demos/one-declaration/package.json",
+    "name": "one-declaration",
+    "version": null,
+    "engines": null,
+    "dependencies": {
+      "@fougere/schema": "workspace:*",
+      "@fougere/adapter-sql": "workspace:*"
+    },
+    "peerDependencies": null,
+    "scripts": {
+      "dev": "tsx main.ts",
+      "typecheck": "tsc --noEmit -p ."
+    }
+  },
+  {
+    "path": "demos/emit-split/package.json",
+    "name": "emit-split",
+    "version": null,
+    "engines": null,
+    "dependencies": {
+      "@fougere/defaults": "workspace:*",
+      "@fougere/core": "workspace:*",
+      "@fougere/schema": "workspace:*",
+      "@fougere/transport-http": "workspace:*",
+      "jiti": "^2.0.0",
+      "@fougere/container": "workspace:*",
+      "@fougere/compiler": "workspace:*"
+    },
+    "peerDependencies": null,
+    "scripts": {
+      "dev:search": "tsx search.ts",
+      "dev": "tsx main.ts",
+      "typecheck": "tsc --noEmit -p ."
+    }
+  },
+  {
+    "path": "demos/rust-frond/package.json",
+    "name": "rust-frond-demo",
+    "version": null,
+    "engines": null,
+    "dependencies": {
+      "@fougere/core": "workspace:*",
+      "@fougere/schema": "workspace:*",
+      "@fougere/transport-http": "workspace:*"
+    },
+    "peerDependencies": null,
+    "scripts": {
+      "frond": "cargo run --release",
+      "consume": "pnpm dlx tsx consumer.ts",
+      "typecheck": "tsc -p tsconfig.json"
+    }
+  },
+  {
+    "path": "demos/next-blog/package.json",
+    "name": "@fougere/demo-next-blog",
+    "version": null,
+    "engines": null,
+    "dependencies": {
+      "@fougere/adapter-rest": "workspace:*",
+      "@fougere/adapter-sql": "workspace:*",
+      "@fougere/core": "workspace:*",
+      "@fougere/log": "workspace:*",
+      "@fougere/next": "workspace:*",
+      "@fougere/react": "workspace:*",
+      "@fougere/schema": "workspace:*",
+      "better-sqlite3": "^13.0.3",
+      "jiti": "^2.6.1",
+      "next": "^15.5.26",
+      "react": "^19.2.0",
+      "react-dom": "^19.2.0"
+    },
+    "peerDependencies": null,
+    "scripts": {
+      "dev": "next dev -p 3100",
+      "start": "next start -p 3100",
+      "typecheck": "tsc -p fronds",
+      "build": "next build",
+      "migrate": "fougere migrate --latest --apply"
+    }
+  },
+  {
+    "path": "demos/nuxt-blog/package.json",
+    "name": "@fougere/demo-nuxt-blog",
+    "version": null,
+    "engines": null,
+    "dependencies": {
+      "@fougere/adapter-graphql": "workspace:*",
+      "@fougere/adapter-rest": "workspace:*",
+      "@fougere/adapter-sql": "workspace:*",
+      "@fougere/app": "workspace:*",
+      "@fougere/auth-better": "workspace:*",
+      "@fougere/calls": "workspace:*",
+      "@fougere/compiler": "workspace:*",
+      "@fougere/container": "workspace:*",
+      "@fougere/core": "workspace:*",
+      "@fougere/defaults": "workspace:*",
+      "@fougere/log": "workspace:*",
+      "@fougere/nuxt": "workspace:*",
+      "@fougere/observability": "workspace:*",
+      "@fougere/schema": "workspace:*",
+      "@fougere/transport-http": "workspace:*",
+      "@hono/node-server": "^1.14.0",
+      "@nuxt/ui": "^4.6.0",
+      "@pothos/core": "^4.12.0",
+      "@tailwindcss/vite": "^4.2.2",
+      "better-sqlite3": "^13.0.3",
+      "graphql": "^16.13.1",
+      "hono": "^4.7.0",
+      "jiti": "^2.6.1",
+      "nuxt": "^4.4.2",
+      "tailwindcss": "^4.2.2",
+      "vite": "^7.3.1",
+      "vue": "^3.5.16"
+    },
+    "peerDependencies": null,
+    "scripts": {
+      "dev": "nuxt dev",
+      "typecheck": "tsc -p fronds && tsc -p tsconfig.node.json",
+      "graphql": "tsx graphql.ts",
+      "build": "nuxt build",
+      "preview": "nuxt preview",
+      "dev:blog": "node serve-blog.ts",
+      "migrate": "fougere migrate --latest --apply"
+    }
+  },
+  {
+    "path": "demos/shared-parent/package.json",
+    "name": "shared-parent",
+    "version": null,
+    "engines": null,
+    "dependencies": {
+      "@fougere/defaults": "workspace:*",
+      "@fougere/log": "workspace:*",
+      "@fougere/compiler": "workspace:*",
+      "@fougere/container": "workspace:*",
+      "@fougere/core": "workspace:*",
+      "@fougere/schema": "workspace:*"
+    },
+    "peerDependencies": null,
+    "scripts": {
+      "dev": "tsx src/main.ts",
+      "typecheck": "tsc --noEmit -p ."
+    }
+  },
+  {
+    "path": "demos/react-router-blog/package.json",
+    "name": "@fougere/demo-react-router-blog",
+    "version": null,
+    "engines": null,
+    "dependencies": {
+      "@fougere/adapter-rest": "workspace:*",
+      "@fougere/adapter-sql": "workspace:*",
+      "@fougere/app": "workspace:*",
+      "@fougere/core": "workspace:*",
+      "@fougere/log": "workspace:*",
+      "@fougere/react": "workspace:*",
+      "@fougere/schema": "workspace:*",
+      "@fougere/vite": "workspace:*",
+      "@react-router/node": "^8",
+      "@react-router/serve": "^8",
+      "better-sqlite3": "^13.0.3",
+      "isbot": "^5",
+      "jiti": "^2.6.1",
+      "react": "^19.2.7",
+      "react-dom": "^19.2.7",
+      "react-router": "^8"
+    },
+    "peerDependencies": null,
+    "scripts": {
+      "dev": "react-router dev --port 3400",
+      "typecheck": "tsc -p fronds",
+      "build": "react-router build",
+      "migrate": "fougere migrate --latest --apply"
+    }
+  },
+  {
+    "path": "demos/boot-refusals/package.json",
+    "name": "fougere-demo-boot-refusals",
+    "version": "0.0.3-alpha.1",
+    "engines": null,
+    "dependencies": {
+      "@fougere/defaults": "workspace:*",
+      "@fougere/container": "workspace:*",
+      "@fougere/core": "workspace:*",
+      "@fougere/compiler": "workspace:*",
+      "@fougere/schema": "workspace:*"
+    },
+    "peerDependencies": null,
+    "scripts": {
+      "dev": "tsx src/main.ts",
+      "typecheck": "tsc --noEmit -p ."
+    }
+  },
+  {
+    "path": "demos/tanstack-blog/package.json",
+    "name": "@fougere/demo-tanstack-blog",
+    "version": null,
+    "engines": null,
+    "dependencies": {
+      "@fougere/adapter-rest": "workspace:*",
+      "@fougere/adapter-sql": "workspace:*",
+      "@fougere/app": "workspace:*",
+      "@fougere/core": "workspace:*",
+      "@fougere/log": "workspace:*",
+      "@fougere/react": "workspace:*",
+      "@fougere/schema": "workspace:*",
+      "@fougere/vite": "workspace:*",
+      "@tanstack/react-router": "^1.170.25",
+      "@tanstack/react-start": "^1.168.42",
+      "better-sqlite3": "^13.0.3",
+      "jiti": "^2.6.1",
+      "react": "^19.2.0",
+      "react-dom": "^19.2.0"
+    },
+    "peerDependencies": null,
+    "scripts": {
+      "dev": "vite dev --port 3200",
+      "typecheck": "tsc -p fronds",
+      "build": "vite build",
+      "migrate": "fougere migrate --latest --apply"
+    }
+  },
+  {
+    "path": "demos/crud-auto/package.json",
+    "name": "fougere-demo-crud-auto",
+    "version": "0.0.3-alpha.4",
+    "engines": null,
+    "dependencies": {
+      "@fougere/log": "workspace:*",
+      "@fougere/schema": "workspace:*",
+      "@fougere/adapter-sql": "workspace:*",
+      "@fougere/container": "workspace:*",
+      "@fougere/core": "workspace:*",
+      "@fougere/adapter-graphql": "workspace:*",
+      "@fougere/adapter-rest": "workspace:*",
+      "hono": "^4.7.0",
+      "@hono/node-server": "^1.14.0",
+      "@pothos/core": "^4.12.0",
+      "better-sqlite3": "^13.0.3",
+      "graphql": "^16.13.1",
+      "@fougere/app": "workspace:*"
+    },
+    "peerDependencies": null,
+    "scripts": {
+      "dev": "tsx src/main.ts",
+      "typecheck": "tsc --noEmit"
+    }
+  },
+  {
+    "path": "demos/oclif-catalog/package.json",
+    "name": "fougere-demo-oclif-catalog",
+    "version": "0.0.1-alpha.0",
+    "engines": null,
+    "dependencies": {
+      "@fougere/adapter-sql": "workspace:*",
+      "@fougere/compiler": "workspace:*",
+      "@fougere/core": "workspace:*",
+      "@fougere/defaults": "workspace:*",
+      "@fougere/log": "workspace:*",
+      "@fougere/oclif": "workspace:*",
+      "@fougere/schema": "workspace:*",
+      "@oclif/core": "^5.0.0",
+      "better-sqlite3": "^13.0.3"
+    },
+    "peerDependencies": null,
+    "scripts": {
+      "dev": "tsx src/main.ts",
+      "test": "vitest run",
+      "typecheck": "tsc -p . --noEmit && tsc -p fronds",
+      "migrate": "fougere migrate --latest --apply"
+    }
+  },
+  {
+    "path": "demos/ports-swap/package.json",
+    "name": "fougere-demo-ports-swap",
+    "version": "0.0.3-alpha.4",
+    "engines": null,
+    "dependencies": {
+      "@fougere/defaults": "workspace:*",
+      "@fougere/log": "workspace:*",
+      "@fougere/container": "workspace:*",
+      "@fougere/core": "workspace:*",
+      "@fougere/compiler": "workspace:*",
+      "@fougere/schema": "workspace:*"
+    },
+    "peerDependencies": null,
+    "scripts": {
+      "dev": "tsx src/main.ts",
+      "typecheck": "tsc -p . --noEmit && tsc -p fronds"
+    }
+  },
+  {
+    "path": "demos/sveltekit-blog/package.json",
+    "name": "@fougere/demo-sveltekit-blog",
+    "version": "0.0.3-alpha.4",
+    "engines": null,
+    "dependencies": {
+      "@fougere/adapter-rest": "workspace:*",
+      "@fougere/adapter-sql": "workspace:*",
+      "@fougere/app": "workspace:*",
+      "@fougere/core": "workspace:*",
+      "@fougere/log": "workspace:*",
+      "@fougere/schema": "workspace:*",
+      "@fougere/svelte": "workspace:*",
+      "@fougere/vite": "workspace:*",
+      "better-sqlite3": "^13.0.3",
+      "jiti": "^2.6.1"
+    },
+    "peerDependencies": null,
+    "scripts": {
+      "dev": "vite dev --port 3500",
+      "typecheck": "tsc -p fronds",
+      "build": "vite build",
+      "start": "node build",
+      "migrate": "fougere migrate --latest --apply"
+    }
+  },
+  {
+    "path": "demos/multi-transport/package.json",
+    "name": "multi-transport",
+    "version": null,
+    "engines": null,
+    "dependencies": {
+      "@fougere/defaults": "workspace:*",
+      "@fougere/core": "workspace:*",
+      "@fougere/schema": "workspace:*",
+      "@fougere/transport-http": "workspace:*",
+      "jiti": "^2.0.0",
+      "@fougere/container": "workspace:*",
+      "@fougere/adapter-memory": "workspace:*",
+      "@fougere/compiler": "workspace:*"
+    },
+    "peerDependencies": null,
+    "scripts": {
+      "dev": "tsx main.ts",
+      "typecheck": "tsc --noEmit -p ."
+    }
+  },
+  {
+    "path": "demos/ask-quorum/package.json",
+    "name": "ask-quorum",
+    "version": null,
+    "engines": null,
+    "dependencies": {
+      "@fougere/defaults": "workspace:*",
+      "@fougere/compiler": "workspace:*",
+      "@fougere/container": "workspace:*",
+      "@fougere/core": "workspace:*",
+      "@fougere/schema": "workspace:*",
+      "@fougere/transport-http": "workspace:*",
+      "jiti": "^2.0.0"
+    },
+    "peerDependencies": null,
+    "scripts": {
+      "dev": "tsx src/main.ts",
+      "rooms": "tsx src/subscriber.ts rooms 4701",
+      "billing": "tsx src/subscriber.ts billing 4702",
+      "calendar": "tsx src/subscriber.ts calendar 4703",
+      "typecheck": "tsc --noEmit -p ."
+    }
+  },
+  {
+    "path": "demos/sveltekit-blog/fronds/blog/package.json",
+    "name": "@fronds/blog",
+    "version": "0.0.1",
+    "engines": null,
+    "dependencies": null,
+    "peerDependencies": null,
+    "scripts": null
+  },
+  {
+    "path": "demos/tanstack-blog/fronds/blog/package.json",
+    "name": "@fronds/blog",
+    "version": "0.0.1",
+    "engines": null,
+    "dependencies": null,
+    "peerDependencies": null,
+    "scripts": null
+  },
+  {
+    "path": "demos/react-router-blog/fronds/blog/package.json",
+    "name": "@fronds/blog",
+    "version": "0.0.1",
+    "engines": null,
+    "dependencies": null,
+    "peerDependencies": null,
+    "scripts": null
+  },
+  {
+    "path": "demos/shared-parent/fronds/billing/package.json",
+    "name": "@fronds/billing",
+    "version": "0.0.1",
+    "engines": null,
+    "dependencies": null,
+    "peerDependencies": null,
+    "scripts": null
+  },
+  {
+    "path": "demos/nuxt-blog/fronds/user/package.json",
+    "name": "@fronds/user",
+    "version": "0.0.1",
+    "engines": null,
+    "dependencies": null,
+    "peerDependencies": null,
+    "scripts": null
+  },
+  {
+    "path": "demos/nuxt-blog/fronds/blog/package.json",
+    "name": "@fronds/blog",
+    "version": "0.0.1",
+    "engines": null,
+    "dependencies": null,
+    "peerDependencies": null,
+    "scripts": null
+  },
+  {
+    "path": "demos/emit-multirepo/blog/package.json",
+    "name": "emit-multirepo-blog",
+    "version": null,
+    "engines": null,
+    "dependencies": {
+      "@fougere/defaults": "workspace:*",
+      "@fougere/core": "workspace:*",
+      "@fougere/schema": "workspace:*",
+      "jiti": "^2.0.0",
+      "@fougere/transport-http": "workspace:*",
+      "@fougere/container": "workspace:*",
+      "@fougere/compiler": "workspace:*"
+    },
+    "peerDependencies": null,
+    "scripts": {
+      "dev": "tsx main.ts",
+      "tunnel": "tsx tunnel.ts",
+      "serve": "tsx serve.ts",
+      "typecheck": "tsc --noEmit -p ."
+    }
+  },
+  {
+    "path": "demos/emit-multirepo/search/package.json",
+    "name": "emit-multirepo-search",
+    "version": null,
+    "engines": null,
+    "dependencies": {
+      "@fougere/defaults": "workspace:*",
+      "@fougere/core": "workspace:*",
+      "@fougere/schema": "workspace:*",
+      "jiti": "^2.0.0",
+      "@fougere/container": "workspace:*",
+      "@fougere/compiler": "workspace:*"
+    },
+    "peerDependencies": null,
+    "scripts": {
+      "dev": "tsx main.ts",
+      "tunnel": "tsx tunnel.ts",
+      "sync": "fougere sync --name blog --from http://127.0.0.1:4301"
+    }
+  },
+  {
+    "path": "demos/next-blog/fronds/blog/package.json",
+    "name": "@fronds/blog",
+    "version": "0.0.1",
+    "engines": null,
+    "dependencies": null,
+    "peerDependencies": null,
+    "scripts": null
+  },
+  {
+    "path": "demos/emit-split/fronds/blog/package.json",
+    "name": "@fronds/blog",
+    "version": "0.0.1",
+    "engines": null,
+    "dependencies": null,
+    "peerDependencies": null,
+    "scripts": null
+  },
+  {
+    "path": "demos/express-blog/fronds/blog/package.json",
+    "name": "@fronds/blog",
+    "version": "0.0.1",
+    "engines": null,
+    "dependencies": null,
+    "peerDependencies": null,
+    "scripts": null
+  },
+  {
+    "path": "demos/multi-frond/remote-blog/package.json",
+    "name": "remote-blog",
+    "version": null,
+    "engines": null,
+    "dependencies": {
+      "@fougere/defaults": "workspace:*",
+      "@fougere/app": "workspace:*",
+      "@fougere/core": "workspace:*",
+      "@fougere/schema": "workspace:*",
+      "@fougere/adapter-rest": "workspace:*",
+      "@fougere/transport-http": "workspace:*",
+      "hono": "^4.0.0",
+      "@hono/node-server": "^1.0.0",
+      "jiti": "^2.0.0",
+      "@fougere/container": "workspace:*",
+      "@fougere/adapter-memory": "workspace:*",
+      "@fougere/compiler": "workspace:*"
+    },
+    "peerDependencies": null,
+    "scripts": {
+      "dev": "tsx server.ts",
+      "typecheck": "tsc --noEmit -p ."
+    }
+  },
+  {
+    "path": "demos/multi-frond/consumer/package.json",
+    "name": "consumer-app",
+    "version": null,
+    "engines": null,
+    "dependencies": {
+      "@fougere/core": "workspace:*",
+      "@fougere/schema": "workspace:*",
+      "@fougere/adapter-sql": "workspace:*",
+      "@fougere/nuxt": "workspace:*",
+      "nuxt": "^4.5.1",
+      "@fougere/container": "workspace:*"
+    },
+    "peerDependencies": null,
+    "scripts": {
+      "sync": "tsx sync-remote.ts",
+      "dev": "nuxt dev --port 3002",
+      "build:synced": "nuxt build",
+      "typecheck": "tsc -p fronds"
+    }
+  },
+  {
+    "path": "demos/multi-frond/consumer/fronds/catalog/package.json",
+    "name": "@fronds/catalog",
+    "version": "0.0.1",
+    "engines": null,
+    "dependencies": null,
+    "peerDependencies": null,
+    "scripts": null
+  },
+  {
+    "path": "demos/multi-frond/remote-blog/fronds/blog/package.json",
+    "name": "@fronds/blog",
+    "version": "0.0.1",
+    "engines": null,
+    "dependencies": null,
+    "peerDependencies": null,
+    "scripts": null
+  },
+  {
+    "path": "demos/on-delete/fronds/blog/package.json",
+    "name": "@fronds/blog",
+    "version": "0.0.1",
+    "engines": null,
+    "dependencies": null,
+    "peerDependencies": null,
+    "scripts": null
+  },
+  {
+    "path": "demos/on-delete/fronds/people/package.json",
+    "name": "@fronds/people",
+    "version": "0.0.1",
+    "engines": null,
+    "dependencies": null,
+    "peerDependencies": null,
+    "scripts": null
+  },
+  {
+    "path": "demos/on-delete/fronds/discussion/package.json",
+    "name": "@fronds/discussion",
+    "version": "0.0.1",
+    "engines": null,
+    "dependencies": null,
+    "peerDependencies": null,
+    "scripts": null
+  },
+  {
+    "path": "demos/emit-fleet/fronds/fleet/package.json",
+    "name": "@fronds/fleet",
+    "version": "0.0.1",
+    "engines": null,
+    "dependencies": null,
+    "peerDependencies": null,
+    "scripts": null
+  },
+  {
+    "path": "demos/tutorial/steps/0-start/package.json",
+    "name": "my-blog",
+    "version": null,
+    "engines": null,
+    "dependencies": {
+      "@fougere/core": "latest",
+      "@fougere/log": "latest",
+      "@fougere/schema": "latest"
+    },
+    "peerDependencies": null,
+    "scripts": {
+      "typecheck": "tsc -p fronds",
+      "test": "vitest run"
+    }
+  },
+  {
+    "path": "demos/tutorial/steps/4-a-port/package.json",
+    "name": "my-blog",
+    "version": null,
+    "engines": null,
+    "dependencies": {
+      "@fougere/adapter-rest": "latest",
+      "@fougere/adapter-sql": "latest",
+      "@fougere/core": "latest",
+      "@fougere/log": "latest",
+      "@fougere/schema": "latest",
+      "better-sqlite3": "^13.0.3"
+    },
+    "peerDependencies": null,
+    "scripts": {
+      "typecheck": "tsc -p fronds",
+      "test": "vitest run"
+    }
+  },
+  {
+    "path": "demos/tutorial/steps/1-crud/package.json",
+    "name": "my-blog",
+    "version": null,
+    "engines": null,
+    "dependencies": {
+      "@fougere/adapter-rest": "latest",
+      "@fougere/core": "latest",
+      "@fougere/log": "latest",
+      "@fougere/schema": "latest"
+    },
+    "peerDependencies": null,
+    "scripts": {
+      "typecheck": "tsc -p fronds",
+      "test": "vitest run"
+    }
+  },
+  {
+    "path": "demos/tutorial/steps/6-a-fact/package.json",
+    "name": "my-blog",
+    "version": null,
+    "engines": null,
+    "dependencies": {
+      "@fougere/adapter-rest": "latest",
+      "@fougere/adapter-sql": "latest",
+      "@fougere/core": "latest",
+      "@fougere/log": "latest",
+      "@fougere/schema": "latest",
+      "better-sqlite3": "^13.0.3"
+    },
+    "peerDependencies": null,
+    "scripts": {
+      "typecheck": "tsc -p fronds",
+      "test": "vitest run"
+    }
+  },
+  {
+    "path": "demos/tutorial/steps/8-split/package.json",
+    "name": "my-blog",
+    "version": null,
+    "engines": null,
+    "dependencies": {
+      "@fougere/adapter-rest": "latest",
+      "@fougere/adapter-sql": "latest",
+      "@fougere/core": "latest",
+      "@fougere/log": "latest",
+      "@fougere/schema": "latest",
+      "better-sqlite3": "^13.0.3"
+    },
+    "peerDependencies": null,
+    "scripts": {
+      "typecheck": "tsc -p fronds",
+      "test": "vitest run"
+    }
+  },
+  {
+    "path": "demos/tutorial/steps/3-a-rule/package.json",
+    "name": "my-blog",
+    "version": null,
+    "engines": null,
+    "dependencies": {
+      "@fougere/adapter-rest": "latest",
+      "@fougere/adapter-sql": "latest",
+      "@fougere/core": "latest",
+      "@fougere/log": "latest",
+      "@fougere/schema": "latest",
+      "better-sqlite3": "^13.0.3"
+    },
+    "peerDependencies": null,
+    "scripts": {
+      "typecheck": "tsc -p fronds",
+      "test": "vitest run"
+    }
+  },
+  {
+    "path": "demos/tutorial/steps/7-an-app/package.json",
+    "name": "my-blog",
+    "version": null,
+    "engines": null,
+    "dependencies": {
+      "@fougere/adapter-rest": "latest",
+      "@fougere/adapter-sql": "latest",
+      "@fougere/core": "latest",
+      "@fougere/log": "latest",
+      "@fougere/schema": "latest",
+      "better-sqlite3": "^13.0.3"
+    },
+    "peerDependencies": null,
+    "scripts": {
+      "typecheck": "tsc -p fronds",
+      "test": "vitest run"
+    }
+  },
+  {
+    "path": "demos/tutorial/steps/5-a-link/package.json",
+    "name": "my-blog",
+    "version": null,
+    "engines": null,
+    "dependencies": {
+      "@fougere/adapter-rest": "latest",
+      "@fougere/adapter-sql": "latest",
+      "@fougere/core": "latest",
+      "@fougere/log": "latest",
+      "@fougere/schema": "latest",
+      "better-sqlite3": "^13.0.3"
+    },
+    "peerDependencies": null,
+    "scripts": {
+      "typecheck": "tsc -p fronds",
+      "test": "vitest run"
+    }
+  },
+  {
+    "path": "demos/tutorial/steps/2-a-source/package.json",
+    "name": "my-blog",
+    "version": null,
+    "engines": null,
+    "dependencies": {
+      "@fougere/adapter-rest": "latest",
+      "@fougere/adapter-sql": "latest",
+      "@fougere/core": "latest",
+      "@fougere/log": "latest",
+      "@fougere/schema": "latest",
+      "better-sqlite3": "^13.0.3"
+    },
+    "peerDependencies": null,
+    "scripts": {
+      "typecheck": "tsc -p fronds",
+      "test": "vitest run"
+    }
+  },
+  {
+    "path": "demos/tutorial/steps/7-an-app/apps/nuxt/package.json",
+    "name": "nuxt",
+    "version": null,
+    "engines": null,
+    "dependencies": {
+      "@fougere/container": "latest",
+      "@fougere/core": "latest",
+      "@fougere/defaults": "latest",
+      "@fougere/log": "latest",
+      "@fougere/nuxt": "latest",
+      "@fougere/schema": "latest",
+      "nuxt": "^4.5.2",
+      "vue": "^3.5.43",
+      "vue-router": "^5.3.1"
+    },
+    "peerDependencies": null,
+    "scripts": {
+      "build": "nuxt build",
+      "dev": "nuxt dev",
+      "generate": "nuxt generate",
+      "preview": "nuxt preview",
+      "postinstall": "nuxt prepare"
+    }
+  },
+  {
+    "path": "demos/tutorial/steps/8-split/apps/nuxt/package.json",
+    "name": "nuxt",
+    "version": null,
+    "engines": null,
+    "dependencies": {
+      "@fougere/container": "latest",
+      "@fougere/core": "latest",
+      "@fougere/defaults": "latest",
+      "@fougere/log": "latest",
+      "@fougere/nuxt": "latest",
+      "@fougere/schema": "latest",
+      "nuxt": "^4.5.2",
+      "vue": "^3.5.43",
+      "vue-router": "^5.3.1"
+    },
+    "peerDependencies": null,
+    "scripts": {
+      "build": "nuxt build",
+      "dev": "nuxt dev",
+      "generate": "nuxt generate",
+      "preview": "nuxt preview",
+      "postinstall": "nuxt prepare"
+    }
+  },
+  {
+    "path": "demos/cloudflare-d1/web/package.json",
+    "name": "fougere-demo-cloudflare-web",
+    "version": "0.0.3-alpha.4",
+    "engines": null,
+    "dependencies": {
+      "@fougere/container": "workspace:*",
+      "@fougere/core": "workspace:*",
+      "@fougere/nuxt": "workspace:*",
+      "@fougere/schema": "workspace:*",
+      "nuxt": "^4.5.1",
+      "@fougere/transport-http": "workspace:*"
+    },
+    "peerDependencies": null,
+    "scripts": {
+      "dev": "nuxt dev --port 3010",
+      "build": "NITRO_PRESET=cloudflare_module nuxt build",
+      "preview": "pnpm build && wrangler dev .output/server/index.mjs --assets .output/public",
+      "deploy": "pnpm build && wrangler deploy .output/server/index.mjs --assets .output/public"
+    }
+  },
+  {
+    "path": "site/fronds/user/package.json",
+    "name": "@fronds/user",
+    "version": "0.0.1",
+    "engines": null,
+    "dependencies": null,
+    "peerDependencies": null,
+    "scripts": null
+  },
+  {
+    "path": "site/fronds/blog/package.json",
+    "name": "@fronds/blog",
+    "version": "0.0.1",
+    "engines": null,
+    "dependencies": null,
+    "peerDependencies": null,
+    "scripts": null
+  },
+  {
+    "path": "packages/calls/package.json",
+    "name": "@fougere/calls",
+    "version": "0.29.0-alpha.0",
+    "engines": null,
+    "dependencies": null,
+    "peerDependencies": {
+      "@fougere/core": "workspace:^",
+      "@fougere/adapter-sql": "workspace:^",
+      "@fougere/schema": "workspace:^"
+    },
+    "scripts": {
+      "build": "rm -rf dist && tsc",
+      "test": "vitest run",
+      "test:watch": "vitest",
+      "typecheck": "tsc --noEmit -p tsconfig.test.json",
+      "prepublishOnly": "pnpm run build"
+    }
+  },
+  {
+    "path": "packages/core/package.json",
+    "name": "@fougere/core",
+    "version": "0.29.0-alpha.0",
+    "engines": null,
+    "dependencies": {
+      "@fougere/container": "workspace:*",
+      "@fougere/graph": "workspace:*",
+      "@fougere/registry": "workspace:*",
+      "@fougere/schema": "workspace:*",
+      "dequal": "^2.0.3",
+      "get-tsconfig": "^4.14.3"
+    },
+    "peerDependencies": null,
+    "scripts": {
+      "build": "rm -rf dist && tsc6",
+      "test": "vitest run --maxWorkers=2",
+      "test:watch": "vitest",
+      "typecheck": "tsc6 --noEmit -p tsconfig.test.json",
+      "prepublishOnly": "pnpm run build"
+    }
+  },
+  {
+    "path": "packages/decorators/package.json",
+    "name": "@fougere/decorators",
+    "version": "0.29.0-alpha.0",
+    "engines": null,
+    "dependencies": null,
+    "peerDependencies": null,
+    "scripts": {
+      "build": "rm -rf dist && tsc",
+      "test": "vitest run",
+      "typecheck": "tsc --noEmit -p tsconfig.test.json",
+      "prepublishOnly": "pnpm run build"
+    }
+  },
+  {
+    "path": "packages/graph/package.json",
+    "name": "@fougere/graph",
+    "version": "0.29.0-alpha.0",
+    "engines": null,
+    "dependencies": null,
+    "peerDependencies": null,
+    "scripts": {
+      "build": "rm -rf dist && tsc",
+      "test": "vitest run",
+      "test:watch": "vitest",
+      "typecheck": "tsc --noEmit -p tsconfig.test.json",
+      "prepublishOnly": "pnpm run build"
+    }
+  },
+  {
+    "path": "packages/cli/package.json",
+    "name": "@fougere/cli",
+    "version": "0.29.0-alpha.0",
+    "engines": null,
+    "dependencies": {
+      "@clack/core": "0.4.2",
+      "@clack/prompts": "^0.10.0",
+      "@fougere/adapter-rest": "workspace:*",
+      "@fougere/app": "workspace:*",
+      "@fougere/compiler": "workspace:*",
+      "@fougere/container": "workspace:*",
+      "@fougere/core": "workspace:*",
+      "@fougere/defaults": "workspace:*",
+      "@fougere/registry": "workspace:*",
+      "@fougere/schema": "workspace:*",
+      "@fougere/testing": "workspace:*",
+      "@fougere/transport-http": "workspace:*",
+      "citty": "^0.2.1",
+      "jiti": "^2.4.2",
+      "jsonc-parser": "^3.3.1",
+      "magicast": "^0.5.4",
+      "package-manager-detector": "^1.9.0",
+      "picocolors": "^1.1.1",
+      "safe-regex": "^2.1.1"
+    },
+    "peerDependencies": {
+      "@fougere/adapter-sql": "workspace:^"
+    },
+    "scripts": {
+      "build": "rm -rf dist && node scripts/scan.ts && tsc && chmod +x dist/src/bin.js",
+      "test": "vitest run",
+      "test:watch": "vitest",
+      "typecheck": "tsc --noEmit && tsc -p tsconfig.runtime.json && tsc -p tsconfig.templates.json",
+      "prepublishOnly": "pnpm run build"
+    }
+  },
+  {
+    "path": "packages/observability/package.json",
+    "name": "@fougere/observability",
+    "version": "0.29.0-alpha.0",
+    "engines": null,
+    "dependencies": null,
+    "peerDependencies": {
+      "@fougere/core": "workspace:^",
+      "@fougere/adapter-sql": "workspace:^"
+    },
+    "scripts": {
+      "build": "rm -rf dist && tsc",
+      "test": "vitest run",
+      "test:watch": "vitest",
+      "typecheck": "tsc --noEmit -p tsconfig.test.json",
+      "prepublishOnly": "pnpm run build"
+    }
+  },
+  {
+    "path": "packages/testing/package.json",
+    "name": "@fougere/testing",
+    "version": "0.29.0-alpha.0",
+    "engines": null,
+    "dependencies": {
+      "@fougere/core": "workspace:*",
+      "@fougere/container": "workspace:*",
+      "@fougere/defaults": "workspace:*",
+      "@fougere/schema": "workspace:*",
+      "json-schema-faker": "^0.6.3",
+      "@fougere/app": "workspace:*",
+      "@fougere/transport-http": "workspace:*",
+      "@fougere/compiler": "workspace:*"
+    },
+    "peerDependencies": {
+      "vitest": ">=2",
+      "@fougere/adapter-graphql": "workspace:^",
+      "@fougere/adapter-sql": "workspace:^",
+      "@fougere/observability": "workspace:^"
+    },
+    "scripts": {
+      "build": "rm -rf dist && tsc",
+      "typecheck": "tsc --noEmit -p tsconfig.test.json",
+      "prepublishOnly": "pnpm run build",
+      "test": "vitest run",
+      "test:watch": "vitest"
+    }
+  },
+  {
+    "path": "packages/container/package.json",
+    "name": "@fougere/container",
+    "version": "0.29.0-alpha.0",
+    "engines": null,
+    "dependencies": null,
+    "peerDependencies": null,
+    "scripts": {
+      "build": "rm -rf dist && tsc",
+      "test": "vitest run",
+      "test:watch": "vitest",
+      "typecheck": "tsc --noEmit -p tsconfig.test.json",
+      "prepublishOnly": "pnpm run build"
+    }
+  },
+  {
+    "path": "packages/schema/package.json",
+    "name": "@fougere/schema",
+    "version": "0.29.0-alpha.0",
+    "engines": null,
+    "dependencies": {
+      "@cfworker/json-schema": "^4.1.1",
+      "@fougere/registry": "workspace:*",
+      "@paralleldrive/cuid2": "^3.3.0",
+      "@standard-schema/spec": "^1.1.0",
+      "dequal": "^2.0.3",
+      "@types/json-schema": "^7.0.15"
+    },
+    "peerDependencies": null,
+    "scripts": {
+      "build": "rm -rf dist && tsc",
+      "test": "vitest run",
+      "test:watch": "vitest",
+      "typecheck": "tsc --noEmit -p tsconfig.test.json",
+      "prepublishOnly": "pnpm run build"
+    }
+  },
+  {
+    "path": "packages/defaults/package.json",
+    "name": "@fougere/defaults",
+    "version": "0.29.0-alpha.0",
+    "engines": null,
+    "dependencies": {
+      "@fougere/core": "workspace:*",
+      "@fougere/transport-http": "workspace:*",
+      "@fougere/container": "workspace:*",
+      "@fougere/adapter-memory": "workspace:*",
+      "jiti": "^2.6.1"
+    },
+    "peerDependencies": {
+      "@fougere/compiler": "workspace:^"
+    },
+    "scripts": {
+      "build": "rm -rf dist && tsc",
+      "typecheck": "tsc --noEmit -p tsconfig.test.json",
+      "prepublishOnly": "pnpm run build",
+      "test": "vitest run",
+      "test:watch": "vitest"
+    }
+  },
+  {
+    "path": "packages/http/package.json",
+    "name": "@fougere/http",
+    "version": "0.29.0-alpha.0",
+    "engines": null,
+    "dependencies": null,
+    "peerDependencies": null,
+    "scripts": {
+      "build": "rm -rf dist && tsc",
+      "typecheck": "tsc --noEmit",
+      "prepublishOnly": "pnpm run build"
+    }
+  },
+  {
+    "path": "packages/workflow/package.json",
+    "name": "@fougere/workflow",
+    "version": "0.29.0-alpha.0",
+    "engines": null,
+    "dependencies": null,
+    "peerDependencies": {
+      "@fougere/core": "workspace:^",
+      "@fougere/schema": "workspace:^",
+      "@fougere/container": "workspace:^"
+    },
+    "scripts": {
+      "build": "rm -rf dist && tsc",
+      "test": "vitest run",
+      "test:watch": "vitest",
+      "typecheck": "tsc --noEmit -p tsconfig.test.json",
+      "prepublishOnly": "pnpm run build"
+    }
+  },
+  {
+    "path": "packages/registry/package.json",
+    "name": "@fougere/registry",
+    "version": "0.29.0-alpha.0",
+    "engines": null,
+    "dependencies": null,
+    "peerDependencies": null,
+    "scripts": {
+      "build": "rm -rf dist && tsc",
+      "test": "vitest run",
+      "test:watch": "vitest",
+      "typecheck": "tsc --noEmit -p tsconfig.test.json",
+      "prepublishOnly": "pnpm run build"
+    }
+  },
+  {
+    "path": "packages/log/package.json",
+    "name": "@fougere/log",
+    "version": "0.29.0-alpha.0",
+    "engines": null,
+    "dependencies": null,
+    "peerDependencies": {
+      "@fougere/core": "workspace:^",
+      "@fougere/schema": "workspace:^"
+    },
+    "scripts": {
+      "build": "rm -rf dist && tsc",
+      "test": "vitest run",
+      "test:watch": "vitest",
+      "typecheck": "tsc --noEmit -p tsconfig.test.json",
+      "prepublishOnly": "pnpm run build"
+    }
+  },
+  {
+    "path": "packages/compiler/package.json",
+    "name": "@fougere/compiler",
+    "version": "0.29.0-alpha.0",
+    "engines": null,
+    "dependencies": {
+      "@typescript/typescript6": "^6.0.2",
+      "jiti": "^2.6.1"
+    },
+    "peerDependencies": {
+      "@fougere/core": "workspace:^",
+      "@fougere/container": "workspace:^",
+      "@fougere/schema": "workspace:^"
+    },
+    "scripts": {
+      "build": "rm -rf dist && tsc",
+      "test": "vitest run",
+      "test:watch": "vitest",
+      "typecheck": "tsc --noEmit -p .",
+      "prepublishOnly": "pnpm run build"
+    }
+  },
+  {
+    "path": "packages/state/cookie/package.json",
+    "name": "@fougere/state-cookie",
+    "version": "0.29.0-alpha.0",
+    "engines": null,
+    "dependencies": {
+      "@fougere/core": "workspace:*",
+      "@fougere/http": "workspace:*",
+      "@fougere/schema": "workspace:*"
+    },
+    "peerDependencies": null,
+    "scripts": {
+      "build": "rm -rf dist && tsc",
+      "test": "vitest run",
+      "test:watch": "vitest",
+      "typecheck": "tsc --noEmit -p tsconfig.test.json",
+      "prepublishOnly": "pnpm run build"
+    }
+  },
+  {
+    "path": "packages/state/session/package.json",
+    "name": "@fougere/state-session",
+    "version": "0.29.0-alpha.0",
+    "engines": null,
+    "dependencies": {
+      "@fougere/core": "workspace:*",
+      "@fougere/state-cookie": "workspace:*",
+      "@fougere/schema": "workspace:*"
+    },
+    "peerDependencies": null,
+    "scripts": {
+      "build": "rm -rf dist && tsc",
+      "test": "vitest run",
+      "test:watch": "vitest",
+      "typecheck": "tsc --noEmit -p tsconfig.test.json",
+      "prepublishOnly": "pnpm run build"
+    }
+  },
+  {
+    "path": "packages/cli/templates/workspace/package.json",
+    "name": "fougere-workspace",
+    "version": null,
+    "engines": null,
+    "dependencies": {
+      "@fougere/core": "latest",
+      "@fougere/log": "latest",
+      "@fougere/schema": "latest"
+    },
+    "peerDependencies": null,
+    "scripts": {
+      "typecheck": "tsc -p fronds",
+      "test": "vitest run"
+    }
+  },
+  {
+    "path": "packages/cli/templates/frond/package.json",
+    "name": "fougere-frond",
+    "version": null,
+    "engines": {
+      "node": ">=24"
+    },
+    "dependencies": {
+      "@fougere/adapter-sql": "latest",
+      "@fougere/compiler": "latest",
+      "@fougere/container": "latest",
+      "@fougere/core": "latest",
+      "@fougere/defaults": "latest",
+      "@fougere/log": "latest",
+      "@fougere/schema": "latest",
+      "@fougere/transport-http": "latest",
+      "better-sqlite3": "^13.0.3",
+      "jiti": "^2.4.2"
+    },
+    "peerDependencies": null,
+    "scripts": {
+      "serve": "node serve.ts"
+    }
+  },
+  {
+    "path": "packages/cli/templates/api/fronds/api/package.json",
+    "name": "@fronds/api",
+    "version": "0.0.1",
+    "engines": null,
+    "dependencies": null,
+    "peerDependencies": null,
+    "scripts": null
+  },
+  {
+    "path": "packages/cli/templates/blog/fronds/blog/package.json",
+    "name": "@fronds/blog",
+    "version": "0.0.1",
+    "engines": null,
+    "dependencies": null,
+    "peerDependencies": null,
+    "scripts": null
+  },
+  {
+    "path": "packages/cli/templates/frond/fronds/__name__/package.json",
+    "name": "@fronds/__name__",
+    "version": "0.0.1",
+    "engines": null,
+    "dependencies": null,
+    "peerDependencies": null,
+    "scripts": null
+  },
+  {
+    "path": "packages/cli/templates/admin/fronds/admin/package.json",
+    "name": "@fronds/admin",
+    "version": "0.0.1",
+    "engines": null,
+    "dependencies": null,
+    "peerDependencies": null,
+    "scripts": null
+  },
+  {
+    "path": "packages/cli/tests/fixtures-super-linear/package.json",
+    "name": "fixture-super-linear",
+    "version": null,
+    "engines": null,
+    "dependencies": null,
+    "peerDependencies": null,
+    "scripts": null
+  },
+  {
+    "path": "packages/cli/tests/fixtures-adapter-name/package.json",
+    "name": "fixture-adapter-name",
+    "version": null,
+    "engines": null,
+    "dependencies": {
+      "@fougere/adapter-sql": "workspace:*"
+    },
+    "peerDependencies": null,
+    "scripts": null
+  },
+  {
+    "path": "packages/cli/tests/fixtures-shell/next/package.json",
+    "name": "next",
+    "version": "0.1.0",
+    "engines": null,
+    "dependencies": {
+      "next": "16.3.6",
+      "react": "19.2.8",
+      "react-dom": "19.2.8"
+    },
+    "peerDependencies": null,
+    "scripts": {
+      "dev": "next dev",
+      "build": "next build",
+      "start": "next start"
+    }
+  },
+  {
+    "path": "packages/cli/tests/fixtures-shell/svelte/package.json",
+    "name": "svelte",
+    "version": "0.0.1",
+    "engines": null,
+    "dependencies": null,
+    "peerDependencies": null,
+    "scripts": {
+      "dev": "vite dev",
+      "build": "vite build",
+      "preview": "vite preview",
+      "prepare": "svelte-kit sync || echo ''",
+      "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+      "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch"
+    }
+  },
+  {
+    "path": "packages/cli/tests/fixtures-shell/nuxt/package.json",
+    "name": "nuxt",
+    "version": null,
+    "engines": null,
+    "dependencies": {
+      "nuxt": "^4.5.2",
+      "vue": "^3.5.43",
+      "vue-router": "^5.3.1"
+    },
+    "peerDependencies": null,
+    "scripts": {
+      "build": "nuxt build",
+      "dev": "nuxt dev",
+      "generate": "nuxt generate",
+      "preview": "nuxt preview",
+      "postinstall": "nuxt prepare"
+    }
+  },
+  {
+    "path": "packages/cli/tests/fixtures-shell/react/package.json",
+    "name": "react",
+    "version": "0.0.0",
+    "engines": null,
+    "dependencies": {
+      "react": "^19.2.8",
+      "react-dom": "^19.2.8"
+    },
+    "peerDependencies": null,
+    "scripts": {
+      "dev": "vite",
+      "build": "tsc -b && vite build",
+      "lint": "oxlint",
+      "preview": "vite preview"
+    }
+  },
+  {
+    "path": "packages/adapter/memory/package.json",
+    "name": "@fougere/adapter-memory",
+    "version": "0.29.0-alpha.0",
+    "engines": null,
+    "dependencies": {
+      "@fougere/core": "workspace:*",
+      "@fougere/schema": "workspace:*"
+    },
+    "peerDependencies": null,
+    "scripts": {
+      "build": "rm -rf dist && tsc",
+      "test": "vitest run",
+      "test:watch": "vitest",
+      "typecheck": "tsc --noEmit -p tsconfig.test.json",
+      "prepublishOnly": "pnpm run build"
+    }
+  },
+  {
+    "path": "packages/adapter/file/package.json",
+    "name": "@fougere/adapter-file",
+    "version": "0.29.0-alpha.0",
+    "engines": null,
+    "dependencies": {
+      "@fougere/core": "workspace:*",
+      "@fougere/schema": "workspace:*",
+      "yaml": "^2.9.0"
+    },
+    "peerDependencies": null,
+    "scripts": {
+      "build": "rm -rf dist && tsc",
+      "test": "vitest run",
+      "test:watch": "vitest",
+      "typecheck": "tsc --noEmit -p tsconfig.test.json",
+      "prepublishOnly": "pnpm run build"
+    }
+  },
+  {
+    "path": "packages/adapter/env/package.json",
+    "name": "@fougere/adapter-env",
+    "version": "0.29.0-alpha.0",
+    "engines": null,
+    "dependencies": {
+      "@fougere/core": "workspace:*",
+      "@fougere/schema": "workspace:*"
+    },
+    "peerDependencies": null,
+    "scripts": {
+      "build": "rm -rf dist && tsc",
+      "test": "vitest run",
+      "test:watch": "vitest",
+      "typecheck": "tsc --noEmit -p tsconfig.test.json",
+      "prepublishOnly": "pnpm run build"
+    }
+  },
+  {
+    "path": "packages/adapter/graphql/package.json",
+    "name": "@fougere/adapter-graphql",
+    "version": "0.29.0-alpha.0",
+    "engines": null,
+    "dependencies": {
+      "@fougere/core": "workspace:*",
+      "@fougere/schema": "workspace:*",
+      "@fougere/http": "workspace:*"
+    },
+    "peerDependencies": {
+      "@pothos/core": ">=4.0.0",
+      "graphql": ">=16.0.0"
+    },
+    "scripts": {
+      "build": "rm -rf dist && tsc",
+      "test": "vitest run",
+      "test:watch": "vitest",
+      "typecheck": "tsc --noEmit -p tsconfig.test.json",
+      "prepublishOnly": "pnpm run build"
+    }
+  },
+  {
+    "path": "packages/adapter/duckdb/package.json",
+    "name": "@fougere/adapter-duckdb",
+    "version": "0.29.0-alpha.0",
+    "engines": null,
+    "dependencies": {
+      "@fougere/core": "workspace:*",
+      "@fougere/schema": "workspace:*",
+      "@fougere/adapter-sql": "workspace:*"
+    },
+    "peerDependencies": {
+      "@duckdb/node-api": ">=1.4.0-0"
+    },
+    "scripts": {
+      "build": "rm -rf dist && tsc",
+      "test": "vitest run",
+      "test:watch": "vitest",
+      "typecheck": "tsc --noEmit -p tsconfig.test.json",
+      "prepublishOnly": "pnpm run build"
+    }
+  },
+  {
+    "path": "packages/adapter/rest/package.json",
+    "name": "@fougere/adapter-rest",
+    "version": "0.29.0-alpha.0",
+    "engines": null,
+    "dependencies": {
+      "@fougere/core": "workspace:*",
+      "@fougere/schema": "workspace:*",
+      "@fougere/http": "workspace:*"
+    },
+    "peerDependencies": null,
+    "scripts": {
+      "build": "rm -rf dist && tsc",
+      "test": "vitest run",
+      "test:watch": "vitest",
+      "typecheck": "tsc --noEmit -p tsconfig.test.json",
+      "prepublishOnly": "pnpm run build"
+    }
+  },
+  {
+    "path": "packages/adapter/sql/package.json",
+    "name": "@fougere/adapter-sql",
+    "version": "0.29.0-alpha.0",
+    "engines": null,
+    "dependencies": {
+      "@fougere/core": "workspace:*",
+      "@fougere/schema": "workspace:*",
+      "dequal": "^2.0.3",
+      "kysely": "^0.28.17",
+      "kysely-d1": "^0.4.0"
+    },
+    "peerDependencies": null,
+    "scripts": {
+      "build": "rm -rf dist && tsc",
+      "test": "vitest run",
+      "test:watch": "vitest",
+      "typecheck": "tsc --noEmit -p tsconfig.test.json",
+      "prepublishOnly": "pnpm run build"
+    }
+  },
+  {
+    "path": "packages/entry/fougere/package.json",
+    "name": "fougere",
+    "version": "0.29.0-alpha.0",
+    "engines": null,
+    "dependencies": {
+      "@fougere/cli": "workspace:*"
+    },
+    "peerDependencies": null,
+    "scripts": {
+      "build": "rm -rf dist && tsc && chmod +x dist/bin.js",
+      "typecheck": "tsc --noEmit",
+      "prepublishOnly": "pnpm run build"
+    }
+  },
+  {
+    "path": "packages/entry/create/package.json",
+    "name": "create-fougere",
+    "version": "0.29.0-alpha.0",
+    "engines": null,
+    "dependencies": {
+      "@fougere/cli": "workspace:*"
+    },
+    "peerDependencies": null,
+    "scripts": {
+      "build": "rm -rf dist && tsc && chmod +x dist/bin.js",
+      "typecheck": "tsc --noEmit",
+      "prepublishOnly": "pnpm run build"
+    }
+  },
+  {
+    "path": "packages/auth/better/package.json",
+    "name": "@fougere/auth-better",
+    "version": "0.29.0-alpha.0",
+    "engines": null,
+    "dependencies": {
+      "@fougere/core": "workspace:*",
+      "@fougere/schema": "workspace:*",
+      "@paralleldrive/cuid2": "^3.3.0",
+      "better-auth": "^1.6.11"
+    },
+    "peerDependencies": null,
+    "scripts": {
+      "build": "rm -rf dist && tsc",
+      "test": "vitest run",
+      "test:watch": "vitest",
+      "typecheck": "tsc --noEmit -p tsconfig.test.json",
+      "prepublishOnly": "pnpm run build"
+    }
+  },
+  {
+    "path": "packages/app/next/package.json",
+    "name": "@fougere/next",
+    "version": "0.29.0-alpha.0",
+    "engines": null,
+    "dependencies": {
+      "@fougere/app": "workspace:*",
+      "@fougere/core": "workspace:*",
+      "jiti": "^2.7.0",
+      "terser-webpack-plugin": "^5.3.14"
+    },
+    "peerDependencies": {
+      "@fougere/compiler": "workspace:^",
+      "next": "^15.0.0 || ^16.0.0"
+    },
+    "scripts": {
+      "build": "rm -rf dist && tsc",
+      "test": "vitest run",
+      "typecheck": "tsc --noEmit -p tsconfig.test.json",
+      "prepublishOnly": "pnpm run build"
+    }
+  },
+  {
+    "path": "packages/app/svelte/package.json",
+    "name": "@fougere/svelte",
+    "version": "0.29.0-alpha.0",
+    "engines": null,
+    "dependencies": {
+      "@fougere/app": "workspace:*",
+      "@fougere/core": "workspace:*"
+    },
+    "peerDependencies": {
+      "svelte": "^5.0.0"
+    },
+    "scripts": {
+      "build": "rm -rf dist && tsc",
+      "test": "vitest run",
+      "typecheck": "tsc --noEmit -p tsconfig.test.json",
+      "prepublishOnly": "pnpm run build"
+    }
+  },
+  {
+    "path": "packages/app/admin/package.json",
+    "name": "@fougere/admin",
+    "version": "0.29.0-alpha.0",
+    "engines": null,
+    "dependencies": {
+      "@dagrejs/dagre": "^3.1.1",
+      "@fougere/app": "workspace:*",
+      "@fougere/core": "workspace:*",
+      "@fougere/schema": "workspace:*"
+    },
+    "peerDependencies": {
+      "@mui/material": "^5.16.12 || ^6.0.0 || ^7.0.0 || ^9.0.0",
+      "react": "^18.3.0 || ^19.0.0",
+      "react-admin": "^5.0.0",
+      "react-router-dom": "^6.22.0 || ^7.0.0"
+    },
+    "scripts": {
+      "build": "rm -rf dist && tsc",
+      "test": "vitest run",
+      "typecheck": "tsc --noEmit -p tsconfig.test.json",
+      "prepublishOnly": "pnpm run build"
+    }
+  },
+  {
+    "path": "packages/app/shared/package.json",
+    "name": "@fougere/app",
+    "version": "0.29.0-alpha.0",
+    "engines": null,
+    "dependencies": {
+      "@fougere/core": "workspace:*",
+      "@fougere/defaults": "workspace:*",
+      "@fougere/schema": "workspace:*",
+      "@fougere/adapter-rest": "workspace:*",
+      "@fougere/transport-http": "workspace:*",
+      "jiti": "^2.6.1",
+      "@fougere/container": "workspace:*",
+      "@fougere/adapter-memory": "workspace:*",
+      "srvx": "^1.0.5"
+    },
+    "peerDependencies": {
+      "@fougere/adapter-graphql": "workspace:^",
+      "@fougere/compiler": "workspace:^"
+    },
+    "scripts": {
+      "build": "rm -rf dist && tsc",
+      "test": "vitest run",
+      "typecheck": "tsc --noEmit -p tsconfig.test.json",
+      "prepublishOnly": "pnpm run build"
+    }
+  },
+  {
+    "path": "packages/app/vite/package.json",
+    "name": "@fougere/vite",
+    "version": "0.29.0-alpha.0",
+    "engines": null,
+    "dependencies": {
+      "@fougere/app": "workspace:*",
+      "@fougere/core": "workspace:*",
+      "jiti": "^2.7.0",
+      "srvx": "^1.0.5",
+      "terser": "^5.44.0"
+    },
+    "peerDependencies": {
+      "@fougere/compiler": "workspace:^",
+      "vite": "^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0"
+    },
+    "scripts": {
+      "build": "rm -rf dist && tsc",
+      "test": "vitest run",
+      "typecheck": "tsc --noEmit -p tsconfig.test.json",
+      "prepublishOnly": "pnpm run build"
+    }
+  },
+  {
+    "path": "packages/app/oclif/package.json",
+    "name": "@fougere/oclif",
+    "version": "0.29.0-alpha.0",
+    "engines": null,
+    "dependencies": {
+      "@fougere/core": "workspace:*",
+      "@fougere/schema": "workspace:*"
+    },
+    "peerDependencies": {
+      "@oclif/core": "^4.0.0 || ^5.0.0"
+    },
+    "scripts": {
+      "build": "rm -rf dist && tsc",
+      "test": "vitest run",
+      "typecheck": "tsc --noEmit -p tsconfig.test.json",
+      "prepublishOnly": "pnpm run build"
+    }
+  },
+  {
+    "path": "packages/app/nuxt/package.json",
+    "name": "@fougere/nuxt",
+    "version": "0.29.0-alpha.0",
+    "engines": null,
+    "dependencies": {
+      "@fougere/app": "workspace:*",
+      "@fougere/core": "workspace:*",
+      "@fougere/defaults": "workspace:*",
+      "@nuxt/kit": "^4.5.1",
+      "jiti": "^2.6.1"
+    },
+    "peerDependencies": {
+      "h3": "^1.15.0",
+      "nuxt": "^4.0.0",
+      "vue": "^3.5.0",
+      "nitropack": "*",
+      "@fougere/compiler": "workspace:^"
+    },
+    "scripts": {
+      "build": "rm -rf dist && tsc && tsc -p tsconfig.runtime.json",
+      "test": "vitest run --passWithNoTests",
+      "typecheck": "tsc --noEmit && tsc -p tsconfig.runtime.json --noEmit",
+      "prepublishOnly": "pnpm run build"
+    }
+  },
+  {
+    "path": "packages/app/react/package.json",
+    "name": "@fougere/react",
+    "version": "0.29.0-alpha.0",
+    "engines": null,
+    "dependencies": {
+      "@fougere/app": "workspace:*",
+      "@fougere/core": "workspace:*"
+    },
+    "peerDependencies": {
+      "react": "^18.3.0 || ^19.0.0"
+    },
+    "scripts": {
+      "build": "rm -rf dist && tsc",
+      "test": "vitest run",
+      "typecheck": "tsc --noEmit -p tsconfig.test.json",
+      "prepublishOnly": "pnpm run build"
+    }
+  },
+  {
+    "path": "packages/app/oclif/template/package.json",
+    "name": "fougere-app",
+    "version": null,
+    "engines": null,
+    "dependencies": {
+      "@fougere/core": "latest",
+      "@fougere/compiler": "latest",
+      "@fougere/defaults": "latest",
+      "@fougere/oclif": "latest",
+      "@fougere/schema": "latest",
+      "@fougere/container": "latest",
+      "@oclif/core": "^5.0.0"
+    },
+    "peerDependencies": null,
+    "scripts": {
+      "dev": "tsx src/main.ts"
+    }
+  },
+  {
+    "path": "packages/transport/http/package.json",
+    "name": "@fougere/transport-http",
+    "version": "0.29.0-alpha.0",
+    "engines": null,
+    "dependencies": {
+      "@fougere/core": "workspace:*",
+      "srvx": "^1.0.5"
+    },
+    "peerDependencies": null,
+    "scripts": {
+      "build": "rm -rf dist && tsc",
+      "test": "vitest run",
+      "test:watch": "vitest",
+      "typecheck": "tsc --noEmit -p tsconfig.test.json",
+      "prepublishOnly": "pnpm run build"
+    }
+  }
+]
