@@ -652,7 +652,7 @@ them there: TypeScript, Next, Vite 8 (`resolve.tsconfigPaths`, set by `fougere()
 (`prepare:types` writes the line into the tsconfig Nuxt generates). One that does not is handed a
 table at its start — `frondAliases` (`core/src/FrondAliases.ts`), for jiti, Nitro, `fougereTest()`
 and Next's two bundlers, whose `paths` never map a `.js` request onto the `.ts` beside it — and it
-reads the fronds only at that start anyway. A rename is a `paths` entry of `fronds/tsconfig.json`
+reads the fronds only at that start anyway. A rename is a `paths` entry of the project's root `tsconfig.json`
 (`frondNamesOf`), since TypeScript is the reader no config reaches; `fougere.frond` in a
 `package.json` is gone. A frond is not a workspace member and has no `package.json`: the starter's
 workspace holds the apps alone (`"workspaces": ["apps/*"]`), because Next writes `typescript ^5`
@@ -1356,7 +1356,8 @@ X), `useFormFor` (contract, not rendering; local validator = remote validator), 
 - **TS 7 (native tsc) at the root** ; `packages/core` compiles and scans with
   `@typescript/typescript6` — measured ~25 % faster than 5.9 on the scan's program, same
   answer. `unstable/` is not a destination yet, and neither is oxc while the scan reads types.
-- **`.vue` files are not type-checked** — `typecheck` is `tsc -p fronds` and stops at the SFC.
+- **`.vue` files are not type-checked** — `typecheck` reads the project's root tsconfig, which covers
+  the fronds and the config and stops at the SFC.
   `vue-tsc` needs `typescript/lib/tsc`, a path the native tsc no longer exports. Rejected
   2026-08-06; revisit when vue-tsc runs on TS 7.
 - `"types": ["node"]` explicit in tsconfig.base — TS 7 dropped automatic @types

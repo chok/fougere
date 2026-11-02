@@ -11,7 +11,7 @@
  * Nuxt's — `defineNitroPlugin`, the auto-imported `extendFougere`, the `cloudflare:`
  * module — and none of them exists outside the scaffolding `nuxt prepare` writes, which
  * has no server tsconfig to extend in Nuxt 4.5. A frond needs none of that, which is why
- * `tsc -p fronds` works everywhere a frond exists and nowhere a consumer does.
+ * the project's root tsconfig types every frond and no consumer.
  *
  * `extendFougere` and not `configureFougere`: the generated plugin already spoke, and
  * replacing its word would throw away the scan. It is auto-imported — the module calls
