@@ -29,6 +29,17 @@ export default defineContentConfig({
     reference: defineCollection({
       type: 'page',
       source: { include: 'reference/**' },
+      // A config page also carries its file written whole, a note per key — `modules/reference.ts`.
+      schema: z.object({
+        file: z.object({
+          name: z.string(),
+          lines: z.array(z.object({ text: z.string(), key: z.string().optional() })),
+          notes: z.record(z.string(), z.object({
+            type: z.string(), optional: z.boolean(), doc: z.string(),
+            links: z.array(z.object({ label: z.string(), path: z.string() })),
+          })),
+        }).optional(),
+      }),
     }),
     // Written by `modules/tutorial.ts` from demos/tutorial — what each step changed, and what it grew.
     tutorial: defineCollection({

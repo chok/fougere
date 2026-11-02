@@ -126,8 +126,28 @@ function formatKeys(source: import('@typescript/typescript6').default.SourceFile
   return { keys, needs };
 }
 
-const head = (title: string, description: string) =>
-  ['---', `title: ${JSON.stringify(title)}`, `description: ${JSON.stringify(description)}`, '---', '', `# ${title}`, ''].join('\n');
+const head = (title: string, description: string, ...matter: string[]) =>
+  ['---', `title: ${JSON.stringify(title)}`, `description: ${JSON.stringify(description)}`, ...matter, '---', '', `# ${title}`, ''].join('\n');
+
+interface Link { label: string; path: string }
+
+/** A config written whole, a line per key, each line carrying what its key is — the file before the list of its keys. */
+const annotatedFile = (name: string, imports: string, call: string, members: Member[], links: Record<string, Link[]> = {}) => {
+  const valueOf = (type: string) => (type.endsWith('[]') ? '[ … ]' : /^(number|string|boolean|LogLevel)$/.test(type) ? '…' : '{ … }');
+  const lines = [
+    { text: imports }, { text: '' }, { text: `export default ${call}({` },
+    ...members.map((member) => ({ text: `  ${member.name}: ${valueOf(member.type)},`, key: member.name })),
+    { text: '});' },
+  ];
+  const notes = Object.fromEntries(members.map((member) => [member.name, {
+    type: member.type,
+    optional: member.optional,
+    doc: member.doc.replace(/\s+/g, ' ').split(/(?<=\.)\s/)[0] ?? '',
+    links: links[member.name] ?? [],
+  }]));
+
+  return `file: ${JSON.stringify({ name, lines, notes })}`;
+};
 
 const memberBlock = (member: Member) =>
   [`### \`${member.name}\``, '', `\`${member.type}\`${member.optional ? ' · optional' : ' · required'}`, '',
@@ -147,11 +167,13 @@ async function project(repository: string, out: string) {
   const { interfaces, augmented, exported, sources, diagnostics } = await read(repository, ts);
   const pages: [string, string][] = [];
 
-  const interfacePage = (name: string, title: string, description: string, intro: string) => {
+  const interfacePage = (name: string, title: string, description: string, intro: string, ...matter: string[]) => {
     const declared = interfaces.get(name);
     const body = (declared?.members ?? []).map(memberBlock).join('\n');
 
-    return head(title, description) + intro + '\n\n' + body;
+    const file = matter.length ? '::reference-annotated-file\n::\n\n' : '';
+
+    return head(title, description, ...matter) + intro + '\n\n' + file + body;
   };
 
   // A key open to packages lists who answers it, each linked to its page — read off the augmentations.
@@ -167,6 +189,19 @@ async function project(repository: string, out: string) {
         && new RegExp(`export (async )?function ${last}\\(|export const ${last}\\b|export \\{[^}]*\\b${last}\\b[^}]*\\}`).test(sources.get(file)?.getFullText() ?? '');
     })
     .map(({ name }) => `[\`'${name}'\`](${pageOf(name)})`);
+  const linksOf = (iface: string): Link[] => (augmented.get(iface) ?? []).flatMap(({ file, members }) =>
+    members.map((member) => ({ label: `${member.name} — ${packageOf(file)}`, path: pageOf(packageOf(file)) })));
+  const configLinks: Record<string, Link[]> = {
+    sources: [...linksOf('FougereSources'), { label: 'Every source type', path: '/reference/sources' }],
+    protocols: [...linksOf('FougereProtocols'), { label: 'Every protocol', path: '/reference/protocols' }],
+    state: [...linksOf('FougereStates'), { label: 'Every state keeper', path: '/reference/states' }],
+    ports: [{ label: 'Ports Fougere opens', path: '/reference/ports' }],
+    fronds: moduleKeys.flatMap((key) => {
+      const [, label, path] = /^\[`'(.+)'`\]\((.+)\)$/.exec(key) ?? [];
+
+      return label && path ? [{ label, path }] : [];
+    }),
+  };
   const answers: Record<string, string> = {
     sources: `**\`type\` is one of:** ${answeredBy('FougereSources').join(' · ')}. Every key each one admits: [Source types](/reference/sources).`,
     protocols: `**Serves:** ${answeredBy('FougereProtocols').join(' · ')}. See [Protocols](/reference/protocols).`,
@@ -175,12 +210,14 @@ async function project(repository: string, out: string) {
     ports: `**Fougere's own ports:** see [Ports Fougere opens](/reference/ports).`,
   };
   const configPage = interfacePage('FougereConfig', 'fougere.config.ts', 'Every key the app config admits, and which package answers each one.',
-    'What the app decides: where each frond runs, what answers each port, where rows live, what is served. A key open to packages lists who answers it — import the package, and its word exists. See [Configuration](/docs/concepts/configuration).')
+    'What the app decides: where each frond runs, what answers each port, where rows live, what is served. A key open to packages lists who answers it — import the package, and its word exists. See [Configuration](/docs/concepts/configuration).',
+    annotatedFile('fougere.config.ts', "import { defineFougere } from '@fougere/core';", 'defineFougere', interfaces.get('FougereConfig')?.members ?? [], configLinks))
     .replace(/### `(\w+)`\n\n([^\n]+)\n\n([\s\S]*?)(?=\n### |$)/g, (whole, key: string, type: string, body: string) =>
       answers[key] ? `### \`${key}\`\n\n${type}\n\n${body.trimEnd()}\n\n${answers[key]}\n` : whole);
   pages.push(['03.config.md', configPage]);
   pages.push(['04.frond-config.md', interfacePage('FrondConfig', 'frond.config.ts', "Every key a frond's own config admits.",
-    "What one frond decides for itself, and wins for its own scope.") + '\n## Per operation\n\n' + (interfaces.get('OperationOverride')?.members ?? []).map(memberBlock).join('\n')]);
+    "What one frond decides for itself, and wins for its own scope.",
+    annotatedFile('fronds/blog/frond.config.ts', "import { defineFrond } from '@fougere/core/node';", 'defineFrond', interfaces.get('FrondConfig')?.members ?? [])) + '\n## Per operation\n\n' + (interfaces.get('OperationOverride')?.members ?? []).map(memberBlock).join('\n')]);
 
   const registered = (name: string, title: string, description: string, key: string) => {
     const lines = [head(title, description), `Each type is a word an entry of \`${key}\` may name, answered by the package that augments \`${name}\` — import it and the word exists.`, ''];
