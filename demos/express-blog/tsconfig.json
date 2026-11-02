@@ -11,6 +11,6 @@
     "skipLibCheck": true,
     "allowImportingTsExtensions": true
   },
-  "include": ["server.ts", "fougere.config.ts"],
-  "exclude": ["node_modules", "fronds"]
+  "include": ["server.ts", "fougere.config.ts", "fronds"],
+  "exclude": ["node_modules"]
 }

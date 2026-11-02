@@ -5,5 +5,5 @@
     "rootDir": ".",
     "noEmit": true
   },
-  "include": ["src", "fronds"]
+  "include": ["src", "fronds", "fougere.config.ts"]
 }

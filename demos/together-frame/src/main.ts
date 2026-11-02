@@ -69,7 +69,7 @@ const state = async () => {
   const lines = await storageOf('ledger').list();
   const rates = await storageOf('rateCard').list();
 
-  return `ada ${ada.balance} · bob ${bob.balance} · ledger ${lines.length} · rates ${rates
+  return `ada ${ada?.balance} · bob ${bob?.balance} · ledger ${lines.length} · rates ${rates
     .map((r: any) => `${r.code}=${r.rate}`).sort().join(' ')}`;
 };
 

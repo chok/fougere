@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "node --experimental-strip-types server.ts",
-    "typecheck": "tsc -p fronds",
+    "typecheck": "tsc -p . --noEmit",
     "migrate": "fougere migrate --latest --apply"
   },
   "dependencies": {
