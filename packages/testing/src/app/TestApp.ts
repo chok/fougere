@@ -1,4 +1,5 @@
 import { migrating, type App } from '@fougere/core';
+import { loadConfig, projectRootOf } from '@fougere/core/node';
 import { boot } from '@fougere/defaults';
 import '@fougere/adapter-sql';
 import { remoteTransport, resolveStorage } from '@fougere/defaults';
@@ -26,7 +27,11 @@ export async function testApp(options: TestAppOptions = {}): Promise<TestApp> {
   // One entry per announcement, in order. `Emissions.announce` calls the carrier for
   // every fact, so this sees them all — including those nobody in this process listens to.
   const heard: { fact: string; payload: unknown }[] = [];
-  const storage = resolveStorage({ main: { type: 'sqlite', path: options.db ?? ':memory:' } });
+  // The project's kind of storage, held in memory: a project naming no source keeps its rows in a Map,
+  // the way it boots, and needs no SQLite driver to be tested.
+  const root = options.root ?? scope?.root ?? projectRootOf(process.cwd());
+  const named = options.db !== undefined || Object.keys((await loadConfig(root)).sources ?? {}).length > 0;
+  const storage = resolveStorage({ main: named ? { type: 'sqlite', path: options.db ?? ':memory:' } : { type: 'memory' } });
 
   const app = await boot({
     onEmit: (fact, payload) => { heard.push({ fact, payload }); },
