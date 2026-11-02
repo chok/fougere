@@ -116,8 +116,10 @@ function pageOf(index: number, slug: string, step: Step, files: Map<string, stri
     if (index === 0) return 'new';
     if (!previous.has(path)) {
       const name = path.split('/').pop();
+
       return gone.some((old) => old.split('/').pop() === name) ? 'moved' : 'new';
     }
+
     return previous.get(path) === files.get(path) ? '' : 'changed';
   };
 

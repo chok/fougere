@@ -40,6 +40,9 @@ const STATED = new Map([
   ['rust-frond',
     'The far side is not TypeScript: `frond` needs cargo. What the demo proves — that the ' +
     'validator stays ours across the wire — is not reachable by starting a node process.'],
+  ['tutorial',
+    'Nine projects, one per step, read by the site rather than started. What each step says ' +
+    'it does is what `pnpm -C demos/tutorial test` checks.'],
 ]);
 
 const BUDGET_MS = 20_000;

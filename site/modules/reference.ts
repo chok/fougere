@@ -52,6 +52,7 @@ async function read(repository: string, ts: TS) {
     if (ts.isTemplateExpression(node)) return node.head.text + node.templateSpans.map((span) => '…' + span.literal.text).join('');
     if (ts.isBinaryExpression(node) && node.operatorToken.kind === ts.SyntaxKind.PlusToken) return textOf(node.left, source) + textOf(node.right, source);
     if (ts.isParenthesizedExpression(node)) return textOf(node.expression, source);
+
     return '…';
   };
   const findDiagnostics = (node: import('@typescript/typescript6').default.Node, source: import('@typescript/typescript6').default.SourceFile, file: string) => {
@@ -161,6 +162,7 @@ async function project(repository: string, out: string) {
     .map((file) => ({ file, name: packageRoots.get(file.replace(/\/src\/index\.ts$/, '')) ?? '' }))
     .filter(({ file, name }) => {
       const last = name.split('/').pop() ?? '';
+
       return /^@fougere\//.test(name)
         && new RegExp(`export (async )?function ${last}\\(|export const ${last}\\b|export \\{[^}]*\\b${last}\\b[^}]*\\}`).test(sources.get(file)?.getFullText() ?? '');
     })
@@ -269,6 +271,7 @@ async function project(repository: string, out: string) {
     }
     const docOfName = (name: string) => {
       const found = exported.get(name) ?? (interfaces.has(name) ? interfaces.get(name)! : undefined);
+
       return found && found.file.startsWith(root) ? found.doc : '';
     };
     const entries = Object.keys(json.exports ?? { '.': true }).filter((one) => !one.endsWith('.json'));

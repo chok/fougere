@@ -6,6 +6,6 @@ import { defineFougere } from '@fougere/core';
  */
 export default defineFougere({
   fronds: {
-    catalog: 'memory://catalog',
+    catalog: { remote: 'memory://catalog' },
   },
 });
