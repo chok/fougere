@@ -1,7 +1,5 @@
 {
-  // A frond is autonomous TypeScript domain code — it typechecks on its own, against
-  // this file, without Nuxt and without `.nuxt/tsconfig.json`. The `typecheck` script at the
-  // project root runs it, and it is the cheapest judge you have.
+  // The frond and fougere.config.ts are autonomous TypeScript — they typecheck on their own, against this file.
   "extends": "@fougere/core/tsconfig",
   "compilerOptions": {
     "target": "ES2022",
@@ -15,5 +13,5 @@
     "noEmit": true,
     "rootDir": "."
   },
-  "include": ["."]
+  "include": ["fronds", "fougere.config.ts"]
 }

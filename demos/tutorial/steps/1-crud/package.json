@@ -6,7 +6,7 @@
     "apps/*"
   ],
   "scripts": {
-    "typecheck": "tsc -p fronds",
+    "typecheck": "tsc",
     "test": "vitest run"
   },
   "dependencies": {

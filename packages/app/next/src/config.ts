@@ -136,7 +136,7 @@ export function nextConfigOf(config: NextConfig, { root, app }: { root: string; 
 
 /**
  * The fronds the convention would not find under `fronds/<name>` — the ones `fougere sync` wrote, and the
- * ones `fronds/tsconfig.json` renames — as name and directory. A bundler alias names one directory.
+ * ones the project's `tsconfig.json` renames — as name and directory. A bundler alias names one directory.
  */
 function frondsElsewhere(root: string, local: string): [string, string][] {
   const remotes = join(root, REMOTES);

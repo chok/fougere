@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "test": "vitest run",
-    "typecheck": "for step in steps/*/; do [ -n \"$(find \"$step/fronds\" -name '*.ts')\" ] || continue; tsc -p \"$step/fronds\" || exit 1; done"
+    "typecheck": "for step in steps/*/; do [ -n \"$(find \"$step/fronds\" -name '*.ts')\" ] || continue; tsc -p \"$step\" || exit 1; done"
   },
   "dependencies": {
     "@fougere/adapter-rest": "workspace:*",

@@ -1,6 +1,5 @@
 {
-  // A Frond is autonomous TypeScript domain code — it typechecks on its own.
-  "extends": "../../../../tsconfig.base.json",
+  "extends": ["@fougere/core/tsconfig", "../../tsconfig.base.json"],
   "compilerOptions": {
     "noEmit": true,
     "rootDir": ".",
@@ -8,5 +7,5 @@
     "declarationMap": false,
     "sourceMap": false
   },
-  "include": ["."]
+  "include": ["fronds", "fougere.config.ts"]
 }

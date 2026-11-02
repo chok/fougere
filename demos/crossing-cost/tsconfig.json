@@ -1,0 +1,13 @@
+{
+  // The fronds are autonomous TypeScript domain code — they typecheck on their own,
+  // against the workspace config, without any app.
+  "extends": ["@fougere/core/tsconfig", "../../tsconfig.base.json"],
+  "compilerOptions": {
+    "noEmit": true,
+    "rootDir": ".",
+    "declaration": false,
+    "declarationMap": false,
+    "sourceMap": false
+  },
+  "include": ["fronds", "fougere.config.ts"]
+}

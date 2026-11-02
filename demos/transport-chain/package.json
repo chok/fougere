@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "FOUGERE_LOG_LEVEL=warn tsx src/main.ts",
-    "typecheck": "tsc -p fronds"
+    "typecheck": "tsc -p ."
   },
   "dependencies": {
     "@fougere/defaults": "workspace:*",

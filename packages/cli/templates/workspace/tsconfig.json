@@ -1,0 +1,19 @@
+{
+  // Your fronds and fougere.config.ts are autonomous TypeScript — they typecheck on their own,
+  // against this file, without any app. Each app under apps/ keeps the tsconfig its own tool wrote.
+  // The `typecheck` script runs it, and it is the cheapest judge you have.
+  "extends": "@fougere/core/tsconfig",
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "Node16",
+    "moduleResolution": "Node16",
+    "lib": ["ESNext"],
+    "types": ["node"],
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "rootDir": "."
+  },
+  "include": ["fronds", "fougere.config.ts"]
+}

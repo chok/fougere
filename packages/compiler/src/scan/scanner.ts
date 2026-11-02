@@ -194,7 +194,7 @@ async function depsOf(filePath: string): Promise<string[]> {
     if (named) {
       throw new Error(
         `${filePath}: TypeScript cannot follow the import of '${param.name}: ${param.type.raw}'. `
-        + 'Add `"extends": "@fougere/core/tsconfig"` to fronds/tsconfig.json.',
+        + 'Add `"extends": "@fougere/core/tsconfig"` to the project\'s tsconfig.json.',
       );
     }
 

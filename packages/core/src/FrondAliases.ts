@@ -16,8 +16,8 @@ export const ALIASES = 'aliases.json';
 export const MODULES = 'modules.js';
 
 /**
- * The fronds whose directory does not give their name — `"@fronds/blog/*": ["./blog-v2/*"]` in
- * `fronds/tsconfig.json`, directory → name.
+ * The fronds whose directory does not give their name — `"@fronds/blog/*": ["./fronds/blog-v2/*"]` in
+ * the project's `tsconfig.json`, directory → name.
  *
  * The entry is read where TypeScript reads it, because TypeScript is the one reader that cannot be
  * told anything else: a rename stated anywhere besides would be a second statement of it.
@@ -26,11 +26,10 @@ export const MODULES = 'modules.js';
  */
 export function frondNamesOf(root: string, conventions: Conventions = DEFAULT_CONVENTIONS): Map<string, string> {
   const frondsDir = resolve(root, conventions.fronds);
-  const path = join(frondsDir, 'tsconfig.json');
   const names = new Map<string, string>();
-  if (!existsSync(path)) return names;
+  if (!existsSync(join(root, 'tsconfig.json'))) return names;
 
-  const tsconfig = getTsconfig(frondsDir);
+  const tsconfig = getTsconfig(root);
   const matches = tsconfig ? createPathsMatcher(tsconfig) : null;
   const prefix = `${conventions.scope}/`;
   for (const key of Object.keys(tsconfig?.config.compilerOptions?.paths ?? {})) {
