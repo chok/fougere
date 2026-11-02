@@ -35,7 +35,7 @@ function expectFougereCheckWorkflow(root: string, typecheck: string): void {
 }
 
 describe('workspace project scaffold', () => {
-  it('emits a project whose members are its apps, and the Fougere check workflow in the words of its package manager', async () => {
+  it('emits a project with no workspace until it has an app, and the Fougere check workflow in the words of its package manager', async () => {
     const parent = mkdtempSync(join(tmpdir(), 'fougere-workspace-'));
     const root = join(parent, 'forest');
 
@@ -43,7 +43,7 @@ describe('workspace project scaffold', () => {
       new ProjectWriter().createWorkspace(root, 'forest', new PackageManager('npm'));
       const pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')) as { packageManager?: string; workspaces?: string[]; dependencies: Record<string, string> };
 
-      expect(pkg.workspaces).toEqual(['apps/*']);
+      expect(pkg.workspaces).toBeUndefined();
       expect(pkg.packageManager).toBeUndefined();
       expect(existsSync(join(root, 'pnpm-workspace.yaml'))).toBe(false);
       expect(pkg.dependencies).not.toHaveProperty('@fougere/adapter-sql');
@@ -67,7 +67,7 @@ describe('workspace project scaffold', () => {
       const pnpm = project(new PackageManager('pnpm', '12.6.0'));
       const workspace = readFileSync(join(pnpm.root, 'pnpm-workspace.yaml'), 'utf8');
       expect(pnpm.pkg.packageManager).toBe('pnpm@12.6.0');
-      expect(workspace).toContain('  - apps/*');
+      expect(workspace).not.toContain('packages:');
       expect(workspace).toContain('better-sqlite3: false');
       expect(workspace).toContain('esbuild: true');
 
@@ -191,6 +191,8 @@ describe('a project linked to this monorepo', () => {
       const workspace = readFileSync(join(root, 'pnpm-workspace.yaml'), 'utf8');
 
       expect(workspace).toMatch(/\n {2}vue: link:\/.*\/packages\/app\/nuxt\/node_modules\/vue\n/);
+      expect(workspace).toContain('  - apps/*');
+      expect(JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')).workspaces).toEqual(['apps/*']);
     } finally {
       rmSync(parent, { recursive: true, force: true });
     }

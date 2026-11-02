@@ -656,7 +656,9 @@ reads the fronds only at that start anyway. A rename is a `paths` entry of the p
 (`frondNamesOf`), since TypeScript is the reader no config reaches; `fougere.frond` in a
 `package.json` is gone. A frond is not a workspace member and has no `package.json`: the starter's
 workspace holds the apps alone (`"workspaces": ["apps/*"]`), because Next writes `typescript ^5`
-where Vite writes `~6.0.2` and no single manifest holds both. The package manager a project is
+where Vite writes `~6.0.2` and no single manifest holds both. It is written with the first app
+(`becomeWorkspace`, `ProjectWriter`): a project with none has no workspace, and one with an app needs
+it so the root and the app install ONE `@fougere/core`, whose registries every package writes to. The package manager a project is
 written for is read, never asked when it can be told (`writtenFor`,
 `cli/src/scaffold/WrittenFor.ts`): `--package-manager`, the launcher's `npm_config_user_agent`,
 the project around (`package-manager-detector`), then a question, then npm said aloud. yarn 1 writes

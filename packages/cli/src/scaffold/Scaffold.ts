@@ -144,9 +144,7 @@ export function settle(dir: string, manager: PackageManager): void {
 
   if (manager.name === 'pnpm') {
     writeFileSync(join(dir, 'pnpm-workspace.yaml'), [
-      'packages:',
-      '  - apps/*',
-      '',
+      ...(pkg.workspaces ? ['packages:', '  - apps/*', ''] : []),
       'allowBuilds:',
       ...builds.map(([name, allow]) => `  ${name}: ${allow}`),
       '',

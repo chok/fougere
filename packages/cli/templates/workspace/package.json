@@ -2,9 +2,6 @@
   "name": "fougere-workspace",
   "private": true,
   "type": "module",
-  "workspaces": [
-    "apps/*"
-  ],
   "scripts": {
     "typecheck": "tsc",
     "test": "vitest run"

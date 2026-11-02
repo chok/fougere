@@ -234,6 +234,7 @@ export default class ProjectWriter {
     cpSync(starter, dest, { recursive: true, filter: (source) => source !== manifest });
     restoreGitignore(dest);
     setPackageName(dest, name);
+    becomeWorkspace(wsDir);
 
     return { path: dest };
   }
@@ -427,4 +428,16 @@ export default class ProjectWriter {
       .flatMap((entry) => rangesOf(JSON.parse(readFileSync(join(apps, entry.name, 'package.json'), 'utf8')) as Manifest))
       .flatMap((ranges) => Object.keys(ranges)));
   }
+}
+
+/**
+ * A project gains its workspace with its first app: the root and every app then install ONE copy of
+ * `@fougere/core`, whose registries each package writes to. Two copies is `adapter-sql` registering
+ * `sqlite` in one while the app reads the other.
+ */
+function becomeWorkspace(root: string): void {
+  const path = join(root, 'package.json');
+  const pkg = JSON.parse(readFileSync(path, 'utf8')) as { workspaces?: string[] };
+  if (pkg.workspaces) return;
+  writeFileSync(path, JSON.stringify({ ...pkg, workspaces: ['apps/*'] }, null, 2) + '\n');
 }
