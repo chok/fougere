@@ -1,5 +1,13 @@
 # @fougere/state-cookie
 
+## 0.29.0-alpha.2
+
+### Patch Changes
+
+- @fougere/core@0.29.0-alpha.2
+- @fougere/http@0.29.0-alpha.2
+- @fougere/schema@0.29.0-alpha.2
+
 ## 0.29.0-alpha.1
 
 ### Patch Changes

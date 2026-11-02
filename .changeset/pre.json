@@ -165,6 +165,7 @@
     "sources-is-the-one-key",
     "sqlite-on-bun",
     "tame-tables-speak",
+    "templates-no-command-reads",
     "test-app-follows-the-project",
     "testapp-boots-a-topology",
     "the-boot-leaves-the-compiler",

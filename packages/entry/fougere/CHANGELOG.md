@@ -1,5 +1,12 @@
 # fougere
 
+## 0.29.0-alpha.2
+
+### Patch Changes
+
+- Updated dependencies
+  - @fougere/cli@0.29.0-alpha.2
+
 ## 0.29.0-alpha.1
 
 ### Patch Changes

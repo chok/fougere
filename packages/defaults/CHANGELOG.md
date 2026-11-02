@@ -1,5 +1,14 @@
 # @fougere/runtime
 
+## 0.29.0-alpha.2
+
+### Patch Changes
+
+- @fougere/adapter-memory@0.29.0-alpha.2
+- @fougere/container@0.29.0-alpha.2
+- @fougere/core@0.29.0-alpha.2
+- @fougere/transport-http@0.29.0-alpha.2
+
 ## 0.29.0-alpha.1
 
 ### Patch Changes

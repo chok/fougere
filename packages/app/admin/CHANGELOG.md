@@ -1,5 +1,13 @@
 # @fougere/admin
 
+## 0.29.0-alpha.2
+
+### Patch Changes
+
+- @fougere/app@0.29.0-alpha.2
+- @fougere/core@0.29.0-alpha.2
+- @fougere/schema@0.29.0-alpha.2
+
 ## 0.29.0-alpha.1
 
 ### Patch Changes

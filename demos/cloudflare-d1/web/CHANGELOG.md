@@ -1,5 +1,15 @@
 # fougere-demo-cloudflare-web
 
+## 0.0.3-alpha.6
+
+### Patch Changes
+
+- @fougere/nuxt@0.29.0-alpha.2
+- @fougere/container@0.29.0-alpha.2
+- @fougere/core@0.29.0-alpha.2
+- @fougere/schema@0.29.0-alpha.2
+- @fougere/transport-http@0.29.0-alpha.2
+
 ## 0.0.3-alpha.5
 
 ### Patch Changes
