@@ -1,6 +1,7 @@
 {
   "name": "@fougere/demo-next-blog",
   "private": true,
+  "type": "module",
   "//": "No \"type\": \"module\" — Next emits CommonJS into .next/server, and declaring ESM here makes it fail to load its own _document.js.",
   "scripts": {
     "dev": "cd apps/next && next dev -p 3100",
