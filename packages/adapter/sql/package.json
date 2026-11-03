@@ -48,7 +48,7 @@
     "@fougere/core": "workspace:*",
     "@fougere/schema": "workspace:*",
     "dequal": "^2.0.3",
-    "kysely": "^0.28.17",
+    "kysely": "^0.29.8",
     "kysely-d1": "^0.4.0"
   },
   "devDependencies": {
