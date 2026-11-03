@@ -67,6 +67,28 @@ export function storageOver(open: (entity: SchemaView, name: string) => Store): 
         return pick(values);
       };
 
+      /** A create's row and its key, refused before anything is written. */
+      const prepared = async (input: Partial<Record<string, unknown>>): Promise<[string, Values]> => {
+        const values = applyCreate(fields, input);
+        const id = values[pk] as string | undefined;
+        // `primary(text())` declares no generator, so nothing fills the hole and the
+        // caller has to. Keying on `undefined` would let the second create overwrite the
+        // first, in silence — the old version hid this by inventing an `id` field the
+        // entity never declared.
+        if (id === undefined) {
+          throw new Error(`${name}.create() needs a ${pk}: nothing generates it. Pass one.`);
+        }
+        // A create is not an upsert. `Map.set` overwrites, so a second create under the
+        // same key answered "created" while destroying the previous instance — SQL answers a
+        // constraint violation, and a store that loses data silently is worse than one
+        // that fails.
+        if (await store.has(keyOf(id))) {
+          throw new FougereError({ code: ErrorCode.CONFLICT, message: `${name}.create: '${pk}' ${JSON.stringify(id)} already exists.` });
+        }
+
+        return [keyOf(id), values];
+      };
+
       return {
         client: store.client,
         async list(options?: any) {
@@ -120,25 +142,22 @@ export function storageOver(open: (entity: SchemaView, name: string) => Store): 
           return inputs.length;
         },
         async create(input: Partial<Record<string, unknown>>) {
-          const values = applyCreate(fields, input);
-          const id = values[pk] as string | undefined;
-          // `primary(text())` declares no generator, so nothing fills the hole and the
-          // caller has to. Keying on `undefined` would let the second create overwrite the
-          // first, in silence — the old version hid this by inventing an `id` field the
-          // entity never declared.
-          if (id === undefined) {
-            throw new Error(`${name}.create() needs a ${pk}: nothing generates it. Pass one.`);
-          }
-          // A create is not an upsert. `Map.set` overwrites, so a second create under the
-          // same key answered "created" while destroying the previous instance — SQL answers a
-          // constraint violation, and a store that loses data silently is worse than one
-          // that fails.
-          if (await store.has(keyOf(id))) {
-            throw new FougereError({ code: ErrorCode.CONFLICT, message: `${name}.create: '${pk}' ${JSON.stringify(id)} already exists.` });
-          }
-          await store.set(keyOf(id), values);
+          const [key, values] = await prepared(input);
+          await store.set(key, values);
 
           return pick(values);
+        },
+        // Every row judged before the first lands, the way one statement fails whole.
+        async createAll(inputs: readonly Values[]) {
+          const rows = await Promise.all(inputs.map(prepared));
+          const keys = rows.map(([key]) => key);
+          const repeated = keys.find((key, index) => keys.indexOf(key) !== index);
+          if (repeated !== undefined) {
+            throw new FougereError({ code: ErrorCode.CONFLICT, message: `${name}.createAll: '${pk}' ${JSON.stringify(repeated)} is given twice.` });
+          }
+          for (const [key, values] of rows) await store.set(key, values);
+
+          return rows.map(([, values]) => pick(values));
         },
         // Its turn on the key covers the read and the write, so a change reads what it replaces.
         async update(id: string, input: Values | Change<Values>) {

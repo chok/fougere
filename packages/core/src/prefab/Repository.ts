@@ -39,6 +39,7 @@ export abstract class Repository<A, B = never, C = never, D = never> {
   findByKeys(ids: readonly string[], options?: SelectOption): Promise<Map<string, A>> { return one<A>(this as never).findByKeys(ids, options); }
   findAllByKeys(field: string, keys: readonly string[], options?: SelectOption): Promise<Map<string, A[]>> { return one<A>(this as never).findAllByKeys(field, keys, options); }
   create(input: Partial<A>, options?: SelectOption): Promise<A> { return one<A>(this as never).create(input, options); }
+  createAll(inputs: readonly Partial<A>[], options?: SelectOption): Promise<A[]> { return one<A>(this as never).createAll(inputs, options); }
   upsert(input: Partial<A>, options?: SelectOption): Promise<A> { return one<A>(this as never).upsert(input, options); }
   upsertAll(inputs: readonly Partial<A>[], options?: SelectOption): Promise<number> { return one<A>(this as never).upsertAll(inputs, options); }
   update(id: string, input: Partial<A>, options?: SelectOption): Promise<A> { return one<A>(this as never).update(id, input, options); }

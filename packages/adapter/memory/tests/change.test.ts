@@ -57,3 +57,17 @@ describe('update(id, change) over a Map', () => {
     expect(await storage.findById('gadget')).toEqual({ sku: 'gadget', units: 0 });
   });
 });
+
+describe('createAll over a Map', () => {
+  it('writes none of the set when one key is taken or given twice', async () => {
+    const { storageFactory } = createMemorySource();
+    const storage = storageFactory(Stock as never, 'Stock');
+    await storage.create({ sku: 'widget', units: 1 });
+
+    await expect(storage.createAll([{ sku: 'gadget', units: 1 }, { sku: 'widget', units: 2 }])).rejects.toMatchObject({ code: ErrorCode.CONFLICT });
+    await expect(storage.createAll([{ sku: 'bolt', units: 1 }, { sku: 'bolt', units: 2 }])).rejects.toMatchObject({ code: ErrorCode.CONFLICT });
+    expect(await storage.findAllBy({})).toEqual([{ sku: 'widget', units: 1 }]);
+
+    expect(await storage.createAll([{ sku: 'b', units: 2 }, { sku: 'a', units: 1 }])).toEqual([{ sku: 'b', units: 2 }, { sku: 'a', units: 1 }]);
+  });
+});

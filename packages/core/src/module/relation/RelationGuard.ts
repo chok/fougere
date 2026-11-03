@@ -7,6 +7,7 @@ import { release, type Releasing } from './Release.js';
 /** The gestures a relation reads before they land. */
 interface Writer {
   create(...args: [Record<string, unknown>, ...unknown[]]): Promise<unknown>;
+  createAll?(...args: [readonly Record<string, unknown>[], ...unknown[]]): Promise<unknown>;
   update(...args: [unknown, Record<string, unknown> | Change<Record<string, unknown>>, ...unknown[]]): Promise<unknown>;
   updateByKeys?(...args: [readonly string[], Change<Record<string, unknown>>, ...unknown[]]): Promise<unknown>;
   upsert?(...args: [Record<string, unknown>, ...unknown[]]): Promise<unknown>;
@@ -79,6 +80,15 @@ export class RelationGuard {
 
       return writer.update.apply(this, args);
     };
+
+    const createAll = writer.createAll;
+    if (typeof createAll === 'function') {
+      guarded.createAll = async function (...args) {
+        await checking.targetsOf(args[0], 'createAll');
+
+        return createAll.apply(this, args);
+      };
+    }
 
     const updateByKeys = writer.updateByKeys;
     if (typeof updateByKeys === 'function') {

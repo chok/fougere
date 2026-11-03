@@ -1,6 +1,6 @@
-import { Role } from '@fougere/schema';
+import { Lifecycle, Role, UUID_GENERATORS } from '@fougere/schema';
 import { sql, type Kysely } from 'kysely';
-import { applyCreate, applyUpdate, type Fields, type SchemaView } from '@fougere/schema';
+import { applyCreate, applyUpdate, type Field, type Fields, type SchemaView } from '@fougere/schema';
 import { isKeyed, toTable, toTableName, type TableDef } from '../table/TableDef.js';
 import { columnTypeFor, resolveDialect, type Dialect } from '../dialect/Dialect.js';
 import { type DialectName } from '../dialect/DialectName.js';
@@ -41,6 +41,19 @@ function analyzeFields(entity: SchemaView): { pk: PrimaryKeyInfo } {
     .map(([name]) => name);
 
   return { pk: { names: pkNames, isComposite: pkNames.length > 1 } };
+}
+
+/**
+ * A `ref()` whose target generates UUID keys — read off the target class, which a table built here
+ * without its relations does not see. A target known only by name answers no.
+ */
+function referencesUuids(field: Field | undefined): boolean {
+  if (!field || !Role.of(field).isReference()) return false;
+  const target = Role.of(field).target as Partial<SchemaView> | undefined;
+  const key = target?.getFields && Object.values(target.getFields()).find((one) => Role.of(one).isPrimary());
+  const generator = key && Lifecycle.of(key).generator();
+
+  return generator !== undefined && UUID_GENERATORS.has(generator);
 }
 
 /** Slice a key set into what one statement may bind. One slice when it already fits. */
@@ -95,6 +108,8 @@ export class SqlStorage {
    * bound to, so a transaction waits its turn here rather than racing for it there.
    */
   private turns = new Turns();
+  /** The type each column holds in the live table, read once and shared by every connection. */
+  private readonly live: { types?: Promise<Map<string, string>> } = {};
   /** The rows each transaction already holds — it does not queue again for its own lock. */
   private static held = new WeakMap<object, Set<string>>();
   /** Fields whose column this engine types `uuid`, which refuses to compare with any other text. */
@@ -120,7 +135,8 @@ export class SqlStorage {
     }
     this.codecs = codecsOf(this.table.columns);
     for (const column of this.table.columns) {
-      if (columnTypeFor(resolved, column, isKeyed(this.table, column)) === 'uuid') this.uuids.add(column.field);
+      const typed = { ...column, uuid: column.uuid || referencesUuids(entity.getFields()[column.field]) };
+      if (columnTypeFor(resolved, typed, isKeyed(this.table, column)) === 'uuid') this.uuids.add(column.field);
     }
     this.pk = analyzeFields(entity).pk;
     this.fields = entity.getFields();
@@ -537,6 +553,39 @@ export class SqlStorage {
     return sel ? pick(result, sel) : result;
   }
 
+  /** One INSERT per slice of what a statement may bind, every row answered whole and in the order given. */
+  async createAll(inputs: readonly Record<string, unknown>[], options?: SelectOption): Promise<Record<string, unknown>[]> {
+    if (inputs.length === 0) return [];
+    const data = inputs.map((input) => applyCreate(this.fields, input));
+    const perStatement = Math.max(1, Math.floor(this.maxBindings / Math.max(1, this.table.columns.length)));
+    const written = new Map<string, Record<string, unknown>>();
+    for (const slice of chunks(data, perStatement)) {
+      const insert = this.db.insertInto(this.table.name).values(slice.map((row) => this.toRow(row)));
+      if (this.dialect.supportsReturning) {
+        const rows = await this.refusal(() => insert.returningAll().execute()) as Record<string, unknown>[];
+        for (const row of rows) {
+          const created = this.fromRow(row);
+          written.set(this.keyOf(created), created);
+        }
+      } else {
+        await this.refusal(() => insert.execute());
+        for (const row of slice) written.set(this.keyOf(row), (await this.reread(row)) ?? row);
+      }
+    }
+    const sel = this.resolveSelect(options);
+
+    return data.map((row) => {
+      const created = written.get(this.keyOf(row)) ?? row;
+
+      return sel ? pick(created, sel) : created;
+    });
+  }
+
+  /** The key a row is known by here — one field, or every field of a composite one. */
+  private keyOf(row: Record<string, unknown>): string {
+    return this.pk.isComposite ? JSON.stringify(this.pk.names.map((name) => row[name])) : String(row[this.pk.names[0]!]);
+  }
+
   async update(
     id: string | Record<string, unknown>,
     input: Record<string, unknown> | Change<Record<string, unknown>>,
@@ -602,14 +651,74 @@ export class SqlStorage {
       throw new FougereError({ code: ErrorCode.NOT_FOUND, message: `No row in ${this.table.name} for ${JSON.stringify(absent)}.` });
     }
 
-    const updated = new Map<string, Record<string, unknown>>();
+    const patches: [string, Record<string, unknown>][] = [];
     for (const key of keys) {
       const current = held.get(key)!;
       const shown = this.selectFields ? pick(current, this.selectFields) : current;
-      updated.set(key, await this.update(key, await change(shown), options));
+      patches.push([key, this.toRow(applyUpdate(this.fields, await change(shown)))]);
+    }
+    const together = await this.refusal(() => this.writtenTogether(patches));
+    const written = together.size > 0 ? together : await this.writtenOneByOne(patches);
+    const sel = this.resolveSelect(options);
+
+    return new Map([...written].map(([key, row]) => [key, sel ? pick(row, sel) : row]));
+  }
+
+  /** Read off the table itself: a `ref()` built here without its target cannot say that the key it names is a uuid. */
+  private async columnTypes(): Promise<Map<string, string>> {
+    const { rows } = await sql<{ name: string; type: string }>`
+      select a.attname as name, format_type(a.atttypid, a.atttypmod) as type
+      from pg_attribute a
+      where a.attrelid = to_regclass(${sql.lit(`"${this.table.name}"`)}) and a.attnum > 0 and not a.attisdropped`.execute(this.db);
+
+    return new Map(rows.map((row) => [row.name, row.type]));
+  }
+
+  private async writtenOneByOne(patches: [string, Record<string, unknown>][]): Promise<Map<string, Record<string, unknown>>> {
+    const written = new Map<string, Record<string, unknown>>();
+    for (const [key, row] of patches) {
+      const write = this.wherePk(this.db.updateTable(this.table.name).set(row) as any, key);
+      const updated = this.dialect.supportsReturning
+        ? await this.refusal(() => write.returningAll().executeTakeFirst()).then((one: any) => one && this.fromRow(one))
+        : await this.refusal(() => write.execute()).then(() => this.findById(key));
+      written.set(key, updated);
     }
 
-    return updated;
+    return written;
+  }
+
+  /**
+   * Every row of a set in ONE statement, where the engine can say it: `UPDATE … FROM (VALUES …)`,
+   * each value cast to its column's type. Answers nothing where it cannot — another engine, or rows
+   * changing different columns — and the rows are then written one by one.
+   */
+  private async writtenTogether(patches: [string, Record<string, unknown>][]): Promise<Map<string, Record<string, unknown>>> {
+    const columns = Object.keys(patches[0]?.[1] ?? {});
+    const same = patches.every(([, row]) => Object.keys(row).length === columns.length && columns.every((name) => name in row));
+    if (this.dialect.name !== 'pg' || patches.length < 2 || columns.length === 0 || !same) return new Map();
+
+    const key = this.column(this.pk.names[0]!);
+    const names = [key, ...columns];
+    const types = await (this.live.types ??= this.columnTypes());
+    const typeOf = (name: string) => sql.raw(types.get(name) ?? 'text');
+    const values = patches.map(([id, row]) => {
+      const cells = names.map((name) => sql`${name === key ? this.sought(this.pk.names[0]!, id) : row[name]}::${typeOf(name)}`);
+
+      return sql`(${sql.join(cells)})`;
+    });
+    const statement = sql<Record<string, unknown>>`
+      update ${sql.table(this.table.name)} as "t"
+      set ${sql.join(columns.map((name) => sql`${sql.ref(name)} = ${sql.ref(`v.${name}`)}`))}
+      from (values ${sql.join(values)}) as "v" (${sql.join(names.map((name) => sql.ref(name)))})
+      where ${sql.ref(`t.${key}`)} = ${sql.ref(`v.${key}`)}
+      returning "t".*`;
+    const { rows } = await statement.execute(this.db);
+
+    return new Map(rows.map((row) => {
+      const data = this.fromRow(row);
+
+      return [this.keyOf(data), data];
+    }));
   }
 
   /** Take the lock in this process's order; a row this transaction already holds needs no turn. */

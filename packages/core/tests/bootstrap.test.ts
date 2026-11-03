@@ -26,6 +26,7 @@ function fakeStorage(overrides: Partial<Storage> = {}): Storage {
     create: vi.fn(async () => ({})),
     update: vi.fn(async () => ({})),
     updateByKeys: vi.fn(async () => new Map()),
+    createAll: vi.fn(async () => []),
     delete: vi.fn(async () => true),
     client: undefined,
     output: () => storage,

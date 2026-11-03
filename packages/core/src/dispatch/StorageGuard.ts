@@ -9,6 +9,7 @@ import type { GuardReport } from './GuardReport.js';
 /** The gestures this guard grafts onto. */
 interface Writer {
   create(...args: [Record<string, unknown>, ...unknown[]]): Promise<unknown>;
+  createAll?(...args: [readonly Record<string, unknown>[], ...unknown[]]): Promise<unknown>;
   update(...args: [unknown, Record<string, unknown> | Change<Record<string, unknown>>, ...unknown[]]): Promise<unknown>;
   updateByKeys?(...args: [readonly string[], Change<Record<string, unknown>>, ...unknown[]]): Promise<unknown>;
   upsert?(...args: [Record<string, unknown>, ...unknown[]]): Promise<unknown>;
@@ -57,6 +58,16 @@ export class StorageGuard {
 
       return writer.update.apply(this, args);
     };
+
+    const createAll = writer.createAll;
+    if (typeof createAll === 'function') {
+      // Every row before the first write, as a page is.
+      guarded.createAll = async function (...args) {
+        args[0] = args[0].map((row, index) => validation.validated(row, 'createAll', index));
+
+        return createAll.apply(this, args);
+      };
+    }
 
     const updateByKeys = writer.updateByKeys;
     if (typeof updateByKeys === 'function') {

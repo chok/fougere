@@ -21,6 +21,7 @@ export interface Undo {
  */
 interface Undoable {
   create(input: Record<string, unknown>, ...rest: unknown[]): Promise<Record<string, unknown>>;
+  createAll?(inputs: readonly Record<string, unknown>[], ...rest: unknown[]): Promise<Record<string, unknown>[]>;
   update(id: string, patch: Record<string, unknown> | Change<Record<string, unknown>>, ...rest: unknown[]): Promise<Record<string, unknown>>;
   updateByKeys?(ids: readonly string[], change: Change<Record<string, unknown>>, ...rest: unknown[]): Promise<Map<string, Record<string, unknown>>>;
   delete(id: string): Promise<boolean>;
@@ -85,6 +86,18 @@ function recordCreate({ base, recorded, entity, key, journal }: Recording): void
     journal.push({ what: `create ${entity}#${id}`, run: () => base.delete.call(this, id).then(() => undefined) });
 
     return row;
+  };
+
+  const createAll = base.createAll;
+  if (typeof createAll !== 'function') return;
+  recorded.createAll = async function (...args) {
+    const rows = await createAll.apply(this, args);
+    for (const row of rows) {
+      const id = String(row[key]);
+      journal.push({ what: `create ${entity}#${id}`, run: () => base.delete.call(this, id).then(() => undefined) });
+    }
+
+    return rows;
   };
 }
 

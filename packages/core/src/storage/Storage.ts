@@ -68,6 +68,8 @@ export interface Storage<T = Record<string, unknown>> {
   /** The dual of `findByKeys`: many rows per key, not one. */
   findAllByKeys(field: string, keys: readonly string[], options?: SelectOption): Promise<Map<string, T[]>>;
   create(input: Partial<T>, options?: SelectOption): Promise<T>;
+  /** Several rows in one statement, answered in the order they were given. */
+  createAll(inputs: readonly Partial<T>[], options?: SelectOption): Promise<T[]>;
   /** Write the row, or make the existing one look like this — one statement. */
   upsert(input: Partial<T>, options?: SelectOption): Promise<T>;
   /** A whole page in one statement — what an import writes through. */
@@ -149,6 +151,7 @@ export abstract class Storage<T = Record<string, unknown>> {
     return behind<T>(this).findAllByKeys(field, keys, options);
   }
   create(input: Partial<T>, options?: SelectOption): Promise<T> { return behind<T>(this).create(input, options); }
+  createAll(inputs: readonly Partial<T>[], options?: SelectOption): Promise<T[]> { return behind<T>(this).createAll(inputs, options); }
   upsert(input: Partial<T>, options?: SelectOption): Promise<T> { return behind<T>(this).upsert(input, options); }
   upsertAll(inputs: readonly Partial<T>[], options?: SelectOption): Promise<number> {
     return behind<T>(this).upsertAll(inputs, options);
