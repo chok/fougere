@@ -1,5 +1,25 @@
 # @fougere/app
 
+## 0.29.0-alpha.3
+
+### Minor Changes
+
+- Breaking: `VALIDATION_FAILED` answers 422, as RFC 9110 has it for a well-formed body the server refuses. A REST list reads its page and its filters off the query string (`?limit=20&name=Bob`), `json(Entity)` refuses a key the entity does not declare, and a route with no prefix and no frond segment answers. Writes return their row in the same statement, a presenter does not compute a field the answer already carries, and an operation builds no event nobody observes.
+
+### Patch Changes
+
+- Updated dependencies
+- Updated dependencies
+- Updated dependencies
+- Updated dependencies
+  - @fougere/schema@0.29.0-alpha.3
+  - @fougere/defaults@0.29.0-alpha.3
+  - @fougere/core@0.29.0-alpha.3
+  - @fougere/adapter-rest@0.29.0-alpha.3
+  - @fougere/adapter-memory@0.29.0-alpha.3
+  - @fougere/transport-http@0.29.0-alpha.3
+  - @fougere/container@0.29.0-alpha.3
+
 ## 0.29.0-alpha.2
 
 ### Patch Changes

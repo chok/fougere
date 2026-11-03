@@ -1,6 +1,6 @@
 {
   "name": "@fougere/next",
-  "version": "0.29.0-alpha.2",
+  "version": "0.29.0-alpha.3",
   "description": "The Next.js adapter: mounting, and the one import that is genuinely Next.",
   "keywords": [
     "fougere",

@@ -1,5 +1,21 @@
 # @fougere/schema-sql
 
+## 0.29.0-alpha.3
+
+### Minor Changes
+
+- Breaking: `primary()` generates a UUIDv7 — `cuid2` cost about 90 µs an id — stored as `uuid` on Postgres, as is every `ref()` to it. A table made before keeps its key as `text`, and the boot refuses it by name: convert the column, or keep `primary({ generate: 'cuid2' })`. A project that froze its schema freezes again. Table and route names share one pluralization (`categorys` is now `categories`), and a `bigint` column reads back as a number.
+- A row changed from what it holds: `update(id, (row) => …)` reads and writes it with no other write in between (`FOR UPDATE` on Postgres and MySQL), and `updateByKeys(ids, change)` holds a whole set at once, in key order, so two blocks taking the same rows cannot cross. Writers wait their turn per key in the process, which Postgres does not keep. `createAll(inputs)` writes a set in one statement, and so does `updateByKeys` on Postgres. A deadlock the engine breaks answers `CONFLICT`.
+
+### Patch Changes
+
+- Kysely 0.29.
+- Updated dependencies
+- Updated dependencies
+- Updated dependencies
+  - @fougere/schema@0.29.0-alpha.3
+  - @fougere/core@0.29.0-alpha.3
+
 ## 0.29.0-alpha.2
 
 ### Patch Changes

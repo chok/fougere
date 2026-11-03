@@ -1,5 +1,17 @@
 # fougere-demo-core-scanner
 
+## 0.0.3-alpha.7
+
+### Patch Changes
+
+- Updated dependencies
+- Updated dependencies
+- Updated dependencies
+  - @fougere/defaults@0.29.0-alpha.3
+  - @fougere/core@0.29.0-alpha.3
+  - @fougere/compiler@0.29.0-alpha.3
+  - @fougere/container@0.29.0-alpha.3
+
 ## 0.0.3-alpha.6
 
 ### Patch Changes

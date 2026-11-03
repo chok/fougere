@@ -1,5 +1,21 @@
 # @fougere/core
 
+## 0.29.0-alpha.3
+
+### Minor Changes
+
+- Breaking: `VALIDATION_FAILED` answers 422, as RFC 9110 has it for a well-formed body the server refuses. A REST list reads its page and its filters off the query string (`?limit=20&name=Bob`), `json(Entity)` refuses a key the entity does not declare, and a route with no prefix and no frond segment answers. Writes return their row in the same statement, a presenter does not compute a field the answer already carries, and an operation builds no event nobody observes.
+- A row changed from what it holds: `update(id, (row) => …)` reads and writes it with no other write in between (`FOR UPDATE` on Postgres and MySQL), and `updateByKeys(ids, change)` holds a whole set at once, in key order, so two blocks taking the same rows cannot cross. Writers wait their turn per key in the process, which Postgres does not keep. `createAll(inputs)` writes a set in one statement, and so does `updateByKeys` on Postgres. A deadlock the engine breaks answers `CONFLICT`.
+
+### Patch Changes
+
+- Updated dependencies
+- Updated dependencies
+  - @fougere/schema@0.29.0-alpha.3
+  - @fougere/container@0.29.0-alpha.3
+  - @fougere/graph@0.29.0-alpha.3
+  - @fougere/registry@0.29.0-alpha.3
+
 ## 0.29.0-alpha.2
 
 ### Patch Changes

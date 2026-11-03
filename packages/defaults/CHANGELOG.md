@@ -1,5 +1,17 @@
 # @fougere/runtime
 
+## 0.29.0-alpha.3
+
+### Patch Changes
+
+- Kysely 0.29.
+- Updated dependencies
+- Updated dependencies
+  - @fougere/core@0.29.0-alpha.3
+  - @fougere/adapter-memory@0.29.0-alpha.3
+  - @fougere/transport-http@0.29.0-alpha.3
+  - @fougere/container@0.29.0-alpha.3
+
 ## 0.29.0-alpha.2
 
 ### Patch Changes

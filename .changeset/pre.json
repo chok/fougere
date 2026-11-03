@@ -141,6 +141,8 @@
     "fougere-ports",
     "fronds-resolve-by-their-paths",
     "keen-users-collect",
+    "keys-are-uuidv7",
+    "kysely-029",
     "kysely-comes-with-the-adapter",
     "lazy-swans-tap",
     "memory-fallback-in-one-line",
@@ -177,6 +179,7 @@
     "the-scan-is-a-package",
     "the-statement-is-whole",
     "the-type-a-projection-reads",
+    "the-wire-says-what-the-norm-says",
     "three-paths-settle",
     "tidy-moons-shave",
     "what-an-op-reaches",
@@ -184,6 +187,7 @@
     "what-stands-around-fougere-serve",
     "who-is-signed-in-is-an-operation",
     "wise-filters-judge",
-    "workspace-with-the-first-app"
+    "workspace-with-the-first-app",
+    "writes-hold-under-contention"
   ]
 }

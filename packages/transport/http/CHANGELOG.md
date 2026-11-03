@@ -1,5 +1,13 @@
 # @fougere/transport-http
 
+## 0.29.0-alpha.3
+
+### Patch Changes
+
+- Updated dependencies
+- Updated dependencies
+  - @fougere/core@0.29.0-alpha.3
+
 ## 0.29.0-alpha.2
 
 ### Patch Changes

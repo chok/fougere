@@ -1,5 +1,21 @@
 # fougere-demo-oclif-catalog
 
+## 0.0.1-alpha.3
+
+### Patch Changes
+
+- Updated dependencies
+- Updated dependencies
+- Updated dependencies
+- Updated dependencies
+  - @fougere/schema@0.29.0-alpha.3
+  - @fougere/adapter-sql@0.29.0-alpha.3
+  - @fougere/defaults@0.29.0-alpha.3
+  - @fougere/core@0.29.0-alpha.3
+  - @fougere/oclif@0.29.0-alpha.3
+  - @fougere/compiler@0.29.0-alpha.3
+  - @fougere/log@0.29.0-alpha.3
+
 ## 0.0.1-alpha.2
 
 ### Patch Changes

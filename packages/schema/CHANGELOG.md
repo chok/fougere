@@ -1,5 +1,16 @@
 # @fougere/schema
 
+## 0.29.0-alpha.3
+
+### Minor Changes
+
+- Breaking: `primary()` generates a UUIDv7 — `cuid2` cost about 90 µs an id — stored as `uuid` on Postgres, as is every `ref()` to it. A table made before keeps its key as `text`, and the boot refuses it by name: convert the column, or keep `primary({ generate: 'cuid2' })`. A project that froze its schema freezes again. Table and route names share one pluralization (`categorys` is now `categories`), and a `bigint` column reads back as a number.
+- Breaking: `VALIDATION_FAILED` answers 422, as RFC 9110 has it for a well-formed body the server refuses. A REST list reads its page and its filters off the query string (`?limit=20&name=Bob`), `json(Entity)` refuses a key the entity does not declare, and a route with no prefix and no frond segment answers. Writes return their row in the same statement, a presenter does not compute a field the answer already carries, and an operation builds no event nobody observes.
+
+### Patch Changes
+
+- @fougere/registry@0.29.0-alpha.3
+
 ## 0.29.0-alpha.2
 
 ### Patch Changes
