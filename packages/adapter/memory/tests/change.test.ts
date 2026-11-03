@@ -42,4 +42,18 @@ describe('update(id, change) over a Map', () => {
 
     expect(await storage.findById('widget')).toEqual({ sku: 'widget', units: 3 });
   });
+
+  it('holds a set of keys at once, in key order, so buyers taking them in opposite orders never cross', async () => {
+    const { storageFactory } = createMemorySource();
+    const storage = storageFactory(Stock as never, 'Stock');
+    await storage.create({ sku: 'widget', units: 10 });
+    await storage.create({ sku: 'gadget', units: 10 });
+
+    const replies = await Promise.allSettled(
+      Array.from({ length: 20 }, (_, index) => storage.updateByKeys(index % 2 ? ['widget', 'gadget'] : ['gadget', 'widget'], sell)),
+    );
+
+    expect(replies.filter((reply) => reply.status === 'fulfilled')).toHaveLength(10);
+    expect(await storage.findById('gadget')).toEqual({ sku: 'gadget', units: 0 });
+  });
 });

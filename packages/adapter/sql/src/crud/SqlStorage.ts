@@ -4,7 +4,7 @@ import { applyCreate, applyUpdate, type Fields, type SchemaView } from '@fougere
 import { isKeyed, toTable, toTableName, type TableDef } from '../table/TableDef.js';
 import { columnTypeFor, resolveDialect, type Dialect } from '../dialect/Dialect.js';
 import { type DialectName } from '../dialect/DialectName.js';
-import { comparisonOf, comparisonsIn, ErrorCode, FougereError, isChange, type Change, type Comparison } from '@fougere/core/contract';
+import { comparisonOf, comparisonsIn, ErrorCode, FougereError, isChange, Turns, type Change, type Comparison } from '@fougere/core/contract';
 import { codecsOf, type ValueCodec } from '../values.js';
 import type { StorageFactoryOptions } from './StorageFactoryOptions.js';
 
@@ -87,6 +87,16 @@ export class SqlStorage {
   private dialect: Dialect;
   /** How many keys one statement may carry here — see `Dialect.maxBindings`. */
   private maxBindings: number;
+  /**
+   * Who asks this process for a row's lock next, in the order they asked. The engine does not keep
+   * that order: when a lock is released, a write that just arrived can take it before those that
+   * were waiting, which left one write in a hundred waiting ten times the median (measured
+   * 2026-11-03, 10 writers on two rows, Postgres 18). Shared by every connection this table is
+   * bound to, so a transaction waits its turn here rather than racing for it there.
+   */
+  private turns = new Turns();
+  /** The rows each transaction already holds — it does not queue again for its own lock. */
+  private static held = new WeakMap<object, Set<string>>();
   /** Fields whose column this engine types `uuid`, which refuses to compare with any other text. */
   private uuids = new Set<string>();
   /** How this engine spells an upsert, or `false` when it cannot — see `Dialect.upsert`. */
@@ -565,11 +575,74 @@ export class SqlStorage {
       return this.db.transaction().execute((transaction) => this.within(transaction).changed(id, change, options));
     }
 
-    const current = await this.refusal(() => this.locked(id));
+    const current = await this.inTurn([String(id)], () => this.refusal(() => this.locked(id)));
     if (!current) throw new FougereError({ code: ErrorCode.NOT_FOUND, message: `No row in ${this.table.name} for ${JSON.stringify(id)}.` });
     const shown = this.selectFields ? pick(current, this.selectFields) : current;
 
     return this.update(id, await change(shown), options);
+  }
+
+  /** `changed` over a set: every row held by one statement, in key order, before any is written. */
+  async updateByKeys(
+    ids: readonly string[],
+    change: Change<Record<string, unknown>>,
+    options?: SelectOption,
+  ): Promise<Map<string, Record<string, unknown>>> {
+    if (this.pk.isComposite) {
+      throw new Error(`${this.table.name}.updateByKeys: the primary key is composite (${this.pk.names.join(', ')}) — update them one by one.`);
+    }
+    if (!this.db.isTransaction) {
+      return this.db.transaction().execute((transaction) => this.within(transaction).updateByKeys(ids, change, options));
+    }
+
+    const keys = [...new Set(ids)].sort();
+    const held = await this.inTurn(keys, () => this.refusal(() => this.lockedAll(keys)));
+    const absent = keys.find((key) => !held.has(key));
+    if (absent !== undefined) {
+      throw new FougereError({ code: ErrorCode.NOT_FOUND, message: `No row in ${this.table.name} for ${JSON.stringify(absent)}.` });
+    }
+
+    const updated = new Map<string, Record<string, unknown>>();
+    for (const key of keys) {
+      const current = held.get(key)!;
+      const shown = this.selectFields ? pick(current, this.selectFields) : current;
+      updated.set(key, await this.update(key, await change(shown), options));
+    }
+
+    return updated;
+  }
+
+  /** Take the lock in this process's order; a row this transaction already holds needs no turn. */
+  private inTurn<R>(keys: readonly string[], lock: () => Promise<R>): Promise<R> {
+    const mine = SqlStorage.held.get(this.db) ?? new Set<string>();
+    SqlStorage.held.set(this.db, mine);
+    const waiting = keys.filter((key) => !mine.has(`${this.table.name} ${key}`));
+
+    return this.turns.takeAll(waiting, async () => {
+      try {
+        return await lock();
+      } finally {
+        for (const key of waiting) mine.add(`${this.table.name} ${key}`);
+      }
+    });
+  }
+
+  private async lockedAll(keys: readonly string[]): Promise<Map<string, Record<string, unknown>>> {
+    const name = this.pk.names[0]!;
+    const column = this.column(name);
+    const sought = keys.map((key) => this.sought(name, key));
+    const read = this.db.selectFrom(this.table.name).selectAll().where(column, 'in', sought).orderBy(column);
+    if (this.dialect.rowLock === 'touch') {
+      await this.db.updateTable(this.table.name).set({ [column]: sql.ref(column) }).where(column, 'in', sought).execute();
+    }
+    const rows = this.dialect.rowLock === 'for update' ? await read.forUpdate().execute() : await read.execute();
+    const held = new Map<string, Record<string, unknown>>();
+    for (const row of rows as Record<string, unknown>[]) {
+      const data = this.fromRow(row);
+      held.set(String(data[name]), data);
+    }
+
+    return held;
   }
 
   private async locked(id: string | Record<string, unknown>): Promise<Record<string, unknown> | undefined> {

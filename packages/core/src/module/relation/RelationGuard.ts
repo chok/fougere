@@ -8,6 +8,7 @@ import { release, type Releasing } from './Release.js';
 interface Writer {
   create(...args: [Record<string, unknown>, ...unknown[]]): Promise<unknown>;
   update(...args: [unknown, Record<string, unknown> | Change<Record<string, unknown>>, ...unknown[]]): Promise<unknown>;
+  updateByKeys?(...args: [readonly string[], Change<Record<string, unknown>>, ...unknown[]]): Promise<unknown>;
   upsert?(...args: [Record<string, unknown>, ...unknown[]]): Promise<unknown>;
   upsertAll?(...args: [readonly Record<string, unknown>[], ...unknown[]]): Promise<unknown>;
   delete?(id: string): Promise<boolean>;
@@ -78,6 +79,21 @@ export class RelationGuard {
 
       return writer.update.apply(this, args);
     };
+
+    const updateByKeys = writer.updateByKeys;
+    if (typeof updateByKeys === 'function') {
+      guarded.updateByKeys = async function (...args) {
+        const change = args[1];
+        args[1] = async (current) => {
+          const patch = await change(current);
+          await checking.targetsOf([patch], 'updateByKeys');
+
+          return patch;
+        };
+
+        return updateByKeys.apply(this, args);
+      };
+    }
 
     const upsert = writer.upsert;
     if (typeof upsert === 'function') {

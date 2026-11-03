@@ -3,6 +3,7 @@ import { lowerFirst, upperFirst, type Entity, type SchemaView } from '@fougere/s
 import type { ListOptions } from '../storage/ListOptions.js';
 import type { ListResult } from '../storage/ListResult.js';
 import type { SelectOption } from '../storage/SelectOption.js';
+import type { Change } from '../storage/Change.js';
 import type { Storage } from '../storage/Storage.js';
 import { storageKeyOf } from '../storage/Storage.js';
 import { crudOps } from './RepositoryOps.js';
@@ -41,6 +42,7 @@ export abstract class Repository<A, B = never, C = never, D = never> {
   upsert(input: Partial<A>, options?: SelectOption): Promise<A> { return one<A>(this as never).upsert(input, options); }
   upsertAll(inputs: readonly Partial<A>[], options?: SelectOption): Promise<number> { return one<A>(this as never).upsertAll(inputs, options); }
   update(id: string, input: Partial<A>, options?: SelectOption): Promise<A> { return one<A>(this as never).update(id, input, options); }
+  updateByKeys(ids: readonly string[], change: Change<A>, options?: SelectOption): Promise<Map<string, A>> { return one<A>(this as never).updateByKeys(ids, change, options); }
   delete(id: string): Promise<boolean> { return one<A>(this as never).delete(id); }
   output(schema: SchemaView): Storage<A> { return one<A>(this as never).output(schema); }
   get client(): unknown { return one<A>(this as never).client; }

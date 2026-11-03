@@ -25,6 +25,7 @@ function fakeStorage(overrides: Partial<Storage> = {}): Storage {
     upsertAll: vi.fn(async (rows: any[]) => rows.length),
     create: vi.fn(async () => ({})),
     update: vi.fn(async () => ({})),
+    updateByKeys: vi.fn(async () => new Map()),
     delete: vi.fn(async () => true),
     client: undefined,
     output: () => storage,

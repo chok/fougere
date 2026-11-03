@@ -88,6 +88,43 @@ describe.each(sources)('update(id, change) on %s', (_, open) => {
     }
   });
 
+  it('holds a set of rows at once, in key order, so buyers taking them in opposite orders never cross', async () => {
+    const { storage } = await stocked(open, 10);
+    await storage.create({ sku: 'gadget', units: 10 });
+    const both = (keys: string[]) => storage.updateByKeys(keys, sell);
+
+    const replies = await Promise.allSettled(
+      Array.from({ length: 20 }, (_, index) => both(index % 2 ? ['widget', 'gadget'] : ['gadget', 'widget'])),
+    );
+
+    expect(replies.filter((reply) => reply.status === 'fulfilled')).toHaveLength(10);
+    expect(replies.every((reply) => reply.status === 'fulfilled' || reply.reason.message === 'Insufficient stock')).toBe(true);
+    expect(await storage.findByKeys(['widget', 'gadget'])).toEqual(new Map([
+      ['widget', { sku: 'widget', units: 0 }],
+      ['gadget', { sku: 'gadget', units: 0 }],
+    ]));
+  });
+
+  it('refuses the whole set when one key has no row, and writes none of it', async () => {
+    const { storage } = await stocked(open, 10);
+
+    await expect(storage.updateByKeys(['widget', 'nothing'], sell)).rejects.toMatchObject({ code: ErrorCode.NOT_FOUND });
+    expect(await storage.findById('widget')).toEqual({ sku: 'widget', units: 10 });
+  });
+
+  it('lets a transaction change a row it already holds again, while others wait for it', async () => {
+    const { source } = await stocked(open, 20);
+    const twice = () => source.transacted(async (factory) => {
+      const rows = factory(Stock as never, 'Stock');
+      await rows.update('widget', sell);
+      await rows.updateByKeys(['widget'], sell);
+    });
+
+    await Promise.all(Array.from({ length: 5 }, twice));
+
+    expect(await source.storageFactory(Stock as never, 'Stock').findById('widget')).toEqual({ sku: 'widget', units: 10 });
+  });
+
   it('answers NOT_FOUND for a row that is not there', async () => {
     const { storage } = await stocked(open, 1);
 

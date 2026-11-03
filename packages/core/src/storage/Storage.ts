@@ -77,6 +77,11 @@ export interface Storage<T = Record<string, unknown>> {
    * written with no other write in between: `update(id, (row) => ({ stock: row.stock - 1 }))`.
    */
   update(id: string, input: Partial<T> | Change<T>, options?: SelectOption): Promise<T>;
+  /**
+   * `update(id, change)` over a SET of rows: every row is held at once, in the order of its key, so
+   * two callers asking for the same rows cannot hold one each. A key with no row refuses them all.
+   */
+  updateByKeys(ids: readonly string[], change: Change<T>, options?: SelectOption): Promise<Map<string, T>>;
   delete(id: string): Promise<boolean>;
   /** Returns a scoped storage that restricts all read results to the fields of the given schema. */
   output(schema: SchemaView): Storage<T>;
@@ -150,6 +155,9 @@ export abstract class Storage<T = Record<string, unknown>> {
   }
   update(id: string, input: Partial<T> | Change<T>, options?: SelectOption): Promise<T> {
     return behind<T>(this).update(id, input, options);
+  }
+  updateByKeys(ids: readonly string[], change: Change<T>, options?: SelectOption): Promise<Map<string, T>> {
+    return behind<T>(this).updateByKeys(ids, change, options);
   }
   delete(id: string): Promise<boolean> { return behind<T>(this).delete(id); }
   output(schema: SchemaView): Storage<T> { return behind<T>(this).output(schema); }

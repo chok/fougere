@@ -22,6 +22,7 @@ export interface Undo {
 interface Undoable {
   create(input: Record<string, unknown>, ...rest: unknown[]): Promise<Record<string, unknown>>;
   update(id: string, patch: Record<string, unknown> | Change<Record<string, unknown>>, ...rest: unknown[]): Promise<Record<string, unknown>>;
+  updateByKeys?(ids: readonly string[], change: Change<Record<string, unknown>>, ...rest: unknown[]): Promise<Map<string, Record<string, unknown>>>;
   delete(id: string): Promise<boolean>;
   findById(id: string, ...rest: unknown[]): Promise<Record<string, unknown> | undefined>;
   findByKeys(ids: readonly string[], ...rest: unknown[]): Promise<Map<string, Record<string, unknown>>>;
@@ -69,6 +70,7 @@ export function recording<T extends object>(storage: T, entity: string, schema: 
 
   recordCreate(into);
   recordUpdate(into);
+  recordUpdateByKeys(into);
   recordDelete(into);
   recordUpserts(into, schema);
 
@@ -103,31 +105,64 @@ function recordUpdate({ base, recorded, entity, journal }: Recording): void {
     }
     const before = await base.findById.call(this, id);
     const row = await base.update.apply(this, args);
-    if (!before) return row;
-
-    const touched = Object.keys(patch);
-    const wrote = pick(row, touched);
-    journal.push({
-      what: `update ${entity}#${id} (${touched.join(', ')})`,
-      run: async () => {
-        const current = await base.findById.call(this, id);
-        if (!current) throw new Error(`${entity}#${id} is gone`);
-        // Reading and restoring are two statements, and there is no transaction here to make
-        // them one — a write landing between them is overwritten unseen. So this names what it
-        // FOUND, and claims nothing about what it did not: the frame was built because no
-        // engine could isolate it, and a check does not put the isolation back.
-        const moved = touched.filter((field) => !dequal(current[field], wrote[field]));
-        if (moved.length > 0) {
-          throw new Error(
-            `${entity}#${id} was changed by someone else since Together wrote it (${moved.join(', ')}), `
-            + 'so it is left as it is',
-          );
-        }
-        await base.update.call(this, id, pick(before, touched));
-      },
-    });
+    if (before) journal.push(undoOf(base, this, entity, id, before, Object.keys(patch), row));
 
     return row;
+  };
+}
+
+/** The same inverse, one per row a set of keys updated. */
+function recordUpdateByKeys({ base, recorded, entity, key, journal }: Recording): void {
+  const updateByKeys = base.updateByKeys;
+  if (typeof updateByKeys !== 'function') return;
+
+  recorded.updateByKeys = async function (ids, change, ...rest) {
+    const patches = new Map<string, Record<string, unknown>>();
+    const before = await base.findByKeys.call(this, ids);
+    const rows = await updateByKeys.call(this, ids, async (current) => {
+      const patch = await change(current);
+      patches.set(String(current[key]), patch);
+
+      return patch;
+    }, ...rest);
+    for (const [id, row] of rows) {
+      const was = before.get(id);
+      if (was) journal.push(undoOf(base, this, entity, id, was, Object.keys(patches.get(id) ?? {}), row));
+    }
+
+    return rows;
+  };
+}
+
+function undoOf(
+  base: Undoable,
+  self: unknown,
+  entity: string,
+  id: string,
+  before: Record<string, unknown>,
+  touched: readonly string[],
+  row: Record<string, unknown>,
+): Undo {
+  const wrote = pick(row, touched);
+
+  return {
+    what: `update ${entity}#${id} (${touched.join(', ')})`,
+    run: async () => {
+      const current = await base.findById.call(self, id);
+      if (!current) throw new Error(`${entity}#${id} is gone`);
+      // Reading and restoring are two statements, and there is no transaction here to make
+      // them one — a write landing between them is overwritten unseen. So this names what it
+      // FOUND, and claims nothing about what it did not: the frame was built because no
+      // engine could isolate it, and a check does not put the isolation back.
+      const moved = touched.filter((field) => !dequal(current[field], wrote[field]));
+      if (moved.length > 0) {
+        throw new Error(
+          `${entity}#${id} was changed by someone else since Together wrote it (${moved.join(', ')}), `
+          + 'so it is left as it is',
+        );
+      }
+      await base.update.call(self, id, pick(before, touched));
+    },
   };
 }
 

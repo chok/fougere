@@ -152,6 +152,25 @@ export function storageOver(open: (entity: SchemaView, name: string) => Store): 
             return pick(updated);
           });
         },
+        async updateByKeys(ids: readonly string[], change: Change<Values>) {
+          const keys = [...new Set(ids.map(keyOf))].sort();
+
+          return turns.takeAll(keys, async () => {
+            const held = await Promise.all(keys.map(async (key) => [key, await store.get(key)] as const));
+            const absent = held.find(([, values]) => !values);
+            if (absent) throw new FougereError({ code: ErrorCode.NOT_FOUND, message: `No row in ${name} for ${JSON.stringify(absent[0])}.` });
+
+            const updated = new Map<string, Values>();
+            for (const [key, existing] of held) {
+              const patch = await change(pick(existing!));
+              const values = { ...existing!, ...applyUpdate(fields, patch), [pk]: existing![pk] };
+              await store.set(key, values);
+              updated.set(key, pick(values));
+            }
+
+            return updated;
+          });
+        },
         async delete(id: string) { return await store.delete(keyOf(id)); },
         output(schema: SchemaView) { return scoped(new Set(Object.keys(schema.getFields()))); },
       };

@@ -38,6 +38,7 @@ const storageFactory: StorageFactory = () => {
     upsertAll: async (rows: any[]) => rows.length,
     create: async (input: unknown) => ({ id: 'p-1', slug: 'lampe', ...(input as object) }),
     update: async (_id: unknown, input: unknown) => ({ id: 'p-1', ...(input as object) }),
+    updateByKeys: async () => new Map(),
     delete: async () => true,
     client: undefined,
     output: () => storage,

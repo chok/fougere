@@ -14,6 +14,7 @@ export { FougereError, validationErrorsOf } from './wire/FougereError.js';
 export { comparisonOf, comparisonsIn } from './storage/Comparison.js';
 export type { Comparison } from './storage/Comparison.js';
 export { isChange } from './storage/Change.js';
+export { Turns } from './storage/Turns.js';
 export type { Change } from './storage/Change.js';
 // A receiver turns a refusal into what may cross a process boundary, and it is not
 // core's boot — reaching it through the main entry dragged the scanner into a bundle.

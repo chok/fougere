@@ -52,6 +52,9 @@ function makeMemoryStorage(): Storage & {
 
       return updated as never;
     },
+    async updateByKeys() {
+      return new Map();
+    },
     async delete(id) {
       return store.delete(id);
     },
