@@ -42,6 +42,17 @@ describe('PresenterExecutor', () => {
     expect(output.total).toBe(1);
   });
 
+  it('asks nothing for a field every row already carries, and keeps what a row carried when one lacks it', async () => {
+    let asked = 0;
+    const presenter = { stock: (rows: { id: string }[]) => (asked++, rows.map(() => 0)) };
+    const executor = new PresenterExecutor(presenter, ['stock']);
+
+    expect(await executor.present({ id: 'a', stock: 7 })).toEqual({ id: 'a', stock: 7 });
+    expect(asked).toBe(0);
+    expect(await executor.present([{ id: 'a', stock: 7 }, { id: 'b' }])).toEqual([{ id: 'a', stock: 7 }, { id: 'b', stock: 0 }]);
+    expect(asked).toBe(1);
+  });
+
   it('names the computed field when its cardinality is invalid', async () => {
     const presenter = { label: () => [] };
 

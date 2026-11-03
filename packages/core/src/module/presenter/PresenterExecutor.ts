@@ -25,6 +25,7 @@ export class PresenterExecutor {
     const rows = Array.isArray(result) ? result : [result];
     const values = new Map<string, unknown[]>();
     for (const name of this.fieldNames) {
+      if (rows.every((row) => carries(row, name))) continue;
       const answer = await this.computed(name, rows, args[name] ?? []);
       if (answer) values.set(name, answer);
     }
@@ -33,7 +34,7 @@ export class PresenterExecutor {
       if (item === null || typeof item !== 'object') return item;
 
       const output = { ...(item as Record<string, unknown>) };
-      for (const [name, answered] of values) output[name] = answered[index];
+      for (const [name, answered] of values) if (!carries(item, name)) output[name] = answered[index];
 
       return output;
     });
@@ -67,3 +68,7 @@ export class PresenterExecutor {
     }
   }
 }
+
+/** The handler already answered this field — `create` returning the stock it just wrote — so it is not asked again. */
+const carries = (row: unknown, name: string): boolean =>
+  row !== null && typeof row === 'object' && (row as Record<string, unknown>)[name] !== undefined;
