@@ -22,6 +22,20 @@ const storageFactory: StorageFactory = () => ({
 }) as never;
 
 describe('App.dispatch', () => {
+  it('builds no event while nobody watches, and sees an observer added while the app runs', async () => {
+    await using app = await createApp({ fronds, createContainer, storageFactory });
+    const call = () => app.dispatch(new Call(new RouteAddress({ address: 'product', operation: 'list' })));
+    await call();
+
+    const events: string[] = [];
+    const stop = app.observe((event) => { if (event instanceof DispatchEvent) events.push(event.stage); });
+    await call();
+    stop();
+    await call();
+
+    expect(events).toEqual(['received', 'resolved', 'completed', 'settled']);
+  });
+
   it('executes a local route through the transverse lifecycle', async () => {
     const events: DispatchEvent[] = [];
     await using app = await createApp({

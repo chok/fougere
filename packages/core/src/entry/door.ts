@@ -58,7 +58,7 @@ export interface DoorAround {
 /** What the cycle needs of the app: where a request is entered, who watches it, who stands around it. */
 export interface DoorCycle {
   enterRequest<R>(request: DoorRequest, fn: () => Promise<R>): Promise<R>;
-  lifecycle: Pick<DispatchLifecycle, 'publish'>;
+  lifecycle: Pick<DispatchLifecycle, 'publish' | 'observed'>;
   /** The door middlewares the frond of an address declared, outermost first. */
   middlewaresAt?(address: string): readonly DoorAround[];
   /** What `state:` declares, the seal its values travel under, and where a keeper's rows are. */
@@ -66,7 +66,7 @@ export interface DoorCycle {
 }
 
 /** A cycle nobody watches — a host holding a runner and no app, or a boot that refused. */
-const UNWATCHED: DoorCycle = { enterRequest: (_request, fn) => fn(), lifecycle: { publish: () => {} } };
+const UNWATCHED: DoorCycle = { enterRequest: (_request, fn) => fn(), lifecycle: { publish: () => {}, observed: () => false } };
 
 /**
  * The one cycle every door runs: the request entered so each call it makes says which, its
@@ -81,7 +81,8 @@ export function answerAt<Received, Decoded, Answer>(
   const request = DoorRequest.open(door.name);
 
   return enterRequest(request, async () => {
-    lifecycle.publish(DoorEvent.received(request));
+    const watched = lifecycle.observed();
+    if (watched) lifecycle.publish(DoorEvent.received(request));
 
     const carrier = keeping && door.carries && door.carrier ? door.carrier(received) : undefined;
     const namesByKeeper = byKeeper(carrier === undefined ? [] : keeping!.declared.filter((one) => one.keeper.over === door.carries));
@@ -96,14 +97,14 @@ export function answerAt<Received, Decoded, Answer>(
     }
 
     const refused = (failure: unknown): Answer => {
-      lifecycle.publish(DoorEvent.failed(request, failure));
+      if (watched) lifecycle.publish(DoorEvent.failed(request, failure));
 
       return door.encode({ refused: door.trusted ? framedOf(failure) : publicOf(failure) }, received, carrier);
     };
     const edges = async (): Promise<Answer> => {
       try {
         const decoded = await door.decode(received);
-        lifecycle.publish(DoorEvent.decoded(request));
+        if (watched) lifecycle.publish(DoorEvent.decoded(request));
         const answer = await door.run(decoded);
         // What the calls wrote leaves with an answer, never with a refusal: a failed op keeps nothing.
         for (const [keeper, names] of namesByKeeper) {
@@ -136,7 +137,7 @@ export function answerAt<Received, Decoded, Answer>(
     );
 
     const answer = await through();
-    lifecycle.publish(DoorEvent.encoded(request));
+    if (watched) lifecycle.publish(DoorEvent.encoded(request));
 
     return answer;
   });

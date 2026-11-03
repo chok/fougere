@@ -26,6 +26,11 @@ export class DispatchLifecycle {
     };
   }
 
+  /** Read at each call, since `add` may subscribe while the app runs: an event nobody reads is not built. */
+  observed(): boolean {
+    return this.observers.length > 0;
+  }
+
   publish(event: DispatchEvent | DoorEvent): void {
     for (const observer of this.observers) {
       try {

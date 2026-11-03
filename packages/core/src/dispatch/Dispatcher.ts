@@ -68,23 +68,24 @@ export class Dispatcher<H = never> implements DispatchPort {
 
     let route: Route | undefined;
     let release: (() => void) | undefined;
-    const request = this.lifecycle.request();
-    this.lifecycle.publish(DispatchEvent.received(call, request));
+    const watched = this.lifecycle.observed();
+    const request = watched ? this.lifecycle.request() : undefined;
+    if (watched) this.lifecycle.publish(DispatchEvent.received(call, request));
 
     try {
       release = this.inFlight.enter(call.address.address, call.address.operation);
       route = await this.routeFor(call);
 
-      this.lifecycle.publish(DispatchEvent.resolved(call, route.kind, request));
+      if (watched) this.lifecycle.publish(DispatchEvent.resolved(call, route.kind, request));
       const result = await route.execute(call);
-      this.lifecycle.publish(DispatchEvent.completed(call, route.kind, request));
+      if (watched) this.lifecycle.publish(DispatchEvent.completed(call, route.kind, request));
 
       return result;
     } catch (error) {
-      this.lifecycle.publish(DispatchEvent.failed(call, error, route?.kind, request));
+      if (watched) this.lifecycle.publish(DispatchEvent.failed(call, error, route?.kind, request));
       throw error;
     } finally {
-      this.lifecycle.publish(DispatchEvent.settled(call, route?.kind, request));
+      if (watched) this.lifecycle.publish(DispatchEvent.settled(call, route?.kind, request));
       release?.();
     }
   }

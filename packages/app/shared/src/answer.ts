@@ -29,14 +29,15 @@ export interface AnswerOptions {
  * serving other things beside it answers the rest.
  */
 export async function answer(app: App, request: Request, options: AnswerOptions = {}): Promise<Response | undefined> {
-  const { pathname } = new URL(request.url);
+  const url = new URL(request.url);
+  const { pathname } = url;
   const method = request.method.toUpperCase();
   const state = () => options.state ?? stateFor(request.headers, app);
 
   if (method === 'POST' && pathname.startsWith(CALL_PATH)) return call(app, request, await state());
   if ((method === 'POST' || method === 'GET') && (pathname === GRAPHQL_PATH || graphqlSurfaceOf(pathname))) return graphql(app, request, await state());
 
-  return rest(app, request, state);
+  return rest(app, request, state, url);
 }
 
 /** The audience this envelope serves — the path segment after `/_fougere/call`. */
@@ -68,12 +69,16 @@ async function call(app: App, request: Request, state: Record<string, unknown>):
 }
 
 /** The URL matched against the canonical table, the call it names invoked, the result shaped for HTTP. */
-async function rest(app: App, request: Request, state: () => Promise<Record<string, unknown>> | Record<string, unknown>): Promise<Response | undefined> {
+async function rest(
+  app: App,
+  request: Request,
+  state: () => Promise<Record<string, unknown>> | Record<string, unknown>,
+  url: URL,
+): Promise<Response | undefined> {
   // The app decides, not the host: a route file may exist, and if `fougere.config.ts` does not name
   // `protocols: { rest: {} }` this serves nothing and the request carries on to what the app routes.
   if (!serves(app.protocols, 'rest')) return undefined;
 
-  const url = new URL(request.url);
   const method = request.method.toUpperCase();
   const described = describedAt(app, method, url.pathname);
   if (described) {

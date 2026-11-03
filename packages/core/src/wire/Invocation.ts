@@ -1,10 +1,21 @@
 import type { InvocationContext } from './InvocationContext.js';
 import type { PartialInvocation } from './PartialInvocation.js';
 
+/** What this module already made canonical: `withInput` hands the other members back as they are. */
+const canonical = new WeakSet<object>();
+const EMPTY: Record<string, unknown> = Object.freeze({});
+canonical.add(EMPTY);
+
 /** Freezes plain data deeply, and leaves a class instance alone — a `Date` is not a record. */
 function canonicalValue(value: unknown): unknown {
   if (value === null || value === undefined || typeof value !== 'object') return value;
-  if (Array.isArray(value)) return Object.freeze(value.map(canonicalValue));
+  if (canonical.has(value)) return value;
+  if (Array.isArray(value)) {
+    const list = Object.freeze(value.map(canonicalValue));
+    canonical.add(list);
+
+    return list;
+  }
 
   const prototype = Object.getPrototypeOf(value);
   if (prototype !== Object.prototype && prototype !== null) return value;
@@ -14,14 +25,19 @@ function canonicalValue(value: unknown): unknown {
 
 /** Drops the keys set to `undefined`, so an input and its JSON round-trip agree. */
 function canonicalRecord(value: unknown): Record<string, unknown> {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) return Object.freeze({});
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return EMPTY;
+  if (canonical.has(value)) return value as Record<string, unknown>;
 
+  const entries = Object.entries(value);
+  if (entries.length === 0) return EMPTY;
   const result: Record<string, unknown> = {};
-  for (const [key, member] of Object.entries(value)) {
+  for (const [key, member] of entries) {
     if (member !== undefined) result[key] = canonicalValue(member);
   }
+  Object.freeze(result);
+  canonical.add(result);
 
-  return Object.freeze(result);
+  return result;
 }
 
 /** Canonical invocation shared by every entry and transport. */
