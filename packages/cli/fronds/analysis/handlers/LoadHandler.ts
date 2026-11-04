@@ -19,11 +19,19 @@ export interface LoadScenario {
  * Read from the SCAN rather than a boot: an app that boots runs its migrations and plants its
  * seeds, and a command that describes a project has no business writing to its database.
  */
+/** The file is yours once written: it holds your weights, so a second run may not replace it unasked. */
+async function keep(file: string, script: string, force = false): Promise<void> {
+  await writeFile(file, script, { encoding: 'utf8', flag: force ? 'w' : 'wx' }).catch((error: NodeJS.ErrnoException) => {
+    if (error.code !== 'EEXIST') throw error;
+    throw new Error(`${file} already exists, and it may hold your weights. Use --force to replace it, or --out to write elsewhere.`);
+  });
+}
+
 export default class LoadHandler {
   constructor(private projectScan: ProjectScan) {}
 
   /** Generate a k6 scenario covering every operation the default facade answers. */
-  async execute(input: { root?: string; facade?: string; out?: string }): Promise<LoadScenario> {
+  async execute(input: { root?: string; facade?: string; out?: string; force?: boolean }): Promise<LoadScenario> {
     const { root, fronds, config } = await this.projectScan.at(input.root);
     const facade = input.facade?.trim() || undefined;
     // The topology statement travels with it: an op that crosses a process is not held to the
@@ -32,7 +40,7 @@ export default class LoadHandler {
     const script = loadScript({ fronds }, { ...(facade ? { facade } : {}), remotes });
 
     const file = input.out === undefined ? join(root, 'load.js') : input.out || null;
-    if (file) await writeFile(file, script, 'utf8');
+    if (file) await keep(file, script, input.force);
 
     return {
       file,
