@@ -8,7 +8,8 @@ import type { SourceView } from '@fougere/core';
 import { type ColumnDef } from '../table/ColumnDef.js';
 import { isKeyed, toTableName, toTables, type TableDef } from '../table/TableDef.js';
 import { orderTables } from '../order/TableOrder.js';
-import { actualState, actualTypes, namesOf, type ColumnTypes, type SchemaState } from './SchemaState.js';
+import { actualTypes, type ColumnTypes } from './ColumnTypes.js';
+import { actualState, namesOf, type SchemaState } from './SchemaState.js';
 
 /** Project a source's entities into the tables they ask for. */
 export function desiredTables(view: SourceView, options?: GenerateOptions): TableDef[] {

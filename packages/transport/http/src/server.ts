@@ -3,6 +3,8 @@ import {
   answerAt, FougereError, ErrorCode, type Answering, type Door, type InvocationContext, type SignedCall, type Transport,
 } from '@fougere/core/contract';
 import { APP_ERROR, INVALID_REQUEST } from './jsonrpc/RpcErrorShape.js';
+import { type PageDoorOptions } from './PageDoorOptions.js';
+import { type RpcCall } from './jsonrpc/RpcCall.js';
 import { type RpcRequest } from './jsonrpc/RpcRequest.js';
 import { type RpcResponse } from './jsonrpc/RpcResponse.js';
 
@@ -16,13 +18,6 @@ export interface ReceiveOptions {
   requireIdentity?: boolean;
   /** The app's cycle, which watches the request; a receiver holding only a runner runs it unwatched. */
   answer?: Answering;
-}
-
-/** One call, unframed. */
-export interface RpcCall {
-  address: string;
-  op: string;
-  invocation: InvocationContext;
 }
 
 /**
@@ -86,15 +81,6 @@ export function peerDoor(runner: Transport, options: ReceiveOptions = {}): Door<
  * written — a peer's right — and `[id, draft, { id: 'admin' }]` would hand the handler a user no
  * collector read.
  */
-export interface PageDoorOptions {
-  /** What the host resolved of the caller, server-side. */
-  state: Record<string, unknown>;
-  /** The page's own HTTP request — what a cookie-kept state arrives and leaves in, written back by the host. */
-  carrier?: unknown;
-  /** Whether an announcement calls this op — one a page may not name. */
-  listens?: (address: string, op: string) => boolean | Promise<boolean>;
-}
-
 export function pageDoor(runner: Transport, { state, carrier, listens }: PageDoorOptions): Door<unknown, RpcCall, RpcResponse> {
   return {
     name: 'rpc',

@@ -26,7 +26,7 @@ export { type EntityNode } from './EntityNode.js';
 export { Mirror } from './prefab/Mirror.js';
 export type { Refreshed } from './prefab/Refreshed.js';
 export { Present } from './prefab/presenter.js';
-export type { PresenterViews } from './prefab/presenter.js';
+export type { PresenterViews } from './prefab/PresenterViews.js';
 export { presentedFields } from './module/presenter/presented.js';
 export { Collect } from './prefab/collector.js';
 export { Repository } from './prefab/Repository.js';

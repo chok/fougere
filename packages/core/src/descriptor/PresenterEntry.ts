@@ -1,5 +1,5 @@
 import type { Subject } from './Subject.js';
-import type { PresenterViews } from '../prefab/presenter.js';
+import type { PresenterViews } from '../prefab/PresenterViews.js';
 import type { PresenterFieldMeta } from './PresenterFieldMeta.js';
 
 /** A discovered presenter (computed fields for an entity's output). */

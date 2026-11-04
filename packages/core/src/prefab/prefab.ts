@@ -1,5 +1,5 @@
 import type { Entity } from '@fougere/schema';
-import type { PresenterViews } from './presenter.js';
+import type { PresenterViews } from './PresenterViews.js';
 
 /** What a prefab class declares about ITSELF, at runtime. */
 interface Prefab {

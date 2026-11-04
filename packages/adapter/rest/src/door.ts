@@ -1,5 +1,6 @@
 import { ErrorCode, FougereError, toHttpError, type Door } from '@fougere/core';
 import type { HttpCarrier, ResponseResult } from '@fougere/http';
+import type { RestInvocation } from './RestInvocation.js';
 import type { RouteDefinition } from './routes/RouteDefinition.js';
 import type { Fields } from '@fougere/schema';
 
@@ -12,17 +13,6 @@ export interface RestRequest {
   query: Record<string, unknown>;
   body: () => Promise<unknown>;
   state: Record<string, unknown>;
-}
-
-/**
- * An answer a link at REST's door may give in the op's place, declared in its return type — the status
- * and the headers are what the contract reads, in the vocabulary of OpenAPI's `responses`.
- */
-export interface RestResponse<Status extends number, Headers extends Record<string, string> = Record<never, string>, Body = null>
-  extends ResponseResult {
-  status: Status;
-  headers: Headers;
-  data: Body;
 }
 
 /**
@@ -49,14 +39,6 @@ export abstract class Rest<H = never> {
 
     return this.inner.answer(request);
   }
-}
-
-/** What a route's op is called with. */
-export interface RestInvocation {
-  params: Record<string, string>;
-  query: Record<string, unknown>;
-  input: unknown;
-  state: Record<string, unknown>;
 }
 
 /**

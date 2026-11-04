@@ -59,5 +59,6 @@ export function receive(
   };
 }
 
-export { pageDoor, type PageDoorOptions } from './server.js';
+export { pageDoor } from './server.js';
+export type { PageDoorOptions } from './PageDoorOptions.js';
 export { PARSE_ERROR } from './jsonrpc/RpcErrorShape.js';
