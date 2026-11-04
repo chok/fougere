@@ -1,7 +1,7 @@
 import SchemaBuilder from '@pothos/core';
 import { describe, expect, it } from 'vitest';
-import { entity, json, list, number, text } from '@fougere/schema';
-import { registerInput } from '../src/OperationsConfig.js';
+import { entity, json, list, number, optional, text, writeOnly } from '@fougere/schema';
+import { registerInput, registerType } from '../src/OperationsConfig.js';
 
 /**
  * Une forme imbriquée EST un type, pas une chaîne.
@@ -48,5 +48,47 @@ describe('une entrée qui porte des objets', () => {
 
   it('un scalaire reste un scalaire', () => {
     expect(String(inputFieldsOf(build(), 'CreateOrderInput').user_id.type)).toContain('String');
+  });
+});
+
+describe('un objet déclaré est un type, en entrée comme en sortie', () => {
+  class Address extends entity({ city: text(), zip: number({ integer: true }) }) {}
+  class Account extends entity({
+    name: text(),
+    secret: writeOnly(text()),
+    address: json(Address),
+    former: list(json(Address)),
+  }) {}
+  class Box extends entity({ account: json(Account), note: optional(json(Address)), loose: json() }) {}
+
+  function schema() {
+    const builder = new SchemaBuilder({});
+    builder.queryType({ fields: (t: any) => ({ ok: t.boolean({ resolve: () => true }) }) });
+    registerInput(builder, { name: 'BoxInput', schema: Box });
+    registerType(builder, { name: 'BoxRow', entity: Box });
+
+    return builder.toSchema();
+  }
+
+  it("l'entrée imbrique, à toute profondeur", () => {
+    const built = schema();
+    expect(String(inputFieldsOf(built, 'BoxInput').account.type)).toBe('BoxInputAccount!');
+    expect(String(inputFieldsOf(built, 'BoxInput').note.type)).toBe('BoxInputNote');
+    expect(String(inputFieldsOf(built, 'BoxInputAccount').address.type)).toBe('BoxInputAccountAddress!');
+    expect(String(inputFieldsOf(built, 'BoxInputAccount').former.type)).toContain('BoxInputAccountFormerItem');
+    expect(String(inputFieldsOf(built, 'BoxInputAccountAddress').zip.type)).toBe('Int!');
+  });
+
+  it('la sortie imbrique aussi, sans le champ writeOnly', () => {
+    const built = schema();
+    expect(String(inputFieldsOf(built, 'BoxRow').account.type)).toBe('BoxRowAccount!');
+    expect(Object.keys(inputFieldsOf(built, 'BoxRowAccount')).sort()).toEqual(['address', 'former', 'name']);
+    expect(String(inputFieldsOf(built, 'BoxRowAccount').address.type)).toBe('BoxRowAccountAddress!');
+  });
+
+  it('un json() sans entité reste une chaîne', () => {
+    const built = schema();
+    expect(String(inputFieldsOf(built, 'BoxInput').loose.type)).toContain('String');
+    expect(String(inputFieldsOf(built, 'BoxRow').loose.type)).toContain('String');
   });
 });

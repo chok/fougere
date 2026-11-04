@@ -70,6 +70,7 @@ function fieldToGraphQL(
   field: Field,
   fieldName: string,
   enumFor?: (values: string[]) => any | undefined,
+  nested?: (shape: Shape, suffix: string) => any,
 ): any {
   // Dispatch on the BASE type via `Shapes.of` — `shape.type` may be the nullable
   // `[T,'null']` union, a direct comparison would fail silently on it.
@@ -107,6 +108,10 @@ function fieldToGraphQL(
                       : t.exposeBoolean(fieldName);
 
     case 'object':
+      if (nested && declaresProperties(shape)) {
+        return t.field({ type: nested(shape, ''), nullable, resolve: (parent: any) => parent[fieldName] ?? null });
+      }
+
       // JSON → String sérialisé
       return t.string({
         nullable,
@@ -127,6 +132,8 @@ function fieldToGraphQL(
         case 'number': return t.floatList({ nullable, resolve });
         case 'boolean': return t.booleanList({ nullable, resolve });
         case 'object':
+          if (nested && declaresProperties(items)) return t.field({ type: [nested(items, 'Item')], nullable, resolve });
+
           return t.stringList({
             nullable,
             resolve: (parent: any) => {
@@ -175,20 +182,22 @@ function nestedInputType(
   const known = perBuilder.get(name);
   if (known) return known;
 
-  // Only an object shape has these two, and only an object shape reaches here.
-  const properties: Record<string, Shape> = 'properties' in shape ? (shape.properties ?? {}) as Record<string, Shape> : {};
+  const properties = propertiesOf(shape);
   const required = new Set<string>('required' in shape ? shape.required ?? [] : []);
   const type = (builder as any).inputType(name, {
     fields: (t: any) => {
       const out: Record<string, any> = {};
       for (const [key, prop] of Object.entries(properties)) {
         const isRequired = required.has(key);
-        switch (Shapes.of(prop).base?.type) {
-          case 'integer': out[key] = t.int({ required: isRequired }); break;
-          case 'number': out[key] = t.float({ required: isRequired }); break;
-          case 'boolean': out[key] = t.boolean({ required: isRequired }); break;
-          default: out[key] = t.string({ required: isRequired }); break;
-        }
+        const base = Shapes.of(prop).base;
+        const inner = (held: Shape, suffix: string) => nestedInputType(builder, held, `${name}${upperFirst(key)}${suffix}`);
+        const items = base?.type === 'array' ? Shapes.of(base.items).base : undefined;
+        if (base && declaresProperties(base)) out[key] = t.field({ type: inner(base, ''), required: isRequired });
+        else if (items && declaresProperties(items)) out[key] = t.field({ type: [inner(items, 'Item')], required: isRequired });
+        else if (base?.type === 'integer') out[key] = t.int({ required: isRequired });
+        else if (base?.type === 'number') out[key] = t.float({ required: isRequired });
+        else if (base?.type === 'boolean') out[key] = t.boolean({ required: isRequired });
+        else out[key] = t.string({ required: isRequired });
       }
 
       return out;
@@ -199,12 +208,63 @@ function nestedInputType(
   return type;
 }
 
+/** The dual of {@link nestedInputType}: what an answer shows of a nested shape. */
+function nestedObjectType(
+  builder: InstanceType<typeof SchemaBuilder>,
+  shape: Shape,
+  name: string,
+): any {
+  let perBuilder = nestedObjects.get(builder as object);
+  if (!perBuilder) nestedObjects.set(builder as object, (perBuilder = new Map()));
+  const known = perBuilder.get(name);
+  if (known) return known;
+
+  const properties = Object.entries(propertiesOf(shape)).filter(([, prop]) => !(prop as { writeOnly?: boolean }).writeOnly);
+  const required = new Set<string>('required' in shape ? shape.required ?? [] : []);
+  const type = (builder as any).objectRef(name);
+  perBuilder.set(name, type);
+  type.implement({
+    fields: (t: any) => {
+      const out: Record<string, any> = {};
+      for (const [key, prop] of properties) {
+        const { base, nullable: stated } = Shapes.of(prop);
+        const nullable = stated || !required.has(key);
+        const resolve = (parent: any) => parent[key] ?? null;
+        const inner = (held: Shape, suffix: string) => nestedObjectType(builder, held, `${name}${upperFirst(key)}${suffix}`);
+        const items = base?.type === 'array' ? Shapes.of(base.items).base : undefined;
+        if (base && declaresProperties(base)) out[key] = t.field({ type: inner(base, ''), nullable, resolve });
+        else if (items && declaresProperties(items)) out[key] = t.field({ type: [inner(items, 'Item')], nullable, resolve });
+        else if (base?.type === 'integer') out[key] = t.int({ nullable, resolve });
+        else if (base?.type === 'number') out[key] = t.float({ nullable, resolve });
+        else if (base?.type === 'boolean') out[key] = t.boolean({ nullable, resolve });
+        else out[key] = t.string({ nullable, resolve });
+      }
+
+      return out;
+    },
+  });
+
+  return type;
+}
+
+/** `json(Address)` states its properties; a bare `json()` admits any shape, and stays a `String`. */
+function propertiesOf(shape: Shape): Record<string, Shape> {
+  return 'properties' in shape ? (shape.properties ?? {}) as Record<string, Shape> : {};
+}
+
+function declaresProperties(shape: Shape): boolean {
+  return shape.type === 'object' && Object.keys(propertiesOf(shape)).length > 0;
+}
+
 /**
  * One input type per name, PER BUILDER — Pothos refuses a duplicate name, and a ref built on one
  * builder is unknown to the next: a global cache handed a stale ref to the second schema
  * ("InputObjectRef has not been implemented").
  */
 const nestedInputs = new WeakMap<object, Map<string, any>>();
+
+/** Same rule as {@link nestedInputs}, for what an answer shows. */
+const nestedObjects = new WeakMap<object, Map<string, any>>();
 
 /** Same rule as {@link nestedInputs}, for the enum types — with the values, see below. */
 const enumTypes = new WeakMap<object, Map<string, { ref: any; values: string[] }>>();
@@ -301,8 +361,14 @@ function fieldToInput(
       }
     }
 
+    case 'object': {
+      // A nested shape IS a type, one level as much as in a list.
+      const built = declaresProperties(shape) ? nested?.(shape, '') : undefined;
+
+      return built ? t.field({ type: built, required }) : t.string({ required });
+    }
+
     case 'string':
-    case 'object':
     default:
       return t.string({ required });
   }
@@ -400,7 +466,7 @@ export function registerType(builder: InstanceType<typeof SchemaBuilder>, config
           const name = enumNameFor(enumOwner, fieldName);
 
           return name ? enumTypeFor(builder, name, values) : undefined;
-        });
+        }, (shape, suffix) => nestedObjectType(builder, shape, `${config.name}${upperFirst(fieldName)}${suffix}`));
       }
 
       // Add relations
@@ -730,18 +796,27 @@ function buildArgsFromSignature(
 
 // ─── Output type resolution ──────────────────────
 
+const ANSWERED_SCALARS: Record<string, string> = { boolean: 'Boolean', number: 'Float', string: 'String' };
+
+interface OutputType {
+  type: any;
+  isList: boolean;
+  nullable: boolean;
+  serialized?: boolean;
+}
+
 function resolveOutputType(
   sig: Signature,
   config: OperationsConfig,
   meta?: OperationMeta,
   opName?: string,
-): { type: any; isList: boolean; nullable: boolean } {
+): OutputType {
   const rt = sig.returnType;
+  const nullable = rt?.nullable === true || rt?.undefined === true;
 
-  // boolean → Boolean scalar
-  if (rt?.name === 'boolean') {
-    return { type: 'Boolean', isList: false, nullable: false };
-  }
+  const scalar = rt && ANSWERED_SCALARS[rt.name];
+  if (scalar) return { type: rt.array ? [scalar] : scalar, isList: false, nullable };
+  if (rt?.name === 'void') return { type: 'Boolean', isList: false, nullable: true };
 
   // A paged op → the paginated list wrapper. `Page<T>` is what a prefab answers; `ListResult<T>`
   // is the array a handler writing its own op still hands back from the storage.
@@ -753,14 +828,25 @@ function resolveOutputType(
   const declared = meta?.output && opName && config.viewType
     ? config.viewType(meta.output, opName)
     : undefined;
+  // A type no schema states has fields nothing can list, and the entity of its handler is not it.
+  if (!declared && (rt || !config.type)) {
+    return { type: rt?.array ? ['String'] : 'String', isList: false, nullable, serialized: true };
+  }
   const type = declared ?? config.type;
-  if (!type) return { type: undefined, isList: false, nullable: false };
 
   if (rt?.array) {
     return { type: [type], isList: false, nullable: false };
   }
 
-  return { type, isList: false, nullable: rt?.nullable === true || rt?.undefined === true };
+  return { type, isList: false, nullable };
+}
+
+/** Same rule as a computed field the scan could not name: an op has a field whatever it answers. */
+function serializedAnswer(result: unknown): unknown {
+  if (Array.isArray(result)) return result.map(serializedAnswer);
+  if (result === null || result === undefined) return null;
+
+  return typeof result === 'string' ? result : JSON.stringify(result);
 }
 
 // ─── registerOperations ──────────────────────────
@@ -806,7 +892,6 @@ export function registerOperations(builder: InstanceType<typeof SchemaBuilder>, 
     const output = resolveOutputType(sig, config, meta, opName);
     const isListWrapper = output.type === 'list-wrapper';
     const outputType = isListWrapper ? listWrapperType : output.type;
-    if (!outputType) continue;
 
     const fieldDef = (t: any) => ({
       [fieldName]: t.field({
@@ -817,6 +902,7 @@ export function registerOperations(builder: InstanceType<typeof SchemaBuilder>, 
         resolve: async (_: any, args: any, gqlCtx: any) => {
           const invocation = buildInvocation(args, gqlCtx);
           const result = await config.facade[opName](invocation);
+          if (output.serialized) return serializedAnswer(result);
 
           // List wrapper: shape the result for the paginated type
           if (isListWrapper) {
