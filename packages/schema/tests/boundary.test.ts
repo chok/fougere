@@ -194,3 +194,43 @@ describe('boundary · a nested date is rebuilt by the shape that holds it', () =
     expect(boundary.decode([{ id: 'm2', since: 'nope' }])).toEqual({ message: 'Invalid date', path: ['0', 'since'] });
   });
 });
+
+describe('boundary · writeOnly inside json(Entity)', () => {
+  class Account extends entity({ name: text(), secret: writeOnly(text()) }) {}
+  class Box extends entity({
+    account: json(Account),
+    former: optional(json(Account)),
+    others: list(json(Account)),
+  }) {}
+  class Crate extends entity({ box: json(Box) }) {}
+
+  const account = { name: 'n', secret: 's' };
+  const visible = { name: 'n' };
+  const row = { account, former: account, others: [account, account] };
+
+  it('leaves a row without the field, in a nested, optional or listed entity', () => {
+    expect(Visibility.of(Box.getFields()).encode(row)).toEqual({
+      account: visible,
+      former: visible,
+      others: [visible, visible],
+    });
+  });
+
+  it('holds at any depth', () => {
+    expect(Visibility.of(Crate.getFields()).encode({ box: row })).toEqual({
+      box: { account: visible, former: visible, others: [visible, visible] },
+    });
+  });
+
+  it('stays in what is written: judging a row keeps the field and still requires it', () => {
+    const accepted = Box.validate({ account, others: [] });
+    expect(accepted.success && accepted.data.account).toEqual(account);
+    expect(Box.validate({ account: visible, others: [] }).success).toBe(false);
+  });
+
+  it('states it in the shape, where a card carries it', () => {
+    const { properties } = json(Account).shape as { properties: Record<string, object> };
+    expect(properties.secret).toMatchObject({ writeOnly: true });
+    expect(properties.name).not.toHaveProperty('writeOnly');
+  });
+});

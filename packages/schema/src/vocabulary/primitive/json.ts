@@ -1,6 +1,7 @@
 import { Field, type Shared } from '../../field/Field.js';
 import type { SchemaView } from '../../SchemaView.js';
 import type { Entity } from '../../entity/Entity.js';
+import { Boundary } from '../../axis/boundary/Boundary.js';
 import { InputValidator } from '../../validator/InputValidator.js';
 import { SchemaError } from '../../SchemaError.js';
 import { admits, judgeOptions } from '../../field/Word.js';
@@ -38,7 +39,7 @@ export function json(
   const required: string[] = [];
 
   for (const [key, field] of Object.entries(fields)) {
-    properties[key] = field.shape;
+    properties[key] = Boundary.of(field).writeOnly() ? { ...field.shape, writeOnly: true } : field.shape;
 
     if (validator.requires(field)) required.push(key);
   }

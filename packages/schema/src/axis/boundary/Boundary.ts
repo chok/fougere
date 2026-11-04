@@ -73,10 +73,56 @@ export class Boundary {
       encode:
         rules.out === 'closed'
           ? identityEncoder
-          : typeof declared.rules.out === 'object'
-            ? Boundaries.encoders.resolve(declared.rules.out.encode)
-            : derived.encode,
+          : Boundary.closing(
+              field.shape,
+              typeof declared.rules.out === 'object'
+                ? Boundaries.encoders.resolve(declared.rules.out.encode)
+                : derived.encode,
+            ),
     });
+  }
+
+  /** What a row leaves as: `encode`, then without the keys its shape closes. */
+  private static closing(shape: Shape | undefined, encode: Encoder): Encoder {
+    const close = Boundary.closedKeysOf(shape);
+
+    return close === identityEncoder ? encode : (value) => close(encode(value));
+  }
+
+  /**
+   * `writeOnly` on a property of `json(Account)`, at any depth. It sits beside `forShape` and not
+   * in it, because the judge encodes through `forShape` and must still see what a write carries.
+   */
+  private static closedKeysOf(shape: Shape | undefined): Encoder {
+    const base = Shapes.of(shape).base;
+    if (base?.type === 'array' && base.items) return Boundary.closingEach(Boundary.closedKeysOf(base.items));
+    if (base?.type !== 'object' || !base.properties) return identityEncoder;
+
+    const properties = Object.entries(base.properties as Record<string, Shape & { writeOnly?: boolean }>);
+    const closed = properties.filter(([, property]) => property.writeOnly).map(([key]) => key);
+    const nested = properties
+      .filter(([, property]) => !property.writeOnly)
+      .map(([key, property]) => [key, Boundary.closedKeysOf(property)] as const)
+      .filter(([, close]) => close !== identityEncoder);
+    if (closed.length === 0 && nested.length === 0) return identityEncoder;
+
+    return (value) => {
+      if (!isObject(value)) return value;
+      const row: Record<string, unknown> = { ...value };
+      for (const key of closed) delete row[key];
+      for (const [key, close] of nested) {
+        if (row[key] !== null && row[key] !== undefined) row[key] = close(row[key]);
+      }
+
+      return row;
+    };
+  }
+
+  private static closingEach(close: Encoder): Encoder {
+    if (close === identityEncoder) return identityEncoder;
+
+    return (value) =>
+      Array.isArray(value) ? value.map((element) => (element === null || element === undefined ? element : close(element))) : value;
   }
 
   /**
