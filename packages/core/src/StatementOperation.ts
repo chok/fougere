@@ -1,4 +1,5 @@
 import { FieldSet, type SchemaView } from '@fougere/schema';
+import type { ErrorCode } from './wire/ErrorCode.js';
 import type { OperationContract } from './wire/OperationContract.js';
 import type { Param } from './wire/Param.js';
 import type { TypeRef } from './wire/TypeRef.js';
@@ -21,6 +22,8 @@ export interface StatementOperation {
   input?: SchemaView;
   /** What the operation answers — `[Post]` for several. */
   output?: SchemaView | readonly [SchemaView];
+  /** What it refuses. The scan follows the `throw`s; a list written here is taken as stated. */
+  errors?: ErrorCode[];
   description?: string;
 }
 
@@ -62,6 +65,7 @@ export function contractOf(name: string, operation: StatementOperation): Operati
     signature: { name, params, ...(operation.description ? { description: operation.description } : {}) },
     ...(operation.input ? { input: operation.input } : {}),
     ...(output ? { output, cardinality: several ? 'many' : 'one' } : { cardinality: 'none' }),
+    ...(operation.errors ? { errors: operation.errors } : {}),
     ...(operation.description ? { description: operation.description } : {}),
   };
 }
