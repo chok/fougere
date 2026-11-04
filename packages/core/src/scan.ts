@@ -4,6 +4,8 @@ import type { VocabularyEntry } from './descriptor/VocabularyEntry.js';
 
 /** Result of scanning a project directory. */
 export interface ScanResult {
+  /** The directory scanned — what a file the scan names is read from. */
+  root: string;
   fronds: Fronds;
   /** What the scan could not do. Empty is a claim, not a default — see {@link Diagnostic}. */
   diagnostics: Diagnostic[];

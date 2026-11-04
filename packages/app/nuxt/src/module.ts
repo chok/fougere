@@ -151,7 +151,7 @@ const module = defineNuxtModule<FougereModuleOptions>({
     const frondsFilter = process.env.FOUGERE_FRONDS?.split(',').map((s) => s.trim()).filter(Boolean);
     const frondsFile = statementFileIn(scanRoot);
     const { scan, statement } = frondsFile
-      ? { scan: await statedIn(frondsFile, frondsFilter), statement: undefined }
+      ? { scan: await statedIn(scanRoot, frondsFile, frondsFilter), statement: undefined }
       : await scanned(scanRoot, frondsFilter, conventions);
     const { fronds } = scan;
 
@@ -354,13 +354,9 @@ function carried(config: FougereConfig): Partial<FougereConfig> {
 }
 
 
-/**
- * The entity names a SYNCED remote brought in — `fougere sync` writes the classes under
- * `.fougere/`, and a consumer designates them exactly as it designates its own.
- */
 /** The fronds a `fronds.ts` states, read the way the boot will read them — no scan, no compiler. */
-async function statedIn(frondsFile: string, only: string[] | undefined): Promise<ScanResult> {
-  return { fronds: Fronds.list((await statementIn(frondsFile, only)).fronds), diagnostics: [] };
+async function statedIn(root: string, frondsFile: string, only: string[] | undefined): Promise<ScanResult> {
+  return { root, fronds: Fronds.list((await statementIn(frondsFile, only)).fronds), diagnostics: [] };
 }
 
 /**
@@ -377,6 +373,7 @@ async function scanned(root: string, only: string[] | undefined, conventions: Co
   return { scan, statement: compiler.emitStatement(scan) };
 }
 
+/** The entity names `fougere sync` brought in: a consumer designates them exactly as it designates its own. */
 function syncedEntityNames(root: string, conventions: Conventions): string[] {
   const remotes = resolve(root, REMOTES);
   if (!existsSync(remotes)) return [];

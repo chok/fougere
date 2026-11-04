@@ -50,6 +50,6 @@ export default class ProjectScan {
 
     // A scan reads the disk, and the disk is flat: who inherits from whom is in the config.
     // Stamped here so every reader of a project gets what a boot would have given it.
-    return { root: target, config, ...scanned, fronds: nested(scanned.fronds, config.fronds) };
+    return { config, ...scanned, fronds: nested(scanned.fronds, config.fronds) };
   }
 }

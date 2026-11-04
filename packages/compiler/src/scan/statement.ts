@@ -37,13 +37,16 @@ class Imports implements Aliases {
   /** Per frond, the file each imported value is declared in — what a refusal names. */
   private readonly declaredIn = new Map<string, Map<string, string>>();
 
-  constructor(private readonly outFile?: string) {}
+  constructor(private readonly root: string, private readonly outFile?: string) {}
 
-  /** `files: [[_0, '/app/fronds/blog/entities/Post.ts'], …]` for the values this frond imported. */
+  /**
+   * `files: [[_0, 'fronds/blog/entities/Post.ts'], …]` for the values this frond imported. From the
+   * project's root, so a refusal reads the same wherever the build ran and where it was deployed.
+   */
   filesOf(frond: FrondDescriptor): string {
     const declared = [...(this.declaredIn.get(frond.name) ?? [])];
 
-    return declared.length ? `files: [${declared.map(([alias, path]) => `[${alias}, ${JSON.stringify(path)}]`).join(', ')}]` : '';
+    return declared.length ? `files: [${declared.map(([alias, path]) => `[${alias}, ${JSON.stringify(relative(this.root, path))}]`).join(', ')}]` : '';
   }
 
   default(filePath: string, frond: FrondDescriptor, value?: Live): string {
@@ -235,7 +238,7 @@ export function emitStatement(scan: ScanResult, options: { outFile?: string } = 
   // statement would serve an input nobody chose.
   const undecided = refusalOf(scan.diagnostics.filter((one) => UNDECIDED.has(one.code)), 'operation contract(s) the scan could not decide');
   if (undecided) throw undecided;
-  const imports = new Imports(options.outFile);
+  const imports = new Imports(scan.root, options.outFile);
   const terms = (scan.vocabulary ?? []).flatMap(({ filePath, name }) => {
     const frond = scan.fronds.find((one) => filePath.startsWith(`${one.source.path}/`));
 

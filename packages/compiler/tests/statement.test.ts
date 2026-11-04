@@ -25,6 +25,15 @@ async function stated(fixture: string): Promise<{ scanned: FrondDescriptor; writ
 }
 
 describe('a statement written from the scan', () => {
+  /** A refusal names the file, and a build runs on one machine and answers on another. */
+  it('names its files from the root of the project, never from the disk that scanned it', async () => {
+    const root = join(import.meta.dirname, 'fixtures-config-contract');
+    const statement = emitStatement(await scanProject(root));
+
+    expect(statement).toMatch(/files: \[\[_\d+, "fronds\//);
+    expect(statement).not.toContain(root);
+  });
+
   it('brings back what the frond is made of beyond its classes', async () => {
     const { scanned, written } = await stated('fixtures-statement');
 
