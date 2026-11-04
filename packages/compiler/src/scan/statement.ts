@@ -224,7 +224,7 @@ function frondOf(frond: FrondDescriptor, imports: Imports): string {
 }
 
 /** What the scan reports when it could not decide a contract — the statement cannot be written then. */
-const UNDECIDED = new Set(['input-contract-ambiguous']);
+const UNDECIDED = new Set(['input-contract-ambiguous', 'output-contract-ambiguous', 'fact-contract-ambiguous']);
 
 /**
  * The scan as a list of `frond()` calls — the file an author writes, written for them. With no

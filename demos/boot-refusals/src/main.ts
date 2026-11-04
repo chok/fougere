@@ -1,5 +1,5 @@
 /**
- * Thirteen of the twenty-eight codes a boot can answer, one project each.
+ * Fourteen of the twenty-nine codes a boot can answer, one project each.
  *
  * A refusal used to be a string: it said what was wrong and, 42 times out of 47, not WHERE.
  * Each case below is a project that does not hold, booted for its answer — a `Diagnostic`
@@ -63,6 +63,7 @@ const CASES: Case[] = [
   { name: 'frond-key-taken', states: "fronds 'shop' and 'stock' both answer Facade<ItemHandler>" },
   { name: 'together-write-uncovered', states: 'the frame names Item, and LineRepository writes Line' },
   { name: 'pipes-unordered', states: 'RoundHandler and TaxHandler both finish itemPriced' },
+  { name: 'output-contract-ambiguous', states: 'AccountHandler answers Account | Receipt, and Account has a writeOnly field' },
   { name: 'several-at-once', states: 'three of the rules above, in one project' },
 ];
 

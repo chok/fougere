@@ -8,6 +8,8 @@ export interface TypeRef {
   array?: boolean;
   /** How MANY array levels. */
   arrayDepth?: number;
+  /** What a union is made of, its absences left out (e.g. `Post | Comment` → ['Post', 'Comment']). */
+  members?: string[];
   /** Generic type arguments (e.g. for Pagination<Post> → [{ name: 'Post' }]). */
   generics?: TypeRef[];
   /** Whether `null` belongs to the type. */

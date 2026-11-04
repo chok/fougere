@@ -319,9 +319,12 @@ function fromCheckedUnion(type: ts.UnionType, raw: string, checker: ts.TypeCheck
     return { ...inner, raw, nullable: nullable || inner.nullable, undefined: undefinable || inner.undefined };
   }
 
+  const names = members.map((member) => meaningfulSymbolName(member, checker));
+
   return {
     raw,
-    name: members.map((member) => meaningfulSymbolName(member, checker)).join(' | ') || raw,
+    name: names.join(' | ') || raw,
+    members: names,
     nullable,
     undefined: undefinable,
   };

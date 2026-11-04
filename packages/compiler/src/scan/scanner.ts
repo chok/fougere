@@ -375,6 +375,49 @@ function inputOf(
   return undefined;
 }
 
+/**
+ * An answer naming an entity beside another type has no view to go through, and an answer with
+ * no view leaves whole: a `writeOnly` field included.
+ */
+function refuseOutputUnion(method: Signature, read: Reading): void {
+  const members = method.returnType?.members ?? [];
+  const entities = members.filter((member) => {
+    const declared = read.moduleExports[member];
+
+    return typeof declared === 'function' && 'getFields' in declared;
+  });
+  if (entities.length === 0 || read.stated) return;
+
+  const subject = `${read.handlerName}.${method.name}`;
+  record({
+    severity: 'blocking',
+    code: 'output-contract-ambiguous',
+    filePath: read.filePath,
+    subject,
+    message: `Fougere cannot tell which view ${subject} answers through: ${method.returnType!.raw}. `
+      + `Write one operation per type, or declare it in frond.config.ts: `
+      + `operations: { '${new RouteAddress({ address: addressOf(read.handlerName), operation: method.name })}': { output } }.`,
+  });
+}
+
+/** A binding names one fact, so `Fact<A | B>` would listen to a name nothing can announce. */
+function refuseFactUnion(method: Signature, read: Reading): void {
+  for (const param of method.params) {
+    const [fact] = param.type.generics ?? [];
+    if (param.type.name !== 'Fact' && param.type.name !== 'Pipe') continue;
+    if ((fact?.members?.length ?? 0) < 2) continue;
+
+    record({
+      severity: 'blocking',
+      code: 'fact-contract-ambiguous',
+      filePath: read.filePath,
+      subject: `${read.handlerName}.${method.name}`,
+      message: `${read.handlerName}.${method.name} listens to ${param.type.raw}, and a parameter takes one fact. `
+        + `Write one method per fact.`,
+    });
+  }
+}
+
 /** What one method of a handler is read against, while its contract is built. */
 interface Reading {
   handlerName: string;
@@ -398,12 +441,14 @@ function contractOf(parsed: Signature, read: Reading): OperationContract {
     ...(read.refused?.length ? { errors: read.refused } : {}),
   };
 
+  refuseFactUnion(method, read);
   const input = inputOf(
     method, read.handlerName, read.filePath, read.collectorTypeNames, read.moduleExports, read.stated,
   );
   if (input) meta.input = input;
 
   if (method.returnType) {
+    refuseOutputUnion(method, read);
     meta.output = resolveSchema(method.returnType, read.moduleExports);
     // `output` is the shape of one row; this says how many rows come back.
     meta.cardinality = cardinalityOf(method.returnType);
