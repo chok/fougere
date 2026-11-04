@@ -1,23 +1,20 @@
-import { readFile } from 'node:fs/promises';
+import { readdir } from 'node:fs/promises';
 import { join } from 'node:path';
+import { REMOTES } from '@fougere/core/node';
 
-/** One entry of `.fougere/remotes.json`, written by `fougere sync`. */
+/** One directory of `remotes/`, written by `fougere sync`. */
 export interface SyncedRemote {
   name: string;
-  url: string;
   /** Where the synced classes were written. */
   path: string;
 }
 
-/** The remotes a project synced, read from the file `fougere sync` writes. */
+/** The remotes a project synced. No directory is the ordinary case: an app with no remote synced nothing. */
 export async function syncedRemotes(root: string): Promise<SyncedRemote[]> {
-  try {
-    const raw = await readFile(join(root, '.fougere', 'remotes.json'), 'utf8');
-    const parsed = JSON.parse(raw) as Record<string, { url: string; path: string }>;
+  const remotes = join(root, REMOTES);
+  const entries = await readdir(remotes, { withFileTypes: true }).catch(() => []);
 
-    return Object.entries(parsed).map(([name, one]) => ({ name, ...one }));
-  } catch {
-    // No file is the ordinary case: an app with no remote synced nothing.
-    return [];
-  }
+  return entries
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => ({ name: entry.name, path: join(remotes, entry.name) }));
 }

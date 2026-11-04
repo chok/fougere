@@ -6,8 +6,8 @@ import { pathToFileURL } from 'node:url';
 import { createPathsMatcher, getTsconfig } from 'get-tsconfig';
 import { DEFAULT_CONVENTIONS, frondPackage, type Conventions } from './Conventions.js';
 
-/** Where `fougere sync` writes a frond another process serves — read by the same convention as `fronds/`. */
-export const REMOTES = join('.fougere', 'remotes');
+/** Where `fougere sync` writes a frond another process serves — versioned, since only that process can write it again. */
+export const REMOTES = 'remotes';
 
 /** The table a built project keeps beside its JavaScript, alias → directory relative to it. */
 export const ALIASES = 'aliases.json';

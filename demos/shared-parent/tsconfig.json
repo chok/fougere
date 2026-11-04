@@ -4,6 +4,6 @@
     "noEmit": true,
     "rootDir": "."
   },
-  "include": ["."],
+  "include": [".", ".fougere/names.generated.d.ts"],
   "exclude": ["**/dist", "node_modules"]
 }

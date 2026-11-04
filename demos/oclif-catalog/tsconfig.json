@@ -1,10 +1,10 @@
 {
-  "extends": "../../tsconfig.base.json",
+  "extends": ["@fougere/core/tsconfig", "../../tsconfig.base.json"],
   "compilerOptions": {
     "outDir": "dist",
     "rootDir": ".",
     "module": "ESNext",
     "moduleResolution": "Bundler"
   },
-  "include": ["src", "fronds", "tests", "fougere.config.ts"]
+  "include": ["src", "fronds", "tests", "fougere.config.ts", ".fougere/names.generated.d.ts"]
 }

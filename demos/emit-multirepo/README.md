@@ -9,7 +9,7 @@ pnpm -r build
 
 # once — the contract crosses the boundary, then Ctrl-C the server
 cd blog   && pnpm serve                     # repository A, standing still, :4301
-cd search && pnpm sync                      # writes .fougere/remotes/blog/ — generated, gitignored
+cd search && pnpm sync                      # writes remotes/blog/ — generated, versioned
 
 # three terminals
 pnpm dlx tsx broker.ts                      # the stand-in carrier, :4300
@@ -82,13 +82,13 @@ call, and the facts that leave:
   "facts": [{ "name": "postPublished", "schema": {...} }] }
 ```
 
-`fougere sync` turns the second into a class under `.fougere/remotes/blog/`, and `search`
+`fougere sync` turns the second into a class under `remotes/blog/`, and `search`
 re-exports it into its own `entities/` in one line — the only thing this repository states
 about someone else's fact is that it accepts it:
 
 ```ts
 // search/fronds/search/entities/PostPublished.ts
-export { default } from '../../../.fougere/remotes/blog/entities/PostPublished.js';
+export { default } from '@fronds/blog/entities/PostPublished.js';
 ```
 
 That re-export is not decoration: the boot validates an arriving fact against an entity of a

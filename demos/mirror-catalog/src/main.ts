@@ -16,7 +16,7 @@ const root = join(import.meta.dirname, '..');
 
 // A copy that survives the run would make the second pass unreadable — the first would
 // already have nothing to do. A real mirror keeps its rows; a demo has to start empty.
-rmSync(join(root, '.fougere', 'catalog.db'), { force: true });
+rmSync(join(root, '.data', 'catalog.db'), { force: true });
 
 const partner = await startPartner();
 process.env.PARTNER_URL = partner.url;

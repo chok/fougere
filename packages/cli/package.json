@@ -34,7 +34,8 @@
   },
   "files": [
     "dist",
-    "templates"
+    "templates",
+    "!templates/**/.fougere"
   ],
   "scripts": {
     "build": "rm -rf dist && node scripts/scan.ts && tsc && chmod +x dist/src/bin.js",

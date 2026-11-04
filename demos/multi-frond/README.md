@@ -11,7 +11,7 @@ const CreatePost = Post.omit('id', 'createdAt');
 ```
 
 `sync` is what makes that import resolvable: it asks the remote for its card and
-writes real Entity files under `.fougere/remotes/blog/`. Validation, `pick`/`omit`,
+writes real Entity files under `remotes/blog/`. Validation, `pick`/`omit`,
 Standard Schema — all identical to a local frond, because the schema was rebuilt,
 not stubbed.
 

@@ -1,4 +1,4 @@
-import { defineConfig } from 'vitest/config';
+import { configDefaults, defineConfig } from 'vitest/config';
 
 /**
  * Seven of these thirteen files build a TypeScript program before they assert anything,
@@ -8,6 +8,8 @@ import { defineConfig } from 'vitest/config';
  */
 export default defineConfig({
   test: {
+    // A starter's own test runs in the project it is copied into, where its boot writes `.fougere/`.
+    exclude: [...configDefaults.exclude, 'templates/**'],
     testTimeout: 15_000,
   },
 });

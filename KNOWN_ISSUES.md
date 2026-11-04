@@ -189,7 +189,7 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
   op taking the query bag reads. Stated 2026-10-20.
 - **A SvelteKit page cannot import a frond `fougere sync` wrote** — `applyScaffold`
   (`cli/src/scaffold/Scaffold.ts`) states `@fronds` in `kit.alias`, which names ONE directory, and
-  SvelteKit owns the `paths` of the tsconfig it generates, so the fallback onto `.fougere/remotes/` has
+  SvelteKit owns the `paths` of the tsconfig it generates, so the fallback onto `remotes/` has
   nowhere to be written. The other hosts read a list. Stated 2026-10-20.
 - **`fougere build` compiles what an import reaches, and nothing else** — `compileProject`
   (`compiler/src/compile.ts`) follows the static imports of the config and the statement, so a module

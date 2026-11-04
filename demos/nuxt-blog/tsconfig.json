@@ -10,5 +10,5 @@
     "sourceMap": false,
     "types": ["node"]
   },
-  "include": ["fronds", "fougere.config.ts", "serve-blog.ts", "graphql.ts"]
+  "include": ["fronds", "fougere.config.ts", "serve-blog.ts", "graphql.ts", ".fougere/names.generated.d.ts"]
 }

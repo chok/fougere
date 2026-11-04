@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "tsx main.ts",
     "tunnel": "tsx tunnel.ts",
-    "sync": "fougere sync --name blog --from http://127.0.0.1:4301"
+    "sync": "fougere sync --name blog --from http://127.0.0.1:4301",
+    "typecheck": "tsc -p . --noEmit"
   },
   "dependencies": {
     "@fougere/defaults": "workspace:*",

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import SyncHandler, { entityClassName } from '../fronds/scaffold/handlers/SyncHandler.js';
@@ -41,7 +41,7 @@ describe('remote frond sync', () => {
 
     try {
       await new SyncHandler().execute({ frond: 'blog', from: 'https://example.test/' });
-      const generated = readFileSync(join(root, '.fougere', 'remotes', 'blog', 'entities', 'Post.ts'), 'utf8');
+      const generated = readFileSync(join(root, 'remotes', 'blog', 'entities', 'Post.ts'), 'utf8');
       // The host's `title` names NOTHING: the class takes the already-sanitized name.
       // The string stays present INSIDE the card, as inert data.
       expect(generated).toContain('export class Post extends Card.fromDescriptor<');
@@ -86,7 +86,7 @@ describe('remote frond sync', () => {
 
     try {
       await new SyncHandler().execute({ frond: 'ops', from: 'https://example.test/' });
-      const dir = join(root, '.fougere', 'remotes', 'ops');
+      const dir = join(root, 'remotes', 'ops');
 
       // The facade travels; there is simply no row class to write beside it.
       expect(readFileSync(join(dir, 'handlers', 'HealthHandler.ts'), 'utf8'))
@@ -138,7 +138,7 @@ describe('remote frond sync', () => {
     try {
       await expect(new SyncHandler().execute({ frond: 'blog', from: 'https://example.test' }))
         .rejects.toThrow(/valid facades array/);
-      expect(() => readFileSync(join(root, '.fougere', 'remotes.json'), 'utf8')).toThrow();
+      expect(existsSync(join(root, 'remotes'))).toBe(false);
     } finally {
       rmSync(root, { recursive: true, force: true });
     }
@@ -185,7 +185,7 @@ describe('remote frond sync', () => {
     try {
       const out = await new SyncHandler().execute({ frond: 'blog', from: 'https://example.test' });
       expect(out.entities).toEqual(['Post']);
-      expect(readFileSync(join(root, '.fougere', 'remotes', 'blog', 'entities', 'Post.ts'), 'utf8'))
+      expect(readFileSync(join(root, 'remotes', 'blog', 'entities', 'Post.ts'), 'utf8'))
         .toContain('class Post extends Card.fromDescriptor<');
     } finally {
       rmSync(root, { recursive: true, force: true });
@@ -224,7 +224,7 @@ describe('remote frond sync', () => {
 
     try {
       await new SyncHandler().execute({ frond: 'blog', from: 'https://example.test' });
-      const written = readFileSync(join(root, '.fougere', 'remotes', 'blog', 'facade.ts'), 'utf8');
+      const written = readFileSync(join(root, 'remotes', 'blog', 'facade.ts'), 'utf8');
 
       expect(written).toContain(
         "'post.publish': { errors: ErrorCode.BAD_GATEWAY | ErrorCode.BAD_REQUEST | ErrorCode.CONFLICT"
@@ -232,7 +232,7 @@ describe('remote frond sync', () => {
       );
       // The synthetic interface is a NAMED export, not a default: the module must reach it
       // the way the file actually exports it, or `keyof Handler` is empty and no op compiles.
-      const handler = readFileSync(join(root, '.fougere', 'remotes', 'blog', 'handlers', 'PostHandler.ts'), 'utf8');
+      const handler = readFileSync(join(root, 'remotes', 'blog', 'handlers', 'PostHandler.ts'), 'utf8');
       expect(handler).toContain('export interface PostHandler {');
       expect(written).toContain("'post': import('./handlers/PostHandler.js').PostHandler;");
 
@@ -260,7 +260,7 @@ describe('remote frond sync', () => {
 
     try {
       await new SyncHandler().execute({ frond: 'blog', from: 'https://example.test' });
-      const handler = readFileSync(join(root, '.fougere', 'remotes', 'blog', 'handlers', 'ArticleHandler.ts'), 'utf8');
+      const handler = readFileSync(join(root, 'remotes', 'blog', 'handlers', 'ArticleHandler.ts'), 'utf8');
 
       expect(handler).toContain("import type { Post } from '../entities/Post.js';");
       expect(handler).toContain('list(invocation?: Invocation): Promise<Post[]>;');
@@ -293,7 +293,7 @@ describe('remote frond sync', () => {
     });
 
     try {
-      const dir = join(root, '.fougere', 'remotes', 'blog');
+      const dir = join(root, 'remotes', 'blog');
 
       vi.stubGlobal('fetch', vi.fn(async () => new Response(cardWith(['post', 'ticket']), { status: 200 })));
       await new SyncHandler().execute({ frond: 'blog', from: 'https://example.test' });
@@ -354,7 +354,7 @@ describe('remote frond sync', () => {
 
     try {
       const out = await new SyncHandler().execute({ frond: 'blog', from: 'https://example.test' });
-      const dir = join(root, '.fougere', 'remotes', 'blog');
+      const dir = join(root, 'remotes', 'blog');
 
       expect(out.entities).toEqual(['Post', 'PostPublished']);
       expect(readFileSync(join(dir, 'entities', 'PostPublished.ts'), 'utf8'))

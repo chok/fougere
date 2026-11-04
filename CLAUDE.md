@@ -535,11 +535,11 @@ which is the line — a form IS a set of fields, a call is a facade. An absent m
 resolve, loudly; a STALE one is the silent case, which `fougere check` reports as
 `facade-stale`. Pinned by `compiler/tests/facade.test.ts` and `app/react/tests/facade.test.ts`.
 
-**A scan has a THIRD projection, and it is types** — `compiler/src/scan/doors.ts`, `emitDoors`,
+**A scan has a THIRD projection, and it is types** — `core/src/projection/FacadeModule.ts`, `emitFacade`,
 beside `emitStatement`. The runtime scan cannot serve as one: its operations
 travel in a `Map`, and a `Map` literal widens its key to `string`, so the association between an
-op and its refusals is exactly what TypeScript drops there. An interface keeps it. The file holds
-no value, reaches no bundle, and is rewritten whenever the app starts — `fougere build` writes it
+op and its refusals is exactly what TypeScript drops there. An interface keeps it. Of the file, only
+each `{ address }` reaches a bundle, and it is rewritten whenever the app starts — `fougere build` writes it
 beside the module, the Nuxt module adds a third template, and the Vite plugin writes it from
 `configureServer`, which covers React, Svelte and Vite at once. `fougere sync` writes the same
 module from the CARD: a frond in another repository has no sources here, and the card carries the
@@ -647,7 +647,7 @@ statement: an app that writes its own builds and runs with TypeScript never inst
 import. Pinned by `defaults/tests/statement.test.ts`, `compiler/tests/statement.test.ts`.
 
 **`@fronds/<name>` is resolved by a rule, read where TypeScript reads it** — `fronds/<name>`, then
-`.fougere/remotes/<name>`, the `paths` of `@fougere/core/tsconfig`. A tool that reads `paths` reads
+`remotes/<name>`, the `paths` of `@fougere/core/tsconfig`. A tool that reads `paths` reads
 them there: TypeScript, Next, Vite 8 (`resolve.tsconfigPaths`, set by `fougere()`), Nuxt's pages
 (`prepare:types` writes the line into the tsconfig Nuxt generates). One that does not is handed a
 table at its start — `frondAliases` (`core/src/FrondAliases.ts`), for jiti, Nitro, `fougereTest()`
@@ -698,7 +698,11 @@ POST fallback, the same direction). The other,
 its frond: behind `fronds:` it mounts on the process serving it there, which is why no key
 widens it — what must be everywhere is a frond that is everywhere, which `Extension.fronds`
 already answers. The config is read BEFORE the aliases, because it names the scope they
-are built from. `.fougere/` is the framework's working directory, not user vocabulary.
+are built from. `.fougere/` is the framework's working directory, not user vocabulary: what it holds is
+recomputed from this project's sources, so it is ignored and may be deleted. There is one, at the
+root, since one scan reads every app's fronds: `FACADE` and `NAMES` say where, and no app holds a copy. What cannot be recomputed
+sits outside it — `remotes/`, which only the far side can write again and which is versioned, and
+`fougere.key`, which no one can.
 Pinned by `tests/conventions.test.ts`.
 
 **`fronds:` says what an app is MADE OF, and `extends:` says one thing only** —

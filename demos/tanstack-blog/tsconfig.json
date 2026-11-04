@@ -1,4 +1,5 @@
 {
+  "extends": "@fougere/core/tsconfig",
   "compilerOptions": {
     "target": "ES2022",
     "module": "Node16",
@@ -9,6 +10,5 @@
     "noEmit": true,
     "esModuleInterop": true,
     "skipLibCheck": true
-  },
-  "include": ["fronds", "fougere.config.ts"]
+  }
 }

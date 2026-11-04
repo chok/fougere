@@ -67,7 +67,7 @@ describe('a frond as a terminal', () => {
   }, 60_000);
 
   it('writes a row, and reads it back in another process', async () => {
-    rmSync(join(root, '.fougere'), { recursive: true, force: true });
+    rmSync(join(root, '.data'), { recursive: true, force: true });
     await migrated();
     await fougere('product:create', 'SKU-9', '--name', 'Lamp', '--cents', '2500');
 

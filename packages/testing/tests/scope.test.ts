@@ -23,7 +23,7 @@ describe('the frond a path sits in', () => {
   });
 
   it('takes the innermost one — a synced neighbour lives under a frond too', () => {
-    expect(frondOf('/p/site/fronds/blog/.fougere/remotes/fronds/user/x.test.ts')).toBe('user');
+    expect(frondOf('/p/site/fronds/blog/remotes/fronds/user/x.test.ts')).toBe('user');
   });
 });
 

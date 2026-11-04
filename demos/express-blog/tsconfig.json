@@ -1,4 +1,5 @@
 {
+  "extends": "@fougere/core/tsconfig",
   "compilerOptions": {
     "target": "ES2022",
     "module": "Node16",
@@ -11,6 +12,6 @@
     "skipLibCheck": true,
     "allowImportingTsExtensions": true
   },
-  "include": ["server.ts", "fougere.config.ts", "fronds"],
+  "include": ["server.ts", "fougere.config.ts", "fronds", ".fougere/names.generated.d.ts"],
   "exclude": ["node_modules"]
 }

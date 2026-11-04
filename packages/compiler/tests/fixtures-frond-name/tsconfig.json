@@ -2,7 +2,7 @@
   "compilerOptions": {
     "paths": {
       "@fronds/blog/*": ["./fronds/blog-v2/*"],
-      "@fronds/*": ["./fronds/*", "./.fougere/remotes/*"]
+      "@fronds/*": ["./fronds/*", "./remotes/*"]
     }
   }
 }

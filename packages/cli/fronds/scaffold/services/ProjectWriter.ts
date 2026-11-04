@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { basename, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { type Conventions, DEFAULT_CONVENTIONS } from '@fougere/core';
-import { REMOTES } from '@fougere/core/node';
+import { FACADE, REMOTES } from '@fougere/core/node';
 import type { Plan } from '../../../src/composer/Plan.js';
 import { PackageManager } from '../../../src/scaffold/PackageManager.js';
 import { applyScaffold, settle, type Scaffold } from '../../../src/scaffold/Scaffold.js';
@@ -229,7 +229,7 @@ export default class ProjectWriter {
       progress(`Writing apps/${name} with ${scaffold.create[0]}`);
       await this.shell.create(scaffold.create, dirname(dest), name, manager);
       progress(`Adding Fougere to apps/${name}`);
-      applyScaffold(dest, scaffold, { local: join(wsDir, DEFAULT_CONVENTIONS.fronds), remotes: join(wsDir, REMOTES) });
+      applyScaffold(dest, scaffold, { local: join(wsDir, DEFAULT_CONVENTIONS.fronds), remotes: join(wsDir, REMOTES), facade: join(wsDir, FACADE) });
     }
     cpSync(starter, dest, { recursive: true, filter: (source) => source !== manifest });
     restoreGitignore(dest);

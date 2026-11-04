@@ -6,7 +6,7 @@ import type { Plugin } from 'vite';
 import { NodeRequest, sendNodeResponse } from 'srvx/node';
 import { RUNTIME_PACKAGES } from '@fougere/core/node';
 import { type Conventions, DEFAULT_CONVENTIONS } from '@fougere/core';
-import { frondAliases, projectRootOf } from '@fougere/core/node';
+import { FACADE, frondAliases, projectRootOf } from '@fougere/core/node';
 
 /** The entity names a build must not rename, read off the filesystem. */
 export function entityNamesIn(root: string, conventions: Conventions = DEFAULT_CONVENTIONS): string[] {
@@ -71,8 +71,6 @@ function serveDoors() {
  * Where the facade types land — the same place `fougere build` puts them, so a host that runs the
  * command and one that only starts a dev server read one file and not two.
  */
-const FACADE = '.fougere/facade.generated.ts';
-const NAMES = '.fougere/names.generated.d.ts';
 
 /**
  * The facades this app serves, written when the dev server comes up — one export per address,
@@ -86,10 +84,10 @@ const NAMES = '.fougere/names.generated.d.ts';
  * A scan that fails is not a failure of the dev server: the types fall back to every code there
  * is, which is what a client had before this existed.
  */
-async function writeDoors(app: string, root: string): Promise<void> {
+async function writeDoors(root: string): Promise<void> {
   try {
     const { scanProject, emitStatement } = await import('@fougere/compiler');
-    const { emitFacade, emitNames, frondAliases } = await import('@fougere/core/node');
+    const { emitFacade, emitNames, frondAliases, NAMES } = await import('@fougere/core/node');
     const { setModuleLoader } = await import('@fougere/core/node');
     const { resolveConventions } = await import('@fougere/core');
     const { createJiti } = await import('jiti');
@@ -103,7 +101,7 @@ async function writeDoors(app: string, root: string): Promise<void> {
       alias: await frondAliases(root, resolveConventions()),
     });
     setModuleLoader((filePath: string) => jiti.import(filePath) as Promise<Record<string, unknown>>);
-    const out = join(app, FACADE);
+    const out = join(root, FACADE);
     mkdirSync(dirname(out), { recursive: true });
     const scan = await scanProject(root);
     writeFileSync(out, emitFacade(scan, { outFile: out }));
@@ -113,8 +111,10 @@ async function writeDoors(app: string, root: string): Promise<void> {
     mkdirSync(dirname(statement), { recursive: true });
     writeFileSync(statement, emitStatement(scan, { outFile: statement }));
     // What a config may NAME, from the same scan.
-    writeFileSync(join(app, NAMES), emitNames(scan));
-  } catch { /* a host with no fronds, or a scan that could not run */ }
+    writeFileSync(join(root, NAMES), emitNames(scan));
+  } catch (error) {
+    console.warn(`[fougere] the scan failed, so @fronds/facade was not written: ${(error as Error).message}`);
+  }
 }
 
 export function fougere(options: FougereViteOptions = {}): Plugin {
@@ -128,7 +128,7 @@ export function fougere(options: FougereViteOptions = {}): Plugin {
     name: 'fougere',
     configureServer(server: { config?: { root?: string }; middlewares: { use(handler: ReturnType<typeof serveDoors>): void } }) {
       const root = server.config?.root ?? app;
-      void writeDoors(root, frondsOf(root));
+      void writeDoors(frondsOf(root));
       if (options.serve !== false) server.middlewares.use(serveDoors());
     },
     /**
@@ -137,7 +137,7 @@ export function fougere(options: FougereViteOptions = {}): Plugin {
      * .fougere/facade.generated.ts`, measured on `demos/react-router-blog`.
      */
     async buildStart() {
-      await writeDoors(app, frondsOf(app));
+      await writeDoors(frondsOf(app));
     },
     /** `order. */
     config: {
@@ -162,7 +162,7 @@ export function fougere(options: FougereViteOptions = {}): Plugin {
         // Vite admits BOTH shapes and a host picks one: SvelteKit states an array of
         // `{ find, replacement }`, and spreading an object over it made rolldown refuse the
         // whole plugin — `StringExpected … on BindingViteAliasPluginAlias.replacement`.
-        const facade = join(app, FACADE);
+        const facade = join(frondsOf(app), FACADE);
         config.resolve.alias = Array.isArray(config.resolve.alias)
           ? [...config.resolve.alias, { find: '@fronds/facade', replacement: facade }, ...Object.entries(fronds).map(([find, replacement]) => ({ find, replacement }))]
           : { ...config.resolve.alias, '@fronds/facade': facade, ...fronds };

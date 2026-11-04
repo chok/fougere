@@ -38,11 +38,8 @@ export type FacadePath =
   | { kind: 'paths'; file: string; compilerOptions?: Record<string, unknown> }
   | { kind: 'kitAlias'; file: string };
 
-/** Where a host writes the facade module, from the app's own directory. */
-const FACADE = './.fougere/facade.generated.ts';
-
-/** Fougere's part, over a shell already written in `dir`, for a project whose fronds sit in `fronds` beside `remotes`. */
-export function applyScaffold(dir: string, scaffold: Scaffold, fronds: { local: string; remotes: string }): void {
+/** Fougere's part, over a shell already written in `dir`, for a project whose fronds sit in `local` beside `remotes` and `facade`. */
+export function applyScaffold(dir: string, scaffold: Scaffold, fronds: { local: string; remotes: string; facade: string }): void {
   for (const path of scaffold.remove ?? []) rmSync(join(dir, path), { recursive: true, force: true });
   asMember(dir);
   addDependencies(dir, scaffold);
@@ -95,13 +92,13 @@ function wire(dir: string, gesture: Wire): void {
  * The alias SvelteKit copies into the tsconfig it generates, stated in `sveltekit()`'s own options.
  * An alias names ONE directory, so a frond `fougere sync` wrote is not reached from a SvelteKit page.
  */
-function aliasFacade(path: string, fronds: { local: string }): void {
+function aliasFacade(path: string, fronds: { local: string; facade: string }): void {
   const source = readFileSync(path, 'utf8');
   const mod = parseModule(source);
   const plugins = getDefaultExportOptions(mod).plugins as { $callee?: string; $args: Record<string, unknown>[] }[];
   const kit = plugins.find((plugin) => plugin.$callee === 'sveltekit')?.$args[0];
   if (!kit) throw new Error(`${path} calls no sveltekit() — the host's tool changed what it writes.`);
-  kit.alias = { ...(kit.alias as Record<string, string> | undefined), '@fronds/facade': FACADE, '@fronds': relativeTo(path, fronds.local) };
+  kit.alias = { ...(kit.alias as Record<string, string> | undefined), '@fronds/facade': relativeTo(path, fronds.facade), '@fronds': relativeTo(path, fronds.local) };
   write(path, source, mod);
 }
 
@@ -117,9 +114,9 @@ function write(path: string, source: string, mod: ReturnType<typeof parseModule>
  * `create-vite` sets `erasableSyntaxOnly`, which refuses the constructor a handler is injected through.
  * The shell's comments and its own paths stay as they were.
  */
-function pointAtFacade(path: string, fronds: { local: string; remotes: string }, compilerOptions: Record<string, unknown> = {}): void {
+function pointAtFacade(path: string, fronds: { local: string; remotes: string; facade: string }, compilerOptions: Record<string, unknown> = {}): void {
   const settings: [string[], unknown][] = [
-    [['compilerOptions', 'paths', '@fronds/facade'], [FACADE]],
+    [['compilerOptions', 'paths', '@fronds/facade'], [relativeTo(path, fronds.facade)]],
     [['compilerOptions', 'paths', '@fronds/*'], [fronds.local, fronds.remotes].map((dir) => `${relativeTo(path, dir)}/*`)],
     ...Object.entries(compilerOptions).map(([key, value]): [string[], unknown] => [['compilerOptions', key], value]),
   ];

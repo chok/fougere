@@ -41,6 +41,8 @@ describe('workspace project scaffold', () => {
 
     try {
       new ProjectWriter().createWorkspace(root, 'forest', new PackageManager('npm'));
+      expect(readFileSync(join(root, '.gitignore'), 'utf8').split('\n')).toContain('.fougere');
+      expect(existsSync(join(root, '.fougere'))).toBe(false);
       const pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')) as { packageManager?: string; workspaces?: string[]; dependencies: Record<string, string> };
 
       expect(pkg.workspaces).toBeUndefined();
@@ -261,8 +263,8 @@ describe('an app is the host\u2019s own shell, and Fougere adds its part', () =>
       const paths = JSON.parse(read('tsconfig.json')).compilerOptions.paths;
       expect(paths).toEqual({
         '@/*': ['./*'],
-        '@fronds/facade': ['./.fougere/facade.generated.ts'],
-        '@fronds/*': ['../../fronds/*', '../../.fougere/remotes/*'],
+        '@fronds/facade': ['../../.fougere/facade.generated.ts'],
+        '@fronds/*': ['../../fronds/*', '../../remotes/*'],
       });
       expect(read('app/page.tsx')).toContain("import './welcome.css'");
     } finally { dispose(); }
@@ -287,7 +289,7 @@ describe('an app is the host\u2019s own shell, and Fougere adds its part', () =>
     const { read, dispose } = await app('svelte');
     try {
       expect(read('vite.config.ts')).toMatch(/plugins: \[\s*fougere\(\),\s*sveltekit\(/);
-      expect(read('vite.config.ts')).toMatch(/alias: \{\s*'@fronds\/facade': '\.\/\.fougere\/facade\.generated\.ts',\s*'@fronds': '\.\.\/\.\.\/fronds'\s*\}/);
+      expect(read('vite.config.ts')).toMatch(/alias: \{\s*'@fronds\/facade': '\.\.\/\.\.\/\.fougere\/facade\.generated\.ts',\s*'@fronds': '\.\.\/\.\.\/fronds'\s*\}/);
       expect(read('vite.config.ts')).toContain('adapter: adapter()');
       expect(read('tsconfig.json')).not.toContain('@fronds/facade');
       expect(read('src/routes/+page.svelte')).toContain('Your app is running on');

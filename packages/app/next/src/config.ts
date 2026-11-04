@@ -5,10 +5,9 @@ import TerserPlugin from 'terser-webpack-plugin';
 import type { NextConfig } from 'next';
 
 import { resolveConventions } from '@fougere/core';
-import { frondNamesOf, projectRootOf, REMOTES, RUNTIME_PACKAGES } from '@fougere/core/node';
+import { FACADE, frondNamesOf, projectRootOf, REMOTES, RUNTIME_PACKAGES } from '@fougere/core/node';
 
-/** Where the facades land, and what a page imports them by. */
-const FACADE = '.fougere/facade.generated.ts';
+/** What a page imports its facades by. */
 const SPECIFIER = '@fronds/facade';
 /**
  * The facades this app serves, written when the config is read.
@@ -18,10 +17,10 @@ const SPECIFIER = '@fronds/facade';
  * sources, so a TS-aware loader is installed first — without it `scanProject` throws and the
  * module is silently never written.
  */
-async function writeFacades(root: string, app: string): Promise<void> {
+async function writeFacades(root: string): Promise<void> {
   try {
     const { scanProject, emitStatement } = await import('@fougere/compiler');
-    const { emitFacade, frondAliases } = await import('@fougere/core/node');
+    const { emitFacade, emitNames, frondAliases, NAMES } = await import('@fougere/core/node');
     const { setModuleLoader } = await import('@fougere/core/node');
     const { resolveConventions } = await import('@fougere/core');
     const { createJiti } = await import('jiti');
@@ -32,7 +31,7 @@ async function writeFacades(root: string, app: string): Promise<void> {
     });
     setModuleLoader((filePath: string) => jiti.import(filePath) as Promise<Record<string, unknown>>);
 
-    const out = join(app, FACADE);
+    const out = join(root, FACADE);
     mkdirSync(dirname(out), { recursive: true });
     const scan = await scanProject(root);
     writeFileSync(out, emitFacade(scan, { outFile: out }));
@@ -41,13 +40,17 @@ async function writeFacades(root: string, app: string): Promise<void> {
     const statement = join(root, '.fougere', 'fronds.generated.ts');
     mkdirSync(dirname(statement), { recursive: true });
     writeFileSync(statement, emitStatement(scan, { outFile: statement }));
-  } catch { /* a host with no fronds, or a scan that could not run */ }
+    // What a config may NAME, from the same scan.
+    writeFileSync(join(root, NAMES), emitNames(scan));
+  } catch (error) {
+    console.warn(`[fougere] the scan failed, so @fronds/facade was not written: ${(error as Error).message}`);
+  }
 }
 
 /**
  * The fronds are found on their own (`projectRootOf`) — `root` is for when they sit elsewhere, the
- * same option `fougere()` takes for Vite and `fougere:` for Nuxt. The facade is written in the app,
- * where its tsconfig looks for it, and the boot learns the root through `FOUGERE_ROOT`.
+ * same option `fougere()` takes for Vite and `fougere:` for Nuxt. The facade is written at the root
+ * beside the statement, and the boot learns the root through `FOUGERE_ROOT`.
  */
 /** The phase a production server starts in — it serves what its build wrote, and writes nothing. */
 const PRODUCTION_SERVER = 'phase-production-server';
@@ -58,7 +61,7 @@ export function withFougere(config: NextConfig = {}, options: { root?: string } 
     const root = options.root ? resolve(app, options.root) : projectRootOf(app);
     process.env.FOUGERE_ROOT = root;
     // Writing scans, and a scan loads TypeScript: `next start` evaluates this file too.
-    if (phase !== PRODUCTION_SERVER) void writeFacades(root, app);
+    if (phase !== PRODUCTION_SERVER) void writeFacades(root);
 
     return nextConfigOf(config, { root, app });
   };
@@ -89,7 +92,7 @@ export function nextConfigOf(config: NextConfig, { root, app }: { root: string; 
       // `paths` reaches Turbopack, but a `.js` request through it never finds the `.ts` beside it.
       resolveAlias: {
         ...config.turbopack?.resolveAlias,
-        [SPECIFIER]: `./${FACADE}`,
+        [SPECIFIER]: `./${relative(app, join(root, FACADE))}`,
         [`${scope}/*.js`]: `./${relative(app, local)}/*.ts`,
         ...Object.fromEntries(elsewhere.map(([name, dir]) => [`${scope}/${name}/*.js`, `./${relative(app, dir)}/*.ts`])),
       },
@@ -104,7 +107,7 @@ export function nextConfigOf(config: NextConfig, { root, app }: { root: string; 
       // `extensionAlias` never reaches, so `@fronds/blog/entities/Post.js` found no `.ts` there.
       // The facade first — it is the one specifier under `@fronds` that names no directory.
       base.resolve.alias = {
-        [SPECIFIER]: join(app, FACADE),
+        [SPECIFIER]: join(root, FACADE),
         ...base.resolve.alias,
         ...Object.fromEntries(elsewhere.map(([name, dir]) => [`${scope}/${name}`, dir])),
         [scope]: local,

@@ -13,7 +13,7 @@ import { join } from 'node:path';
 const ROOT = import.meta.dirname;
 const REMOTE_DIR = join(ROOT, 'remote-blog');
 const CONSUMER_DIR = join(ROOT, 'consumer');
-const SYNCED_DIR = join(CONSUMER_DIR, '.fougere', 'remotes');
+const SYNCED_DIR = join(CONSUMER_DIR, 'remotes');
 const PORT = 4099; // Use non-standard port to avoid conflicts
 
 let server: ChildProcess | null = null;

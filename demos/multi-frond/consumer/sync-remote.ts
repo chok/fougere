@@ -49,7 +49,7 @@ async function sync() {
   if (rpc.error) throw new Error(`Remote error: ${rpc.error.message}`);
 
   for (const frond of rpc.result!.fronds) {
-    const frondDir = join(CWD, '.fougere', 'remotes', frond.name);
+    const frondDir = join(CWD, 'remotes', frond.name);
     const entitiesDir = join(frondDir, 'entities');
     mkdirSync(entitiesDir, { recursive: true });
 
@@ -101,21 +101,7 @@ async function sync() {
     }, null, 2) + '\n');
   }
 
-  // Write .fougere/remotes.json — read by @fougere/nuxt for auto-aliasing
-  const registryPath = join(CWD, '.fougere', 'remotes.json');
-  let registry: Record<string, { url: string; path: string }> = {};
-  if (existsSync(registryPath)) {
-    try { registry = JSON.parse(readFileSync(registryPath, 'utf-8')); } catch { /* reset */ }
-  }
-  for (const frond of rpc.result!.fronds) {
-    registry[frond.name] = {
-      url: REMOTE_URL,
-      path: join(CWD, '.fougere', 'remotes', frond.name),
-    };
-  }
-  writeFileSync(registryPath, JSON.stringify(registry, null, 2) + '\n');
-
-  console.log('Done. Remote schemas synced to .fougere/remotes/');
+  console.log('Done. Remote schemas synced to remotes/');
 }
 
 sync().catch((err) => {

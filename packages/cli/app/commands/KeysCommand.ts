@@ -1,4 +1,4 @@
-import { mkdir, readFile, writeFile, appendFile, access } from 'node:fs/promises';
+import { readFile, writeFile, appendFile, access } from 'node:fs/promises';
 import { join } from 'node:path';
 import { generateKeyPair } from '@fougere/core/node';
 import type { App } from '@fougere/core';
@@ -31,7 +31,6 @@ export default class KeysCommand {
     }
 
     const { privateKey, publicKey } = generateKeyPair();
-    await mkdir(join(process.cwd(), '.fougere'), { recursive: true });
     await writeFile(path, privateKey, { mode: 0o600 });
     await ignore(ROOT_KEY);
 

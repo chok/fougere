@@ -14,12 +14,12 @@ import type { Nuxt } from '@nuxt/schema';
 import { Fronds, orderSeeds, serves, type ScanResult } from '@fougere/core';
 import { prefixOf } from '@fougere/app';
 import { frondPackage, resolveConventions, keyedFrondEntries, statesModule, type Conventions } from '@fougere/core';
-import { emitFacade, emitNames, frondAliases, frondNamesOf, REMOTES, statementFileIn, statementIn, setModuleLoader, loadNearestConfig, configFileNear, projectRootOf, remotesOf } from '@fougere/core/node';
+import { emitFacade, emitNames, frondAliases, frondNamesOf, NAMES, REMOTES, statementFileIn, statementIn, setModuleLoader, loadNearestConfig, configFileNear, projectRootOf, remotesOf } from '@fougere/core/node';
 import { declaresStorage } from '@fougere/defaults';
 import type { SeedEntry, FougereConfig } from '@fougere/core';
 import { createJiti } from 'jiti';
-import { resolve, relative, join } from 'node:path';
-import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { dirname, resolve, relative, join } from 'node:path';
+import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 
 export interface FougereModuleOptions {
   /** Where `fronds/` lives, relative to the app's rootDir — found on its own (`projectRootOf`), so written only when it is elsewhere. */
@@ -63,7 +63,7 @@ const module = defineNuxtModule<FougereModuleOptions>({
     const runtimeResolve = (...path: string[]) =>
       resolveModule('./runtime', ...path);
     const rootDir = nuxt.options.rootDir;
-    // Fronds may live at the workspace root (app under apps/*); config/.fougere stay app-local.
+    // Fronds may live at the workspace root (app under apps/*).
     const scanRoot = options.root ? resolve(rootDir, options.root) : projectRootOf(rootDir);
     // The runtime app (fougereApp) scans fronds too; hand it the same root via
     // env (the Nitro dev worker inherits the parent env, like FORCE_COLOR above).
@@ -211,13 +211,13 @@ const module = defineNuxtModule<FougereModuleOptions>({
     // letter, which is the only reason it was findable at all.
     const designated = [
       ...fronds.flatMap((frond) => frond.entities.map((e) => (e.entityClass as unknown as { name: string }).name)),
-      ...(await syncedEntityNames(rootDir, conventions)),
+      ...syncedEntityNames(scanRoot, conventions),
     ];
     const entityNames = [...new Set(designated)];
     if (Object.keys(remotesOf(config)).length > 0 && entityNames.length === 0) {
       useLogger('fougere').warn(
         'fougere: a frond runs elsewhere, and its entity names are unknown here, so the production build may rename them '
-        + 'and calls to it would fail. Run `fougere sync` to bring its entities into .fougere/.',
+        + 'and calls to it would fail. Run `fougere sync` to bring its entities into remotes/.',
       );
     }
     if (entityNames.length > 0) {
@@ -313,11 +313,9 @@ const module = defineNuxtModule<FougereModuleOptions>({
     // neighbours designate classes by string, and a string is what nothing else here reads back.
     // The sources are the config's own keys: no scan can find them, and a project with none
     // states none.
-    addTemplate({
-      filename: 'fougere-names.d.ts',
-      write: true,
-      getContents: () => emitNames(scan),
-    });
+    const names = join(scanRoot, NAMES);
+    mkdirSync(dirname(names), { recursive: true });
+    writeFileSync(names, emitNames(scan));
 
     // ── 6b. Boot plugin (virtual — lives in .nuxt/) ───
     // Planted by the plugin when the scan found them; a stated `fronds.ts` carries its own.
@@ -379,25 +377,16 @@ async function scanned(root: string, only: string[] | undefined, conventions: Co
   return { scan, statement: compiler.emitStatement(scan) };
 }
 
-async function syncedEntityNames(rootDir: string, conventions: Conventions): Promise<string[]> {
-  const remotesPath = resolve(rootDir, '.fougere', 'remotes.json');
-  if (!existsSync(remotesPath)) return [];
-  try {
-    const remotes = JSON.parse(readFileSync(remotesPath, 'utf-8')) as Record<string, { path: string }>;
-    const names: string[] = [];
-    for (const { path } of Object.values(remotes)) {
-      const dir = resolve(path, conventions.dirs.entities);
-      if (!existsSync(dir)) continue;
-      for (const file of readdirSync(dir)) {
-        const name = file.replace(/\.(ts|js|tsx)$/, '');
-        if (name !== file) names.push(name);
-      }
-    }
+function syncedEntityNames(root: string, conventions: Conventions): string[] {
+  const remotes = resolve(root, REMOTES);
+  if (!existsSync(remotes)) return [];
 
-    return names;
-  } catch {
-    return [];
-  }
+  return readdirSync(remotes).flatMap((remote) => {
+    const entities = resolve(remotes, remote, conventions.dirs.entities);
+    const files = existsSync(entities) ? readdirSync(entities) : [];
+
+    return files.filter((file) => /\.(ts|js|tsx)$/.test(file)).map((file) => file.replace(/\.(ts|js|tsx)$/, ''));
+  });
 }
 
 export function generateBootPlugin(

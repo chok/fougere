@@ -38,6 +38,9 @@ function declaredIn(frond: FrondDescriptor): Set<string> {
   ]);
 }
 
+/** Where the names sit, from the project's root: `include` of `@fougere/core/tsconfig` reads them there, beside the config. */
+export const NAMES = '.fougere/names.generated.d.ts';
+
 export function emitNames(scan: ScanResult): string {
   const fronds = new Set<string>();
   const entities = new Set<string>();

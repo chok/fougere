@@ -8,6 +8,5 @@
     "declaration": false,
     "declarationMap": false,
     "sourceMap": false
-  },
-  "include": ["fronds", "fougere.config.ts"]
+  }
 }

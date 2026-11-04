@@ -1,9 +1,9 @@
 {
-  "extends": "../../tsconfig.base.json",
+  "extends": ["@fougere/core/tsconfig", "../../tsconfig.base.json"],
   "compilerOptions": {
     "outDir": "dist",
     "rootDir": ".",
     "noEmit": true
   },
-  "include": ["src", "fronds", "fougere.config.ts"]
+  "include": ["src", "fronds", "fougere.config.ts", ".fougere/names.generated.d.ts"]
 }

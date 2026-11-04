@@ -1,0 +1,15 @@
+{
+  "name": "@fronds/blog",
+  "version": "0.0.0-synced",
+  "type": "module",
+  "fougere": {
+    "frond": "blog",
+    "synced": true,
+    "source": "http://localhost:4099"
+  },
+  "exports": {
+    ".": "./index.ts",
+    "./entities/*": "./entities/*.ts",
+    "./package.json": "./package.json"
+  }
+}

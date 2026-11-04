@@ -2,13 +2,13 @@
  * The one line this repository writes about someone else's fact: **it accepts it**.
  *
  * The SHAPE is no longer here. `fougere sync` fetched it from the blog's identity card
- * (`pnpm sync`) and wrote `.fougere/remotes/blog/entities/PostPublished.ts` — generated,
- * gitignored, regenerated whenever the emitter changes. This file re-exports it into
+ * (`pnpm sync`) and wrote `remotes/blog/entities/PostPublished.ts` — generated, versioned,
+ * and written again whenever the emitter changes. This file re-exports it into
  * `search`'s own `entities/`, which is what makes the validator apply: the boot validates an
- * arriving fact against an entity of a scanned frond, and a package under `.fougere/`
+ * arriving fact against an entity of a scanned frond, and a copy under `remotes/`
  * is not one.
  *
- * `@fronds/blog` and not a relative path into `.fougere/`: the name means the same thing
+ * `@fronds/blog` and not a relative path into `remotes/`: the name means the same thing
  * whether that frond is on this disk or was fetched from a card, and only the name
  * survives the folder moving.
  *
