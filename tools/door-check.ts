@@ -208,6 +208,11 @@ async function open(host: string, name: PackageManager['name'], tarball: Record<
       // the group is already gone
     }
   }
+
+  // The starter's own test runs here, and never in `templates/`: it boots, and a boot writes `.fougere/`.
+  console.log(`${where}: running the project's own test`);
+  shell(manager.script('test'), app);
+  console.log(`${where}: the project's own test passes`);
 }
 
 try {
