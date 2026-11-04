@@ -20,6 +20,13 @@ const entry = [
   'index.ts',
 ];
 
+const demo = {
+  entry: [...entry, '*.ts', 'src/**/*.ts', 'tests/**/*.ts', 'apps/**/*.{ts,tsx,vue,svelte}', 'cases/**/*.ts', 'server/**/*.ts'],
+  // Reached by what they serve, never imported here: a driver, a loader, a key of `fronds:` (a string),
+  // a Worker's own scheme, and what a host's tooling reads or brings.
+  ignoreDependencies: ['better-sqlite3', 'jiti', '@fougere/log', 'cloudflare', /^nitropack/, /^@iconify-json\//, /^@types\//, /tailwindcss/],
+};
+
 const config: KnipConfig = {
   /**
    * `files` is deliberately absent, and it is the one verdict knip cannot reach
@@ -51,10 +58,28 @@ const config: KnipConfig = {
      * and reporting it as `unlisted` costs the one finding class this step is kept for.
      */
     'packages/testing': { entry, ignoreDependencies: ['graphql'] },
+    // A demo and the site run their files by name from a script.
+    'demos/*': demo,
+    'demos/cloudflare-d1/web': demo,
+    'demos/multi-frond/remote-blog': demo,
+    'demos/multi-frond/consumer': demo,
+    site: demo,
   },
   // Copied, never imported: a scaffold template is source for an app knip is not
   // looking at. Test fixtures are fronds too, loaded by the scan under test.
-  ignore: ['packages/cli/templates/**', '**/tests/fixtures*/**'],
+  ignore: [
+    'packages/cli/templates/**',
+    '**/tests/fixtures*/**',
+    // What a host generates names what the host installed, which no package here lists.
+    '**/.nuxt/**',
+    '**/.output/**',
+    '**/.next/**',
+    '**/.svelte-kit/**',
+    '**/.react-router/**',
+    '**/.fougere/**',
+  ],
+  // Resolved by an alias each host sets, never by a package.
+  ignoreDependencies: ['@fronds/facade'],
 };
 
 export default config;
