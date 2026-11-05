@@ -1,5 +1,25 @@
 # fougere-demo-transport-chain
 
+## 0.0.1-alpha.5
+
+### Patch Changes
+
+- Updated dependencies [4c0ebd2]
+- Updated dependencies [aa2be0c]
+- Updated dependencies [565ca0f]
+- Updated dependencies [50e1b8d]
+- Updated dependencies [85aff54]
+- Updated dependencies [2d67956]
+- Updated dependencies [c5c3105]
+- Updated dependencies [2d67956]
+- Updated dependencies [85aff54]
+  - @fougere/schema@0.30.0-alpha.0
+  - @fougere/core@0.30.0-alpha.0
+  - @fougere/compiler@0.30.0-alpha.0
+  - @fougere/defaults@0.30.0-alpha.0
+  - @fougere/log@0.30.0-alpha.0
+  - @fougere/container@0.30.0-alpha.0
+
 ## 0.0.1-alpha.4
 
 ### Patch Changes

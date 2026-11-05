@@ -1,6 +1,6 @@
 {
   "name": "@fougere/container",
-  "version": "0.29.0-alpha.3",
+  "version": "0.30.0-alpha.0",
   "description": "Fougere's DI container: resolution by type, wired from the AST scan. Zero dependencies.",
   "keywords": [
     "fougere",

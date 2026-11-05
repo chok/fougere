@@ -1,5 +1,23 @@
 # @fougere/next
 
+## 0.30.0-alpha.0
+
+### Minor Changes
+
+- 85aff54: `fougere sync` writes `remotes/<name>/` at the root of the project, and that directory is committed: only the far side can write it again, so a fresh clone compiles with no host running. `.fougere/remotes.json` is gone, since its path follows from the name and nothing read its url. Move `.fougere/remotes/` to `remotes/`, and change `.fougere/remotes/` to `remotes/` in any `paths` of your own. `SyncedRemote` has no `url` any more.
+- 85aff54: A project has one `.fougere/`, at its root: the facade and the names are written there by every host, and no app holds a copy, so `fougere build` is enough before `tsc` in a CI. In an app's tsconfig, `./.fougere/facade.generated.ts` becomes `../../.fougere/facade.generated.ts`. `@fougere/core/tsconfig` now states `include` — the fronds, the config and the names — so a wrong name in `fougere.config.ts` no longer compiles: remove your own `include` to get it. Next writes the names too, and a scan that fails under Vite or Next now says so.
+
+### Patch Changes
+
+- c5c3105: `writeDerived(root)` writes the statement, the facade and the names from one scan, each file renamed into place. Vite and Next call it rather than each holding a copy.
+- Updated dependencies [565ca0f]
+- Updated dependencies [50e1b8d]
+- Updated dependencies [85aff54]
+- Updated dependencies [2d67956]
+- Updated dependencies [85aff54]
+  - @fougere/core@0.30.0-alpha.0
+  - @fougere/app@0.30.0-alpha.0
+
 ## 0.29.0-alpha.3
 
 ### Patch Changes

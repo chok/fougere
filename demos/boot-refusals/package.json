@@ -1,6 +1,6 @@
 {
   "name": "fougere-demo-boot-refusals",
-  "version": "0.0.3-alpha.4",
+  "version": "0.0.3-alpha.5",
   "private": true,
   "type": "module",
   "scripts": {

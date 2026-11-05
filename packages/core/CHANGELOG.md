@@ -1,5 +1,24 @@
 # @fougere/core
 
+## 0.30.0-alpha.0
+
+### Minor Changes
+
+- 565ca0f: An operation written by hand can state what it refuses: `{ params: {…}, output: Post, errors: [ErrorCode.CONFLICT] }`. The list reaches the card and OpenAPI as a scanned one does.
+- 50e1b8d: A written statement names each file from the root of the project, not from the disk that scanned it, so a build carries no path of the machine that ran it. A `ScanResult` states its `root`.
+- 85aff54: `fougere sync` writes `remotes/<name>/` at the root of the project, and that directory is committed: only the far side can write it again, so a fresh clone compiles with no host running. `.fougere/remotes.json` is gone, since its path follows from the name and nothing read its url. Move `.fougere/remotes/` to `remotes/`, and change `.fougere/remotes/` to `remotes/` in any `paths` of your own. `SyncedRemote` has no `url` any more.
+- 85aff54: A project has one `.fougere/`, at its root: the facade and the names are written there by every host, and no app holds a copy, so `fougere build` is enough before `tsc` in a CI. In an app's tsconfig, `./.fougere/facade.generated.ts` becomes `../../.fougere/facade.generated.ts`. `@fougere/core/tsconfig` now states `include` — the fronds, the config and the names — so a wrong name in `fougere.config.ts` no longer compiles: remove your own `include` to get it. Next writes the names too, and a scan that fails under Vite or Next now says so.
+
+### Patch Changes
+
+- 2d67956: An operation answering an entity beside another type (`Promise<Account | Receipt>`, `Promise<Account | string>`) refuses the boot with `output-contract-ambiguous`. It had no view, so it left whole, a `writeOnly` field included. `Promise<Account | null>` is unchanged, and `operations:` in `frond.config.ts` may state the output.
+- Updated dependencies [4c0ebd2]
+- Updated dependencies [aa2be0c]
+  - @fougere/schema@0.30.0-alpha.0
+  - @fougere/container@0.30.0-alpha.0
+  - @fougere/graph@0.30.0-alpha.0
+  - @fougere/registry@0.30.0-alpha.0
+
 ## 0.29.0-alpha.3
 
 ### Minor Changes

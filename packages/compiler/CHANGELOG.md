@@ -1,5 +1,14 @@
 # @fougere/compiler
 
+## 0.30.0-alpha.0
+
+### Minor Changes
+
+- 50e1b8d: A written statement names each file from the root of the project, not from the disk that scanned it, so a build carries no path of the machine that ran it. A `ScanResult` states its `root`.
+- 2d67956: An operation answering an entity beside another type (`Promise<Account | Receipt>`, `Promise<Account | string>`) refuses the boot with `output-contract-ambiguous`. It had no view, so it left whole, a `writeOnly` field included. `Promise<Account | null>` is unchanged, and `operations:` in `frond.config.ts` may state the output.
+- c5c3105: `writeDerived(root)` writes the statement, the facade and the names from one scan, each file renamed into place. Vite and Next call it rather than each holding a copy.
+- 2d67956: `Fact<A | B>` and `Pipe<A | B>` refuse the boot with `fact-contract-ambiguous`. A binding names one fact, so such a parameter listened to a name nothing could announce, and was never called.
+
 ## 0.29.0-alpha.3
 
 ## 0.29.0-alpha.2

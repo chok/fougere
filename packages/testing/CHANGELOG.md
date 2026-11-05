@@ -1,5 +1,30 @@
 # @fougere/testing
 
+## 0.30.0-alpha.0
+
+### Minor Changes
+
+- 85aff54: `fougere sync` writes `remotes/<name>/` at the root of the project, and that directory is committed: only the far side can write it again, so a fresh clone compiles with no host running. `.fougere/remotes.json` is gone, since its path follows from the name and nothing read its url. Move `.fougere/remotes/` to `remotes/`, and change `.fougere/remotes/` to `remotes/` in any `paths` of your own. `SyncedRemote` has no `url` any more.
+
+### Patch Changes
+
+- Updated dependencies [4c0ebd2]
+- Updated dependencies [aa2be0c]
+- Updated dependencies [565ca0f]
+- Updated dependencies [50e1b8d]
+- Updated dependencies [85aff54]
+- Updated dependencies [2d67956]
+- Updated dependencies [c5c3105]
+- Updated dependencies [2d67956]
+- Updated dependencies [85aff54]
+  - @fougere/schema@0.30.0-alpha.0
+  - @fougere/core@0.30.0-alpha.0
+  - @fougere/compiler@0.30.0-alpha.0
+  - @fougere/app@0.30.0-alpha.0
+  - @fougere/defaults@0.30.0-alpha.0
+  - @fougere/transport-http@0.30.0-alpha.0
+  - @fougere/container@0.30.0-alpha.0
+
 ## 0.29.0-alpha.3
 
 ### Patch Changes

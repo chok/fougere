@@ -1,5 +1,13 @@
 # @fougere/schema
 
+## 0.30.0-alpha.0
+
+### Patch Changes
+
+- 4c0ebd2: A descriptor's `enum` holds strings and numbers. It was typed `null[]`, so an entity `fougere sync` wrote from a card with a `oneOf` field did not compile.
+- aa2be0c: A `writeOnly` field inside `json(Entity)` no longer leaves in an answer, at any depth. `json()` writes `writeOnly: true` on the property, so a card carries it, and a write keeps the field.
+  - @fougere/registry@0.30.0-alpha.0
+
 ## 0.29.0-alpha.3
 
 ### Minor Changes
