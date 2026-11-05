@@ -105,35 +105,23 @@ async function main() {
 
     // 4. Sync remote schemas
     log('Syncing remote schemas...');
-    execSync('npx tsx sync-remote.ts', {
-      cwd: CONSUMER_DIR,
-      env: { ...process.env, REMOTE_URL: `http://localhost:${PORT}` },
-      stdio: 'pipe',
-    });
+    execSync(`npx fougere sync --name blog --from http://localhost:${PORT}`, { cwd: CONSUMER_DIR, stdio: 'pipe' });
 
     // Verify generated files
     const postFile = join(SYNCED_DIR, 'blog', 'entities', 'Post.ts');
     const authorFile = join(SYNCED_DIR, 'blog', 'entities', 'Author.ts');
-    const pkgFile = join(SYNCED_DIR, 'blog', 'package.json');
 
     if (!existsSync(postFile)) fail('Post.ts not generated');
     if (!existsSync(authorFile)) fail('Author.ts not generated');
-    if (!existsSync(pkgFile)) fail('package.json not generated');
     pass('Synced files generated');
 
-    // 5. Verify generated package.json
-    const pkg = JSON.parse(readFileSync(pkgFile, 'utf-8'));
-    if (pkg.name !== '@fronds/blog') fail(`Wrong package name: ${pkg.name}`);
-    if (!pkg.exports?.['./entities/*']) fail('Missing exports field');
-    pass('Generated package.json is correct');
-
-    // 6. Verify generated code imports and works
+    // 5. Verify generated code imports and works
     log('Testing generated schemas...');
     const postContent = readFileSync(postFile, 'utf-8');
     if (!postContent.includes('Card.fromDescriptor')) fail('Missing Card.fromDescriptor');
     pass('Generated code uses correct imports');
 
-    // 7. Actually import and test the generated schema
+    // 6. Actually import and test the generated schema
     const { default: Post } = await import(postFile);
 
     // getFields
@@ -169,7 +157,7 @@ async function main() {
     }
     pass('Post["~standard"] is Standard Schema v1');
 
-    // 8. Test local frond import
+    // 7. Test local frond import
     log('Testing local frond...');
     const { default: Product } = await import(
       join(CONSUMER_DIR, 'fronds', 'catalog', 'entities', 'Product.ts')

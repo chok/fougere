@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "remote": "cd remote-blog && tsx server.ts",
-    "sync": "cd consumer && REMOTE_URL=http://localhost:4001 tsx sync-remote.ts",
+    "sync": "pnpm -C consumer sync",
     "dev": "cd consumer && pnpm exec nuxt dev --port 3002",
     "test": "tsx test.ts",
     "typecheck": "tsc --noEmit -p ."
