@@ -49,7 +49,6 @@
   "dependencies": {
     "@fougere/app": "workspace:*",
     "@fougere/core": "workspace:*",
-    "jiti": "^2.7.0",
     "terser-webpack-plugin": "^5.3.14"
   },
   "peerDependenciesMeta": {

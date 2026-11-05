@@ -38,7 +38,6 @@
   "dependencies": {
     "@fougere/app": "workspace:*",
     "@fougere/core": "workspace:*",
-    "jiti": "^2.7.0",
     "srvx": "^1.0.5",
     "terser": "^5.44.0"
   },

@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "sync": "tsx sync-remote.ts",
+    "sync": "fougere sync --name blog --from http://localhost:4001",
     "dev": "nuxt dev apps/nuxt --port 3002",
     "build:synced": "nuxt build apps/nuxt",
     "typecheck": "tsc -p ."
@@ -15,5 +15,8 @@
     "@fougere/nuxt": "workspace:*",
     "nuxt": "^4.5.1",
     "@fougere/container": "workspace:*"
+  },
+  "devDependencies": {
+    "@fougere/cli": "workspace:*"
   }
 }

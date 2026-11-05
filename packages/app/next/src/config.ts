@@ -1,6 +1,6 @@
 /** `withFougere(config)` — what Next has to be told so a Fougere app builds. */
-import { existsSync, mkdirSync, readdirSync, writeFileSync } from 'node:fs';
-import { dirname, join, relative, resolve } from 'node:path';
+import { existsSync, readdirSync } from 'node:fs';
+import { join, relative, resolve } from 'node:path';
 import TerserPlugin from 'terser-webpack-plugin';
 import type { NextConfig } from 'next';
 
@@ -13,35 +13,12 @@ const SPECIFIER = '@fronds/facade';
  * The facades this app serves, written when the config is read.
  *
  * Synchronously and not in a hook: a Next config is evaluated before anything resolves a
- * module, and the alias below points at a file a page imports. The scan LOADS a frond's own
- * sources, so a TS-aware loader is installed first — without it `scanProject` throws and the
- * module is silently never written.
+ * module, and the alias below points at a file a page imports.
  */
 async function writeFacades(root: string): Promise<void> {
   try {
-    const { scanProject, emitStatement } = await import('@fougere/compiler');
-    const { emitFacade, emitNames, frondAliases, NAMES } = await import('@fougere/core/node');
-    const { setModuleLoader } = await import('@fougere/core/node');
-    const { resolveConventions } = await import('@fougere/core');
-    const { createJiti } = await import('jiti');
-
-    const jiti = createJiti(import.meta.url, {
-      interopDefault: true,
-      alias: await frondAliases(root, resolveConventions()),
-    });
-    setModuleLoader((filePath: string) => jiti.import(filePath) as Promise<Record<string, unknown>>);
-
-    const out = join(root, FACADE);
-    mkdirSync(dirname(out), { recursive: true });
-    const scan = await scanProject(root);
-    writeFileSync(out, emitFacade(scan, { outFile: out }));
-    // The statement too, from the same scan: a production install leaves the compiler out, and the
-    // server then boots from what the build wrote here.
-    const statement = join(root, '.fougere', 'fronds.generated.ts');
-    mkdirSync(dirname(statement), { recursive: true });
-    writeFileSync(statement, emitStatement(scan, { outFile: statement }));
-    // What a config may NAME, from the same scan.
-    writeFileSync(join(root, NAMES), emitNames(scan));
+    const { writeDerived } = await import('@fougere/compiler');
+    await writeDerived(root);
   } catch (error) {
     console.warn(`[fougere] the scan failed, so @fronds/facade was not written: ${(error as Error).message}`);
   }

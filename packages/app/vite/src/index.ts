@@ -1,7 +1,7 @@
 /** `@fougere/vite` — the one place a Vite-built host is told what a Fougere app needs. */
-import { readdirSync, existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { readdirSync, existsSync } from 'node:fs';
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import { join, dirname, resolve } from 'node:path';
+import { join, resolve } from 'node:path';
 import type { Plugin } from 'vite';
 import { NodeRequest, sendNodeResponse } from 'srvx/node';
 import { RUNTIME_PACKAGES } from '@fougere/core/node';
@@ -86,32 +86,8 @@ function serveDoors() {
  */
 async function writeDoors(root: string): Promise<void> {
   try {
-    const { scanProject, emitStatement } = await import('@fougere/compiler');
-    const { emitFacade, emitNames, frondAliases, NAMES } = await import('@fougere/core/node');
-    const { setModuleLoader } = await import('@fougere/core/node');
-    const { resolveConventions } = await import('@fougere/core');
-    const { createJiti } = await import('jiti');
-
-    // The scan LOADS a frond's own sources, and `@fronds/user/entities/User.js` inside a handler
-    // has to resolve there for the same reason it does in a page. Without it `scanProject`
-    // throws `Cannot find module …/Post.js`, the catch below swallows it, and the module is
-    // silently never written — which is what happened until this line existed.
-    const jiti = createJiti(import.meta.url, {
-      interopDefault: true,
-      alias: await frondAliases(root, resolveConventions()),
-    });
-    setModuleLoader((filePath: string) => jiti.import(filePath) as Promise<Record<string, unknown>>);
-    const out = join(root, FACADE);
-    mkdirSync(dirname(out), { recursive: true });
-    const scan = await scanProject(root);
-    writeFileSync(out, emitFacade(scan, { outFile: out }));
-    // The statement too, from the same scan: a production install leaves the compiler out, and the
-    // server then boots from what the build wrote here.
-    const statement = join(root, '.fougere', 'fronds.generated.ts');
-    mkdirSync(dirname(statement), { recursive: true });
-    writeFileSync(statement, emitStatement(scan, { outFile: statement }));
-    // What a config may NAME, from the same scan.
-    writeFileSync(join(root, NAMES), emitNames(scan));
+    const { writeDerived } = await import('@fougere/compiler');
+    await writeDerived(root);
   } catch (error) {
     console.warn(`[fougere] the scan failed, so @fronds/facade was not written: ${(error as Error).message}`);
   }
