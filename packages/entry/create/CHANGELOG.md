@@ -1,5 +1,12 @@
 # create-fougere
 
+## 0.30.0-alpha.1
+
+### Patch Changes
+
+- Updated dependencies [cfaa0bf]
+  - @fougere/cli@0.30.0-alpha.1
+
 ## 0.30.0-alpha.0
 
 ### Patch Changes

@@ -1,5 +1,13 @@
 # fougere-demo-no-compiler
 
+## 0.0.1-alpha.5
+
+### Patch Changes
+
+- @fougere/core@0.30.0-alpha.1
+- @fougere/defaults@0.30.0-alpha.1
+- @fougere/schema@0.30.0-alpha.1
+
 ## 0.0.1-alpha.4
 
 ### Patch Changes

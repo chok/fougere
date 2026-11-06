@@ -1,5 +1,13 @@
 # @fougere/nuxt
 
+## 0.30.0-alpha.1
+
+### Patch Changes
+
+- @fougere/app@0.30.0-alpha.1
+- @fougere/core@0.30.0-alpha.1
+- @fougere/defaults@0.30.0-alpha.1
+
 ## 0.30.0-alpha.0
 
 ### Minor Changes

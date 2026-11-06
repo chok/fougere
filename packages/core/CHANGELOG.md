@@ -1,5 +1,14 @@
 # @fougere/core
 
+## 0.30.0-alpha.1
+
+### Patch Changes
+
+- @fougere/container@0.30.0-alpha.1
+- @fougere/graph@0.30.0-alpha.1
+- @fougere/registry@0.30.0-alpha.1
+- @fougere/schema@0.30.0-alpha.1
+
 ## 0.30.0-alpha.0
 
 ### Minor Changes

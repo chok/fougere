@@ -1,5 +1,7 @@
 # @fougere/workflow
 
+## 0.30.0-alpha.1
+
 ## 0.30.0-alpha.0
 
 ## 0.29.0-alpha.3

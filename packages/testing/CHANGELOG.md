@@ -1,5 +1,18 @@
 # @fougere/testing
 
+## 0.30.0-alpha.1
+
+### Patch Changes
+
+- cfaa0bf: `testApp()` no longer loads `@fougere/adapter-sql`: a project's config imports the adapter it names, and only `statementsOf` needs it. A required peer that yarn 4 does not install stopped a new project's `yarn test`.
+  - @fougere/app@0.30.0-alpha.1
+  - @fougere/compiler@0.30.0-alpha.1
+  - @fougere/container@0.30.0-alpha.1
+  - @fougere/core@0.30.0-alpha.1
+  - @fougere/defaults@0.30.0-alpha.1
+  - @fougere/schema@0.30.0-alpha.1
+  - @fougere/transport-http@0.30.0-alpha.1
+
 ## 0.30.0-alpha.0
 
 ### Minor Changes

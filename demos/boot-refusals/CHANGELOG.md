@@ -1,5 +1,15 @@
 # fougere-demo-boot-refusals
 
+## 0.0.3-alpha.6
+
+### Patch Changes
+
+- @fougere/compiler@0.30.0-alpha.1
+- @fougere/container@0.30.0-alpha.1
+- @fougere/core@0.30.0-alpha.1
+- @fougere/defaults@0.30.0-alpha.1
+- @fougere/schema@0.30.0-alpha.1
+
 ## 0.0.3-alpha.5
 
 ### Patch Changes

@@ -1,5 +1,22 @@
 # @fougere/cli
 
+## 0.30.0-alpha.1
+
+### Patch Changes
+
+- cfaa0bf: `yarn create fougere` works under yarn 4. Copying a template with `cpSync` answered `ENOENT` on a package yarn leaves in its zip.
+- Updated dependencies [cfaa0bf]
+  - @fougere/testing@0.30.0-alpha.1
+  - @fougere/adapter-rest@0.30.0-alpha.1
+  - @fougere/app@0.30.0-alpha.1
+  - @fougere/compiler@0.30.0-alpha.1
+  - @fougere/container@0.30.0-alpha.1
+  - @fougere/core@0.30.0-alpha.1
+  - @fougere/defaults@0.30.0-alpha.1
+  - @fougere/registry@0.30.0-alpha.1
+  - @fougere/schema@0.30.0-alpha.1
+  - @fougere/transport-http@0.30.0-alpha.1
+
 ## 0.30.0-alpha.0
 
 ### Minor Changes

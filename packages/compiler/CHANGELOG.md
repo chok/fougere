@@ -1,5 +1,7 @@
 # @fougere/compiler
 
+## 0.30.0-alpha.1
+
 ## 0.30.0-alpha.0
 
 ### Minor Changes
