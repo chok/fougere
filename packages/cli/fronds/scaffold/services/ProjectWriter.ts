@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { cpSync, existsSync, mkdirSync, mkdtempSync, renameSync, readFileSync, rmSync, writeFileSync, readdirSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, mkdtempSync, renameSync, readFileSync, rmSync, writeFileSync, readdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { basename, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -46,6 +46,20 @@ function packageRoot(): string {
  * The only per-piece edits are the package names.
  */
 const TEMPLATES = join(packageRoot(), 'templates');
+
+/**
+ * Not `cpSync`, which runs in Node's native code: yarn 4 leaves a package inside its zip and answers for
+ * it through the `fs` functions alone, so `cpSync` read `ENOENT` on every template.
+ */
+function copyTree(from: string, to: string, keep: (source: string) => boolean = () => true): void {
+  mkdirSync(to, { recursive: true });
+  for (const entry of readdirSync(from, { withFileTypes: true })) {
+    const source = join(from, entry.name);
+    if (!keep(source)) continue;
+    if (entry.isDirectory()) copyTree(source, join(to, entry.name), keep);
+    else copyFileSync(source, join(to, entry.name));
+  }
+}
 
 /**
  * Where a HOST keeps its starter, or nothing when it ships none.
@@ -197,7 +211,7 @@ export default class ProjectWriter {
 
   /** The workspace shell — fougere.config, the fronds' tsconfig, a package.json whose members are the apps. */
   createWorkspace(dir: string, name: string, manager: PackageManager = PackageManager.of()): { path: string } {
-    cpSync(join(TEMPLATES, 'workspace'), dir, { recursive: true });
+    copyTree(join(TEMPLATES, 'workspace'), dir);
     restoreGitignore(dir);
     setPackageName(dir, name);
     for (const file of ['AGENTS.md', 'CLAUDE.md']) {
@@ -211,7 +225,7 @@ export default class ProjectWriter {
   /** Add a frond (business hexagon) under fronds/<name>. */
   addFrond(wsDir: string, template: string, name: string, conventions: Conventions = DEFAULT_CONVENTIONS): { path: string } {
     const dest = join(wsDir, conventions.fronds, name);
-    cpSync(join(TEMPLATES, 'fronds', template), dest, { recursive: true });
+    copyTree(join(TEMPLATES, 'fronds', template), dest);
 
     return { path: dest };
   }
@@ -231,7 +245,7 @@ export default class ProjectWriter {
       progress(`Adding Fougere to apps/${name}`);
       applyScaffold(dest, scaffold, { local: join(wsDir, DEFAULT_CONVENTIONS.fronds), remotes: join(wsDir, REMOTES), facade: join(wsDir, FACADE) });
     }
-    cpSync(starter, dest, { recursive: true, filter: (source) => source !== manifest });
+    copyTree(starter, dest, (source) => source !== manifest);
     restoreGitignore(dest);
     setPackageName(dest, name);
     becomeWorkspace(wsDir);
@@ -252,7 +266,7 @@ export default class ProjectWriter {
         const example = join(TEMPLATES, 'examples', frond.template, app.template);
         if (!existsSync(example)) continue;
         const dest = join(wsDir, 'apps', app.name);
-        cpSync(example, dest, { recursive: true });
+        copyTree(example, dest);
         for (const file of filesUnder(example)) {
           const path = join(dest, file);
           writeFileSync(path, readFileSync(path, 'utf8').replaceAll('__frond__', frond.name));

@@ -34,10 +34,13 @@ const BOOT_MS = 180_000;
 const work = mkdtempSync(path.join(tmpdir(), 'fougere-facade-'));
 const store = path.join(work, 'tarballs');
 
-/** yarn 4 comes through corepack: a `yarn` on PATH is yarn 1 often enough, and the scripts call `yarn` by name. */
+/**
+ * yarn 4 comes through corepack, and by its version: alone, `corepack yarn` answers yarn 1, which
+ * `PackageManager` reads as npm, so the yarn row built npm projects. The scripts call `yarn` by name.
+ */
 const shims = path.join(work, 'bin');
 mkdirSync(shims, { recursive: true });
-writeFileSync(path.join(shims, 'yarn'), '#!/bin/sh\nexec corepack yarn "$@"\n');
+writeFileSync(path.join(shims, 'yarn'), '#!/bin/sh\nexec corepack yarn@4.5.0 "$@"\n');
 chmodSync(path.join(shims, 'yarn'), 0o755);
 const env = { ...process.env, PATH: `${shims}${path.delimiter}${process.env.PATH}`, YARN_ENABLE_IMMUTABLE_INSTALLS: 'false' };
 
@@ -112,6 +115,32 @@ const publishable = (dir: string, found: Publishable[] = []): Publishable[] => {
   return found;
 };
 
+let launcher: ReturnType<typeof zipped> | undefined;
+
+/**
+ * `create-fougere` run the way `yarn create` runs it: from inside its zip, through yarn's own `fs`. Started
+ * from `dist/` it reads plain files, and `cpSync` refusing every template under yarn 4 stayed unseen.
+ */
+function zipped(tarball: Record<string, string>): { bin: string; options: string } {
+  const directory = path.join(work, 'launcher');
+  const specs = Object.fromEntries(Object.entries(tarball).map(([name, file]) => [name, `file:${file}`]));
+  mkdirSync(directory, { recursive: true });
+  writeFileSync(path.join(directory, 'package.json'), JSON.stringify({
+    name: 'launcher',
+    private: true,
+    dependencies: { 'create-fougere': specs['create-fougere'] },
+    resolutions: specs,
+  }));
+  writeFileSync(path.join(directory, 'yarn.lock'), '');
+  writeFileSync(path.join(directory, '.yarnrc.yml'), 'nodeLinker: pnp\nenableGlobalCache: false\n');
+  shell('yarn install', directory);
+
+  return {
+    bin: run('yarn', ['bin', 'create-fougere'], { cwd: directory }).trim(),
+    options: `--require ${path.join(directory, '.pnp.cjs')} --experimental-loader file://${path.join(directory, '.pnp.loader.mjs')}`,
+  };
+}
+
 /** Scaffold one host from the tarballs, boot, and ask the domain — or throw saying where it stopped. */
 async function open(host: string, name: PackageManager['name'], tarball: Record<string, string>): Promise<void> {
   const agent = agentOf(name);
@@ -120,9 +149,10 @@ async function open(host: string, name: PackageManager['name'], tarball: Record<
   const project = `door-${host}-${name}`;
   const app = path.join(work, project);
   console.log(`\n${where}: scaffolding outside the workspace`);
-  run('node', [path.join(ROOT, 'packages/entry/create/dist/bin.js'), project, '--frond', 'blog', '--app', host], {
+  const launched = name === 'yarn' ? (launcher ??= zipped(tarball)) : undefined;
+  run('node', [launched?.bin ?? path.join(ROOT, 'packages/entry/create/dist/bin.js'), project, '--frond', 'blog', '--app', host], {
     cwd: work,
-    env: { ...env, npm_config_user_agent: agent },
+    env: { ...env, npm_config_user_agent: agent, ...(launched ? { NODE_OPTIONS: launched.options } : {}) },
   });
 
   // The scaffold pins every @fougere dep to the CLI's version. Pointing them at the tarballs is

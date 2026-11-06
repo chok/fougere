@@ -1,7 +1,6 @@
 import { migrating, type App } from '@fougere/core';
 import { loadConfig, projectRootOf } from '@fougere/core/node';
 import { boot } from '@fougere/defaults';
-import '@fougere/adapter-sql';
 import { remoteTransport, resolveStorage } from '@fougere/defaults';
 import { installStubs, type Stub } from '../stub/Stub.js';
 import type { Port } from '../stub/Port.js';

@@ -63,6 +63,9 @@
     "@fougere/observability": "workspace:^"
   },
   "peerDependenciesMeta": {
+    "@fougere/adapter-sql": {
+      "optional": true
+    },
     "vitest": {
       "optional": true
     },
