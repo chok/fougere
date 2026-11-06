@@ -250,8 +250,6 @@ onBeforeUnmount(() => cancelAnimationFrame(frame));
   --ink: var(--ui-text);
   --muted: var(--ui-text-muted);
   --green: var(--ui-primary);
-  --terracotta: #c0603a;
-  --saffron: #a0701c;
   --slate: #4a6b8c;
   --code: #10180f;
   --header: 3.5rem;

@@ -173,7 +173,7 @@ useSeoMeta({ title: `${page.value.title} — Fougere docs`, description: page.va
   padding: 0.05rem 0.5rem;
   border: 0;
   border-radius: 999px;
-  background: color-mix(in oklab, #a0701c 14%, transparent);
+  background: color-mix(in oklab, var(--saffron) 14%, transparent);
   color: #7d5814;
 }
 .put-to-work div {

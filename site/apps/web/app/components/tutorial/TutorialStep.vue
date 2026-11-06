@@ -265,8 +265,6 @@ onBeforeUnmount(() => removeEventListener('keydown', onKey));
 
 <style scoped>
 .tutorial {
-  --terracotta: #c0603a;
-  --saffron: #a0701c;
   --slate: #4a6b8c;
   --code: #10180f;
   --hand: 'Architects Daughter', 'Bradley Hand', cursive;

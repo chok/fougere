@@ -31,34 +31,15 @@
   --ui-text-highlighted: #17201a;
   --ui-text-muted: #4c5a50;
   --ui-text-toned: #2e3a31;
-  --ui-text-dimmed: #7a857c;
+  --ui-text-dimmed: #616c63;
+  --terracotta: #a54d2a;
+  --saffron: #855c13;
 }
 
 h1, h2, h3 {
   font-family: var(--font-serif);
   font-weight: 400;
   letter-spacing: -0.01em;
-}
-
-/* ── Hero glow ─────────────────────────────────────────────────────────── */
-.hero-glow {
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  overflow: hidden;
-  pointer-events: none;
-}
-.hero-glow::before {
-  content: "";
-  position: absolute;
-  top: -12rem;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 60rem;
-  height: 32rem;
-  border-radius: 9999px;
-  background: radial-gradient(closest-side, color-mix(in oklab, var(--ui-primary) 13%, transparent), transparent);
-  filter: blur(48px);
 }
 
 /* ── Prose — docs pages and rendered post bodies ───────────────────────── */
