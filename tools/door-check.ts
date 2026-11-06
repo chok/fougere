@@ -121,7 +121,7 @@ let launcher: ReturnType<typeof zipped> | undefined;
  * `create-fougere` run the way `yarn create` runs it: from inside its zip, through yarn's own `fs`. Started
  * from `dist/` it reads plain files, and `cpSync` refusing every template under yarn 4 stayed unseen.
  */
-function zipped(tarball: Record<string, string>): { bin: string; options: string } {
+function zipped(tarball: Record<string, string>): { bin: string; options: string; starters: string } {
   const directory = path.join(work, 'launcher');
   const specs = Object.fromEntries(Object.entries(tarball).map(([name, file]) => [name, `file:${file}`]));
   mkdirSync(directory, { recursive: true });
@@ -135,7 +135,18 @@ function zipped(tarball: Record<string, string>): { bin: string; options: string
   writeFileSync(path.join(directory, '.yarnrc.yml'), 'nodeLinker: pnp\nenableGlobalCache: false\n');
   shell('yarn install', directory);
 
+  // A CLI that carries no host reads its starter off npm, where a release's version does not exist
+  // yet: this commit's tarballs sit where `fetched` looks first, under the temporary directory.
+  const starters = path.join(work, 'starters');
+  const { version } = JSON.parse(readFileSync(path.join(ROOT, 'packages/cli/package.json'), 'utf8')) as { version: string };
+  for (const [name, file] of Object.entries(tarball)) {
+    const unpacked = path.join(starters, 'fougere-starter', `${name.replace('/', '-')}@${version}`);
+    mkdirSync(unpacked, { recursive: true });
+    shell(`tar -xzf ${file} -C ${unpacked} package/template 2>/dev/null || true`, work);
+  }
+
   return {
+    starters,
     bin: run('yarn', ['bin', 'create-fougere'], { cwd: directory }).trim(),
     options: `--require ${path.join(directory, '.pnp.cjs')} --experimental-loader file://${path.join(directory, '.pnp.loader.mjs')}`,
   };
@@ -152,7 +163,7 @@ async function open(host: string, name: PackageManager['name'], tarball: Record<
   const launched = name === 'yarn' ? (launcher ??= zipped(tarball)) : undefined;
   run('node', [launched?.bin ?? path.join(ROOT, 'packages/entry/create/dist/bin.js'), project, '--frond', 'blog', '--app', host], {
     cwd: work,
-    env: { ...env, npm_config_user_agent: agent, ...(launched ? { NODE_OPTIONS: launched.options } : {}) },
+    env: { ...env, npm_config_user_agent: agent, ...(launched ? { NODE_OPTIONS: launched.options, TMPDIR: launched.starters } : {}) },
   });
 
   // The scaffold pins every @fougere dep to the CLI's version. Pointing them at the tarballs is
