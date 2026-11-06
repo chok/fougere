@@ -29,9 +29,9 @@ async function copy() {
   margin: 0;
   overflow-x: auto;
   white-space: pre;
-  background: #10180f;
-  color: #e1ebde;
-  border-radius: 12px;
+  background: var(--code);
+  color: var(--code-ink);
+  border-radius: var(--radius-card);
   padding: 16px 48px 16px 18px;
   font-family: var(--font-mono);
   font-size: 14px;
@@ -48,15 +48,15 @@ async function copy() {
   align-items: center;
   justify-content: center;
   border: 0;
-  border-radius: 8px;
+  border-radius: var(--radius-small);
   background: transparent;
-  color: #7d8c80;
+  color: var(--code-dim);
   cursor: pointer;
   transition: color 0.2s, background 0.2s;
 }
 
 .copy:hover {
-  color: #e1ebde;
+  color: var(--code-ink);
   background: rgb(255 255 255 / 0.08);
 }
 </style>

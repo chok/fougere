@@ -66,13 +66,13 @@ const rays = [
 
     <!-- Small screens: the core card, then the four families -->
     <div class="lg:hidden">
-      <div class="rounded-xl border border-accented bg-default p-4">
+      <div class="rounded-[var(--radius-card)] border border-accented bg-default p-4">
         <p class="text-[10px] uppercase tracking-wider text-muted mb-2">{{ t('diagram.core.coreLabel') }}</p>
         <p class="font-mono text-xs text-highlighted">entities · operations · its validator · its facts</p>
         <p class="mt-2 pt-2 border-t border-default text-[11px] italic text-muted">{{ t('diagram.core.coreNote') }}</p>
       </div>
       <div class="mt-3 grid sm:grid-cols-2 gap-2">
-        <div v-for="f in families" :key="f.title" class="rounded-lg border border-default px-3 py-2">
+        <div v-for="f in families" :key="f.title" class="rounded-[var(--radius-small)] border border-default px-3 py-2">
           <p class="text-sm font-medium text-highlighted">{{ f.title }}</p>
           <p v-for="line in f.lines" :key="line" class="font-mono text-[11px] text-muted mt-0.5">{{ line }}</p>
           <p v-if="f.note" class="text-[11px] italic text-muted mt-1">{{ f.note }}</p>

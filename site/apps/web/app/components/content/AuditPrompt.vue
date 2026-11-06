@@ -35,9 +35,9 @@ pre {
   margin: 0;
   overflow: auto;
   padding: 18px 22px;
-  background: #10180f;
-  color: #e1ebde;
-  border-radius: 12px;
+  background: var(--code);
+  color: var(--code-ink);
+  border-radius: var(--radius-card);
   font-family: var(--font-mono);
   font-size: 12.5px;
   line-height: 1.6;

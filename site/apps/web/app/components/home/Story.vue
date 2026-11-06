@@ -250,8 +250,6 @@ onBeforeUnmount(() => cancelAnimationFrame(frame));
   --ink: var(--ui-text);
   --muted: var(--ui-text-muted);
   --green: var(--ui-primary);
-  --slate: #4a6b8c;
-  --code: #10180f;
   --header: 3.5rem;
   --gutter: max(1.5rem, calc((100% - 72rem) / 2 + 1.5rem));
   background: var(--paper);
@@ -470,7 +468,7 @@ h2 em.code { display: block; }
   font-size: 11px;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: #8a948c;
+  color: var(--ui-text-dimmed);
   background: none;
   border: 0;
   padding: 4px 0;
@@ -565,20 +563,20 @@ h2 em.code { display: block; }
 .clip video {
   max-width: 100%;
   max-height: 80vh;
-  border-radius: 12px;
+  border-radius: var(--radius-card);
   background: #000;
 }
 
-.clip figcaption { color: #e1ebde; font-size: 14px; }
+.clip figcaption { color: var(--code-ink); font-size: 14px; }
 
 .clip button {
   align-self: flex-end;
   min-height: 44px;
   padding: 8px 18px;
   border-radius: 999px;
-  border: 1px solid #e1ebde;
+  border: 1px solid var(--code-ink);
   background: transparent;
-  color: #e1ebde;
+  color: var(--code-ink);
   font: inherit;
   cursor: pointer;
 }

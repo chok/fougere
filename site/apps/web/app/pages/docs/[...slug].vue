@@ -149,7 +149,7 @@ useSeoMeta({ title: `${page.value.title} — Fougere docs`, description: page.va
   padding: 0.85rem 1rem;
   border: 1px solid var(--ui-border);
   border-left: 3px solid var(--ui-primary);
-  border-radius: 0.65rem;
+  border-radius: var(--radius-card);
   background: var(--ui-bg-elevated);
   font-size: 0.875rem;
 }

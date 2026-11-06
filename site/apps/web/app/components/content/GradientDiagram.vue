@@ -58,7 +58,7 @@ const { t } = useI18n();
     </svg>
 
     <!-- The pivot line -->
-    <div class="mt-3 rounded-lg border border-default bg-elevated/60 px-4 py-2.5 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-center">
+    <div class="mt-3 rounded-[var(--radius-small)] border border-default bg-elevated/60 px-4 py-2.5 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-center">
       <code class="font-mono text-xs text-highlighted">remotes: { blog: 'http://127.0.0.1:4100' }</code>
       <span class="text-xs text-muted">— {{ t('diagram.pivot') }}</span>
     </div>

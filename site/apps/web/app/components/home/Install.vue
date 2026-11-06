@@ -46,7 +46,7 @@ async function copy() {
       variant="none"
       aria-label="Package manager"
       class="manager"
-      :ui="{ base: 'text-[#e1ebde]', content: 'min-w-44' }"
+      :ui="{ base: 'text-[var(--code-ink)]', content: 'min-w-44' }"
     />
     <button type="button" class="line" :aria-label="copied ? 'Copied' : `Copy ${command}`" @click="copy">
       <code>{{ command }}</code>
@@ -61,14 +61,14 @@ async function copy() {
   align-items: center;
   width: min(100%, 460px);
   min-height: 56px;
-  background: #10180f;
-  border-radius: 12px;
+  background: var(--code);
+  border-radius: var(--radius-card);
   padding-left: 8px;
 }
 
 .manager {
   flex: none;
-  color: #e1ebde;
+  color: var(--code-ink);
   font-family: var(--font-mono);
   font-size: 14px;
   border-right: 1px solid rgb(255 255 255 / 0.12);
@@ -85,15 +85,15 @@ async function copy() {
   padding: 0 16px 0 18px;
   border: 0;
   background: transparent;
-  color: #7d8c80;
+  color: var(--code-dim);
   cursor: pointer;
   text-align: left;
-  border-radius: 0 12px 12px 0;
+  border-radius: 0 var(--radius-card) var(--radius-card) 0;
   transition: color 0.2s, background 0.2s;
 }
 
 .line:hover {
-  color: #e1ebde;
+  color: var(--code-ink);
   background: rgb(255 255 255 / 0.04);
 }
 
@@ -103,7 +103,7 @@ async function copy() {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: #e1ebde;
+  color: var(--code-ink);
   font-family: var(--font-mono);
   font-size: 16px;
 }

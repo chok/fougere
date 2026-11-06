@@ -57,7 +57,7 @@ const run = async () => {
 </script>
 
 <template>
-  <section v-if="demo" class="not-prose my-6 rounded-xl border border-default overflow-hidden">
+  <section v-if="demo" class="not-prose my-6 rounded-[var(--radius-card)] border border-default overflow-hidden">
     <header class="flex flex-wrap items-center gap-3 px-4 py-3 border-b border-default bg-elevated/50">
       <UIcon name="i-lucide-folder-tree" class="size-4 text-muted" />
       <code class="text-sm font-medium text-highlighted">demos/{{ demo.name }}</code>

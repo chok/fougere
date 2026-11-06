@@ -80,15 +80,15 @@ const highlight = (text: string) =>
 </template>
 
 <style scoped>
-.annotated { position: relative; margin: 20px 0 6px; padding-bottom: 12px; background: #10180f; color: #d9e4da; border-radius: 10px; font-family: var(--font-mono); font-size: 13px; line-height: 1.8; }
-.path { padding: 9px 16px 7px; margin-bottom: 6px; border-bottom: 1px solid rgb(255 255 255 / 0.08); font-size: 11px; color: #9fb09f; }
+.annotated { position: relative; margin: 20px 0 6px; padding-bottom: 12px; background: var(--code); color: var(--code-soft); border-radius: var(--radius-card); font-family: var(--font-mono); font-size: 13px; line-height: 1.8; }
+.path { padding: 9px 16px 7px; margin-bottom: 6px; border-bottom: 1px solid rgb(255 255 255 / 0.08); font-size: 11px; color: var(--code-muted); }
 .line { display: flex; gap: 12px; padding: 0 16px 0 10px; white-space: pre; }
-.line .no { width: 18px; flex: none; text-align: right; color: #4f604f; user-select: none; }
+.line .no { width: 18px; flex: none; text-align: right; color: var(--code-number); user-select: none; }
 .annotated code { font: inherit; background: none; border: 0; padding: 0; border-radius: 0; color: inherit; box-shadow: none; }
-.line code :deep(.kw) { color: #9cc79f; }
+.line code :deep(.kw) { color: var(--code-keyword); }
 .line.keyed { cursor: pointer; outline: none; }
-.line.keyed:hover, .line.on { background: #2a4a2c; }
-.bubble { position: absolute; z-index: 5; left: 48px; width: min(420px, calc(100% - 60px)); display: grid; gap: 6px; padding: 12px 14px; background: var(--ui-bg-elevated); color: var(--ui-text); border: 1px solid var(--ui-border); border-radius: 12px; box-shadow: 0 14px 30px -14px rgb(0 0 0 / 0.55); font-family: var(--font-sans); font-size: 13px; line-height: 1.45; white-space: normal; pointer-events: none; }
+.line.keyed:hover, .line.on { background: var(--code-focus); }
+.bubble { position: absolute; z-index: 5; left: 48px; width: min(420px, calc(100% - 60px)); display: grid; gap: 6px; padding: 12px 14px; background: var(--ui-bg-elevated); color: var(--ui-text); border: 1px solid var(--ui-border); border-radius: var(--radius-card); box-shadow: 0 14px 30px -14px rgb(0 0 0 / 0.55); font-family: var(--font-sans); font-size: 13px; line-height: 1.45; white-space: normal; pointer-events: none; }
 .bubble.pinned { pointer-events: auto; }
 .bubble::before { content: ''; position: absolute; top: -7px; left: 22px; width: 12px; height: 12px; background: var(--ui-bg-elevated); border-left: 1px solid var(--ui-border); border-top: 1px solid var(--ui-border); transform: rotate(45deg); }
 .bubble p { margin: 0; }
