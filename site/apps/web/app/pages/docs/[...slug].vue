@@ -151,7 +151,7 @@ useSeoMeta({ title: `${page.value.title} — Fougere docs`, description: page.va
   border-left: 3px solid var(--ui-primary);
   border-radius: var(--radius-card);
   background: var(--ui-bg-elevated);
-  font-size: 0.875rem;
+  font-size: var(--text-interface);
 }
 .uses div {
   display: flex;
@@ -163,13 +163,13 @@ useSeoMeta({ title: `${page.value.title} — Fougere docs`, description: page.va
   width: 7.5rem;
   flex: none;
   font-family: var(--font-mono);
-  font-size: 0.7rem;
+  font-size: var(--text-tiny);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--ui-text-dimmed);
 }
 .uses code {
-  font-size: 0.78rem;
+  font-size: var(--text-tiny);
   padding: 0.05rem 0.5rem;
   border: 0;
   border-radius: 999px;
@@ -186,6 +186,6 @@ useSeoMeta({ title: `${page.value.title} — Fougere docs`, description: page.va
   padding: 0.3rem 0.8rem;
   border: 1px solid var(--ui-border-accented);
   border-radius: 999px;
-  font-size: 0.875rem;
+  font-size: var(--text-interface);
 }
 </style>

@@ -80,23 +80,23 @@ const highlight = (text: string) =>
 </template>
 
 <style scoped>
-.annotated { position: relative; margin: 20px 0 6px; padding-bottom: 12px; background: var(--code); color: var(--code-soft); border-radius: var(--radius-card); font-family: var(--font-mono); font-size: 13px; line-height: 1.8; }
-.path { padding: 9px 16px 7px; margin-bottom: 6px; border-bottom: 1px solid rgb(255 255 255 / 0.08); font-size: 11px; color: var(--code-muted); }
+.annotated { position: relative; margin: 20px 0 6px; padding-bottom: 12px; background: var(--code); color: var(--code-soft); border-radius: var(--radius-card); font-family: var(--font-mono); font-size: var(--text-note); line-height: 1.8; }
+.path { padding: 9px 16px 7px; margin-bottom: 6px; border-bottom: 1px solid rgb(255 255 255 / 0.08); font-size: var(--text-tiny); color: var(--code-muted); }
 .line { display: flex; gap: 12px; padding: 0 16px 0 10px; white-space: pre; }
 .line .no { width: 18px; flex: none; text-align: right; color: var(--code-number); user-select: none; }
 .annotated code { font: inherit; background: none; border: 0; padding: 0; border-radius: 0; color: inherit; box-shadow: none; }
 .line code :deep(.kw) { color: var(--code-keyword); }
 .line.keyed { cursor: pointer; outline: none; }
 .line.keyed:hover, .line.on { background: var(--code-focus); }
-.bubble { position: absolute; z-index: 5; left: 48px; width: min(420px, calc(100% - 60px)); display: grid; gap: 6px; padding: 12px 14px; background: var(--ui-bg-elevated); color: var(--ui-text); border: 1px solid var(--ui-border); border-radius: var(--radius-card); box-shadow: 0 14px 30px -14px rgb(0 0 0 / 0.55); font-family: var(--font-sans); font-size: 13px; line-height: 1.45; white-space: normal; pointer-events: none; }
+.bubble { position: absolute; z-index: 5; left: 48px; width: min(420px, calc(100% - 60px)); display: grid; gap: 6px; padding: 12px 14px; background: var(--ui-bg-elevated); color: var(--ui-text); border: 1px solid var(--ui-border); border-radius: var(--radius-card); box-shadow: 0 14px 30px -14px rgb(0 0 0 / 0.55); font-family: var(--font-sans); font-size: var(--text-note); line-height: 1.45; white-space: normal; pointer-events: none; }
 .bubble.pinned { pointer-events: auto; }
 .bubble::before { content: ''; position: absolute; top: -7px; left: 22px; width: 12px; height: 12px; background: var(--ui-bg-elevated); border-left: 1px solid var(--ui-border); border-top: 1px solid var(--ui-border); transform: rotate(45deg); }
 .bubble p { margin: 0; }
 .bubble .key code { font-family: var(--font-mono); font-weight: 600; }
-.key span { color: var(--ui-text-dimmed); font-family: var(--font-mono); font-size: 11.5px; }
+.key span { color: var(--ui-text-dimmed); font-family: var(--font-mono); font-size: var(--text-tiny); }
 .doc { color: var(--ui-text-muted); }
-.doc :deep(.word) { font-family: var(--font-mono); font-size: 12px; color: var(--ui-text); }
+.doc :deep(.word) { font-family: var(--font-mono); font-size: var(--text-tiny); color: var(--ui-text); }
 .links { display: flex; flex-wrap: wrap; gap: 4px 12px; }
-.links a, .more { color: var(--ui-primary); font-size: 12.5px; }
-.hint { margin: 0 0 24px; font-size: 13px; color: var(--ui-text-dimmed); }
+.links a, .more { color: var(--ui-primary); font-size: var(--text-note); }
+.hint { margin: 0 0 24px; font-size: var(--text-note); color: var(--ui-text-dimmed); }
 </style>

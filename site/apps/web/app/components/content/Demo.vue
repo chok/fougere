@@ -105,6 +105,6 @@ const run = async () => {
   margin: 0;
   border: 0;
   border-radius: 0;
-  font-size: 0.78rem;
+  font-size: var(--text-tiny);
 }
 </style>

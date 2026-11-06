@@ -70,7 +70,7 @@ async function copy() {
   flex: none;
   color: var(--code-ink);
   font-family: var(--font-mono);
-  font-size: 14px;
+  font-size: var(--text-interface);
   border-right: 1px solid rgb(255 255 255 / 0.12);
   border-radius: 0;
 }
@@ -105,6 +105,6 @@ async function copy() {
   white-space: nowrap;
   color: var(--code-ink);
   font-family: var(--font-mono);
-  font-size: 16px;
+  font-size: var(--text-body);
 }
 </style>

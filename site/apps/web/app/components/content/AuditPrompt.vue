@@ -39,7 +39,7 @@ pre {
   color: var(--code-ink);
   border-radius: var(--radius-card);
   font-family: var(--font-mono);
-  font-size: 12.5px;
+  font-size: var(--text-note);
   line-height: 1.6;
   white-space: pre-wrap;
 }

@@ -82,6 +82,6 @@ async function logout() {
 }
 
 .paper nav a {
-  font-size: 15px;
+  font-size: var(--text-body);
 }
 </style>

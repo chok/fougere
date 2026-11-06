@@ -34,7 +34,7 @@ async function copy() {
   border-radius: var(--radius-card);
   padding: 16px 48px 16px 18px;
   font-family: var(--font-mono);
-  font-size: 14px;
+  font-size: var(--text-interface);
   line-height: 1.7;
 }
 

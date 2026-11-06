@@ -93,14 +93,14 @@ const anchors = [165, 215, 265];
     <!-- Small screens: nucleus card + chips -->
     <div class="lg:hidden">
       <div class="rounded-[var(--radius-card)] border border-accented bg-default p-4 mx-auto max-w-xs shadow-sm">
-        <p class="text-[10px] uppercase tracking-wider text-muted text-center mb-2">{{ t('diagram.coreLabel') }}</p>
+        <p class="text-xs uppercase tracking-wider text-muted text-center mb-2">{{ t('diagram.coreLabel') }}</p>
         <pre class="font-mono text-xs leading-relaxed text-highlighted overflow-x-auto"><code>{{ code.join('\n') }}</code></pre>
-        <p class="mt-2 pt-2 border-t border-default font-mono text-[11px] text-muted flex justify-between gap-2"><span>Post.validate(input)</span><span class="font-sans italic">{{ t('diagram.validator') }}</span></p>
+        <p class="mt-2 pt-2 border-t border-default font-mono text-xs text-muted flex justify-between gap-2"><span>Post.validate(input)</span><span class="font-sans italic">{{ t('diagram.validator') }}</span></p>
       </div>
       <div class="mt-4 grid grid-cols-2 gap-2">
         <div v-for="node in [...left, ...right]" :key="node.label" class="rounded-[var(--radius-small)] border border-default px-3 py-2">
           <p class="text-sm font-medium text-highlighted">{{ node.label }}</p>
-          <p class="font-mono text-[11px] text-muted mt-0.5 truncate">{{ node.hint }}</p>
+          <p class="font-mono text-xs text-muted mt-0.5 truncate">{{ node.hint }}</p>
         </div>
       </div>
     </div>

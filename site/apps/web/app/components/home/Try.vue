@@ -44,18 +44,18 @@ h2 em {
 
 p {
   margin: 0;
-  font-size: 19px;
+  font-size: var(--text-lead);
   color: var(--ui-text-muted);
   max-width: 600px;
 }
 
 .or {
   color: var(--ui-text-muted);
-  font-size: 15px;
+  font-size: var(--text-body);
 }
 
 .doc {
-  font-size: 15px;
+  font-size: var(--text-body);
   color: var(--ui-primary);
   text-decoration: underline;
   text-underline-offset: 3px;
@@ -76,7 +76,7 @@ p {
   border-radius: 999px;
   background: var(--ui-text);
   color: var(--ui-bg);
-  font-size: 18px;
+  font-size: var(--text-lead);
   font-weight: 500;
   text-decoration: none;
 }

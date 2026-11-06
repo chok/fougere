@@ -254,7 +254,7 @@ onBeforeUnmount(() => cancelAnimationFrame(frame));
   --gutter: max(1.5rem, calc((100% - 72rem) / 2 + 1.5rem));
   background: var(--paper);
   color: var(--ink);
-  font-size: 17px;
+  font-size: var(--text-body);
   line-height: 1.6;
 }
 
@@ -317,7 +317,7 @@ h2 em.code { display: block; }
   border-top: 1px solid var(--ink);
   max-width: 340px;
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: var(--text-tiny);
   line-height: 1.7;
   color: var(--muted);
 }
@@ -326,7 +326,7 @@ h2 em.code { display: block; }
   display: block;
   font-family: var(--font-serif);
   font-style: italic;
-  font-size: 18px;
+  font-size: var(--text-lead);
   color: var(--ink);
 }
 
@@ -363,7 +363,7 @@ h2 em.code { display: block; }
 .label {
   margin: 0 0 14px;
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: var(--text-tiny);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--green);
@@ -377,7 +377,7 @@ h2 em.code { display: block; }
 .text {
   margin: 18px 0 0;
   max-width: 580px;
-  font-size: 18px;
+  font-size: var(--text-lead);
   color: var(--muted);
 }
 
@@ -386,7 +386,7 @@ h2 em.code { display: block; }
   display: flex;
   flex-wrap: wrap;
   gap: 8px 16px;
-  font-size: 14px;
+  font-size: var(--text-interface);
   color: var(--muted);
 }
 
@@ -429,7 +429,7 @@ h2 em.code { display: block; }
 }
 
 .doc {
-  font-size: 15px;
+  font-size: var(--text-body);
   color: var(--muted);
   text-decoration: underline;
   text-underline-offset: 3px;
@@ -465,7 +465,7 @@ h2 em.code { display: block; }
   justify-content: flex-end;
   gap: 10px;
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: var(--text-tiny);
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--ui-text-dimmed);
@@ -515,7 +515,7 @@ h2 em.code { display: block; }
   background: color-mix(in oklab, var(--paper) 85%, transparent);
   color: var(--ink);
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: var(--text-tiny);
   letter-spacing: 0.04em;
   cursor: pointer;
   transition: opacity 0.4s ease;
@@ -529,7 +529,7 @@ h2 em.code { display: block; }
   width: 80px;
   text-align: center;
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: var(--text-tiny);
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--muted);
@@ -567,7 +567,7 @@ h2 em.code { display: block; }
   background: #000;
 }
 
-.clip figcaption { color: var(--code-ink); font-size: 14px; }
+.clip figcaption { color: var(--code-ink); font-size: var(--text-interface); }
 
 .clip button {
   align-self: flex-end;
@@ -621,11 +621,11 @@ h2 em.code { display: block; }
 
   .text {
     margin-top: 12px;
-    font-size: 16px;
+    font-size: var(--text-body);
   }
 
   .snippet :deep(pre) {
-    font-size: 11.5px;
+    font-size: var(--text-tiny);
     padding: 12px 44px 12px 14px;
   }
 
@@ -641,7 +641,7 @@ h2 em.code { display: block; }
 
   .shortcuts button, .shortcuts a {
     padding: 8px 12px;
-    font-size: 11px;
+    font-size: var(--text-tiny);
   }
 }
 </style>
