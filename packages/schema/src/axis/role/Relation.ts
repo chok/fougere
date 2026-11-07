@@ -10,13 +10,7 @@ export type OnDelete = (typeof ON_DELETE)[number];
 
 export type Relation = NonNullable<RoleRules['relation']>;
 
-/**
- * How a relation is built — the one place a target becomes `() => Entity`.
- *
- * A target arrives as the class or as a function returning it, because a cycle between two
- * entities can only be written the second way. Recognised by FORM, `getFields` on the
- * value: a class answers it, `() => Post` does not.
- */
+/** Builds a relation; the target is the class, or a function returning it. */
 export const Relation = {
   /** `() => Post` so two entities can point at each other. */
   one(target: Entity | (() => Entity), onDelete?: OnDelete): Relation {

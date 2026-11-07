@@ -11,13 +11,6 @@ import { SchemaConstraints } from './SchemaConstraints.js';
 import { SchemaError } from './SchemaError.js';
 import type { ConstraintKind } from './SchemaConstraints.js';
 
-/**
- * Everything a definition is made of, every member required.
- *
- * A transformation states what it keeps AND what it clears — `previous: undefined` and
- * `anchored: false` are the two a derivation decides, and positionally they were an
- * `undefined` and a `false` a reader had to count arguments to name.
- */
 type SchemaState = Pick<
   SchemaDefinition,
   'fields' | 'adapterSet' | 'opts' | 'previous' | 'derivation' | 'anchored' | 'constraints'
@@ -30,20 +23,9 @@ export interface SchemaDeclaration<TFields extends Fields> {
   constraints?: SchemaConstraints;
 }
 
-/** The keys a derivation keeps, in the order it keeps them, under the names they take. */
 type Renaming = ReadonlyMap<string, string>;
 
-/**
- * Everything a schema IS, apart from being a class whose instances are rows.
- *
- * The members used to be that many statics assigned side by side, and every derivation
- * re-threaded them by hand — which is how one of them came to be dropped from a list
- * without anyone noticing. A transformation here returns a COMPLETE definition or it does
- * not compile, so no gesture can mix the fields of one with the options of another.
- *
- * Internal: it is not exported from the package and never appears on `SchemaConstructor`.
- * A user derives with `Order.pick(…)`, never `Order.definition.pick(…)`.
- */
+/** Everything a schema is, apart from being a class. */
 export class SchemaDefinition {
   readonly fields: Fields;
   readonly adapterSet: EntityAdapterSet;
@@ -63,18 +45,10 @@ export class SchemaDefinition {
     this.constraints = state.constraints;
   }
 
-  /**
-   * A schema cut from another one: it carries no previous names and holds no rows of its
-   * own, whatever else it keeps. `pick`, `partial`, `extend` and `compose` all land here.
-   */
   private static derived(state: Omit<SchemaState, 'previous' | 'anchored'>): SchemaDefinition {
     return new SchemaDefinition({ ...state, previous: undefined, anchored: false });
   }
 
-  /**
-   * The same schema, one member restated — `declares` and `anchor`, which cut nothing.
-   * What they do not name is kept, and that is the whole difference with `derived`.
-   */
   private restated(state: Partial<SchemaState>): SchemaDefinition {
     return new SchemaDefinition({ ...this, ...state });
   }
@@ -133,10 +107,6 @@ export class SchemaDefinition {
     return this.renaming(new Map(here), root);
   }
 
-  /**
-   * `pick`, `omit` and `rename` are one gesture, and the renaming IS that gesture: the
-   * fields it keeps and everything else addressed by field name are both read from it.
-   */
   private renaming(kept: Renaming, root: SchemaView): SchemaDefinition {
     const fields: Fields = {};
     for (const [from, to] of kept) {
@@ -198,11 +168,6 @@ export class SchemaDefinition {
     });
   }
 
-  /**
-   * Refuses a gesture naming a field the schema does not carry, and lists what it does.
-   * FR : refuse un geste nommant un champ absent, et énumère ceux qui existent.
-   * `pick('titel')` → `pick(): unknown field \`titel\`. This schema carries id, title, body.`
-   */
   private assertKnown(operation: string, keys: readonly string[]): void {
     const strangers = keys.filter((key) => !Object.hasOwn(this.fields, key));
     if (strangers.length === 0) return;

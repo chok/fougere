@@ -6,15 +6,11 @@ export interface Axis {
   readonly format: Format;
 
   /**
-   * What a format cannot state: `role.relation.to` is a function, and JSON holds none.
-   * The whole declaration comes with the name, because a contradiction is a PAIR — a
-   * primary key that admits null states one legal `role` beside one legal `shape`.
+   * What the axis refuses that a format cannot say.
+   * Ex: `role.relation.to` must be a function.
    */
   refusals?(value: unknown, declaration: Record<string, unknown>): ValidationError[];
 
-  /**
-   * Whether this axis alone lets the field be absent from what a caller sends. Asked of every
-   * REGISTERED axis, so a fourth one weighs on it without the validator naming it.
-   */
+  /** Whether this axis lets the field be missing from an input. */
   admitsAbsence?(field: Field): boolean;
 }

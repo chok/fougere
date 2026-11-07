@@ -82,17 +82,12 @@ export class Boundary {
     });
   }
 
-  /** What a row leaves as: `encode`, then without the keys its shape closes. */
   private static closing(shape: Shape | undefined, encode: Encoder): Encoder {
     const close = Boundary.closedKeysOf(shape);
 
     return close === identityEncoder ? encode : (value) => close(encode(value));
   }
 
-  /**
-   * `writeOnly` on a property of `json(Account)`, at any depth. It sits beside `forShape` and not
-   * in it, because the judge encodes through `forShape` and must still see what a write carries.
-   */
   private static closedKeysOf(shape: Shape | undefined): Encoder {
     const base = Shapes.of(shape).base;
     if (base?.type === 'array' && base.items) return Boundary.closingEach(Boundary.closedKeysOf(base.items));
@@ -126,8 +121,8 @@ export class Boundary {
   }
 
   /**
-   * `date-time` means a `Date` on both sides, without a word in the entity — and so does a
-   * `date-time` inside `json(Address)`, read off the properties the shape already states.
+   * The boundary a shape implies.
+   * Ex: a `date-time` becomes a `Date`, inside `json(Address)` too.
    */
   static forShape(shape: Shape | undefined): Boundary {
     if (Shapes.typeOf(shape) === 'date') {

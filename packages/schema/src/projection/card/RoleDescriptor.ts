@@ -8,11 +8,6 @@ import type { CardForm } from './CardForm.js';
 
 const GROUPS = Format.listOf(Format.listOf(Format.text));
 
-/**
- * What a role becomes on a card: a target is a NAME there, and `unique` and `index` are both
- * GROUPS — the field says `true`, the card says which names go together, since a group of
- * several belongs to no single field.
- */
 const ROLE_ON_CARD = Format.of('card/role')
   .key('primary', Format.flag)
   .key('unique', GROUPS)
@@ -28,6 +23,7 @@ const ROLE_ON_CARD = Format.of('card/role')
   )
   .closed();
 
+/** A role as a card writes it: the target is a name, `unique` and `index` are groups. */
 export type RoleDescriptor = Accepted<typeof ROLE_ON_CARD>;
 
 export type RelationDescriptor = NonNullable<RoleDescriptor['relation']>;

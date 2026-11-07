@@ -3,7 +3,6 @@ import { SHAPE_TYPES, type Judged, type Shape } from './Shape.js';
 
 const SHAPE = 'field/shape';
 
-/** A word, or that word beside `null` — the second place is what makes a shape nullable. */
 const TYPE = Format.either(
   Format.tokens(SHAPE_TYPES),
   Format.tuple(Format.tokens(SHAPE_TYPES), Format.tokens(['null'])),
@@ -11,7 +10,6 @@ const TYPE = Format.either(
 
 const CHILD = Format.ref(SHAPE);
 
-/** The dialect the engine reads — a shape stating another one would be judged by rules it did not write. */
 const DIALECT = Format.tokens(['https://json-schema.org/draft/2020-12/schema']);
 
 const JUDGED = {
@@ -66,10 +64,6 @@ const JUDGED = {
   pattern: Format.text,
 } satisfies Record<Judged, Format<unknown>>;
 
-/**
- * What the engine reads and judges nothing of. `default`, `readOnly` and `writeOnly` are
- * annotations too, and they are left out: `lifecycle` and `boundary` state them as rules.
- */
 const ANNOTATIONS = {
   title: Format.text,
   description: Format.text,
@@ -77,10 +71,7 @@ const ANNOTATIONS = {
   examples: Format.listOf(Format.anything),
 };
 
-/**
- * What a shape may state — every keyword the engine judges, and the annotations no axis owns. A
- * name outside both is refused under its own name, so `minLenght: 1` does not pass and travel.
- */
+/** What a shape may state: the keywords the engine judges, and the annotations. */
 export const SHAPE_FORMAT = Object.entries({ ...JUDGED, ...ANNOTATIONS })
   .reduce((format, [keyword, admits]) => format.key(keyword, admits), Format.of(SHAPE))
   .closed()

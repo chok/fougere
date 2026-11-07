@@ -5,9 +5,7 @@ import { DESCRIBED, admits, judgeOptions } from '../../field/Word.js';
 
 const ADMITS = admits('many', {}, DESCRIBED);
 
-/**
- * `many(() => Post)` → `{ type: 'array' }` with `role.relation.kind` `'many'`
- */
+/** The rows of another entity that point at this one. */
 export function many<E extends Entity>(
   target: E | (() => E),
   opts?: Described,

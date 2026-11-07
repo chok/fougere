@@ -9,7 +9,6 @@ import { FieldValueValidator } from './FieldValueValidator.js';
 
 type Kind = 'format' | 'generator' | 'boundary' | 'decoder' | 'encoder';
 
-/** What answers each kind of name, besides what a format engine knows natively. */
 const REGISTRIES = {
   generator: Generators,
   boundary: Boundaries.aliases,
@@ -18,8 +17,8 @@ const REGISTRIES = {
 } as const;
 
 /**
- * A term a field names by its name, which a registry answers — `format: 'slug'`, `generate: 'ulid'`,
- * `boundary: 'moneyCents'` and the codecs its rules name. `role` names a class, so it has none.
+ * A name a field gives for a registry to answer.
+ * Ex: `format: 'slug'`, `generate: 'ulid'`.
  */
 export class NamedTerm {
   constructor(

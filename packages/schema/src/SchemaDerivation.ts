@@ -2,7 +2,8 @@ import { type Fields } from './field/Fields.js';
 import type { SchemaView } from './SchemaView.js';
 
 /**
- * The origin is the ROOT: `Post.pick(a, b).omit(b)` answers `Post`, never the intermediate.
+ * Where a derived schema comes from.
+ * Ex: `Post.pick('a', 'b').omit('b')` comes from `Post`.
  *
  * Documented: [views](https://fougere.dev/docs/concepts/entity).
  */

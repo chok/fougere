@@ -2,11 +2,7 @@ import { Lifecycle } from './Lifecycle.js';
 import { type Field } from '../../field/Field.js';
 import { type Fields } from '../../field/Fields.js';
 
-/**
- * Fills what the declaration leaves to the storage, so no handler stamps a date itself.
- * FR : remplit ce que la déclaration laisse au storage : aucun handler n'estampe lui-même.
- * `applyCreate({ id: primary(), createdAt: created() }, { title: 'a' })` → `id`, `createdAt`
- */
+/** Fills what the declaration leaves to the storage, such as an id or a date. */
 export function applyCreate(
   fields: Fields,
   input: Record<string, unknown>,
@@ -25,12 +21,7 @@ export function applyCreate(
   return values;
 }
 
-/**
- * The dual of `applyCreate` on a patch: only `update: 'now'` fields are touched.
- * FR : le dual d'`applyCreate` sur une modification : seuls les champs `update: 'now'`
- * sont touchés.
- * `applyUpdate(fields, { title: 'b' })` → `updatedAt` added, nothing else
- */
+/** Fills the `update: 'now'` fields of a patch. */
 export function applyUpdate(
   fields: Fields,
   patch: Record<string, unknown>,

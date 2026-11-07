@@ -15,10 +15,7 @@ export function json<E extends Entity>(
   opts?: Shared<InstanceType<E>>,
 ): Field<InstanceType<E>>;
 
-/**
- * `json(Address)` → the entity's properties, its required keys, and nothing else: a key the
- * entity does not declare is refused here as it is on the entity's own input.
- */
+/** A JSON value; `json(Address)` admits the fields of `Address` and no other key. */
 export function json(
   of?: Entity | Shared<unknown>,
   opts?: Shared<unknown>,

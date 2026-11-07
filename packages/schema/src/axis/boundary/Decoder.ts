@@ -3,19 +3,12 @@ import { Registry } from '@fougere/registry';
 import type { Encoder } from './Encoder.js';
 import type { Verdict } from '../../lib/Verdict.js';
 
-/**
- * Wire to domain, and it must ANSWER a value it already produced: two facades decode — the
- * client one on what arrives, `StorageGuard` on what a handler writes — so a decoder that
- * halves cents halves them twice and stores a hundredth.
- */
+/** Turns a wire value into a domain value, and accepts a value it already produced. */
 export type Decoder = (value: unknown) => Verdict;
 
 /**
- * `decoders` for a value coming in, `encoders` for one going out, `aliases` for the word
- * that names a pair. Three registries, so a codec is never half declared.
- * FR : `decoders` à l'entrée, `encoders` à la sortie, `aliases` pour le mot qui nomme la paire.
- * `Boundaries.aliases.register('isoDate', { in: { decode: 'isoDate' }, out: { encode: 'isoDate' } })`
- * → a field saying `boundary: 'isoDate'` decodes to a `Date` and leaves as a string
+ * The codecs by name: `decoders` in, `encoders` out, `aliases` for a pair.
+ * Ex: `Boundaries.aliases.register('isoDate', { in: { decode: 'isoDate' }, out: { encode: 'isoDate' } })`.
  */
 export const Boundaries = {
   decoders: new Registry<Decoder>(

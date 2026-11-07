@@ -8,11 +8,6 @@ import { InputValidator } from '../validator/InputValidator.js';
 import { InputRefusal } from '../validator/InputRefusal.js';
 import type { ValidationCase } from './ValidationCase.js';
 
-/**
- * A value of the wrong type, so every field yields at least one case whatever it declares.
- * FR : une valeur du mauvais type, pour que chaque champ rende au moins un cas.
- * `text()` → `42`; `number()` → `'not-a-value-of-this-shape'`
- */
 function wrongTypeFor(field: Field): unknown {
   const declared = (field.shape as { type?: string | readonly string[] }).type;
   const names = Array.isArray(declared) ? declared : [declared];
@@ -20,15 +15,7 @@ function wrongTypeFor(field: Field): unknown {
   return names.includes('string') ? 42 : 'not-a-value-of-this-shape';
 }
 
-/**
- * One case per bound the shape states, and none for a bound it does not.
- * FR : un cas par borne que la forme énonce, aucun pour une borne absente.
- * `text({ maxLength: 3 })` → one case with `'xxxx'`; `text()` → no case
- */
 function outOfBoundsFor(field: Field): { why: string; value: unknown }[] {
-  // Through `Shapes`, not a cast: the cast admitted any keyword, and it declared
-  // `maxItems` — which no branch below ever produced. In the one function whose job is
-  // to be exhaustive, a bound the type does not carry is a case nobody notices missing.
   const shape = Shapes.of(field.shape).base;
   const cases: { why: string; value: unknown }[] = [];
   if (shape?.type === 'string') {
@@ -66,12 +53,7 @@ function outOfBoundsFor(field: Field): { why: string; value: unknown }[] {
   return cases;
 }
 
-/**
- * The decision table, enumerated on the entity's own fields.
- *
- * Use the complete entity so a derived view cannot hide a divergent field. The caller
- * supplies a valid row; generating data belongs to the testing package.
- */
+/** The validation cases an entity's fields imply, from a valid row of the complete entity. */
 export class Cases {
   private constructor(readonly all: readonly ValidationCase[]) {}
 
@@ -98,12 +80,6 @@ export class Cases {
   }
 }
 
-/**
- * Reads the four axes rather than a list kept by hand: a case exists because a field
- * declares the rule it breaks.
- * FR : lit les quatre axes plutôt qu'une liste tenue à la main : un cas existe parce qu'un
- * champ déclare la règle qu'il casse.
- */
 function enumerate(schema: SchemaView, valid: Record<string, unknown>): ValidationCase[] {
   const fields = schema.getFields();
   const validator = InputValidator.of(fields);
@@ -169,8 +145,6 @@ function aboutField(
     });
   }
 
-  // A reference names a row that must exist; the caller supplied its id and we do not
-  // get to invent a second one, so the only case we can state about it is the bound one.
   if (name in valid && !Role.of(field).isReference()) {
     cases.push({
       why: `${name} of the wrong type`,
@@ -186,5 +160,4 @@ function aboutField(
   return cases;
 }
 
-/** What a case names: the input itself, or the field the refusal lands on. */
 const rejected = (path: readonly string[]): string => path[0] ?? '.';

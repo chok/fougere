@@ -21,23 +21,14 @@ export interface FieldDeclaration extends FougereFieldAxes {
   shape: Shape;
 }
 
-/**
- * Every word ends on `setShared`, so the options are read in ONE place and refused there.
- * `text(42)` used to pass for a bare `text()`, and nine of the twelve words took it.
- */
 const refuseLooseOptions = (opts: unknown): void => {
   if (!isObject(opts))
     throw new SchemaError('Options must go in an object, like { max: 200 }', { received: opts });
 };
 
-/** The registry answers strings, and a member of a declaration is what they name. */
 const registered = (): (keyof FieldDeclaration)[] => Axes.names as (keyof FieldDeclaration)[];
 
-/**
- * The axes it carries are `FougereFieldAxes`, which each axis writes its own line in — so the
- * three of the core are typed the way a fourth declared outside is, and the class names what
- * the registry decides only once, in the constructor.
- */
+/** A field: its shape, and one member per registered axis. */
 export interface Field<T = unknown> extends FougereFieldAxes {
   readonly _type?: T;
 }
@@ -77,11 +68,7 @@ export class Field<T = unknown> {
     return FieldDeclarationValidator.of(value).verdict.success;
   }
 
-  /**
-   * What this field declares on ONE axis, a fourth one registered outside included. An axis is
-   * a member, so it is read by NAME, and three callers reached for it through a cast of their
-   * own before this existed.
-   */
+  /** What the field declares on one axis, read by name. */
   axis(name: keyof FieldDeclaration): unknown {
     return (this satisfies FieldDeclaration)[name];
   }
@@ -104,12 +91,7 @@ export class Field<T = unknown> {
     return new Field<U>({ ...this, ...overrides });
   }
 
-  /**
-   * What a word admits whatever its shape, and where it lands: `description` IS a JSON Schema
-   * keyword, `default` IS a lifecycle rule. Stated here alone, so no word writes the conversion.
-   * FR : ce que tout mot admet quelle que soit sa forme, et où ça atterrit.
-   * `text({ max: 200 }).setShared({ description: 'The title' })` → `shape.description`
-   */
+  /** Applies the options every word admits: `description` and `default`. */
   setShared(opts?: Shared<T>): Field<T> {
     if (opts === undefined) return this;
 

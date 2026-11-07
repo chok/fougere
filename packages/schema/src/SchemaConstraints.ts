@@ -3,13 +3,7 @@ import { type Fields } from './field/Fields.js';
 import { type FieldGroups } from './field/FieldGroups.js';
 import type { EntityDeclarations } from './entity/EntityDeclarations.js';
 
-/**
- * What a schema states beyond any single field: groups of names. `unique` constrains the
- * rows, `index` says how they are reached — two decisions, and neither implies the other.
- * They sit under an owner rather than beside `fields` and `opts` because the next rule
- * spanning two fields — a check, an exclusion — is a member here, not an eighth positional
- * argument in a list that has already lost one.
- */
+/** What a schema states beyond a single field: groups of field names. */
 export type ConstraintKind = (typeof SchemaConstraints.kinds)[number];
 
 export class SchemaConstraints<TFields extends Fields = Fields> {
@@ -23,9 +17,8 @@ export class SchemaConstraints<TFields extends Fields = Fields> {
   static readonly none = new SchemaConstraints([], []);
 
   /**
-   * The order is part of a group, so `['a','b']` and `['b','a']` are two constraints.
-   * FR : l'ordre fait partie du groupe : `['a','b']` et `['b','a']` sont deux contraintes.
-   * `SchemaConstraints.of([['a','b'], ['a','b']])` → `unique` holds one group
+   * The groups, without duplicates.
+   * Ex: `['a','b']` and `['b','a']` are two groups.
    */
   static of<TFields extends Fields>(
     groups: Pick<EntityDeclarations<TFields>, ConstraintKind>,

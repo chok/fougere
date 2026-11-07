@@ -16,16 +16,12 @@ export type OptionsOf<Table extends Record<string, WordOption>> = { [K in keyof 
 /** The same, for a word whose keys write no keyword — read off the formats of its keys. */
 export type OptionsIn<Keys extends Record<string, Format<any>>> = { [K in keyof Keys]?: Accepted<Keys[K]> };
 
-/** The two keys every shaping word admits: the sentence it carries, and the value it is born with. */
 const SHARED = { description: Format.text, default: Format.anything } as const;
 
 /** What a word that shapes no value admits — a relation, a stamp: the sentence and nothing else. */
 export const DESCRIBED = { description: Format.text } as const;
 
-/**
- * The keys a word admits, as a closed format — so an option it does not know is refused under its
- * own name, where reading only the keys it knew used to drop `minn` without a word.
- */
+/** The options a word admits, as a closed format. */
 export function admits(
   word: string,
   keys: Record<string, Format<unknown>>,
@@ -46,9 +42,8 @@ export function judgeOptions(word: string, format: Format<unknown>, opts: unknow
 }
 
 /**
- * A word, declared as a table: its base shape, and each option with the keyword it writes. The
- * closed format, the options type and the shape all derive from that one table.
- * `word<string>()('text', { type: 'string' }, { max: ['maxLength', Format.count] })`
+ * Declares a word as a table: its base shape, and the keyword each option writes.
+ * Ex: `word<string>()('text', { type: 'string' }, { max: ['maxLength', Format.count] })`.
  */
 export function word<T>() {
   return <Table extends Record<string, WordOption>>(name: string, base: Shape, table: Table) => {

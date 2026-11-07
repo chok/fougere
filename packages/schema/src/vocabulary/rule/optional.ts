@@ -2,10 +2,7 @@ import { vocabulary } from '../vocabulary.js';
 import { Shapes } from '../../axis/shape/Shape.js';
 import { type Field } from '../../field/Field.js';
 
-/**
- * Adds `null` AND permits absence. A field that already states a `create` rule keeps it.
- * `optional(text())` → `{ type: ['string', 'null'] }` and `create: 'optional'`
- */
+/** Admits `null` and absence, and keeps a `create` rule already stated. */
 export const optional: <T>(field: Field<T>) => Field<T | null> = vocabulary(
   'optional',
   (field) => ({

@@ -8,7 +8,6 @@ type Nullably<T extends string> = T | readonly [T, 'null'];
 /** The keywords the engine judges — its own type, less the index signature and its `__` bookkeeping. */
 export type Judged = keyof { [K in keyof Schema as string extends K ? never : K extends `__${string}` ? never : K]: true };
 
-/** Where the door admits less than the engine — a child is a shape, never `true` or a list. */
 interface Narrowed {
   type: Nullably<(typeof SHAPE_TYPES)[number]>;
   items?: Shape;
@@ -38,7 +37,6 @@ export const SHAPE_TYPES = [
 ] as const;
 
 
-/** A shape with `null` taken out of its type — what `Shapes` splits a nullable one into. */
 type BaseShape = Shape extends infer Each
   ? Each extends { type: infer Type } ? Omit<Each, 'type'> & { type: Type extends readonly [infer One, 'null'] ? One : Type } : never
   : never;
@@ -62,12 +60,7 @@ export class Shapes {
   private static readonly cache = new WeakMap<object, ShapeParts>();
   private static readonly none: ShapeParts = { base: undefined, nullable: false };
 
-  /**
-   * Every `pattern` a shape states, the nested ones included — `items`, `properties`.
-   *
-   * Two readers ask two questions of the same list: the card facade asks whether each one
-   * compiles, `fougere check` whether each one backtracks. Neither owns the walk.
-   */
+  /** Every `pattern` a shape states, nested ones included. */
   static patterns(shape: unknown): string[] {
     const found: string[] = [];
     Shapes.collectPatterns(shape, found);
@@ -90,16 +83,8 @@ export class Shapes {
   }
 
   /**
-   * `null` enters the grammar, and every constraint stays. It is added when it is ABSENT,
-   * read off the shape rather than assumed from its form — a shape already stating it comes
-   * back as itself, so `optional(nullable(text()))` does the work once.
-   *
-   * `enum` is widened TOO, because JSON Schema checks it apart from `type`: a shape saying
-   * `['string','null']` and `enum: ['draft','live']` calls null a legal type and not a legal
-   * value, and the engine answers `Instance does not match any of ["draft","live"]`.
-   *
-   * `{ type: 'string', minLength: 3 }`      → `{ type: ['string','null'], minLength: 3 }`
-   * `{ type: 'string', enum: ['draft'] }`   → `{ type: ['string','null'], enum: ['draft', null] }`
+   * Adds `null` to a shape, and to its `enum`.
+   * Ex: `{ type: 'string', enum: ['draft'] }` → `{ type: ['string','null'], enum: ['draft', null] }`.
    */
   static nullable(shape: Shape): Shape {
     const types = Shapes.typesOf(shape);
@@ -150,11 +135,8 @@ export class Shapes {
   }
 
   /**
-   * A value that came in as text — a form control, a command-line flag, a variable of the
-   * environment — read as the shape declares it. What does not read that way stays as it came,
-   * for the judge to refuse by name.
-   * `fromText({ type: 'integer' }, '12')` → `12`, `fromText({ type: 'boolean' }, '0')` → `false`,
-   * `fromText({ type: 'array' }, '["a"]')` → `['a']`, and `fromText({ type: 'integer' }, 'abc')` → `'abc'`
+   * A text value, read as the shape declares it.
+   * Ex: `fromText({ type: 'integer' }, '12')` → `12`, and `'abc'` stays `'abc'`.
    */
   static fromText(shape: Shape | undefined, value: unknown): unknown {
     const type = this.of(shape).base?.type;
@@ -171,7 +153,6 @@ export class Shapes {
     return value;
   }
 
-  /** The words a boolean is written in as text. */
   private static readonly BOOLEANS: Readonly<Record<string, boolean>> = { true: true, false: false, 1: true, 0: false };
 
   private static json(text: string): unknown {
@@ -182,11 +163,7 @@ export class Shapes {
     }
   }
 
-  /**
-   * `shape.type` read off the base, except that a `string` answers `date` or `choice`.
-   * FR : `shape.type` lu sur la base, sauf qu'une chaîne répond `date` ou `choice`.
-   * `typeOf({ type: ['string', 'null'], format: 'date-time' })` → `'date'`
-   */
+  /** The shape's type, with `date` and `choice` told apart from `string`. */
   static typeOf(shape?: Shape): ShapeType | undefined {
     const base = this.of(shape).base;
     if (!base) return undefined;

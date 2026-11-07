@@ -7,17 +7,11 @@ type AdapterConfiguration = Record<string, unknown>;
 type AdapterConfigurations = Record<string, AdapterConfiguration>;
 
 export class EntityAdapterSet {
-  /**
-   * `{ sql: { body: { columnType: { pg: 'tsvector' } } } }`
-   */
   private constructor(readonly adapters: EntityAdapters<Fields>) {}
 
   static readonly none = new EntityAdapterSet({});
 
-  /**
-   * Stops a malformed declaration from propagating, by checking its two levels.
-   * `of({ sql: { body: 3 } })` → passes; `of({ sql: 'oops' })` → throws, naming `adapters.sql`
-   */
+  /** Checks an `adapters:` declaration on its two levels, adapter then field. */
   static of(adapters?: EntityAdapters<Fields>): EntityAdapterSet {
     if (!adapters) return EntityAdapterSet.none;
 
@@ -73,8 +67,6 @@ export class EntityAdapterSet {
         if (newName !== undefined) mapped[newName] = entry;
       }
 
-      // Drop an adapter left with no field. `Post.pick('id')` would otherwise answer
-      // `{ sql: {} }` — a line the entity never wrote.
       if (Object.keys(mapped).length) renamed[adapter] = mapped;
     }
 

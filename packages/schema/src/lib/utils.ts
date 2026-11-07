@@ -9,9 +9,8 @@ export function upperFirst(text: string): string {
 }
 
 /**
- * The plural of a name's last word — `orderItem` → `orderItems`, `category` → `categories`,
- * `inventory` → `inventories`. Every name a collection is given is read here, so a table and a
- * route never spell one entity two ways.
+ * The plural of a name's last word.
+ * Ex: `orderItem` → `orderItems`, `category` → `categories`.
  */
 export function pluralOf(name: string): string {
   const [, head, last] = /^(.*?)([A-Za-z][a-z0-9]*)$/.exec(name) ?? [, '', name];

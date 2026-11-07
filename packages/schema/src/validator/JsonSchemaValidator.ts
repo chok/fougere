@@ -4,11 +4,7 @@ import { isObject } from '../lib/utils.js';
 import type { ValidationError } from '../lib/ValidationError.js';
 import { locationOf } from '../lib/ValidationResult.js';
 
-/**
- * The one door onto the engine: a field's value against its shape, a declaration against the
- * format of its key. The format is DATA, not a TypeScript interface: an interface is erased
- * before a JS caller, a config or a card from another language could be measured against it.
- */
+/** The one door onto the JSON Schema engine. */
 export class JsonSchemaValidator {
   private static readonly held = new WeakMap<JsonSchema, JsonSchemaValidator>();
 
@@ -42,10 +38,7 @@ export class JsonSchemaValidator {
     return at(path, reasons.length ? deepestOf(reasons) : refused[0]);
   }
 
-  /**
-   * One refusal per key, so a declaration hears every fault at once. It reads through an engine
-   * of its own: the other stops at the first, which is what a single value wants.
-   */
+  /** Every refusal, one per key. */
   refusalsOf(value: unknown, path: readonly string[]): ValidationError[] {
     this.every ??= new Validator(this.schema, '2020-12', false);
 
@@ -60,7 +53,6 @@ export class JsonSchemaValidator {
   }
 }
 
-/** What it refused on, or the member JSON cannot hold — the engine throws on one rather than refusing. */
 function refusedBy(engine: Validator, value: unknown): OutputUnit[] | ValidationError {
   const json = stated(value);
 
@@ -75,20 +67,13 @@ function refusedBy(engine: Validator, value: unknown): OutputUnit[] | Validation
   }
 }
 
-/** `False boolean schema` names nothing: the unit above it carries the offending key. */
 const named = (units: readonly OutputUnit[]): OutputUnit[] =>
   units.filter((unit) => unit.keyword !== 'false');
 
-/** The engine states its refusals outermost first: the deepest says where, the last one is why. */
 function deepestOf(units: readonly OutputUnit[]): OutputUnit {
   return units.reduce((held, unit) => (depthOf(held) > depthOf(unit) ? held : unit));
 }
 
-/**
- * The units of one fault, addressed by the key they happened under. A unit on the value ITSELF
- * points at a key when another one is deeper — `Property "lifecycle" does not match schema.` —
- * so it is kept only when it is all there is.
- */
 function byKey(units: readonly OutputUnit[]): Map<string, OutputUnit[]> {
   const held = new Map<string, OutputUnit[]>();
 
@@ -114,7 +99,6 @@ const under = (path: readonly string[], refusal: ValidationError): ValidationErr
 
 const depthOf = (unit: OutputUnit): number => locationOf(unit.instanceLocation).length;
 
-/** A key set to `undefined` states nothing, as in JSON — and the engine refuses to read one. */
 function stated(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(stated);
 
@@ -125,7 +109,6 @@ function stated(value: unknown): unknown {
   return Object.fromEntries(present.map(([key, member]) => [key, stated(member)]));
 }
 
-/** Where the engine stopped: a function, a symbol or a bigint is not a value JSON holds. */
 function unreadableIn(
   value: unknown,
   path: readonly string[] = [],

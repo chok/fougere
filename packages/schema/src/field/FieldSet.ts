@@ -13,16 +13,7 @@ export class FieldSet<TFields extends Fields = Fields> {
     return new FieldSet(fields);
   }
 
-  /**
-   * Splits a declared `unique`: a group of one lands on the field, several stay on the schema.
-   * FR : partage un `unique` déclaré : un groupe d'un va au champ, plusieurs restent au schéma.
-   * `declaring(fields, [['email'], ['listId', 'docId']])` → `email` carries it, the pair is a group
-   */
-  /**
-   * A group of ONE is the word on the field — `unique: [['slug']]` is `unique(text())` — so it
-   * is written there and never kept as a group, which is what lets a derivation drop it with
-   * its field. A group of several is what no single field can state, and it is kept whole.
-   */
+  /** Splits the declared groups: a group of one goes on its field, several stay on the schema. */
   static declaring<TFields extends Fields>(
     declared: TFields,
     groups: Partial<Record<ConstraintKind, FieldGroups<TFields>>> = {},

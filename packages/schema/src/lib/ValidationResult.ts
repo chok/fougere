@@ -5,8 +5,8 @@ export type ValidationResult<T> =
   | { success: false; errors: ValidationError[] };
 
 /**
- * A path as a message writes it — `addr.street`. One rendering among others, and the
- * reason the value stays segmented: this one cannot be read back.
+ * A path written for a message.
+ * Ex: `['addr', 'street']` → `addr.street`.
  */
 export const dotted = (path: readonly string[]): string => path.join('.');
 

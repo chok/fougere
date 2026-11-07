@@ -4,8 +4,8 @@ import { dequal } from 'dequal';
 import { SchemaError } from '../SchemaError.js';
 
 /**
- * Builds a `rule/` word
- * `vocabulary('indexed', () => ({ role: { index: true } }))`
+ * Builds a `rule/` word.
+ * Ex: `vocabulary('indexed', () => ({ role: { index: true } }))`.
  */
 export function vocabulary(
   word: string,
@@ -20,11 +20,6 @@ export function vocabulary(
 
 export type FieldWord = (field: Field<any>) => Field<any>;
 
-/**
- * Refuses two words stating one member DIFFERENTLY, rather than letting the outer win.
- * `readOnly(writeOnly(text()))` → both apply, they write two members; `immutable(created())`
- * too, since both say `update: 'forbidden'`; `immutable(updated())` → throws.
- */
 function merge(word: string, field: Field, changes: Partial<FieldDeclaration>): Partial<Field> {
   const merged: Record<string, unknown> = {};
   if ('shape' in changes) merged.shape = changes.shape;

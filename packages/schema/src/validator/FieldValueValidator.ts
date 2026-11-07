@@ -49,10 +49,7 @@ export class FieldValueValidator {
     return { value };
   }
 
-  /**
-   * The value admitted, then handed back in the form the domain writes — an ISO string
-   * arrives as a `Date`. `null` passes untouched, and a refusal stops before the codec.
-   */
+  /** The value admitted, then decoded into its domain form. */
   parse(value: unknown): Verdict {
     const verdict = this.validate(value);
     if ('message' in verdict) return verdict;

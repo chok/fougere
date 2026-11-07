@@ -47,6 +47,10 @@ group('Card.fromSchema — schema to JSON Schema card', () => {
     expect(card.title).toBe('post');
   });
 
+  it('names a derivation after the entity it was cut from', () => {
+    expect(Card.titleOf(Post.pick('title'))).toBe(Card.titleOf(Post));
+  });
+
   it('maps shape to JSON Schema keywords', () => {
     expect(card.properties.title).toEqual({ type: 'string', minLength: 1 });
     expect(card.properties.views).toEqual({ type: 'integer', minimum: 0 });

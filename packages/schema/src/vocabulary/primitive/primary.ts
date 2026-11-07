@@ -11,9 +11,8 @@ type PrimaryOptions = OptionsIn<typeof KEYS> & Described;
 export function primary(opts?: PrimaryOptions): Field<string>;
 export function primary<T>(field: Field<T>): Field<T>;
 /**
- * `primary()` for a generated id; `primary(number())` to make a declared field the key.
- * `primary()` → `create: { generate: 'uuidv7' }`, `update: 'forbidden'` — an id that carries its
- * creation time; `primary({ generate: 'uuid' })` for one that carries nothing.
+ * The key: a generated id, or a declared field.
+ * Ex: `primary()` is a `uuidv7`, `primary(number())` keys on a number.
  */
 export function primary(fieldOrOptions?: Field | PrimaryOptions): Field {
   if (Field.is(fieldOrOptions)) {

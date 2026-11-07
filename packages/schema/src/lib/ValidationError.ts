@@ -1,9 +1,5 @@
 export interface ValidationError {
-  /**
-   * Where the refusal happened: the field, then where under it the shape refused.
-   * Empty when the input itself is refused. Segments, never a sentence — a field may
-   * legally be named `a.b`, and re-parsing a joined path invents a segment it never had.
-   */
+  /** Where the refusal happened, as segments; empty when the whole input is refused. */
   path: readonly string[];
   message: string;
 }

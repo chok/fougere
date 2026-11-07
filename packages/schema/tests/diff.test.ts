@@ -30,6 +30,17 @@ group('what separates two shapes', () => {
     expect(V1.diff(V1)).toEqual({ changes: [], ambiguous: [] });
   });
 
+  it('reads the order of the types as no change', () => {
+    const typed = (type: string[]) => {
+      const descriptor = structuredClone(V1.descriptor) as { properties: Record<string, { type: unknown }> };
+      descriptor.properties.body!.type = type;
+
+      return Card.fromDescriptor(descriptor as never);
+    };
+
+    expect(typed(['string', 'null']).diff(typed(['null', 'string'])).changes).toEqual([]);
+  });
+
   it('reports a field that appeared, and whether it must be filled', () => {
     const V2 = shapeOf({ id: primary(), title: text(), body: text(), slug: text() });
 

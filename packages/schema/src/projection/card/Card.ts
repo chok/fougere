@@ -74,8 +74,8 @@ export class Card<T = Values<Fields>> {
   }
 
   /**
-   * A derivation answers the name it was cut from — `Post.pick('title')` is `Post`, since
-   * a derived class carries `Schema`.
+   * The entity's name.
+   * Ex: `Post.pick(…)` answers `Post`.
    */
   static titleOf(schema: SchemaView): string {
     return schema.derivation?.sourceName ?? schema.name;
@@ -132,11 +132,6 @@ export class Card<T = Values<Fields>> {
   }
 }
 
-/**
- * Each axis writes its own wire form under `x-fougere`; `shape` stays outside, plain.
- * FR : chaque axe écrit sa forme de fil sous `x-fougere` ; `shape` reste dehors, nu.
- * `ref(User)` → `{ role: { relation: { to: 'user', kind: 'one' } } }`
- */
 function describeExtension(field: Field, key: string): FieldExtension | undefined {
   const extension: Record<string, unknown> = {};
   for (const [name, declared] of Object.entries(field.axes)) {
@@ -150,8 +145,6 @@ function describeExtension(field: Field, key: string): FieldExtension | undefine
 }
 
 function describeField(field: Field, key: string): FieldDescriptor {
-  // The shape IS JSON Schema, so it lands whole rather than key by key — which is what let
-  // it be copied under a computed key into a type that names its own.
   const descriptor: FieldDescriptor = clean({ ...field.shape }) as FieldDescriptor;
   const extension = describeExtension(field, key);
   if (extension) descriptor['x-fougere'] = extension;
@@ -159,11 +152,6 @@ function describeField(field: Field, key: string): FieldDescriptor {
   return descriptor;
 }
 
-/**
- * What a derived card says of its root, and of every field the cut kept or dropped.
- * FR : ce qu'une carte dérivée dit de sa racine, et de chaque champ gardé ou perdu.
- * `Post.pick('title')` → `{ from: 'Post', nameOf: { title: 'title' } }`
- */
 function originOf(schema: SchemaView): DerivedFrom | undefined {
   const { derivation } = schema;
   if (!derivation) return undefined;
@@ -174,28 +162,16 @@ function originOf(schema: SchemaView): DerivedFrom | undefined {
   return { from: derivation.sourceName, nameOf };
 }
 
-/**
- * Rebuilds the shape a card carries, refusing a type the standard does not name.
- * FR : reconstruit la forme que porte une carte, refusant un type hors du standard.
- * `{ type: 'string', maxLength: 200 }` → the same shape `text({ max: 200 })` states
- */
 function reconstructShape(property: FieldDescriptor): Field['shape'] | undefined {
   const types = Shapes.typesOf(property);
   if (!types.some((type) => type !== 'null')) return undefined;
 
-  // `describeField` writes the shape whole, so it is read whole: a list of keywords here
-  // would be a second inventory, and the one that forgets a keyword loses it in silence.
   const { 'x-fougere': _extension, ...shape } = property;
   if (shape.items) shape.items = reconstructShape(shape.items) as FieldDescriptor;
 
   return clean(shape) as Field['shape'];
 }
 
-/**
- * Rebuilds a field, each axis reading back what it wrote — the dual of `describeField`.
- * FR : reconstruit un champ, chaque axe relisant ce qu'il a écrit — le dual de `describeField`.
- * `{ 'x-fougere': { lifecycle: { create: 'now' } } }` → a field stamped at create
- */
 function reconstructField(
   property: FieldDescriptor,
   key: string,
@@ -221,11 +197,6 @@ function reconstructField(
   return new Field({ shape, ...axes } as never, key);
 }
 
-/**
- * Writes a group onto EVERY member — a wire reader sees one field at a time.
- * FR : écrit un groupe sur CHAQUE membre — un lecteur du fil ne voit qu'un champ.
- * `carryGroup(properties.listId, ['listId', 'docId'])` → the pair lands under its `role`
- */
 function carryGroup(
   property: FieldDescriptor | undefined,
   kind: 'unique' | 'index',

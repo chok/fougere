@@ -12,10 +12,8 @@ const absolute = (id?: string): string | undefined =>
 export type Accepted<F> = F extends Format<infer T> ? T : never;
 
 /**
- * How a format is written here: its keys, never its JSON Schema. `$id`, `$ref`, `$defs` and the
- * closing are produced, and what it accepts is carried as a TYPE, so a declaration is stated once.
- * FR : on écrit les clés d'un format ; le document et le type sont produits.
- * `Format.of('axis/tenancy').key('scope', Format.tokens(SCOPES)).closed()`
+ * A format, written as keys; its JSON Schema and its type are produced.
+ * Ex: `Format.of('axis/tenancy').key('scope', Format.tokens(SCOPES)).closed()`.
  */
 export class Format<T = unknown> {
   static readonly anything = new Format<unknown>(true);
@@ -47,8 +45,8 @@ export class Format<T = unknown> {
   }
 
   /**
-   * A list of a FIXED length, each place stating its own format — `['string', 'null']` and
-   * never `['string', 'number']`, which a list of one format cannot tell apart.
+   * A list of fixed length, a format per place.
+   * Ex: `['string', 'null']`.
    */
   static tuple<const Places extends readonly Format<unknown>[]>(
     ...places: Places
@@ -61,18 +59,12 @@ export class Format<T = unknown> {
     });
   }
 
-  /**
-   * A format naming ITSELF, which no value can do while it is being built: `items` holds a shape,
-   * and the shape is what declares `items`. The `$id` `of()` already posts is what it points at.
-   */
+  /** A format pointing at another by its `$id`, for one that contains itself. */
   static ref(id: string): Format<unknown> {
     return new Format({ $ref: absolute(id) as string });
   }
 
-  /**
-   * A word or anything else, told apart by TYPE, so a refusal names the half the value belongs
-   * to — `create: 'nawak'` reads against the words, `type: ['string', 'null']` against the list.
-   */
+  /** A word or anything else, told apart by type. */
   static either<Word, Other>(word: Format<Word>, otherwise: Format<Other>): Format<Word | Other> {
     return new Format({
       if: { type: 'string' },

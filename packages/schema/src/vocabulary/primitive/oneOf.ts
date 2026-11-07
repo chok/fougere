@@ -15,7 +15,8 @@ export function oneOf<const T extends Values>(
 ): Field<T[number]>;
 
 /**
- * `oneOf('draft', 'published', { default: 'draft' })` → `{ type: 'string', enum: [...] }`
+ * One of a fixed set of strings or numbers.
+ * Ex: `oneOf('draft', 'published', { default: 'draft' })`.
  */
 export function oneOf<const T extends Values>(
   ...args: [...T] | [...T, Shared<T[number]>]

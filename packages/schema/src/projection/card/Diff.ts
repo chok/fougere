@@ -17,9 +17,8 @@ export interface Diff {
 }
 
 /**
- * What changed between two descriptions of the same entity, read from the wire form alone.
- * FR : ce qui a changé entre deux descriptions d'une même entité, lu du seul format du fil.
- * `compare(v1, v2, { renamed: { body: 'content' } })` → one `renamed`, no `ambiguous`
+ * What changed between two descriptions of the same entity.
+ * Ex: `compare(v1, v2, { renamed: { body: 'content' } })`.
  *
  * Documented: [how a schema moves](https://fougere.dev/docs/data/evolve).
  */
@@ -36,7 +35,6 @@ export function compare(
 
   const kept: Change[] = [];
   const removed: string[] = [];
-  // A declared rename first, so every difference below is read under the new name.
   for (const [field, descriptor] of Object.entries(before)) {
     const now = renamed[field] ?? field;
     const target = after[now];
@@ -64,7 +62,6 @@ export function compare(
   };
 }
 
-/** What one field that survived the two descriptions says about itself now. */
 function movedIn(
   field: string,
   now: string,
@@ -112,31 +109,16 @@ function shapeOf(descriptor: FieldDescriptor): Record<string, unknown> {
   return shape as Record<string, unknown>;
 }
 
-/**
- * Sorted, so `['string','null']` and `['null','string']` compare equal, not as a change.
- * FR : trié, pour que `['string','null']` et `['null','string']` soient égaux.
- * `typesOf({ type: ['null', 'string'] })` → `['null', 'string']`
- */
 function typesOf(descriptor: FieldDescriptor): TypeSet {
   return [...Shapes.typesOf(descriptor)].sort();
 }
 
-/**
- * The shape without its type, which is what tells a `reshaped` from a `retyped`.
- * FR : la forme sans son type, ce qui distingue un `reshaped` d'un `retyped`.
- * `maxLength: 200` → `maxLength: 100` → one `reshaped`, never a `retyped`
- */
 function boundsOf(descriptor: FieldDescriptor): Record<string, unknown> {
   const { type: _type, ...rest } = shapeOf(descriptor);
 
   return rest;
 }
 
-/**
- * A removal plus an addition of one shape is REPORTED, never resolved — only `renamed` decides.
- * FR : une suppression plus un ajout de même forme est RAPPORTÉE, jamais résolue.
- * `body` gone, `content` appeared → `ambiguous: [{ removed: 'body', added: 'content' }]`
- */
 function candidates(
   removed: string[],
   added: string[],

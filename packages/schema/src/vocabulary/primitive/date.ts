@@ -1,7 +1,4 @@
 import { word } from '../../field/Word.js';
 
-/**
- * A `Date` in a handler, an ISO string on the wire — the `isoDate` boundary converts.
- * `date()` → `{ type: 'string', format: 'date-time' }`
- */
+/** A `Date` in code, an ISO string on the wire. */
 export const date = word<Date>()('date', { type: 'string', format: 'date-time' }, {});
