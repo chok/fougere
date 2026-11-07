@@ -41,7 +41,7 @@
       "import": "./dist/descriptor/index.js",
       "default": "./dist/descriptor/index.js"
     },
-    "./tsconfig": "./tsconfig/fronds.json"
+    "./tsconfig": "./tsconfig/tsconfig.json"
   },
   "imports": {
     "#ambient": {

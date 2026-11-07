@@ -1,5 +1,4 @@
 {
-  // A Frond is autonomous TypeScript domain code — it typechecks on its own.
   "extends": "../../../tsconfig.base.json",
   "compilerOptions": {
     "noEmit": true,

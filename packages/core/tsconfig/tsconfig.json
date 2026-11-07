@@ -1,8 +1,4 @@
 {
-  // `@fronds/<name>` for the checker, from a tsconfig at the project root or in `fronds/`:
-  // a frond of the project, then one `fougere sync` wrote. `${configDir}` is the directory of
-  // the tsconfig that extends this one. What a project checks on its own is `include`: its fronds,
-  // its config, and the names that config may write. An `include` of its own replaces this one.
   "include": [
     "${configDir}/fronds",
     "${configDir}/fougere.config.ts",

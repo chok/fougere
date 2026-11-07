@@ -5,7 +5,7 @@ import ts from '@typescript/typescript6';
 import { describe, expect, it } from 'vitest';
 import { NAMES } from '../src/node.js';
 
-const base = join(import.meta.dirname, '..', 'tsconfig', 'fronds.json');
+const base = join(import.meta.dirname, '..', 'tsconfig', 'tsconfig.json');
 
 const filesOf = (root: string): string[] => {
   const parsed = ts.getParsedCommandLineOfConfigFile(join(root, 'tsconfig.json'), {}, {
