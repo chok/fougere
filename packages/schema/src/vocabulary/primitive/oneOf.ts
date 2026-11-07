@@ -26,23 +26,8 @@ export function oneOf<const T extends Values>(
   const opts = isObject(last) ? last : undefined;
   const values = opts ? given.slice(0, -1) : given;
 
-  let shape: Shape | undefined = undefined;
-
-  if (values.length === 0)
-    throw new SchemaError(
-      'oneOf() takes strings or numbers, then an optional object of options', { received: given },
-    );
-
-  if (isArrayOf(values, (value) => typeof value === 'string'))
-    shape = { type: 'string', enum: values };
-
-  if (isArrayOf(values, (value) => typeof value === 'number'))
-    shape = {
-      type: values.every(Number.isInteger) ? 'integer' : 'number',
-      enum: values,
-    };
-
-  if (shape === undefined)
+  const shape = shapeOf(values);
+  if (!shape)
     throw new SchemaError(
       'oneOf() takes strings or numbers, then an optional object of options', { received: given },
     );
@@ -50,4 +35,13 @@ export function oneOf<const T extends Values>(
   judgeOptions('oneOf', ADMITS, opts);
 
   return new Field<T[number]>({ shape }).setShared(opts);
+}
+
+function shapeOf(values: readonly unknown[]): Shape | undefined {
+  if (values.length === 0) return undefined;
+  if (isArrayOf(values, (value) => typeof value === 'string')) return { type: 'string', enum: values };
+  if (isArrayOf(values, (value) => typeof value === 'number'))
+    return { type: values.every(Number.isInteger) ? 'integer' : 'number', enum: values };
+
+  return undefined;
 }
