@@ -1,9 +1,8 @@
 import type { Registry } from './Registry.js';
 
 /**
- * A name and its answer, held as a value — what a `vocabulary/` file exports, and what the frond
- * stating it registers. A declaration still writes the NAME (`format: 'slug'`), which is what a card
- * carries; the answer travels with the frond, so it is imported rather than loaded for its effect.
+ * A name and its answer, exported from a `vocabulary/` file.
+ * Ex: `export const slug = StringFormats.term('slug', …)`.
  */
 export class Term<T> {
   constructor(

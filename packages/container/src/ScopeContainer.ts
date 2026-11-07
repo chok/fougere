@@ -187,7 +187,6 @@ export class ScopeContainer implements Container {
     if (at !== -1) this.children.splice(at, 1);
   }
 
-  /** What this scope will close. A value that answers neither `[Symbol.asyncDispose]` nor `[Symbol.dispose]` is not one of them. */
   private disposeLater(value: unknown): void {
     if (ScopeContainer.isDisposable(value)) this.toDispose.push(value);
   }

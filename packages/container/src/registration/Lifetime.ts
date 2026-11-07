@@ -1,5 +1,2 @@
-/**
- * `'singleton'` builds once per scope and the container disposes it; `'transient'`
- * builds per `resolve` and the caller closes it. Absent means `'transient'`.
- */
+/** `'singleton'` builds once per scope, `'transient'`, the default, at each `resolve`. */
 export type Lifetime = 'singleton' | 'transient';

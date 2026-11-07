@@ -7,12 +7,7 @@ export interface Ordering<N> {
   cycle: N[];
 }
 
-/**
- * A labelled directed multigraph: two edges may join the same nodes under two labels, and an edge
- * may leave a node to come back to it. It is read both ways, and every answer follows the order the
- * nodes were added in. Whether a cycle is a fault is the caller's to say — a state machine has them,
- * a dependency may not.
- */
+/** A labelled directed multigraph, read both ways, in the order its nodes were added. */
 export class Graph<N = string, L = string> {
   private static readonly none: readonly never[] = [];
 
@@ -57,8 +52,8 @@ export class Graph<N = string, L = string> {
   }
 
   /**
-   * Each node after every node it points to, the first added first among those ready. A loop orders
-   * nothing — it places a node against no other — so `cycles()` is where it is seen.
+   * Each node after every node it points to.
+   * Ex: a loop orders nothing; `cycles()` reports it.
    */
   order(): Ordering<N> {
     const nodes = this.nodes;
@@ -147,10 +142,6 @@ export class Graph<N = string, L = string> {
     return reached;
   }
 
-  /**
-   * The strongly connected components, each starting with its first-added node, in that node's order
-   * — Tarjan's, walked with a stack of its own so a long chain cannot exhaust the call stack.
-   */
   private stronglyConnectedComponents(): N[][] {
     const index = new Map<N, number>();
     const low = new Map<N, number>();
@@ -204,7 +195,6 @@ export class Graph<N = string, L = string> {
     return stronglyConnectedComponents.sort((a, b) => this.rank.get(a[0])! - this.rank.get(b[0])!);
   }
 
-  /** The shortest way out of `start` and back, without leaving the knot. */
   private loopThrough(start: N, component: Set<N>): N[] {
     const cameFrom = new Map<N, N>();
     const queue = [start];
