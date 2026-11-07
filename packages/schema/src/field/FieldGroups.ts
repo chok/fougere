@@ -1,5 +1,5 @@
-import type { FieldName } from '../field/FieldName.js';
-import type { Fields } from '../field/Fields.js';
+import type { FieldName } from './FieldName.js';
+import type { Fields } from './Fields.js';
 
 /**
  * Field names grouped, as `unique` and `index` both are — `[['listId', 'docId'], ['slug']]`.

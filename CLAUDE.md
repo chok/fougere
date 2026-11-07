@@ -1339,8 +1339,9 @@ cycles too and marks what the emitted JS does not contain, and it prints the THI
 because that is what moves. It reads pairs, and it does not read a package's ROOT as a family — which is where the
   passes of 2026-09-10 found what it could not see: a family reaching down for a leaf that
   depends on nothing (`schema/src/lib/validation.ts`, `core/src/storage/`) while the root
-  reached back up into it. Three exceptions are stated
-with their reason: `field`↔`validator`, `axis`↔`field`, `entity`↔`field`. A fourth went the day
+  reached back up into it. Two exceptions are stated
+with their reason: `field`↔`validator`, `axis`↔`field`. `entity`↔`field` went the day `FieldGroups`
+moved under `field/`, since it names field names and nothing of an entity. A fourth went the day
 the card stopped asking an axis how to be written: `roleOnCard` and `RoleDescriptor` sit under
 `projection/card/`, so `projection` reads `axis` and nothing runs the other way.
 

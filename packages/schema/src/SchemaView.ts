@@ -1,5 +1,5 @@
 import type { Fields } from './field/Fields.js';
-import type { FieldGroups } from './entity/FieldGroups.js';
+import type { FieldGroups } from './field/FieldGroups.js';
 import type { PreviousNames } from './entity/PreviousNames.js';
 import type { EntityAdapters } from './entity/EntityAdapters.js';
 import type { ValidationResult } from './lib/ValidationResult.js';

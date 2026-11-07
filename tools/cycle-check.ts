@@ -33,10 +33,6 @@ const STATED = new Map([
     'Type-only both ways: an axis reads the field it qualifies, and a field names the axes ' +
     'it carries. Mutual by definition — neither can be named without the other. What an axis ' +
     'WRITES on a field is not in it: `FougereFieldAxes` sits at the root, outside the layering.'],
-  ['packages/schema entity↔field',
-    'Type-only and shallow: an entity states `unique`, `adapters` and `previousNames` ' +
-    'about ITSELF and the field set reads them, while the two declarations name `Fields` ' +
-    'because the field vocabulary is what they address.'],
 ]);
 
 /** A directory under `module/` is a family of its own: two modules reading each other is the cycle that matters. */

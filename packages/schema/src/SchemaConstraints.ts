@@ -1,6 +1,6 @@
 import { type FieldName } from './field/FieldName.js';
 import { type Fields } from './field/Fields.js';
-import { type FieldGroups } from './entity/FieldGroups.js';
+import { type FieldGroups } from './field/FieldGroups.js';
 import type { EntityDeclarations } from './entity/EntityDeclarations.js';
 
 /**

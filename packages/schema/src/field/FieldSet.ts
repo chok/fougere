@@ -1,11 +1,10 @@
 import { Role } from '../axis/role/Role.js';
-import type { FieldGroups } from '../entity/FieldGroups.js';
+import type { FieldGroups } from './FieldGroups.js';
 import { Field } from './Field.js';
 import { type FieldName } from './FieldName.js';
 import { type Fields } from './Fields.js';
 import { SchemaError } from '../SchemaError.js';
 import { SchemaConstraints, type ConstraintKind } from '../SchemaConstraints.js';
-import type { EntityDeclarations } from '../entity/EntityDeclarations.js';
 
 export class FieldSet<TFields extends Fields = Fields> {
   private constructor(private readonly fields: TFields) {}
@@ -26,7 +25,7 @@ export class FieldSet<TFields extends Fields = Fields> {
    */
   static declaring<TFields extends Fields>(
     declared: TFields,
-    groups: Pick<EntityDeclarations<TFields>, ConstraintKind> = {},
+    groups: Partial<Record<ConstraintKind, FieldGroups<TFields>>> = {},
   ): { fields: TFields } & Record<ConstraintKind, FieldGroups<TFields>> {
     const fields: Fields = {};
     for (const [key, field] of Object.entries(declared))
