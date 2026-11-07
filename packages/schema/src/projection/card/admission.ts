@@ -1,4 +1,8 @@
 import { Shapes } from '../../axis/shape/Shape.js';
+import type { JsonSchema } from '../../lib/JsonSchema.js';
+import { dotted } from '../../lib/ValidationResult.js';
+import { JsonSchemaValidator } from '../../validator/JsonSchemaValidator.js';
+import type { CardForm } from './CardForm.js';
 import { SchemaError } from '../../SchemaError.js';
 
 /**
@@ -28,4 +32,11 @@ export function admitPatterns(shape: unknown, subject: string): void {
       );
     }
   }
+}
+
+/** Judges what a card wrote for an axis against the form that writes it, before it is rebuilt. */
+export function admitAxis(form: CardForm, wire: unknown, subject: string, axis: string): void {
+  const refusal = JsonSchemaValidator.of(form.format.schema as JsonSchema).refusalOf(wire, [axis]);
+
+  if (refusal) throw new SchemaError(`${subject}: ${dotted(refusal.path)}: ${refusal.message}`);
 }

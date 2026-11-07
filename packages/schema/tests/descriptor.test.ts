@@ -352,6 +352,16 @@ group('a card is admitted before it becomes a validator', () => {
     expect(() => Card.fromDescriptor(bad as never).toSchema()).toThrow(`Field 'a': role.relation.onDelete: Instance does not match any of ["cascade","restrict","set null"].`);
   });
 
+  it.each([
+    [{ unique: 'x' }, `Field 'a': role.unique:`],
+    [{ primary: 'yes' }, `Field 'a': role.primary:`],
+    [{ relation: { to: 3, kind: 'one' } }, `Field 'a': role.relation.to:`],
+    [{ nawak: true }, `Field 'a': role.nawak:`],
+  ])('refuses a role the card writes wrong — %j', (role, refusal) => {
+    const bad = { ...card(), properties: { a: { type: 'string' as const, 'x-fougere': { role } } } };
+    expect(() => Card.fromDescriptor(bad as never).toSchema()).toThrow(refusal);
+  });
+
   it('refuses a property that is not a JSON Schema object', () => {
     expect(() => Card.fromDescriptor({ ...card(), properties: { a: null } } as never).toSchema())
       .toThrow(/states `a` as null/);

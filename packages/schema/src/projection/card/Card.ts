@@ -11,7 +11,7 @@ import { Schema } from '../../Schema.js';
 import { type SchemaConstructor } from '../../SchemaConstructor.js';
 import type { SchemaView } from '../../SchemaView.js';
 import type { Values } from '../../field/Values.js';
-import { admitPatterns, refuse } from './admission.js';
+import { admitAxis, admitPatterns, refuse } from './admission.js';
 import type { DerivedFrom } from './DerivedFrom.js';
 import type { FieldDescriptor } from './FieldDescriptor.js';
 import type { FieldExtension } from './FieldExtension.js';
@@ -213,7 +213,9 @@ function reconstructField(
   for (const name of Axes.names) {
     const wire = (extension as Record<string, unknown> | undefined)?.[name];
     const form = CardForms.find(name);
-    if (wire !== undefined) axes[name] = form ? form.reconstruct(wire, resolve) : wire;
+    if (wire === undefined) continue;
+    if (form) admitAxis(form, wire, `Field '${key}'`, name);
+    axes[name] = form ? form.reconstruct(wire, resolve) : wire;
   }
 
   return new Field({ shape, ...axes } as never, key);

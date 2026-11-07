@@ -123,15 +123,6 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
   in one process feed one list. `registerFlush` is the same shape read once instead of per
   line; it lives there because the host that calls `flushTelemetry()` holds a request handler,
   not an app (`demos/cloudflare-d1`, `ctx.waitUntil`).
-- **A card states `role` in a form of its own, and nothing judges it** — `schema/src/axis/role/Role.ts`,
-  `roleAxis.reconstruct`. `role` is the one axis whose wire differs from its declaration: `relation.to` is a
-  function here and a name there, `unique` a boolean here and a list of groups there — so `ROLE_FORMAT`
-  cannot serve both, where `lifecycle` and `boundary` are judged by the format they already
-  state. Measured 2026-09-17 through `Card.fromDescriptor(…).toSchema()`: `unique: 'x'` throws
-  `wire.unique?.some is not a function`, `primary: 'yes'` is read as `true`, `relation: { to: 3 }`
-  passes, and a key nothing reads is dropped. What closes it is a format beside `RoleDescriptor`,
-  read before the rebuild — everything the rebuild produces is refused by `new Field(…, key)` already.
-
 - **A `many()` cannot be written from its own side, and the pair is not offered either.** The
   key sits on the far row — `tags.post_id`, never a column of `posts` — so
   `post.create({ tags: [...] })` has nowhere to land. It is refused now rather than dropped:
