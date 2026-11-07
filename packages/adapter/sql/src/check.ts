@@ -9,6 +9,8 @@ export interface ShapeBounds {
   maxLength?: number;
   minimum?: number;
   maximum?: number;
+  exclusiveMinimum?: number;
+  exclusiveMaximum?: number;
 }
 
 /** The CHECK expression for one column, or nothing when its shape bounds nothing. */
@@ -29,6 +31,8 @@ export function checkFor(column: ColumnDef): Expression<SqlBool> | undefined {
   if (bounds.maxLength !== undefined) terms.push(sql<SqlBool>`length(${col}) <= ${sql.lit(bounds.maxLength)}`);
   if (bounds.minimum !== undefined) terms.push(sql<SqlBool>`${col} >= ${sql.lit(bounds.minimum)}`);
   if (bounds.maximum !== undefined) terms.push(sql<SqlBool>`${col} <= ${sql.lit(bounds.maximum)}`);
+  if (bounds.exclusiveMinimum !== undefined) terms.push(sql<SqlBool>`${col} > ${sql.lit(bounds.exclusiveMinimum)}`);
+  if (bounds.exclusiveMaximum !== undefined) terms.push(sql<SqlBool>`${col} < ${sql.lit(bounds.exclusiveMaximum)}`);
 
   if (terms.length === 0) return undefined;
 
@@ -43,7 +47,8 @@ export function boundsOf(shape: Record<string, unknown> | undefined): ShapeBound
 
   const bounds: ShapeBounds = {};
   if (Array.isArray(shape.enum) && shape.enum.length > 0) bounds.enum = shape.enum;
-  for (const key of ['minLength', 'maxLength', 'minimum', 'maximum'] as const) {
+  if (typeof shape.const === 'string' || typeof shape.const === 'number') bounds.enum = [shape.const];
+  for (const key of ['minLength', 'maxLength', 'minimum', 'maximum', 'exclusiveMinimum', 'exclusiveMaximum'] as const) {
     if (typeof shape[key] === 'number') bounds[key] = shape[key] as number;
   }
 

@@ -6,7 +6,7 @@
  * `oneOf('draft','published')` used to let `'brouillon'` land and stay.
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { entity, primary, text, number, oneOf, optional, created } from '@fougere/schema';
+import { entity, Field, primary, text, number, oneOf, optional, created } from '@fougere/schema';
 import { autoMigrate, createTableSQL, toTable } from '../src/index.js';
 import { createSqliteSource, type SqliteSource } from '../src/sqlite/SqliteSource.js';
 
@@ -82,5 +82,21 @@ describe('what is emitted', () => {
     }) {}
 
     expect(createTableSQL(toTable('slugs', WithPattern), 'sqlite')).not.toContain('check');
+  });
+
+  it('holds an exclusive bound and a const like the inclusive ones', async () => {
+    class Rating extends entity({
+      id: primary(),
+      stars: new Field({ shape: { type: 'number', exclusiveMinimum: 0, exclusiveMaximum: 6 } }),
+      kind: new Field({ shape: { type: 'string', const: 'review' } }),
+    }) {}
+    const rated = createSqliteSource({ path: ':memory:' });
+    await autoMigrate({ entities: new Map([['rating', Rating]]) }, rated.sqlite);
+    const ratings: any = rated.storageFactory(Rating, 'rating');
+
+    await expect(ratings.create({ stars: 3, kind: 'review' })).resolves.toBeTruthy();
+    await expect(ratings.create({ stars: 0, kind: 'review' })).rejects.toThrow();
+    await expect(ratings.create({ stars: 6, kind: 'review' })).rejects.toThrow();
+    await expect(ratings.create({ stars: 3, kind: 'other' })).rejects.toThrow();
   });
 });
