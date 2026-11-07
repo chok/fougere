@@ -240,8 +240,6 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
   "Disallowed operation called within global scope", error 10021, measured 2026-08-23.
 - **Nitro's prod trace misses lazily-loaded packages under pnpm**, which is why the hand-copy
   in `site/Dockerfile` exists.
-- **`clean` decides nothing** (`schema/src/lib/utils.ts`) — a free function nobody has
-  validated as a word of the package.
 - `graphql` dual ESM/CJS hazard in tests — use `schema.getTypeMap()`, not `printSchema()`
 - **A hop is drawn as CLIENT and SERVER only when the receiver says it crossed** —
   `observability/src/otlp/OtlpExporter.ts`, `kindOf`. The sender knows it (`OperationContext.toAnotherProcess`,

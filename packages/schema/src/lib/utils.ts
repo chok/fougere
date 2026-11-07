@@ -19,12 +19,6 @@ export function pluralOf(name: string): string {
   return head + pluralize(last!);
 }
 
-export function clean<T extends Record<string, unknown>>(obj: T): T {
-  for (const key of Object.keys(obj)) if (obj[key] === undefined) delete obj[key];
-
-  return obj;
-}
-
 export const isObject = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
 

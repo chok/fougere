@@ -2,7 +2,7 @@ import { Axes } from '../../axis/Axes.js';
 import { Shapes } from '../../axis/shape/Shape.js';
 import { CardForms } from './CardForms.js';
 import { type Resolver } from '../../axis/Resolver.js';
-import { clean, isObject } from '../../lib/utils.js';
+import { isObject } from '../../lib/utils.js';
 import { Field } from '../../field/Field.js';
 import { type Fields } from '../../field/Fields.js';
 import { SchemaConstraints } from '../../SchemaConstraints.js';
@@ -23,6 +23,12 @@ import type { ConstraintKind } from '../../SchemaConstraints.js';
 import { ENVELOPE } from './Envelope.js';
 
 type FieldsOf<T> = { [K in keyof T]-?: Field<T[K]> };
+
+function clean<T extends Record<string, unknown>>(obj: T): T {
+  for (const key of Object.keys(obj)) if (obj[key] === undefined) delete obj[key];
+
+  return obj;
+}
 
 /**
  * One portable schema description and every decision made about that description.
