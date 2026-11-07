@@ -132,6 +132,11 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
   passes, and a key nothing reads is dropped. What closes it is a format beside `RoleDescriptor`,
   read before the rebuild — everything the rebuild produces is refused by `new Field(…, key)` already.
 
+- **The `Shape` type admits less than the shape door** — `schema/src/axis/shape/Shape.ts` is written
+  by hand, where `SHAPE_FORMAT` (`ShapeFormat.ts`) is read off the engine's own `Schema` type. A
+  shape stating `anyOf`, `title` or `prefixItems` passes the door at run time and is refused by the
+  editor, so a TypeScript caller writes `as Shape`. What closes it is the type derived from the
+  same keyword map the door is built from. Stated 2026-11-07.
 - **A `many()` cannot be written from its own side, and the pair is not offered either.** The
   key sits on the far row — `tags.post_id`, never a column of `posts` — so
   `post.create({ tags: [...] })` has nowhere to land. It is refused now rather than dropped:
