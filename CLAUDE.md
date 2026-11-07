@@ -1376,10 +1376,15 @@ X), `useFormFor` (contract, not rendering; local validator = remote validator), 
 - `better-sqlite3` bindings may need `npx prebuild-install` in its pnpm dir
 - **Measure before concluding.** On a design question, run the grep or the probe FIRST and
   answer with the number.
-- **The code is meant to stand on its own.** If a comment is about to explain something,
-  change the code instead. Measured: he writes 4-5 % comments across fifteen years, this
-  repo was at 31-37 %. `fougere-notes/docs/notes/style-chok.md` holds the rest — how a tree
-  is cut, how a thing is named, and the words to avoid.
+- **The code is meant to stand on its own — two rules.** A `//` inside the code: none. If one
+  is about to explain something, change the code instead. A JSDoc: on an EXPORT only, ONE
+  sentence — what it is or when to call it — plus its `Documented:` link. No why, no history
+  ("used to", "measured"), no example, no explanation of the concept: the why is the doc
+  page's, a behaviour is a test's. A JSDoc that needs a second sentence says the name or the
+  cut is wrong. The export's sentence stays because `site/apps/web/modules/reference.ts`
+  projects it into `content/reference/`. Measured 2026-11-07: 21.9 % comment lines, 79 % of
+  them JSDoc, 726 blocks of four lines or more. `fougere-notes/docs/notes/style-chok.md` holds
+  the rest — how a tree is cut, how a thing is named, and the words to avoid.
 - **A comment names its doc page when one exists** —
   `Documented: [ports](https://fougere.dev/docs/concepts/port).` on the last line of the
   block. A markdown link on the ABSOLUTE url, because that is the one an editor's hover can
