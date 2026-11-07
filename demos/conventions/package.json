@@ -1,0 +1,21 @@
+{
+  "name": "fougere-demo-conventions",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx src/main.ts",
+    "typecheck": "tsc -p ."
+  },
+  "dependencies": {
+    "@fougere/adapter-memory": "workspace:*",
+    "@fougere/compiler": "workspace:*",
+    "@fougere/core": "workspace:*",
+    "@fougere/defaults": "workspace:*",
+    "@fougere/schema": "workspace:*"
+  },
+  "devDependencies": {
+    "@fougere/cli": "workspace:*",
+    "tsx": "^4.21.0"
+  }
+}

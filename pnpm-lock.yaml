@@ -485,6 +485,31 @@ importers:
         specifier: ^4.21.0
         version: 4.21.0
 
+  demos/conventions:
+    dependencies:
+      '@fougere/adapter-memory':
+        specifier: workspace:*
+        version: link:../../packages/adapter/memory
+      '@fougere/compiler':
+        specifier: workspace:*
+        version: link:../../packages/compiler
+      '@fougere/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@fougere/defaults':
+        specifier: workspace:*
+        version: link:../../packages/defaults
+      '@fougere/schema':
+        specifier: workspace:*
+        version: link:../../packages/schema
+    devDependencies:
+      '@fougere/cli':
+        specifier: workspace:*
+        version: link:../../packages/cli
+      tsx:
+        specifier: ^4.21.0
+        version: 4.21.0
+
   demos/core-scanner:
     dependencies:
       '@fougere/compiler':

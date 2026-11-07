@@ -90,6 +90,11 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
   child of the real logger, so `masked.child('x').info('token=abc')` is not masked. A single
   `write(line)` every level and every child funnels through is what would make nothing bypass the
   wrapper. Measured 2026-10-01, narrowed 2026-10-27.
+- **`@fougere/vite` and `@fougere/next` do not read `conventions:`** — `fougere()` calls `frondAliases`
+  and `entityNamesIn` with the defaults, and `nextConfigOf` calls `resolveConventions()` with nothing, so
+  a page resolves `@fronds/<name>` under `fronds/` whatever the config says. `@fougere/nuxt` reads it.
+  Neither host loads the config: Next's `withFougere` answers synchronously. Stated 2026-11-06, read and
+  not run. `demos/conventions` covers the scan, the boot and the CLI.
 - **`conventions:` restates the directory NAMES and the import scope, nothing else** —
   `Conventions` (`core/src/Conventions.ts`). What a file is recognized BY stays fixed: a
   middleware extends `Middleware`, an extension `up`/`down`/`state`, and an address is the class

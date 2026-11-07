@@ -55,6 +55,7 @@ pnpm -C demos/oclif-catalog dev --help  # a frond as a terminal — topics, flag
 pnpm -C demos/boot-refusals dev    # fourteen projects that do not hold — a code, a subject, a file
 pnpm -C demos/on-delete dev        # restrict, cascade, set null — the engine, then the guard
 pnpm -C demos/no-compiler dev      # fronds written by hand, booted by Node alone — no scan, no TypeScript
+pnpm -C demos/conventions dev      # all ten names changed — what the config moves, and what tsconfig must say
 pnpm -C demos/test-gradient test   # 53 tests, 44 of them from a one-line file
 pnpm -C demos/test-gradient e2e    # the browser rung — a form that states no rule of its own
 ```
@@ -166,6 +167,7 @@ demos/
   boot-refusals/       fourteen projects that do not hold, and what each refusal names
   on-delete/           what a deletion does to the rows that name it — one line moves who does it
   no-compiler/         fronds written by hand: Node boots them, and neither the compiler nor TypeScript loads
+  conventions/         every name a project may change, and the two TypeScript has to be told
   anchor-chain/        a path with two stops — which derivations hold rows, and which say nothing
   emit-multirepo/      two repositories, one fact, and the ~80-line carrier that is not Fougere's
   rust-frond/          the far side is not TypeScript, and the validator is still ours

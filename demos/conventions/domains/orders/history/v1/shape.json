@@ -1,0 +1,40 @@
+{
+  "$defs": {
+    "order": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "x-fougere": {
+            "role": {
+              "primary": true
+            },
+            "lifecycle": {
+              "create": {
+                "generate": "uuidv7"
+              },
+              "update": "forbidden"
+            }
+          }
+        },
+        "product": {
+          "type": "string",
+          "minLength": 1
+        },
+        "cents": {
+          "type": "number",
+          "minimum": 0
+        }
+      },
+      "x-fougere-version": 1,
+      "x-fougere-vendor": "fougere",
+      "title": "order",
+      "required": [
+        "product",
+        "cents"
+      ]
+    }
+  },
+  "x-fougere-version": 1,
+  "x-fougere-vendor": "fougere"
+}

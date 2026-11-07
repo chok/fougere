@@ -1,0 +1,45 @@
+{
+  "$defs": {
+    "product": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "x-fougere": {
+            "role": {
+              "primary": true
+            },
+            "lifecycle": {
+              "create": {
+                "generate": "uuidv7"
+              },
+              "update": "forbidden"
+            }
+          }
+        },
+        "sku": {
+          "type": "string",
+          "format": "sku"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "cents": {
+          "type": "number",
+          "minimum": 0
+        }
+      },
+      "x-fougere-version": 1,
+      "x-fougere-vendor": "fougere",
+      "title": "product",
+      "required": [
+        "sku",
+        "title",
+        "cents"
+      ]
+    }
+  },
+  "x-fougere-version": 1,
+  "x-fougere-vendor": "fougere"
+}

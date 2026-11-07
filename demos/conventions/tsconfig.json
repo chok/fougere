@@ -1,0 +1,15 @@
+{
+  "extends": ["@fougere/core/tsconfig", "../../tsconfig.base.json"],
+  "include": ["domains", "src", "fougere.config.ts", ".fougere/names.generated.d.ts"],
+  "compilerOptions": {
+    "noEmit": true,
+    "rootDir": ".",
+    "declaration": false,
+    "declarationMap": false,
+    "sourceMap": false,
+    "paths": {
+      "@fronds/facade": ["./.fougere/facade.generated.ts"],
+      "@shop/*": ["./domains/*", "./remotes/*"]
+    }
+  }
+}
