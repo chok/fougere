@@ -24,4 +24,16 @@ describe('the project as JavaScript', () => {
       rmSync(out, { recursive: true, force: true });
     }
   });
+
+  it('follows the scope and the directory `conventions:` name', async () => {
+    const renamed = join(import.meta.dirname, 'fixtures-conventions');
+    const out = mkdtempSync(join(tmpdir(), 'fougere-compiled-'));
+    try {
+      await compileProject(renamed, await scanProject(renamed, undefined, { scope: '@shop', fronds: 'domains' }), out);
+
+      expect(JSON.parse(readFileSync(join(out, 'aliases.json'), 'utf8'))).toEqual({ '@shop/orders': 'domains/orders' });
+    } finally {
+      rmSync(out, { recursive: true, force: true });
+    }
+  });
 });

@@ -2,7 +2,7 @@
 import type ts from '@typescript/typescript6';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
-import { statesModule, type ScanResult } from '@fougere/core';
+import { resolveConventions, statesModule, type ScanResult } from '@fougere/core';
 import { ALIASES, configFileIn, frondAliases, loadConfig, MODULES, statementFileIn } from '@fougere/core/node';
 import { emitStatement } from './scan/statement.js';
 
@@ -30,12 +30,13 @@ export interface Compiled {
  */
 export async function compileProject(root: string, scan: ScanResult, out: string): Promise<Compiled> {
   const typescript = await loadTs();
-  const aliases = await frondAliases(root);
+  const config = await loadConfig(root);
+  const aliases = await frondAliases(root, resolveConventions(config.conventions));
   const statement = statementFileIn(root) ?? join(root, 'fronds.ts');
   const sources = new Map<string, string>();
   if (!existsSync(statement)) sources.set(statement, emitStatement(scan, { outFile: statement }));
 
-  const keys = Object.keys((await loadConfig(root)).fronds ?? {}).filter(statesModule);
+  const keys = Object.keys(config.fronds ?? {}).filter(statesModule);
   const local = keys.filter((key) => key.startsWith('.')).map((key) => resolve(root, key));
   const pending = [configFileIn(root), statement, ...local].filter((path): path is string => path !== undefined);
   const reached = new Set<string>();
