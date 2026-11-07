@@ -1,5 +1,4 @@
 import { Axes } from '../axis/Axes.js';
-import type { Field } from '../field/Field.js';
 import { isObject } from '../lib/utils.js';
 import { SchemaError } from '../SchemaError.js';
 import type { ValidationError } from '../lib/ValidationError.js';
@@ -13,7 +12,7 @@ export class FieldDeclarationValidator {
     return new FieldDeclarationValidator(declaration);
   }
 
-  get verdict(): ValidationResult<Field> {
+  get verdict(): ValidationResult<Record<string, unknown>> {
     const declaration = this.declaration;
 
     if (!isObject(declaration)) {
@@ -44,6 +43,6 @@ export class FieldDeclarationValidator {
 
     return errors.length
       ? { success: false, errors }
-      : { success: true, data: declaration as unknown as Field };
+      : { success: true, data: declaration };
   }
 }

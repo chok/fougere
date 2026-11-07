@@ -26,9 +26,8 @@ import path from 'node:path';
 /** A cycle this repo has WEIGHED and keeps. Anything else fails the check. */
 const STATED = new Map([
   ['packages/schema field↔validator',
-    'Two owners addressing each other: the field holds the facts, the validator holds the ' +
-    'verdict, and neither owns the other. Nesting `validator/` under `field/` would say the ' +
-    'field owns the decision, which `FieldDeclarationValidator.of(value)` denies.'],
+    'Type-only from the validator: a judge names the field it judges, and a field calls its ' +
+    'judge at construction, which is what keeps an invalid field from existing.'],
   ['packages/schema axis↔field',
     'Type-only both ways: an axis reads the field it qualifies, and a field names the axes ' +
     'it carries. Mutual by definition — neither can be named without the other. What an axis ' +
