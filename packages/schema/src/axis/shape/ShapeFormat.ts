@@ -1,11 +1,7 @@
-import type { Schema } from '@cfworker/json-schema';
 import { Format } from '../../lib/Format.js';
-import { SHAPE_TYPES, type Shape } from './Shape.js';
+import { SHAPE_TYPES, type Judged, type Shape } from './Shape.js';
 
 const SHAPE = 'field/shape';
-
-/** The keywords the engine judges — its own type, less the index signature and its `__` bookkeeping. */
-type Judged = keyof { [K in keyof Schema as string extends K ? never : K extends `__${string}` ? never : K]: true };
 
 /** A word, or that word beside `null` — the second place is what makes a shape nullable. */
 const TYPE = Format.either(

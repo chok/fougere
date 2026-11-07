@@ -1,52 +1,32 @@
-import type { JSONSchema7, JSONSchema7TypeName } from 'json-schema';
+import type { Schema } from '@cfworker/json-schema';
+import type { JSONSchema7TypeName } from 'json-schema';
 import type { StringFormat } from './StringFormat.js';
 import type { ShapeType } from './ShapeType.js';
 
 type Nullably<T extends string> = T | readonly [T, 'null'];
 
-/** The sentence a field carries, where JSON Schema already holds one. */
-interface Documented {
-  description?: string;
-}
+/** The keywords the engine judges — its own type, less the index signature and its `__` bookkeeping. */
+export type Judged = keyof { [K in keyof Schema as string extends K ? never : K extends `__${string}` ? never : K]: true };
 
-interface StringConstraints extends Documented {
-  minLength?: number;
-  maxLength?: number;
-  pattern?: string;
-  enum?: readonly (string | null)[];
-  const?: string;
-  format?: StringFormat;
-}
-
-interface NumericConstraints extends Documented {
-  minimum?: number;
-  maximum?: number;
-  exclusiveMinimum?: number;
-  exclusiveMaximum?: number;
-  multipleOf?: number;
-  enum?: readonly (number | null)[];
-  const?: number;
-}
-
-interface ArrayConstraints extends Documented {
+/** Where the door admits less than the engine — a child is a shape, never `true` or a list. */
+interface Narrowed {
+  type: Nullably<(typeof SHAPE_TYPES)[number]>;
   items?: Shape;
-  minItems?: number;
-  maxItems?: number;
-}
-
-interface ObjectConstraints extends Documented {
-  properties?: Record<string, unknown>;
+  prefixItems?: readonly Shape[];
+  enum?: readonly (string | number | null)[];
+  const?: string | number;
+  format?: StringFormat;
   required?: readonly string[];
+  properties?: Record<string, unknown>;
   additionalProperties?: boolean | Shape;
   propertyNames?: Shape;
+  title?: string;
+  description?: string;
+  deprecated?: boolean;
+  examples?: readonly unknown[];
 }
 
-export type Shape =
-  | ({ type: Nullably<'string'> } & StringConstraints)
-  | ({ type: Nullably<'number'> | Nullably<'integer'> } & NumericConstraints)
-  | ({ type: Nullably<'boolean'> } & Documented)
-  | ({ type: Nullably<'array'> } & ArrayConstraints)
-  | ({ type: Nullably<'object'> } & ObjectConstraints);
+export type Shape = Omit<Pick<Schema, Judged>, keyof Narrowed> & Narrowed;
 
 export const SHAPE_TYPES = [
   'string',
@@ -69,12 +49,6 @@ interface ShapeParts {
 }
 
 type Assert<T extends true> = T;
-
-type ShapeKeys<T> = T extends unknown ? keyof T : never;
-
-type _ShapeConformsToJsonSchema = Assert<
-  [Exclude<ShapeKeys<Shape>, keyof JSONSchema7>] extends [never] ? true : false
->;
 
 type _ShapeTypesAreTheStandardsLessNull = Assert<
   [Exclude<Exclude<JSONSchema7TypeName, 'null'>, (typeof SHAPE_TYPES)[number]>] extends [
