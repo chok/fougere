@@ -2,6 +2,7 @@ import { Registry } from '@fougere/registry';
 import type { Format } from '@fougere/schema';
 import type { FougereProtocols } from './FougereProtocols.js';
 import type { FrondDescriptor } from './descriptor/FrondDescriptor.js';
+import type { EffectiveOperation } from './EffectiveOperation.js';
 
 /** The protocols this app serves — a key per protocol, its options as the adapter states them. */
 export type ProtocolConfig = { [K in keyof FougereProtocols]?: FougereProtocols[K] };
@@ -17,6 +18,13 @@ export interface ProtocolType<Options = any> {
   readonly port?: string;
   /** What the entry may not say of the fronds this app is made of — a sentence per refusal. */
   refusals?(options: Options, fronds: readonly FrondDescriptor[]): string[];
+  /**
+   * Where an operation answers on this protocol — `PATCH /api/blog/posts/:id`, `query posts` — or
+   * `undefined` when it has no place here.
+   *
+   * Documented: [REST and GraphQL](https://fougere.dev/docs/serve/rest-graphql).
+   */
+  answersAt?(operation: EffectiveOperation, options: Options, frond: FrondDescriptor): string | undefined;
 }
 
 /**

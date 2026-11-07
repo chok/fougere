@@ -632,6 +632,11 @@ function claimRootField(builder: object, fieldName: string, origin: string): voi
   perField.set(fieldName, origin);
 }
 
+/** The root field an operation answers to — what the frond stated, else what its name derives. */
+export function rootFieldOf(opName: string, typeName: string, meta: Pick<OperationMeta, 'protocols'>): string {
+  return meta.protocols?.graphql ?? graphqlFieldName(opName, typeName);
+}
+
 function graphqlFieldName(opName: string, entityName: string): string {
   const nameLower = entityName.charAt(0).toLowerCase() + entityName.slice(1);
   const namePlural = pluralize(nameLower);
@@ -883,8 +888,7 @@ export function registerOperations(builder: InstanceType<typeof SchemaBuilder>, 
     const sig = meta.signature;
     if (!sig) continue;
 
-    const fieldName = meta.protocols?.graphql
-      ?? graphqlFieldName(opName, config.name);
+    const fieldName = rootFieldOf(opName, config.name, meta);
     claimRootField(builder, fieldName, `${config.origin ?? config.name}.${opName}`);
     const { argsDef, buildInvocation } = buildArgsFromSignature(sig, meta, builder, opName, config.typeName ?? config.name);
 

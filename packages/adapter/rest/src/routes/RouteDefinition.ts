@@ -166,10 +166,33 @@ export function generateRoutes(app: AppLike, options: GenerateRoutesOptions = {}
 }
 
 /** `/api/blog` — where the app mounts REST, then the segment the frond answers under. */
-function baseOf(app: AppLike, frond: FrondLike): string {
+function baseOf(protocols: ProtocolConfig | undefined, frond: Pick<FrondLike, 'name' | 'protocols'>): string {
   const segment = frond.protocols?.rest?.path ?? `/${frond.name}`;
 
-  return prefixOf(app.protocols) + segment;
+  return prefixOf(protocols) + segment;
+}
+
+/** What `fougere.config.ts` said of a frond it cannot edit, then what the frond said of this op. */
+function statedRoute(protocols: ProtocolConfig | undefined, address: string, opName: string, meta: OperationMeta): RestRoute {
+  const thirdParty = protocols?.rest?.overrides?.[new RouteAddress({ address, operation: opName }).toString()];
+
+  return { ...meta.protocols?.rest, ...thirdParty };
+}
+
+/** Where an operation answers on REST — what was stated, else what its contract derives. */
+export function routeOf(
+  protocols: ProtocolConfig | undefined,
+  frond: Pick<FrondLike, 'name' | 'protocols'>,
+  address: string,
+  opName: string,
+  meta: OperationMeta,
+): Pick<RouteDefinition, 'method' | 'path'> {
+  const stated = statedRoute(protocols, address, opName, meta);
+
+  return {
+    method: stated.method ?? deriveMethod(opName, meta),
+    path: baseOf(protocols, frond) + (stated.path ?? derivePath(address, opName, meta.binding, changeOf(meta)?.fields)),
+  };
 }
 
 /** What one address answers on REST — nothing, when this surface does not serve it. */
@@ -205,36 +228,31 @@ function routesOf(
   };
 
   return [...effectiveOperations.keys()].filter(served).map((opName) => routeFor({
+    protocols: app.protocols,
+    frond,
     address,
-    base: baseOf(app, frond),
     facade,
     opName,
     meta: effectiveOperations.get(opName),
-    thirdParty: app.protocols?.rest?.overrides?.[new RouteAddress({ address, operation: opName }).toString()],
   }));
 }
 
 /** One operation at one address, and everything that decides how it is addressed. */
 interface Projecting {
+  protocols: ProtocolConfig | undefined;
+  frond: FrondLike;
   address: string;
-  /** `/api/blog` — what every path of this frond starts with. */
-  base: string;
   facade: HandlerFacade;
   opName: string;
   meta: OperationMeta | undefined;
-  /** What `fougere.config.ts` says of this op — only ever a frond the project cannot edit. */
-  thirdParty: RestRoute | undefined;
 }
 
-function routeFor({ address, base, facade, opName, meta, thirdParty }: Projecting): RouteDefinition {
+function routeFor({ protocols, frond, address, facade, opName, meta }: Projecting): RouteDefinition {
   if (!meta) {
     throw new Error(
       `REST facade '${address}' exposes '${opName}' but its EffectiveOperation table does not.`,
     );
   }
-
-  // What the app said of a frond it cannot edit, then what the frond said, then the contract.
-  const override: RestRoute = { ...meta.protocols?.rest, ...thirdParty };
 
   // Handler and method overrides are already executed by the facade, from the same
   // EffectiveOperation local and RPC use. The adapter never resolves DI itself.
@@ -243,17 +261,18 @@ function routeFor({ address, base, facade, opName, meta, thirdParty }: Projectin
     throw new Error(`REST EffectiveOperation table exposes '${opName}' but its facade does not.`);
   }
 
-  const method = override.method ?? deriveMethod(opName, meta);
+  const { method, path } = routeOf(protocols, frond, address, opName, meta);
+  const stated = statedRoute(protocols, address, opName, meta);
 
   return {
     method,
-    path: base + (override.path ?? derivePath(address, opName, meta.binding, changeOf(meta)?.fields)),
+    path,
     operationName: opName,
     address,
     handler: (invocation) => op(invocation),
     ...inputAndOutput(meta),
-    successStatus: override.status,
-    ...(override.responses && { responses: override.responses }),
+    successStatus: stated.status,
+    ...(stated.responses && { responses: stated.responses }),
     cardinality: meta.cardinality,
     creates: method === 'POST' && meta.cardinality === 'one' && !designates(meta.binding),
     ...(meta.description && { description: meta.description }),

@@ -36,7 +36,7 @@ export default class ExplainCommand {
     if (names) {
       const values = names === 'fronds'
         ? listing.fronds.map((frond) => frond.name)
-        : listing.operations;
+        : listing.operations.map((operation) => operation.id);
       if (values.length > 0) process.stdout.write(values.join('\n') + '\n');
 
       return;
@@ -111,18 +111,29 @@ function renderReach(reach: ExplainResult['reach']): string {
 }
 
 export function renderListing(listing: ExplainListing): string {
-  const lines = [pc.bold('Fronds')];
-  if (listing.fronds.length === 0) lines.push('  —');
-  for (const frond of listing.fronds) {
+  if (listing.fronds.length === 0) return '—';
+
+  const rows = listing.operations.map((operation) => [
+    operation.address,
+    operation.kind,
+    ...listing.protocols.map((protocol) => operation.answers[protocol] ?? '—'),
+  ]);
+  const widths = rows.reduce(
+    (widest, row) => row.map((cell, column) => Math.max(cell.length, widest[column] ?? 0)),
+    [] as number[],
+  );
+  const aligned = (row: string[]) => row.map((cell, column) => cell.padEnd(widths[column]!)).join('  ').trimEnd();
+
+  return listing.fronds.flatMap((frond) => {
     const where = frond.remote ? `remote ${pc.dim(frond.remote)}` : 'local';
-    lines.push(`  ${frond.name} ${pc.dim('→')} ${where}, ${frond.operations} operation(s)`);
-  }
+    const own = listing.operations.flatMap((operation, index) => (operation.frond === frond.name ? [rows[index]!] : []));
 
-  lines.push('', pc.bold('Operations'));
-  if (listing.operations.length === 0) lines.push('  —');
-  for (const operation of listing.operations) lines.push(`  ${operation}`);
-
-  return lines.join('\n');
+    return [
+      `${pc.bold(frond.name)} ${pc.dim('→')} ${where}`,
+      ...(own.length === 0 ? ['  —'] : own.map((row) => `  ${aligned(row)}`)),
+      '',
+    ];
+  }).join('\n').trimEnd();
 }
 
 function bindingName(binding: ExplainedBinding | null): string {

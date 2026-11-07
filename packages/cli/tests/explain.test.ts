@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { join } from 'node:path';
 import ExplainHandler from '../fronds/analysis/handlers/ExplainHandler.js';
 import ProjectScan from '../fronds/analysis/services/ProjectScan.js';
-import { renderExplain, renderExplainJson } from '../app/commands/ExplainCommand.js';
+import '@fougere/adapter-rest';
+import { renderExplain, renderExplainJson, renderListing } from '../app/commands/ExplainCommand.js';
 
 const fixture = join(import.meta.dirname, 'fixtures-explain');
 const explain = () => new ExplainHandler(new ProjectScan());
@@ -50,6 +51,20 @@ describe('explain', () => {
       null: 'explicit-value',
       jsonObjectUndefined: 'omitted',
     });
+  });
+
+  it('lists each op with its kind and where each protocol that answers places it', async () => {
+    const listing = await explain().list({ root: fixture });
+
+    expect(listing.protocols).toEqual(['rest']);
+    expect(listing.operations).toContainEqual({
+      id: 'blog/default/Post.publish',
+      frond: 'blog',
+      address: 'post.publish',
+      kind: 'command',
+      answers: { rest: 'POST /api/blog/posts/publish' },
+    });
+    expect(renderListing(listing)).toMatch(/post\.publish\s+command\s+POST \/api\/blog\/posts\/publish/);
   });
 
   it('refuses an unknown operation with deterministic available names', async () => {

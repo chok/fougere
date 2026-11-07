@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import SchemaBuilder from '@pothos/core';
 import { entity, primary, text, number, created, ref, many, type Entity } from '@fougere/schema';
+import { Protocols, type EffectiveOperation } from '@fougere/core';
 import { registerAll } from '../src/index.js';
 
 // ─── Fixtures ──────────────────────────────────
@@ -814,5 +815,31 @@ describe('a root field per address, a type per schema returned', () => {
     const schema = builder.toSchema();
 
     expect(Object.keys(schema.getMutationType()!.getFields())).toContain('pay');
+  });
+});
+
+describe('GraphQL answersAt', () => {
+  it('names the root field the schema registers, under the root its kind decides', () => {
+    const operations = withCustomOps(crudOps('Post', Post), {
+      publish: { kind: 'command', output: Post, signature: { name: 'publish', params: [{ name: 'id', type: { raw: 'string', name: 'string' } }], returnType: { raw: 'Post', name: 'Post' } } },
+      search: { kind: 'query', output: Post, signature: { name: 'search', params: [], returnType: { raw: 'Post', name: 'Post' } } },
+    });
+    operations.set('search', { ...operations.get('search'), protocols: { graphql: 'findPosts' } });
+    const builder = new SchemaBuilder({});
+    builder.queryType({});
+    builder.mutationType({});
+    registerAll(builder, fakeApp([{ name: 'post', entityClass: Post }], { postHandler: { ...fakeCrud(), publish: vi.fn(), search: vi.fn() } }, [{ address: 'post', operations }]));
+    const schema = builder.toSchema();
+    const registered = [
+      ...Object.keys(schema.getQueryType()!.getFields()).map((field) => `query ${field}`),
+      ...Object.keys(schema.getMutationType()!.getFields()).map((field) => `mutation ${field}`),
+    ];
+
+    const answers = [...operations].map(([name, meta]) =>
+      Protocols.resolve('graphql').answersAt!({ ...meta, name, handler: { address: 'post' } } as EffectiveOperation, {}, undefined as never));
+
+    expect(answers.sort()).toEqual(registered.sort());
+    expect(answers).toContain('mutation publish');
+    expect(answers).toContain('query findPosts');
   });
 });

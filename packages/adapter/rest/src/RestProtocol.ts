@@ -1,6 +1,7 @@
 import { Format, type Accepted } from '@fougere/schema';
 import { HTTP_METHODS } from '@fougere/http';
-import { Protocols, RouteAddress, isScanned, type FrondDescriptor, type ProtocolConfig } from '@fougere/core';
+import { Protocols, RouteAddress, isScanned, listens, type EffectiveOperation, type FrondDescriptor, type ProtocolConfig } from '@fougere/core';
+import { routeOf } from './routes/RouteDefinition.js';
 
 /** Where one operation answers, when what its contract derives is not what it should be. */
 /** An answer the op may give besides its own — a redirect, say — and the headers it sets. */
@@ -75,8 +76,18 @@ function misplaced(overrides: Record<string, RestRoute> | undefined, fronds: rea
   });
 }
 
+/** `PATCH /api/blog/posts/:id` — nothing for an op a fact calls, which no request reaches. */
+function answersAt(operation: EffectiveOperation, options: Accepted<typeof REST>, frond: FrondDescriptor): string | undefined {
+  if (listens(operation)) return undefined;
+
+  const { method, path } = routeOf({ rest: options }, frond, operation.handler.address, operation.name, operation);
+
+  return `${method} ${path}`;
+}
+
 Protocols.register('rest', {
   format: REST,
   port: 'Rest',
   refusals: (options: Accepted<typeof REST>, fronds) => misplaced(options.overrides, fronds),
+  answersAt,
 });

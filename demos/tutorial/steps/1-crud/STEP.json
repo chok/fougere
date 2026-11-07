@@ -17,7 +17,7 @@
     {
       "side": "in",
       "label": "5 REST routes under /api/blog/posts",
-      "detail": "one per operation — because protocols: names rest",
+      "detail": "one per operation — because protocols: names rest. npx fougere explain lists them",
       "from": {
         "file": "fougere.config.ts",
         "line": "protocols: { rest: {} }"

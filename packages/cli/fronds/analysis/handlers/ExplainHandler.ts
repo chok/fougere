@@ -1,11 +1,16 @@
 import {
   addressOf,
+  Protocols,
+  RouteAddress,
   resolveEffectiveOperations,
   type Binding,
   type Cardinality,
   type EffectiveOperation,
   type OperationKind,
   type Placement,
+  type FrondDescriptor,
+  type ProtocolConfig,
+  type ProtocolType,
 } from '@fougere/core';
 import { relative } from 'node:path';
 import ProjectScan from '../services/ProjectScan.js';
@@ -57,6 +62,15 @@ export interface ExplainResult {
   reach: EffectiveOperation['reach'];
 }
 
+/** One operation as the listing shows it: what it is called, and where each protocol answers it. */
+export interface ListedOperation {
+  id: string;
+  frond: string;
+  address: string;
+  kind: OperationKind;
+  answers: Record<string, string>;
+}
+
 /** What this project serves, when no single operation was named. */
 export interface ExplainListing {
   fronds: {
@@ -65,7 +79,8 @@ export interface ExplainListing {
     remote: string | null;
     operations: number;
   }[];
-  operations: string[];
+  protocols: string[];
+  operations: ListedOperation[];
 }
 
 interface Selector {
@@ -79,10 +94,13 @@ interface Selector {
 export default class ExplainHandler {
   constructor(private projectScan: ProjectScan) {}
 
-  /** The names this project serves — the list `explain` used to spell in a refusal only. */
+  /** What this project serves, op by op: its kind and where each protocol answers it. */
   async list(input: { root?: string }): Promise<ExplainListing> {
     const { scan, model } = await this.modelOf(input.root);
     const remotes = remotesOf(scan.config);
+    const answering = Object.keys(scan.config.protocols ?? {})
+      .map((name) => [name, Protocols.find(name)] as const)
+      .filter((entry): entry is readonly [string, NonNullable<typeof entry[1]>] => entry[1]?.answersAt !== undefined);
     const counted = new Map<string, number>();
     for (const operation of model.operations) {
       const frond = operation.frond;
@@ -96,7 +114,10 @@ export default class ExplainHandler {
         remote: remotes[frond.name] ?? null,
         operations: counted.get(frond.name) ?? 0,
       })).sort((a, b) => a.name.localeCompare(b.name)),
-      operations: model.operations.map((operation) => operation.id).sort(),
+      protocols: answering.map(([name]) => name),
+      operations: model.operations
+        .map((operation) => listed(operation, answering, scan))
+        .sort((a, b) => a.id.localeCompare(b.id)),
     };
   }
 
@@ -152,6 +173,28 @@ export default class ExplainHandler {
 
     return project(selected, scan.root);
   }
+}
+
+function listed(
+  operation: EffectiveOperation,
+  answering: readonly (readonly [string, ProtocolType])[],
+  scan: { fronds: FrondDescriptor[]; config: { protocols?: ProtocolConfig } },
+): ListedOperation {
+  const frond = scan.fronds.find((one) => one.name === operation.frond)!;
+  const options = scan.config.protocols as Record<string, unknown> | undefined;
+  const answers = Object.fromEntries(answering.flatMap(([name, protocol]) => {
+    const place = protocol.answersAt!(operation, options?.[name], frond);
+
+    return place ? [[name, place]] : [];
+  }));
+
+  return {
+    id: operation.id,
+    frond: operation.frond,
+    address: new RouteAddress({ address: operation.handler.address, operation: operation.name }).toString(),
+    kind: operation.kind,
+    answers,
+  };
 }
 
 function project(operation: EffectiveOperation, root: string): ExplainResult {
