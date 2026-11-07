@@ -6,6 +6,7 @@
   "compilerOptions": {
     "noEmit": true,
     "rootDir": ".",
+    "allowImportingTsExtensions": true,
     "declaration": false,
     "declarationMap": false
   },
