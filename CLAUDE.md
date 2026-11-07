@@ -236,7 +236,7 @@ produces the `$id`, the `$ref`, the `$defs` and the closing. `Format.either` tel
 anything else by TYPE rather than by `anyOf`, because the engine reports the LAST branch of an
 `anyOf` and `create: 'nawak'` then answered `Expected "object"`; `closed()` closes with
 `propertyNames`, so an unknown key is refused UNDER its own name and the message lists the legal
-ones. `fieldFormat` (`schema/src/field/FieldFormat.ts`) composes the keys of a field the same
+ones. `Axes.fieldFormat` (`schema/src/axis/Axes.ts`) composes the keys of a field the same
 way, carrying each format whole and citing it by its `$id`. Each axis used to hold a validator
 written by hand, whose messages copied the token lists, and `lifecycle: { craete: 'now' }`
 passed; `{ shape, nawak: 42 }` was accepted and the key dropped. The tokens stay `as const` and

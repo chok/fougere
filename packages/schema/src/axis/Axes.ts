@@ -1,6 +1,7 @@
 import { Registry } from '@fougere/registry';
 import type { JsonSchema } from '../lib/JsonSchema.js';
-import { fieldFormat } from '../field/FieldFormat.js';
+import { Format } from '../lib/Format.js';
+import { SHAPE_FORMAT } from './shape/ShapeFormat.js';
 import type { Axis } from './Axis.js';
 import { Boundary } from './boundary/Boundary.js';
 import { Lifecycle } from './lifecycle/Lifecycle.js';
@@ -17,7 +18,9 @@ class AxisRegistry extends Registry<Axis> {
 
   /** The document a field declaration is judged against, rebuilt the next time one arrives. */
   get fieldFormat(): JsonSchema {
-    this.composed ??= fieldFormat(this.entries);
+    this.composed ??= this.entries
+      .reduce((held, [name, axis]) => held.cites(name, axis.format), Format.of('field').cites('shape', SHAPE_FORMAT))
+      .closed().schema as JsonSchema;
 
     return this.composed;
   }
