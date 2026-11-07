@@ -1379,8 +1379,8 @@ X), `useFormFor` (contract, not rendering; local validator = remote validator), 
   answer with the number.
 - **The code is meant to stand on its own — two rules.** A `//` inside the code: none. If one
   is about to explain something, change the code instead. A JSDoc: on an EXPORT only, ONE
-  sentence — what it is or when to call it — plus its `Documented:` link. No why, no history
-  ("used to", "measured"), no example, no explanation of the concept: the why is the doc
+  sentence — what it is or when to call it — then, when a case surprises, ONE `Ex:` line, plus its
+  `Documented:` link. No why, no history ("used to", "measured"), no explanation of the concept: the why is the doc
   page's, a behaviour is a test's. A JSDoc that needs a second sentence says the name or the
   cut is wrong. The export's sentence stays because `site/apps/web/modules/reference.ts`
   projects it into `content/reference/`. Measured 2026-11-07: 21.9 % comment lines, 79 % of
