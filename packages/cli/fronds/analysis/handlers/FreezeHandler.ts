@@ -1,8 +1,9 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import { resolveConventions } from '@fougere/core';
 import { Bundle, lowerFirst, type SchemaBundle, type SchemaView, type SetDiff } from '@fougere/schema';
 import ProjectScan from '../services/ProjectScan.js';
-import { VERSIONS, lastVersionOf, shapesOf } from '../versions.js';
+import { lastVersionOf, shapesOf } from '../versions.js';
 import type Freeze from '../entities/Freeze.js';
 
 export interface FreezeInspection {
@@ -43,7 +44,7 @@ export default class FreezeHandler {
    * `json` is the presentation's, so it is not part of what this operation receives.
    */
   async execute(input: Omit<Freeze, 'json'> & { renamed?: Record<string, Record<string, string>> }): Promise<FreezeInspection> {
-    const fronds = await this.read(input);
+    const { fronds, versions } = await this.read(input);
     const version = input.version;
     const entities = fronds.flatMap(({ bundle }) => Object.keys(bundle.$defs ?? {}));
     // Two entrances, one map: what the entities declare, and what a caller answered.
@@ -74,12 +75,12 @@ export default class FreezeHandler {
     }
 
     for (const { path, bundle, previous, step } of inspected) {
-      await this.record(path, version, bundle);
+      await this.record(join(path, versions, version), bundle);
       if (!previous || !step) continue;
       // `previous` is recorded rather than re-derived: the chain is a fact of the moment
       // this version was cut, and a later sort of directory names is not that fact.
       await writeFile(
-        join(path, VERSIONS, version, 'from.json'),
+        join(path, versions, version, 'from.json'),
         `${JSON.stringify({ previous: previous.name, renamed, ...step }, null, 2)}\n`,
       );
     }
@@ -87,8 +88,7 @@ export default class FreezeHandler {
     return { version, previous: previousName(inspected), entities, step: merge(inspected), ambiguous: {}, written: true };
   }
 
-  private async record(root: string, version: string, bundle: SchemaBundle): Promise<void> {
-    const directory = join(root, VERSIONS, version);
+  private async record(directory: string, bundle: SchemaBundle): Promise<void> {
     await mkdir(directory, { recursive: true });
     await writeFile(join(directory, 'shape.json'), `${JSON.stringify(bundle, null, 2)}\n`);
   }
@@ -101,17 +101,19 @@ export default class FreezeHandler {
    */
   private async read(input: Omit<Freeze, 'json'>) {
     const scan = await this.projectScan.at(input.root ?? undefined);
-
-    return Promise.all(
+    const { versions } = resolveConventions(scan.config.conventions).dirs;
+    const fronds = await Promise.all(
       scan.fronds
         .filter((frond) => frond.entities.length > 0)
         .map(async (frond) => ({
           path: frond.source.path,
           bundle: shapesOf(frond.entities),
           declared: declaredRenames(frond.entities),
-          previous: await lastVersionOf(frond.source.path, input.version),
+          previous: await lastVersionOf(frond.source.path, versions, input.version),
         })),
     );
+
+    return { fronds, versions };
   }
 }
 

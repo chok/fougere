@@ -3,7 +3,7 @@
  * unnecessary. The handler is called directly: it writes, so the fixture is copied first.
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { cp, mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises';
+import { access, cp, mkdir, mkdtemp, readFile, rename, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import FreezeHandler from '../fronds/analysis/handlers/FreezeHandler.js';
@@ -28,6 +28,17 @@ describe('freeze', () => {
     expect(seen.ambiguous).toEqual({});
     expect(seen.written).toBe(true);
     expect(seen.previous).toBe('v1');
+  });
+
+  it('records under the directory `conventions:` names', async () => {
+    await rename(join(root, 'fronds/blog/versions'), join(root, 'fronds/blog/history'));
+    await writeFile(join(root, 'fougere.config.ts'), "export default { conventions: { dirs: { versions: 'history' } } };\n");
+
+    const seen = await freeze().execute({ version: 'v2', root });
+
+    expect(seen.previous).toBe('v1');
+    await expect(access(join(root, 'fronds/blog/history/v2/shape.json'))).resolves.toBeUndefined();
+    await expect(access(join(root, 'fronds/blog/versions'))).rejects.toThrow();
   });
 
   it('a version steps from the chain tip, not from the last name in the directory', async () => {

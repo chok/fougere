@@ -2,12 +2,6 @@ import { readFile, readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { Bundle, type SchemaBundle, type SchemaView, type SetDiff } from '@fougere/schema';
 
-/**
- * Where a FROND keeps what its shapes used to be — beside `entities/`, not under a dot.
- * Written by `fougere freeze`, replayed by `fougere migrate`.
- */
-export const VERSIONS = 'versions';
-
 /** One cut version: its name, and the step that reached it — absent on the first. */
 export interface Version {
   name: string;
@@ -20,8 +14,8 @@ export interface Version {
  * That link is the fact recorded the day the version was cut. Sorting directory names is
  * a guess about the same fact, and a hotfix cut after a later version orders it wrong.
  */
-export async function chainOf(frondPath: string): Promise<Version[]> {
-  const directory = join(frondPath, VERSIONS);
+export async function chainOf(frondPath: string, versions: string): Promise<Version[]> {
+  const directory = join(frondPath, versions);
   const found = await readdir(directory, { withFileTypes: true }).catch(() => []);
   const names = found.filter((entry) => entry.isDirectory()).map((entry) => entry.name);
   if (names.length === 0) return [];
@@ -59,12 +53,12 @@ export async function chainOf(frondPath: string): Promise<Version[]> {
 }
 
 /** The tip of a frond's chain and its shapes there — `except` leaves out the version being cut. */
-export async function lastVersionOf(frondPath: string, except?: string): Promise<{ name: string; bundle: SchemaBundle } | undefined> {
-  const chain = (await chainOf(frondPath)).filter((cut) => cut.name !== except);
+export async function lastVersionOf(frondPath: string, versions: string, except?: string): Promise<{ name: string; bundle: SchemaBundle } | undefined> {
+  const chain = (await chainOf(frondPath, versions)).filter((cut) => cut.name !== except);
   const last = chain.at(-1)?.name;
   if (!last) return undefined;
 
-  const raw = await readFile(join(frondPath, VERSIONS, last, 'shape.json'), 'utf8').catch(() => undefined);
+  const raw = await readFile(join(frondPath, versions, last, 'shape.json'), 'utf8').catch(() => undefined);
 
   return raw ? { name: last, bundle: JSON.parse(raw) as SchemaBundle } : undefined;
 }

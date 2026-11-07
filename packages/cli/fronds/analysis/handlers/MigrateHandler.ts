@@ -1,5 +1,5 @@
 import { loadConfig } from '@fougere/core/node';
-import { sourceViewOf, type App } from '@fougere/core';
+import { resolveConventions, sourceViewOf, type App } from '@fougere/core';
 import type { Plan, StepChange } from '@fougere/adapter-sql';
 import { Bundle, Card, lowerFirst, type Change, type SchemaView, type SetDiff } from '@fougere/schema';
 import ProjectScan from '../services/ProjectScan.js';
@@ -46,11 +46,12 @@ export default class MigrateHandler {
    */
   async execute(input: Omit<Migrate, 'json'>): Promise<MigrationPlan> {
     const scan = await this.projectScan.at(input.root ?? undefined);
-    const perFrond = await Promise.all(scan.fronds.map((frond) => stepsOf(frond.source.path)));
+    const { versions } = resolveConventions(scan.config.conventions).dirs;
+    const perFrond = await Promise.all(scan.fronds.map((frond) => stepsOf(frond.source.path, versions)));
     const steps = perFrond.flat();
     const chain = versionsOf(steps);
 
-    const unfrozen = input.latest ? [] : await unfrozenIn(scan.fronds);
+    const unfrozen = input.latest ? [] : await unfrozenIn(scan.fronds, versions);
     if (unfrozen.length > 0) return { chain, changes: [], added: [], warnings: [], ran: [], refusals: unfrozen };
 
     const config = await loadConfig(scan.root);
@@ -127,10 +128,11 @@ export default class MigrateHandler {
 /** What was never frozen, or moved since its last version — one refusal per frond or per entity. */
 async function unfrozenIn(
   fronds: readonly { name: string; source: { path: string }; entities: readonly { name: string; entityClass: SchemaView }[] }[],
+  versions: string,
 ): Promise<Plan['refusals']> {
   const refusals: Plan['refusals'] = [];
   for (const frond of fronds.filter((one) => one.entities.length > 0)) {
-    const last = await lastVersionOf(frond.source.path);
+    const last = await lastVersionOf(frond.source.path, versions);
     if (!last) {
       refusals.push({ entity: frond.name, field: '*', reason: 'never frozen — fougere freeze v1, or migrate --latest on a local database' });
       continue;
@@ -185,8 +187,8 @@ function onSource(step: SetDiff, source: string, sourceOf: (entity: string) => s
 }
 
 /** Every recorded step, oldest first — the chain composes, so it is replayed whole. */
-async function stepsOf(frondPath: string): Promise<{ version: string; step: SetDiff }[]> {
-  const chain = await chainOf(frondPath);
+async function stepsOf(frondPath: string, versions: string): Promise<{ version: string; step: SetDiff }[]> {
+  const chain = await chainOf(frondPath, versions);
 
   // The first version has a shape and no step — there was nothing before it to move from.
   return chain.flatMap(({ name, step }) => (step ? [{ version: name, step }] : []));
