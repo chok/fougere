@@ -32,6 +32,8 @@ export class FieldDeclarationValidator {
 
     if (declaration.shape === undefined) {
       errors.push({ path: ['shape'], message: 'Every field states a shape' });
+    } else if (isObject(declaration.shape) && declaration.shape.type === undefined) {
+      errors.push({ path: ['shape'], message: 'A field states the type of its shape' });
     }
 
     errors.push(...JsonSchemaValidator.of(Axes.fieldFormat).refusalsOf(declaration, []));

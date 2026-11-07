@@ -43,6 +43,10 @@ function outOfBoundsFor(field: Field): { why: string; value: unknown }[] {
       cases.push({ why: 'below minimum', value: shape.minimum - 1 });
     if (typeof shape.maximum === 'number')
       cases.push({ why: 'above maximum', value: shape.maximum + 1 });
+    if (typeof shape.exclusiveMinimum === 'number')
+      cases.push({ why: 'at the exclusive minimum', value: shape.exclusiveMinimum });
+    if (typeof shape.exclusiveMaximum === 'number')
+      cases.push({ why: 'at the exclusive maximum', value: shape.exclusiveMaximum });
     if (shape.enum) {
       const members = shape.enum.filter((value) => typeof value === 'number');
 

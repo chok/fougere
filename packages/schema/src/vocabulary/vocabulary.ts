@@ -11,7 +11,11 @@ export function vocabulary(
   word: string,
   states: (field: Field) => Partial<Field>,
 ): FieldWord {
-  return (field) => field.with(merge(word, field, states(field)));
+  return (field) => {
+    const declared = field instanceof Field ? field : new Field(field);
+
+    return declared.with(merge(word, declared, states(declared)));
+  };
 }
 
 export type FieldWord = (field: Field<any>) => Field<any>;

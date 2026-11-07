@@ -242,9 +242,11 @@ written by hand, whose messages copied the token lists, and `lifecycle: { craete
 passed; `{ shape, nawak: 42 }` was accepted and the key dropped. The tokens stay `as const` and
 `Format.tokens` spreads them, because a JSON import keeps a KEY as a literal and widens a VALUE
 to `string`. `shape` is cited like an axis (`schema/src/axis/shape/ShapeFormat.ts`) rather than
-admitting anything: it is JSON Schema, so JSON Schema's own keywords are what it states, and
-`{ type: 'string', minLenght: 1 }` used to pass where `lifecycle: { craete: 'now' }` was already
-refused. `items` holds a shape, so the format points at its OWN `$id` — `Format.ref`, a name and
+admitting anything: its keywords are the ENGINE's, read off `@cfworker/json-schema`'s own `Schema`
+type through `satisfies`, so a keyword the engine would not judge is refused and a release of the
+engine that adds one stops the build. `default`, `readOnly` and `writeOnly` are left out: an axis
+states each as a rule. `{ type: 'string', minLenght: 1 }` used to pass where `lifecycle: { craete:
+'now' }` was already refused, and `exclusiveMinimum` was refused because nobody had listed it. `items` holds a shape, so the format points at its OWN `$id` — `Format.ref`, a name and
 not a value, because no format can hand itself over while it is being built. `properties` stays
 open, since what it holds is a projection's output. The one thing a format cannot say is that the
 key is MISSING, and that stays `FieldDeclarationValidator`'s line and its own sentence.

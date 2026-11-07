@@ -61,17 +61,44 @@ describe('the field facade', () => {
   it('judges the shape itself, down to the shape inside one', () => {
     const refused: readonly (readonly [object, string])[] = [
       [{ shape: 'nawak' }, 'shape: Instance type "string" is invalid. Expected "object".'],
-      [{ shape: { minLength: 1 } }, 'shape: Instance does not have required property "type".'],
+      [{ shape: { minLength: 1 } }, 'shape: A field states the type of its shape'],
       [{ shape: { type: 'nawak' } }, 'shape.type: Instance does not match any of ["string","number","integer","boolean","array","object"].'],
-      [{ shape: { type: 'string', minLenght: 1 } }, 'shape.minLenght: Instance does not match any of ["type","description","minLength"'],
+      [{ shape: { type: 'string', minLenght: 1 } }, 'shape.minLenght: Instance does not match any of ["$anchor",'],
       [{ shape: { type: 'string', minLength: 'trois' } }, 'shape.minLength: Instance type "string" is invalid. Expected "integer".'],
       [{ shape: { type: 'string', description: 42 } }, 'shape.description: Instance type "number" is invalid. Expected "string".'],
       [{ shape: { type: 'string', enum: 'draft' } }, 'shape.enum: Instance type "string" is invalid. Expected "array".'],
-      [{ shape: { type: 'array', items: { type: 'string', minLenght: 1 } } }, 'shape.items.minLenght: Instance does not match any of ["type","description","minLength"'],
+      [{ shape: { type: 'array', items: { type: 'string', minLenght: 1 } } }, 'shape.items.minLenght: Instance does not match any of ["$anchor",'],
     ];
     for (const [init, message] of refused) {
       expect(() => new Field(init as never)).toThrow(message);
     }
+  });
+
+  /**
+   * The keywords are the engine's own, read off its type: what it judges is admitted, what it
+   * does not know is refused, and the three annotations an axis states as a rule stay out.
+   */
+  it('admits every keyword the engine judges, and none it does not', () => {
+    const admitted: readonly object[] = [
+      { type: 'number', exclusiveMinimum: 0, multipleOf: 0.5 },
+      { type: 'string', const: 'a' },
+      { $schema: 'https://json-schema.org/draft/2020-12/schema', type: 'string', title: 'Title' },
+      { type: 'string', anyOf: [{ minLength: 1 }, { pattern: '^a' }] },
+    ];
+    for (const shape of admitted) expect(() => new Field({ shape } as never)).not.toThrow();
+
+    const refused: readonly (readonly [object, string])[] = [
+      [{ type: 'string', $dynamicRef: '#x' }, 'shape.$dynamicRef: Instance does not match any of'],
+      [{ $schema: 'http://json-schema.org/draft-07/schema#', type: 'string' }, 'shape.$schema: Instance does not match any of ["https://json-schema.org/draft/2020-12/schema"]'],
+      [{ type: 'string', default: 'x' }, 'shape.default: Instance does not match any of'],
+      [{ type: 'string', readOnly: true }, 'shape.readOnly: Instance does not match any of'],
+    ];
+    for (const [shape, message] of refused) expect(() => new Field({ shape } as never)).toThrow(message);
+  });
+
+  it('lets a rule word take a field written as a declaration', () => {
+    expect(unique({ shape: { type: 'string' } } as never).role).toEqual({ unique: true });
+    expect(() => unique({ shape: { type: 'string', minLenght: 1 } } as never)).toThrow('shape.minLenght');
   });
 
   // The facade judges the FORM of a generator, never the name: `Generators.register` may

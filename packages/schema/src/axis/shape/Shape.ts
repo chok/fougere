@@ -14,13 +14,18 @@ interface StringConstraints extends Documented {
   maxLength?: number;
   pattern?: string;
   enum?: readonly (string | null)[];
+  const?: string;
   format?: StringFormat;
 }
 
 interface NumericConstraints extends Documented {
   minimum?: number;
   maximum?: number;
+  exclusiveMinimum?: number;
+  exclusiveMaximum?: number;
+  multipleOf?: number;
   enum?: readonly (number | null)[];
+  const?: number;
 }
 
 interface ArrayConstraints extends Documented {
