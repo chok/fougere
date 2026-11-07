@@ -87,16 +87,10 @@ export class Shapes {
    * Ex: `{ type: 'string', enum: ['draft'] }` → `{ type: ['string','null'], enum: ['draft', null] }`.
    */
   static nullable(shape: Shape): Shape {
-    const types = Shapes.typesOf(shape);
-    if (types.includes('null')) return shape;
+    if (typeof shape.type !== 'string') return shape;
 
-    const nullable = { ...shape, type: [...types, 'null'] } as unknown as Shape;
-    if ('enum' in nullable && nullable.enum && !nullable.enum.includes(null)) {
-      (nullable as { enum: readonly (string | number | null)[] }).enum = [
-        ...nullable.enum,
-        null,
-      ];
-    }
+    const nullable: Shape = { ...shape, type: [shape.type, 'null'] };
+    if (shape.enum && !shape.enum.includes(null)) nullable.enum = [...shape.enum, null];
 
     return nullable;
   }
