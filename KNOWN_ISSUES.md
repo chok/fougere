@@ -111,7 +111,7 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
   `constructor(private log: Log)` resolves to the key `Log`, and the boot refuses
   `'Log' is not registered`. The checker keeps the OUTER alias symbol and drops
   `<LogLine>`, so `depKeyOf` never sees the port. Recovering it means reading the alias's
-  own declaration in `handler-parser.ts` (`parseCheckedType`). Measured 2026-09-10; the
+  own declaration in `scan/typeRef.ts` (`parseCheckedType`). Measured 2026-09-10; the
   alias was removed rather than shipped broken.
 - **`onQuery` is still a module-level list, and the path between its ends is the CONTEXT** —
   `adapter/sql/src/query/QuerySink.ts`. The producer is a Kysely built by `createSqliteSource()` BEFORE

@@ -1043,7 +1043,7 @@ an engine that has one. `all()` reading everything is what bounds a file source.
 Repository<Post>`, or a `PostRepository` that names its queries. It serves the five the base declares
 (`__ops`, `prefab/RepositoryOps.ts`) beside its own public methods and those of a repository it
 extends; the rest of the rows' gestures (`findBy`, `upsert`…) are the class's to call and never
-served — the scan stops at core's base (`isCoreRepositoryMember`, `handler-parser.ts`). A handler that
+served — the scan stops at core's base (`isCoreRepositoryMember`, `scan/classes.ts`). A handler that
 wants the five DIFFERENT — published only, a draft visible to its author — does not extend one:
 TypeScript refuses an inherited method a narrower answer or another parameter, so it asks for its
 repository and writes the ones it serves (`site/fronds/blog/handlers/PostHandler.ts`). An op answering
@@ -1232,7 +1232,7 @@ server, and every other host has middlewares of its own. Who is signed in is not
 entity's primary (`id: Post['id']`) DESIGNATES a row and comes before the op —
 `/posts/:id/publish`; another required primitive comes after it, an optional one is left to the
 query string. The checker answers `string` for `Post['id']`, so the parser reads the SYNTAX
-(`fieldOf`, `handler-parser.ts`) and the scan marks it `identifies` when the field is the
+(`fieldOf`, `scan/typeRef.ts`) and the scan marks it `identifies` when the field is the
 entity's primary (`identifying`, `scan/contract.ts`). `Repository` declares it on its three `byId`. A `ById`
 in a name used to decide, so `publish(id: string)` and `publishById` answered different paths for
 one signature. Pinned by `adapter/rest/tests/routes.test.ts` and `compiler/tests/identifies.test.ts`.
@@ -1262,7 +1262,7 @@ nothing to say it in. Pinned by `core/tests/argument-resolver.test.ts`.
 nothing else. A base DECLARES (`Repository`'s `__ops`, once seated), the scan DERIVES from source,
 `frond.config.ts` STATES and wins over both. Config also creates an op neither producer
 found — the answer for a method inherited from an installed base class. `description` is the
-method's own doc sentence, read from the AST (`compiler/src/scan/handler-parser.ts`, `docSentenceOf`).
+method's own doc sentence, read from the AST (`compiler/src/scan/classes.ts`, `docSentenceOf`).
 A `fronds.ts` written by hand states a method's contract as a `StatementOperation`
 (`core/src/StatementOperation.ts`) — `{ params: { id: [Post, 'id'] }, output: Post }`, read by `frond()`
 into the signature the boot binds from. Nothing is guessed: what the file does not list is not served,
@@ -1314,7 +1314,7 @@ dependency where a subscriber is not — a subscriber that throws is
 logged and the announcer goes on, a link that throws stops the announcement, and behind
 `fronds:` that makes announcing depend on another process. Pinned by `tests/pipe.test.ts`
 and `demos/pipe-split`. `Fact` and `Pipe` are both transparent (`= T`), so the scan keeps
-them by NAME (`handler-parser.ts`, `ANNOUNCED`) — the checker keeps nothing of an alias.
+them by NAME (`scan/typeRef.ts`, `ANNOUNCED`) — the checker keeps nothing of an alias.
 
 **`Emit<T>` / `Fact<T>`** (`core/src/wire/emit.ts`, dispatched by `module/fact/Emissions.ts`) — every
 other call names ONE recipient; an emission names a SUBJECT. Accepting a `Fact<T>` IS the
