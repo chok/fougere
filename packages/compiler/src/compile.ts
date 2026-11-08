@@ -1,17 +1,10 @@
 /** The project as JavaScript — what `fougere serve` starts with Node alone. */
-import type ts from '@typescript/typescript6';
+import { loadTS } from './scan/TypeProgram.js';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
 import { resolveConventions, statesModule, type ScanResult } from '@fougere/core';
 import { ALIASES, configFileIn, frondAliases, loadConfig, MODULES, statementFileIn } from '@fougere/core/node';
 import { emitStatement } from './scan/statement.js';
-
-let _ts: typeof ts | undefined;
-async function loadTs(): Promise<typeof ts> {
-  if (!_ts) _ts = (await import('@typescript/typescript6')).default;
-
-  return _ts;
-}
 
 export interface Compiled {
   out: string;
@@ -29,7 +22,7 @@ export interface Compiled {
  * resolves it the way any import is resolved.
  */
 export async function compileProject(root: string, scan: ScanResult, out: string): Promise<Compiled> {
-  const typescript = await loadTs();
+  const typescript = await loadTS();
   const config = await loadConfig(root);
   const aliases = await frondAliases(root, resolveConventions(config.conventions));
   const statement = statementFileIn(root) ?? join(root, 'fronds.ts');

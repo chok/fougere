@@ -912,7 +912,7 @@ literal would stop being a storage, a `#private` field would make the class nomi
 refuse every realization at once, and a `WeakMap` beside the instance is not found through
 `StorageGuard.guard`'s `Object.create(storage)`. The guard stays OUTSIDE the chain, so a
 link reads the value the door already parsed. A bare `Storage` in a signature binds because
-`depKeyOf` (`compiler/src/scan/scanner.ts`) stops reading `Record` as a subject — it is the
+`depKeyOf` (`compiler/src/scan/deps.ts`) stops reading `Record` as a subject — it is the
 default of `Storage<T = Record<string, unknown>>`, which the checker fills in, and the key
 was `RecordStorage`. Pinned by `tests/host-port.test.ts`.
 
@@ -1233,7 +1233,7 @@ entity's primary (`id: Post['id']`) DESIGNATES a row and comes before the op —
 `/posts/:id/publish`; another required primitive comes after it, an optional one is left to the
 query string. The checker answers `string` for `Post['id']`, so the parser reads the SYNTAX
 (`fieldOf`, `handler-parser.ts`) and the scan marks it `identifies` when the field is the
-entity's primary (`identifying`, `scanner.ts`). `Repository` declares it on its three `byId`. A `ById`
+entity's primary (`identifying`, `scan/contract.ts`). `Repository` declares it on its three `byId`. A `ById`
 in a name used to decide, so `publish(id: string)` and `publishById` answered different paths for
 one signature. Pinned by `adapter/rest/tests/routes.test.ts` and `compiler/tests/identifies.test.ts`.
 

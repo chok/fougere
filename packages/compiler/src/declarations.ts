@@ -2,14 +2,8 @@
 import { type Conventions } from '@fougere/core';
 import { type HandlerEntry } from '@fougere/core/descriptor';
 import type ts from '@typescript/typescript6';
+import { loadTS } from './scan/TypeProgram.js';
 import { readFile } from 'node:fs/promises';
-
-let _ts: typeof ts | undefined;
-async function loadTs(): Promise<typeof ts> {
-  if (!_ts) _ts = (await import('@typescript/typescript6')).default;
-
-  return _ts;
-}
 
 export interface HandlerDeclaration {
   /** Stable rule name — the same vocabulary `verify()` uses. */
@@ -67,7 +61,7 @@ export async function handlerDeclarations(
   }[],
   conventions: Conventions,
 ): Promise<HandlerDeclaration[]> {
-  const typescript = await loadTs();
+  const typescript = await loadTS();
   const found: HandlerDeclaration[] = [];
 
   for (const frond of fronds) {

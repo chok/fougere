@@ -70,7 +70,7 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
   out. `fougere migrate` boots the whole project, so it carries every frond and writes the key.
 - **Scanning a directory that sits under `packages/` fails** — `LogLine_base is not defined`,
   measured 2026-09-10 on `packages/log/fronds/`. The same file scanned from outside the
-  workspace loads. `findWorkspaceRoot` (`compiler/src/scan/scanner.ts`) seeds a type program
+  workspace loads. `findWorkspaceRoot` (`compiler/src/scan/project.ts`) seeds a type program
   from the monorepo root, and the entity is then evaluated from an emit whose hoisted
   `const <Class>_base` is lost. `@fougere/log` states its frond rather than being scanned,
   which is the right form for a published package anyway — so this is a trap for a frond
@@ -263,7 +263,7 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
 - **Under Bun, a schema refused while a module loads surfaces as a TDZ error, through jiti's module
   cache** — `Cannot access 'CheckInput' before initialization` where Node shows the `SchemaError`.
   Remeasured 2026-10-20: the import itself throws it, not the `{ ...mod }` of `toHandlerEntry`
-  (`compiler/src/scan/scanner.ts`) this entry used to blame; Bun's native `import()` and jiti with
+  (`compiler/src/scan/entries.ts`) this entry used to blame; Bun's native `import()` and jiti with
   `moduleCache: false` both report the real error. `fougere dev` loads without the cache and `fougere
   serve` natively, so `check`, `call` and `migrate` under Bun are where it shows. Turning the cache off
   for the scan is not the fix: an entity class is compared by identity across the modules that import it.

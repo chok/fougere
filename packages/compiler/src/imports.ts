@@ -1,15 +1,8 @@
 /** A frond reaching into another one by FILE PATH. */
 import { type FrondDescriptor } from '@fougere/core/descriptor';
-import type ts from '@typescript/typescript6';
+import { loadTS } from './scan/TypeProgram.js';
 import { readdir, readFile } from 'node:fs/promises';
 import { join, resolve, dirname, relative, isAbsolute } from 'node:path';
-
-let _ts: typeof ts | undefined;
-async function loadTs(): Promise<typeof ts> {
-  if (!_ts) _ts = (await import('@typescript/typescript6')).default;
-
-  return _ts;
-}
 
 export interface CrossFrondImport {
   /** Stable rule name — the same vocabulary `verify()` uses. */
@@ -55,7 +48,7 @@ async function sourcesUnder(dir: string): Promise<string[]> {
 export async function crossFrondImports(
   fronds: readonly Pick<FrondDescriptor, 'name' | 'source'>[],
 ): Promise<CrossFrondImport[]> {
-  const typescript = await loadTs();
+  const typescript = await loadTS();
   // `source.package` is the scoped name the scan already resolved — the remedy this rule
   // prints must be the name that actually resolves, not one rebuilt from a prefix here.
   const roots = fronds.map((frond) => ({
