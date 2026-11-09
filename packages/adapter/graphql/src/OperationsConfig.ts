@@ -1,4 +1,4 @@
-import { upperFirst, Role } from '@fougere/schema';
+import { pluralOf, upperFirst, Role } from '@fougere/schema';
 import type SchemaBuilder from '@pothos/core';
 import { Shapes, Schema, type Shape } from '@fougere/schema';
 import type { Entity, Field, SchemaView } from '@fougere/schema';
@@ -48,10 +48,6 @@ function operationIsQuery(
   }
 
   return resolved === 'query';
-}
-
-function pluralize(name: string): string {
-  return name.endsWith('y') ? name.slice(0, -1) + 'ies' : name + 's';
 }
 
 const PRIMITIVES: Record<string, (t: any, required: boolean) => any> = {
@@ -639,7 +635,7 @@ export function rootFieldOf(opName: string, typeName: string, meta: Pick<Operati
 
 function graphqlFieldName(opName: string, entityName: string): string {
   const nameLower = entityName.charAt(0).toLowerCase() + entityName.slice(1);
-  const namePlural = pluralize(nameLower);
+  const namePlural = pluralOf(nameLower);
 
   switch (opName) {
     case 'list': return namePlural;
