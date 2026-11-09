@@ -4,9 +4,6 @@ export { BUILD_DIRECTORY, configFileIn, statementFileIn, loadConfig, loadNearest
 export { configModules } from './ConfigModules.js';
 export { defineFrond, frondConfigFileIn, loadFrondConfig } from './FrondConfig.js';
 
-// Making a key and binding a name to it happen once, at a deployment, on a machine with
-// a filesystem — the CLI speaking. Verifying happens per call, everywhere, and stays on
-// the main entry behind `#crypto`.
 export { generateKeyPair, issueGrant } from './identity-keys.js';
 export { ALIASES, frondAliases, frondNamesOf, MODULES, registerFrondAliases, REMOTES } from './FrondAliases.js';
 export { codesOf, emitFacade, facadeModule, type Served } from './projection/FacadeModule.js';

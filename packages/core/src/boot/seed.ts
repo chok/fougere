@@ -15,11 +15,7 @@ export interface SeedOrder {
   cycle: SeedEntry[];
 }
 
-/**
- * Seeds in dependency order — a `ref()` target is planted before its referrer. Only what is SEEDED
- * can be waited for: a relation to an entity with no seed is already satisfied by whatever put its
- * rows there, and an entity naming itself waits for nobody.
- */
+/** Seeds in dependency order: a `ref()` target before its referrer. */
 export function orderSeeds(fronds: FrondDescriptor[]): SeedOrder {
   const seeded = new Map<string, SeedEntry[]>();
   for (const seed of fronds.flatMap((frond) => frond.seeds)) {
@@ -42,8 +38,7 @@ export function orderSeeds(fronds: FrondDescriptor[]): SeedOrder {
 }
 
 /**
- * Plant a set of seeds, in the order given — by the storage, as a handler writes: a seed is the
- * frond's own code, not a client.
+ * Plants seeds in the order given, through the storage.
  *
  * Documented: [seeds](https://fougere.dev/docs/data/seeds).
  */
@@ -68,8 +63,6 @@ export async function runSeeds(
     const resolve = <T>(name: string) => app.resolve<T>(name + 'Handler');
     const data = typeof seed.data === 'function' ? await (seed.data as SeedFactory)(resolve) : seed.data;
 
-    // The driver's error alone names neither the entity nor the row — and a foreign
-    // key is exactly what a seed gets wrong.
     for (const item of data) {
       try {
         await storage.create(item);
@@ -84,10 +77,7 @@ export async function runSeeds(
   }
 }
 
-/**
- * The framework's own ascent for rows, named — so a host can REPLACE it rather than take over the
- * whole post-boot to get its own.
- */
+/** The boot's seeding step, named so a host can replace it. */
 export function seeding(report?: (message: string) => void): Extension {
   return {
     name: 'seeds',

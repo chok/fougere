@@ -1,8 +1,3 @@
-/**
- * Remote façade — what resolve() falls back to.
- *
- * Documented: [the gradient](https://fougere.dev/docs/concepts/configuration).
- */
 import type { FrondCall } from '../wire/FrondCall.js';
 import type { StateShape } from '../wire/StateShape.js';
 import type { Transport } from '../wire/Transport.js';
@@ -22,10 +17,7 @@ import type { RemoteListener } from '../module/fact/RemoteListener.js';
 interface Route {
   frond: string;
   transport: Transport;
-  /**
-   * What each operation answers, rebuilt from the identity card — the same `SchemaConstructor`
-   * shape `entity({...})` produces, live validation included.
-   */
+  /** What each operation answers, rebuilt from the identity card. */
   outputs: Map<string, SchemaView>;
   /** The ops an announcement calls there — what its card says each one `listens` to. */
   listening: Set<string>;
@@ -35,10 +27,7 @@ export interface RemoteRouter {
   route(address: string): Promise<Route>;
   /** The schema a remote STORES under an entity's name — `undefined` when none does. */
   schemaOf(entity: string): Promise<SchemaView | undefined>;
-  /**
-   * Who listens to a fact elsewhere, read off the cards — and which remotes could not be asked,
-   * since a remote that did not answer may listen too.
-   */
+  /** Who listens to a fact elsewhere, and which remotes could not be asked. */
   listenersOf(fact: string): Promise<{ listeners: RemoteListener[]; unreachable: string[] }>;
 }
 
@@ -49,28 +38,19 @@ export function createRemoteRouter(
   const byAddress = new Map<string, Route>();
   const stored = new Map<string, SchemaView>();
   const byFact = new Map<string, RemoteListener[]>();
-  // The remotes config key is a label for the address — the identity card is
-  // what decides which addresses answer behind it.
   const pending = new Map(Object.entries(remotes));
 
-  /** Which remote label claimed a facade name — so a second claim can name the first. */
   const remoteOfFacade = new Map<string, string>();
 
   const discover = async (): Promise<void> => {
-    // Asking is concurrent; INDEXING is not, and is done in the order `remotes` declares.
-    // Reading the cards inside the race made "which remote won" depend on who answered
-    // first, so the same two remotes could resolve differently between two runs.
     const cards = await Promise.all(
       [...pending].map(async ([label, url]) => {
         const transport = transportAt(url);
         try {
           const answer = await transport({ address: RPC_ADDRESS, op: 'discover' }, Invocation.empty);
 
-          // Judged below and not here: this catch means "unreachable, retry", and a
-          // refusal thrown inside it would be swallowed into another silent retry.
           return { label, url, transport, answer };
         } catch {
-          // Unreachable — stays pending, retried on the next miss.
           return undefined;
         }
       }),
@@ -141,15 +121,12 @@ export function createRemoteFacade(
       transport(call, { ...(ctx.invocation ?? invocation), state: shape.judge(ctx.state, address, op, entered) }).catch(addressed))
       .catch(addressed);
 
-    // What the op says it answers, put to work: a row crosses as data and comes back through
-    // the same codecs a local facade applies, so a placement does not decide what a caller holds.
     return decoded(outputs.get(op), answer);
   };
 
   return dynamicOperations(opFn) as Facade;
 }
 
-/** What one remote answered `discover` with, once it has been reached. */
 interface RemoteAnswer {
   label: string;
   url: string;
@@ -157,11 +134,6 @@ interface RemoteAnswer {
   answer: unknown;
 }
 
-/**
- * Which remote serves which facade. Facades only: a fact is not routable — nobody calls it, it
- * arrives — so adding one here would answer a call with a transport to a facade that does not
- * exist. Two remotes claiming one name is refused, never silently arbitrated.
- */
 function registerRemoteFacades(
   { label, url, transport, answer }: RemoteAnswer,
   byAddress: Map<string, Route>,
@@ -194,14 +166,12 @@ function registerRemoteFacades(
   }
 }
 
-/** What each remote stores, by entity name — what `schemaFor` answers for a row kept elsewhere. */
 function storedBy({ label, url, answer }: RemoteAnswer, stored: Map<string, SchemaView>): void {
   for (const frond of assertIdentityCard(answer, `Remote '${label}' (${url})`).fronds) {
     for (const entity of frond.entities) stored.set(entity.name, Card.fromDescriptor(entity.schema).toSchema());
   }
 }
 
-/** Who listens to what on each remote — the `listens` an op states on the card it serves. */
 function listenedBy({ label, url, answer }: RemoteAnswer, byFact: Map<string, RemoteListener[]>): void {
   for (const frond of assertIdentityCard(answer, `Remote '${label}' (${url})`).fronds) {
     for (const facade of frond.facades) {

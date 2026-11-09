@@ -5,16 +5,14 @@ import { collectorKeyOf } from '../../prefab/collector.js';
 import { collectedAs } from './collectedAs.js';
 import type { CollectorResolver } from './CollectorResolver.js';
 
-/** The collector the handler's scope holds for a type, when one does. */
 function collectorIn(scope: Container | undefined, typeName: string): CollectorResolver | undefined {
   try { return scope?.resolve<CollectorResolver>(collectorKeyOf(typeName)); }
   catch { return undefined; }
 }
 
 /**
- * A parameter whose TYPE has a collector in the frond — `user: User` beside a `Collect<User>`.
- * The set is keyed `lowerFirst`, the way the scan spells it, never `toLowerCase()`: `AuthorUser`
- * looked up as `authoruser` missed `authorUser` and fell through to the request input.
+ * A parameter whose type has a collector in the frond.
+ * Ex: `user: User` beside a `Collect<User>`.
  */
 export const collector: BindingSourceType<'collector'> = {
   bind(param, collectorTypeNames) {

@@ -42,34 +42,25 @@ function hubOf(entities: string[], nodes: Map<string, EntityNode>): string {
     .sort((a, b) => b.score - a.score)[0].name;
 }
 
-/**
- * If there's only one big cluster, try to split it using Kernighan-Lin-style
- * heuristic: find the entity with the fewest cross-links and use it as a cut point.
- */
+/** Splits one big cluster at the entity with the fewest cross-links. */
 export function suggestSplit(
   nodes: Map<string, EntityNode>,
   minClusterSize = 2,
 ): DomainCluster[] {
   const clusters = clusterEntities(nodes);
 
-  // If already multiple clusters, just annotate cross-refs
   if (clusters.length > 1) {
     return annotateCrossRefs(clusters, nodes);
   }
 
-  // No entities at all — nothing to cluster (empty or fresh workspace).
   if (clusters.length === 0) return clusters;
 
-  // Single cluster — try to find natural cut points
   const allEntities = clusters[0].entities;
   if (allEntities.length <= minClusterSize) return clusters;
 
-  // Score each entity by how many unique "groups" it connects
-  // Entities with high betweenness are boundaries, not cluster members
   const subClusters: string[][] = [];
   const assigned = new Set<string>();
 
-  // Start with entities that have no outgoing refs (leaves/roots)
   const roots = allEntities.filter((name) => nodes.get(name)!.refs.length === 0);
 
   for (const root of roots) {
@@ -77,7 +68,6 @@ export function suggestSplit(
     const group: string[] = [root];
     assigned.add(root);
 
-    // Add entities that reference this root
     for (const refBy of nodes.get(root)!.referencedBy) {
       if (!assigned.has(refBy)) {
         group.push(refBy);
@@ -87,11 +77,9 @@ export function suggestSplit(
     subClusters.push(group);
   }
 
-  // Any remaining unassigned entities form their own group
   const remaining = allEntities.filter((name) => !assigned.has(name));
   if (remaining.length > 0) subClusters.push(remaining);
 
-  // Convert to domain clusters
   const result = subClusters.map((entities) => ({ name: hubOf(entities, nodes), entities, crossRefs: [] as DomainCluster['crossRefs'] }));
 
   return annotateCrossRefs(result, nodes);

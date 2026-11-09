@@ -38,8 +38,6 @@ export function normalizeBinding(
   }
   if (params.length === 0) return { ...contract, binding: contract.binding };
 
-  // Explicit plans are matched by parameter name and then placed in signature order.
-  // Array order is never allowed to become semantic authority.
   const byName = new Map<string, Binding[]>();
   for (const binding of contract.binding) {
     const sameName = byName.get(binding.name) ?? [];
@@ -116,9 +114,6 @@ export function validateProvenance(
     }
   }
 
-  // A type written with an inline object literal names nothing a collector can register
-  // under, so the parameter IS the input. Only a NAMED type can be the wrong-frond
-  // substitution the refusal below exists for.
   for (const parameter of fromInput) {
     if (structural(contract.signature?.params[parameter.position]?.type)) inferredBody.add(parameter);
   }
@@ -147,14 +142,9 @@ export function validateProvenance(
       ? []
       : candidate.collectors.filter((collector) => collector.typeName === typeName));
     if (inOtherFronds.length > 0) {
-      // verify() supplies the more complete topology diagnostic; do not also call this
-      // an unknown input.
       continue;
     }
 
-    // An inferred input must be backed by exactly one resolved interpretation. With one
-    // input, the value itself is sufficient evidence; with several, exactly one type may
-    // match. Explicit plans are authoritative because they state every provenance.
     const recognized = explicitBinding || inferredBody.has(parameter);
     if (recognized) continue;
     valid = false;

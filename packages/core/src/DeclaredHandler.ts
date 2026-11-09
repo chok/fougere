@@ -6,11 +6,6 @@ import type { Seating } from './Declared.js';
 
 /** A handler, and the surface it answers on when it is not the default one. */
 export type DeclaredHandler = DeclaredSubject & Partial<Pick<HandlerEntry, 'surface'>> & Seating & {
-  /**
-   * What each method takes and answers — read from SOURCE by the scan, and unreachable
-   * from a class at runtime. A prefab declares its own (`Crud.__ops`) and needs nothing
-   * here; a method someone wrote does, or the route it should serve does not exist — written
-   * whole, as the scan writes it, or as a `StatementOperation` by hand.
-   */
+  /** What each method takes and answers, as the scan writes it or as a `StatementOperation`. */
   operations?: ReadonlyMap<string, OperationContract> | Record<string, OperationContract | StatementOperation>;
 };

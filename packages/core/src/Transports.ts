@@ -4,7 +4,8 @@ import type { CallIdentity } from './CallIdentity.js';
 import type { Transport } from './wire/Transport.js';
 
 /**
- * What carries a call to an address whose scheme names it — `http` for `remote: 'http://…'`.
+ * What carries a call to an address whose scheme names it.
+ * Ex: `http` for `remote: 'http://…'`.
  *
  * Documented: [extension points](https://fougere.dev/docs/extending/extension-points).
  */
@@ -12,7 +13,6 @@ export interface TransportType {
   open(address: URL, identity: CallIdentity): Transport;
 }
 
-/** Which package answers a scheme — one per process, the way a source type is. */
 class TransportRegistry extends Registry<TransportType> {
   /** The transport an address stands for, refused under `path` when no package answers its scheme. */
   open(address: string, identity: CallIdentity, path: string): Transport {
@@ -33,10 +33,7 @@ function urlOf(address: string, path: string): URL {
 
 export const Transports = new TransportRegistry('transport', 'import the package that provides it');
 
-/**
- * One transport per address `remotes` names, opened at boot so an unknown scheme refuses the boot
- * rather than the first call — the table the router and the relation readings both read.
- */
+/** One transport per address `remotes` names, opened at boot. */
 export function transportsOf(
   remotes: Record<string, string>,
   open: (address: string, label: string) => Transport,

@@ -8,8 +8,8 @@ export type Declared = AbstractCtor
   | (Omit<DeclaredSubject, 'ctor'> & { ctor: AbstractCtor } & Partial<Pick<ProviderEntry, 'name' | 'abstract' | 'implements' | 'answers' | 'refuses' | 'collecting'>> & Seating);
 
 /**
- * What a class built on `Repository<…>` is built on — `repository: Post`, or the members of an
- * aggregate in order. TypeScript erases the type arguments, so a statement says them.
+ * What a class built on `Repository<…>` is built on.
+ * Ex: `repository: Post`.
  */
 export interface Seating {
   repository?: Entity | readonly Entity[];

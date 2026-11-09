@@ -39,13 +39,8 @@ export interface Serving {
   log: Logger;
 }
 
-/**
- * What an app answers about what it serves — the membership rule and its neighbours.
- *
- * `facadeFor` is THE rule, stated once: every projection reads it and nothing else.
- */
+/** What an app answers about what it serves; `facadeFor` is the rule. */
 export class Membership {
-  /** Said once per pair, so a facade that registers in a loop says it once. */
   private readonly saidAbsent = new Set<string>();
 
   constructor(private readonly serving: Serving) {}
@@ -65,8 +60,6 @@ export class Membership {
     if (found) return found.entityClass;
     if (!remoteRouter) throw new Error(notLoaded(entity));
 
-    // An address that stores nothing publishes ops and no shape. Saying so beats handing back
-    // an empty schema, which would validate every input it was given.
     const stored = await remoteRouter.schemaOf(entity);
     if (!stored) {
       throw new Error(
@@ -126,11 +119,6 @@ export class Membership {
     }
   }
 
-  /**
-   * What a door is handed for an address it may serve: the calls, not the facade code holds.
-   * The names are the routes this process registered; an address served elsewhere has none
-   * before it is reached, so its calls are named when they are made.
-   */
   private callsAt(address: string, surface: string | undefined, through: Dispatcher): Record<string, Function> {
     const { routeRegistry, effectiveByKey } = this.serving;
     const names = routeRegistry.operationNames(address, surface);
@@ -140,11 +128,6 @@ export class Membership {
     return callOperations(through, address, names, surface, (operation, answer) => decoded(effective?.get(operation)?.output, answer));
   }
 
-  /**
-   * A surface is declared in the frond that serves it. When that frond runs in another
-   * process, this one never asked for its facades, and answering 'no' is the only thing a
-   * synchronous rule can do — so it says so rather than registering nothing in silence.
-   */
   private sayNoSurfaceAcross(entity: string, surface: string): void {
     if (!this.serving.remoteRouter || this.saidAbsent.has(`${surface}:${entity}`)) return;
     this.saidAbsent.add(`${surface}:${entity}`);

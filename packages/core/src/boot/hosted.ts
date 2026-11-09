@@ -2,10 +2,6 @@
 import type { FrondDescriptor } from '../descriptor/FrondDescriptor.js';
 import { Fronds } from '../descriptor/Fronds.js';
 
-/**
- * A frond as this boot will write on it — the boot stamps `extends` and each handler's resolved
- * contracts, and a statement handed to a second boot must not arrive carrying the first one's answers.
- */
 const ownCopy = (frond: FrondDescriptor): FrondDescriptor =>
   ({ ...frond, handlers: frond.handlers.map((handler) => ({ ...handler })) });
 

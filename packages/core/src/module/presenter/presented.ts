@@ -11,11 +11,7 @@ import { PresenterExecutor } from './PresenterExecutor.js';
 import { presenterArguments, presenterPlans } from './presenterArguments.js';
 
 /**
- * The computed fields a `Present<Post>` chain adds, over the rows the handler answered and BEFORE the
- * view projects them. A presenter runs on the server, so what it reads is the row the storage holds: a
- * `writeOnly` field is gone by the time the client sees it, and deriving from one is the whole reason
- * to declare it. A computed field's parameters and the collectors in scope are both boot-time facts,
- * so the plans are built here once.
+ * The computed fields a `Present<Post>` chain adds, before the view projects the rows.
  *
  * Documented: [presenters](https://fougere.dev/docs/data/computed-field).
  */
@@ -38,17 +34,11 @@ export function presentedFields(frond: Chained, presenter: Chaining): string[] {
   return chainFields(frond, presenter, []);
 }
 
-/** What a frond is read for to find a chain: its name, and the classes that may stand in front. */
 type Chained = Pick<FrondDescriptor, 'name'> & { providers?: readonly Pick<ProviderEntry, 'ctor' | 'deps' | 'implements' | 'filePath'>[] };
 
-/** What a presenter is read for — its entity and its fields, and its class when the refusal names it. */
 type Chaining = Pick<PresenterEntry, 'entityName' | 'fields'> & { ctor?: { name: string } };
 
-/**
- * The fields a chain computes: the presenter's, and what each link in front of it in its frond adds —
- * `implements Partial<Present<Post>>` asking for `Present<Post>`. A field two classes of one chain
- * compute is refused, naming both — computed twice, one would silently win.
- */
+/** The fields a chain computes; a field two classes compute is refused. */
 export function chainFields(frond: Chained, presenter: Chaining, refused: Diagnostic[]): string[] {
   const key = presenterKeyOf(presenter.entityName);
   const links = (frond.providers ?? []).filter((provider) => provider.implements?.includes(key) && provider.deps.includes(key));

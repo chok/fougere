@@ -5,11 +5,7 @@ import { targetOf } from '../../prefab/prefab.js';
 
 const readers = new WeakMap<object, Field>();
 
-/**
- * What a collector answered, read by the entity it names — judged and rebuilt, so a `User` that
- * crossed a process as JSON reaches the handler with its dates. A collector naming no entity
- * answers what it built.
- */
+/** What a collector answered, rebuilt by the entity it names. */
 export function collectedAs(collector: object, value: unknown): unknown {
   const target = targetOf(collector.constructor);
   if (value === null || value === undefined || typeof target?.getFields !== 'function') return value;

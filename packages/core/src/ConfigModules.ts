@@ -1,16 +1,3 @@
-/**
- * The fronds a config names by MODULE rather than by directory — `@fougere/log`, or a package
- * of your own. Reading one means importing it, which is why this lives on the node entry and
- * never on the one a Worker runs.
- *
- * What a module hands back decides where it goes: a shape stating `up`, `down` or `state` is an
- * extension and rises with the app, anything else is a frond and is installed like the rest.
- * The author of a config does not have to know which one their package exports — the same
- * reading `extensions/` already does off a module's form.
- *
- * A frond the config BUILT in place — `auth: betterAuth({ … })` — is handed over the same way,
- * with nothing to import: the config file already did.
- */
 import type { Extension } from './boot/Extension.js';
 import type { FrondDescriptor } from './descriptor/FrondDescriptor.js';
 import { isExtension } from './descriptor/ExtensionEntry.js';
@@ -18,7 +5,6 @@ import { statesModule, type FrondEntries } from './FrondEntries.js';
 import { keyedFrondEntries } from './KeyedFrondEntry.js';
 import { getModuleLoader, type ModuleLoader } from './loader.js';
 
-/** The export a specifier reaches: its last segment, `default` failing that. */
 function exportedBy(specifier: string): string {
   const last = specifier.split('/').at(-1) ?? specifier;
 

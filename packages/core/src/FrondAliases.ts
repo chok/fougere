@@ -16,11 +16,8 @@ export const ALIASES = 'aliases.json';
 export const MODULES = 'modules.js';
 
 /**
- * The fronds whose directory does not give their name — `"@fronds/blog/*": ["./fronds/blog-v2/*"]` in
- * the project's `tsconfig.json`, directory → name.
- *
- * The entry is read where TypeScript reads it, because TypeScript is the one reader that cannot be
- * told anything else: a rename stated anywhere besides would be a second statement of it.
+ * The fronds whose directory does not give their name, read off the project's `tsconfig.json`.
+ * Ex: `"@fronds/blog/*": ["./fronds/blog-v2/*"]`.
  *
  * Documented: [fronds](https://fougere.dev/docs/concepts/configuration).
  */
@@ -59,16 +56,11 @@ export async function frondAliases(root: string, conventions: Conventions = DEFA
   return aliases;
 }
 
-/** The one resolve hook each runtime offers — Node's, and Bun's plugin, which Bun has in Node's place. */
 interface BunRuntime {
   plugin(plugin: { name: string; setup(build: { onResolve(options: { filter: RegExp }, resolve: (args: { path: string }) => { path: string } | undefined): void }): void }): void;
 }
 
-/**
- * `@fronds/<name>` for the runtime itself, once a build turned the fronds into JavaScript — what a server
- * started by `fougere serve` resolves by, with no loader and no TypeScript. The longest alias wins, so
- * a renamed frond answers before the scope does.
- */
+/** Registers `@fronds/<name>` for a built server, the longest alias first. */
 export function registerFrondAliases(aliases: Record<string, string>): void {
   const entries = Object.entries(aliases).sort(([left], [right]) => right.length - left.length);
   const fileOf = (specifier: string): string | undefined => {

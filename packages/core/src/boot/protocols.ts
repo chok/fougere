@@ -2,10 +2,7 @@ import { JsonSchemaValidator, SchemaError, dotted, type JsonSchema } from '@foug
 import { Protocols, type ProtocolConfig } from '../Protocol.js';
 import type { FrondDescriptor } from '../descriptor/FrondDescriptor.js';
 
-/**
- * Each protocol named in `protocols:` — served by an imported adapter, judged by its format, then
- * by the adapter against the fronds the app is made of.
- */
+/** Each protocol named in `protocols:`, judged by its format and by its adapter. */
 export function servedProtocols(protocols: ProtocolConfig | undefined, fronds: readonly FrondDescriptor[]): ProtocolConfig {
   for (const [name, options] of Object.entries(protocols ?? {})) {
     const type = Protocols.resolve(name, `protocols.${name}`);

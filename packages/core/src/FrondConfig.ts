@@ -11,18 +11,11 @@ export interface FrondConfig {
   reads?: NameOf<'entity'>[];
   /** Per-surface entity lists. Overrides default deduction for each named surface. */
   surfaces?: Record<string, NameOf<'entity'>[]>;
-  /**
-   * The ops that FINISH a fact, in the order they run — by class name, keyed by fact.
-   *
-   * Declared by the frond that OWNS the fact, because ordering is a decision about the
-   * fact itself and it has one owner. Without it two links refuse: nothing would say which
-   * ran first, and scan order is not an answer.
-   */
+  /** The ops that finish a fact, in the order they run, keyed by fact; declared by the fact's owner. */
   pipes?: Record<NameOf<'entity'>, NameOf<'handler'>[]>;
   /**
-   * The order this frond's links stand in front of a port, outside in — `ports: { Dispatcher: ['Timing',
-   * 'Audit'] }`. A decision of the definition, where `ports:` in `fougere.config.ts` is the operator's
-   * choice of what answers; the frond's wins for its own scope.
+   * The order this frond's links stand in front of a port, outside in.
+   * Ex: `ports: { Dispatcher: ['Timing', 'Audit'] }`.
    */
   ports?: Record<string, string | readonly string[]>;
   /** What the frond says to each protocol about itself — `rest: { path: '/journal' }`. */
@@ -31,21 +24,16 @@ export interface FrondConfig {
   operations?: Record<`${string}.${string}`, OperationOverride>;
 }
 
-// ── Helper ───────────────────────────────────────
 
 /** Define a frond configuration (typed identity helper). */
 export function defineFrond(config: FrondConfig): FrondConfig {
   return config;
 }
 
-// ── Loading ──────────────────────────────────────
 
 const FROND_CONFIG_FILES = ['frond.config.ts', 'frond.config.js', 'frond.config.mjs'];
 
-/**
- * Load a frond's `frond.config.{ts,js,mjs}` from the given frond directory.
- * Returns `undefined` if no config file is found.
- */
+/** A frond's `frond.config.{ts,js,mjs}`, or `undefined` when it has none. */
 export async function loadFrondConfig(frondPath: string): Promise<FrondConfig | undefined> {
   const path = frondConfigFileIn(frondPath);
   if (!path) return undefined;

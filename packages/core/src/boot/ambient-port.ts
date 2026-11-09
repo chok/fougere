@@ -6,10 +6,7 @@ export interface Slot<T> {
   within<R>(value: T, fn: () => Promise<R>): Promise<R>;
 }
 
-/**
- * What runs now, carried without being handed along — one mechanism for every package, each
- * keeping its own slot: core its operation and request, `@fougere/observability` its span.
- */
+/** What runs now, carried without being handed along; each package keeps its own slot. */
 export interface Ambient {
   /** True when this runtime has no async context, and the boot says so. */
   readonly degraded: boolean;
@@ -20,9 +17,6 @@ export interface Ambient {
   /** Run `fn` as the frame `key`. */
   enterFrame<R>(key: string, fn: () => Promise<R>): Promise<R>;
 
-  /**
-   * Settle before `fact` is dispatched: a fact announced inside a frame that then rolls
-   * back is a lie. Refuses when the caller's own frame can be told, waits when it cannot.
-   */
+  /** Settles before `fact` is dispatched, refusing inside a frame that can still roll back. */
   beforeAnnounce(fact: string): Promise<void>;
 }

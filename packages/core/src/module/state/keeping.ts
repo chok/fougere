@@ -19,10 +19,7 @@ export function keeperFronds(declared: readonly DeclaredState[]): FrondDescripto
   return [...new Set(declared.map((one) => one.keeper))].flatMap((keeper) => keeper.fronds ?? []);
 }
 
-/**
- * What `state:` declares, judged, and the seal its values travel under — the key read from
- * `FOUGERE_STATE_KEY`. None declared, nothing is kept and no key is asked for.
- */
+/** What `state:` declares, judged, with the seal its values travel under. */
 export async function keepingOf(declared: readonly DeclaredState[], storageFor: StorageFor, log: Logger): Promise<Keeping | undefined> {
   if (declared.length === 0) return undefined;
 

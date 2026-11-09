@@ -5,16 +5,13 @@ import type { FrondDescriptor } from '../../descriptor/FrondDescriptor.js';
 import type { ValueSources } from './ValueSources.js';
 import { envKeyOf, type Env } from './Env.js';
 
-/** What this member reads of the app, and the slot of the ascent it fills. */
 interface Valuing {
   name: 'values';
   up?(app: { fronds: readonly FrondDescriptor[]; container: Container }): Promise<void>;
 }
 
 /**
- * Each entity held as a value is read, completed by its defaults, judged, and registered in the
- * scope of the frond declaring it — so `constructor(meili: Meili)` receives it as it is. After the
- * schema, since a source keeping values in a table needs that table first.
+ * Reads, completes, judges and registers each value in its frond's scope.
  *
  * Documented: [values](https://fougere.dev/docs/data/values).
  */
@@ -33,7 +30,6 @@ export function valuing(values?: ValueSources): Valuing {
         for (const { name, entityClass } of frond.entities) {
           if (values.sourceOf(name) === undefined) continue;
           const fields = entityClass.getFields();
-          // Through what stands in front of it, when anything does: the source's read is the innermost.
           const env = scope.has(envKeyOf(entityClass.name)) ? scope.resolve<Env<unknown>>(envKeyOf(entityClass.name)) : undefined;
           const read = env ? await env.read() as Record<string, unknown> | undefined : await values.read(name, entityClass);
           const judged = InputValidator.of(fields).validate(read ?? {});

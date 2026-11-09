@@ -16,9 +16,6 @@ export class PresenterExecutor {
       return result;
     }
 
-    // A paged op answers an envelope, and what a computed field sits on is a ROW. Handed the
-    // envelope itself, a presenter added its fields to `{ items, total }` and every row came
-    // back untouched.
     const page = asPage(result, Object.fromEntries(this.fieldNames.map((name) => [name, true])));
     if (page) return { ...page, items: await this.present(page.items, args) as unknown[] };
 
@@ -42,11 +39,6 @@ export class PresenterExecutor {
     return Array.isArray(result) ? preserveArrayProperties(result, enriched) : enriched[0];
   }
 
-  /**
-   * One computed field, handed the whole PAGE — so one query per page is possible where one per
-   * row was not. It answers for every row or for none: a shorter list would silently shift the
-   * values onto the wrong rows.
-   */
   private async computed(name: string, rows: unknown[], args: unknown[]): Promise<unknown[] | undefined> {
     const field = this.presenter?.[name];
     if (typeof field !== 'function') return undefined;
@@ -69,6 +61,5 @@ export class PresenterExecutor {
   }
 }
 
-/** The handler already answered this field — `create` returning the stock it just wrote — so it is not asked again. */
 const carries = (row: unknown, name: string): boolean =>
   row !== null && typeof row === 'object' && (row as Record<string, unknown>)[name] !== undefined;

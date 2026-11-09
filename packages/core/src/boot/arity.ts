@@ -8,15 +8,7 @@ interface Constructed {
   filePath: string;
 }
 
-/**
- * What the container hands a constructor is `deps`, one argument per key and in order — so a
- * constructor asking for more is handed `undefined`. The scan reads `deps` off the signature and
- * cannot miss; a frond declared by hand can, and `Function.length` is the one thing a
- * constructor says about itself once the types are gone.
- *
- * `length` is a floor and never a count: a class that writes no constructor inherits
- * `(...args) => super(...args)`, which is 0, while the scan read its parent's dependencies.
- */
+/** Refuses a constructor that takes more arguments than its `deps`. */
 export function refuseArityDrift(frond: FrondDescriptor, refused: Diagnostic[]): void {
   const constructed: Constructed[] = [
     ...frond.handlers,
@@ -26,7 +18,6 @@ export function refuseArityDrift(frond: FrondDescriptor, refused: Diagnostic[]):
   ];
 
   for (const { ctor: built, deps: given, filePath } of constructed) {
-    // A seated class takes its rows after what it was written to take: the sentence counts the latter.
     const handed = seatOf(built).length;
     const ctor = { name: built.name, length: built.length - handed };
     const deps = given.slice(0, given.length - handed);

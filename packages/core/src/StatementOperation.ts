@@ -11,9 +11,8 @@ export type StatementType = SchemaView | readonly [SchemaView, string] | 'string
 export type StatementParam = StatementType | { type: StatementType; optional: true };
 
 /**
- * An operation written by hand: what TypeScript erases of its method, stated, and nothing guessed.
- * `publish: { params: { id: [Post, 'id'] }, output: Post }` — `[Post]` answers several, and the kind
- * is told by the verb the name leads with, the way it is for every operation.
+ * An operation written by hand: what TypeScript erases of its method.
+ * Ex: `publish: { params: { id: [Post, 'id'] }, output: Post }`.
  */
 export interface StatementOperation {
   /** Every parameter, in the order the method takes them. */

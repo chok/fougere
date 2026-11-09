@@ -35,7 +35,6 @@ export function ownersOf(
   refused: Diagnostic[],
 ): Map<string, string> {
   const owners = new Map<string, string>();
-  /** Claimed twice, so it has no owner — and no owner is nobody to judge a reader against. */
   const contested = new Set<string>();
   for (const provider of providers) {
     const owned = ownedBy(provider.ctor);
@@ -44,9 +43,6 @@ export function ownersOf(
       const name = lowerFirst((entity as { name: string }).name);
       const first = owners.get(name);
       if (first && first !== provider.ctor.name) {
-        // Refused rather than settled, for the reason `ports:` refuses two implementations
-        // and `remotes` two owners of an entity: whichever won would depend on scan order,
-        // and one of the two aggregates would be silently unenforced.
         refused.push({
           severity: 'blocking',
           code: 'entity-owned-twice',
@@ -61,18 +57,11 @@ export function ownersOf(
       owners.set(name, provider.ctor.name);
     }
   }
-  // The second claimant is BUILT ON what it claims, so `storageInUserCode` would read it as
-  // reaching around the first — two more refusals naming the same declaration, in the one
-  // case where the answer to "who owns this" is already the diagnostic above.
   for (const name of contested) owners.delete(name);
 
   return owners;
 }
 
-/**
- * The entities a class was BUILT ON — what a prefab may legitimately be handed the storage
- * of. Empty for a plain service, which is why one cannot ask for a storage at all.
- */
 function entitiesOfPrefab(ctor: unknown): string[] {
   const owned = ownedBy(ctor);
   if (owned.length > 0) return owned.map((e) => lowerFirst((e as { name: string }).name));
@@ -81,11 +70,6 @@ function entitiesOfPrefab(ctor: unknown): string[] {
   return target?.name ? [lowerFirst(target.name)] : [];
 }
 
-/**
- * Storage is reached through a repository, and an OWNED entity's not even that way: an aggregate's
- * members are reached through it and nowhere else. The ownership question is asked first, so a
- * member says who owns it rather than being told to write a repository it may not have.
- */
 function refuseStorageReached(
   decl: { ctor: { name: string }; deps: string[]; filePath: string; kind: string },
   frond: string,
@@ -120,7 +104,6 @@ function refuseStorageReached(
   }
 }
 
-/** Whether `dep` reaches an entity an aggregate other than `decl` owns — a frame as much as a storage. */
 function reachesOwned(
   decl: { ctor: { name: string }; filePath: string },
   dep: string,
@@ -170,7 +153,6 @@ export function crudOnOwned(
   refused: Diagnostic[],
 ): void {
   for (const handler of frond.handlers) {
-    // What it extends the repository of — seated by the boot — or, for a prefab, its address.
     const built = seatOf(handler.ctor).map((entity) => lowerFirst(entity.name));
     const subject = built.find((entity) => owners.has(entity))
       ?? (built.length === 0 && handler.deps.length === 0 && extendsRepository(handler.ctor) ? handler.address : undefined);

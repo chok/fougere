@@ -1,10 +1,3 @@
-/**
- * Who inherits code from whom, read off `FougereConfig.fronds` and judged before anything is
- * built. It reads no disk and holds no container: the scopes it decides are built later, in
- * `install.ts`, and everything here is a fact about names.
- *
- * Documented: [fronds](https://fougere.dev/docs/concepts/configuration).
- */
 import type { Diagnostic } from '../diagnostic.js';
 import { frondPackage, resolveConventions, type Conventions } from '../Conventions.js';
 import { isFrondDescriptor } from '../descriptor/FrondDescriptor.js';
@@ -13,7 +6,6 @@ import { Fronds } from '../descriptor/Fronds.js';
 import { statesModule, type FrondEntries } from '../FrondEntries.js';
 import { keyedFrondEntries } from '../KeyedFrondEntry.js';
 
-/** A frond that holds what a family shares serves nothing — which is what keeps it here. */
 function refuseServingParent(
   parent: FrondDescriptor,
   children: string[],
@@ -35,10 +27,6 @@ function refuseServingParent(
   return true;
 }
 
-/**
- * Rows belong to a frond something can call — the family case is not traced, so it is refused. A
- * value is not rows: it is what a family shares, and the frond it inherits from is where it lives.
- */
 function refuseParentEntities(
   parent: FrondDescriptor,
   children: string[],
@@ -101,8 +89,6 @@ export function nestingOf(
     });
   }
 
-  // A frond a family inherits from needs no entry of its own — `extends` is said by the
-  // inheritor — so what it may not be is asked of the NAMES, not of the entries.
   for (const [parent, children] of childrenOf) {
     const frond = here.get(parent);
     if (frond === undefined) continue;
@@ -128,11 +114,6 @@ export function nestingOf(
     const frond = here.get(statement.key);
 
     if (frond === undefined) {
-      // Three ways a stated name is absent from this process and says nothing wrong: a module
-      // key, which the host imports; an address, whose frond answers elsewhere by definition;
-      // and a frond `only:` left out, since the config describes the PROJECT and the flag one
-      // process. What is left is a name nothing carries — a typo, and the config is where it
-      // was made, so that is where the message points.
       const placedRemotely = statement.value !== undefined || (remotes && statement.key in remotes);
       if (!statesModule(statement.key) && !placedRemotely && here.size > 0 && !narrowed) {
         refused.push({
@@ -165,14 +146,7 @@ export function nestingOf(
   return { under, refused };
 }
 
-/**
- * The same fronds, each parent before the ones inheriting from it — the order the boot installs
- * them in, since a scope hangs off the one above it.
- *
- * A partition and not a sort: inheriting goes one level, so a frond that inherits has nothing
- * under it and two passes are enough. Stable, and the same array when nothing inherits — which
- * is what `orderSeeds` reads.
- */
+/** The same fronds, each parent before the ones inheriting from it. */
 export function parentsFirst(fronds: Fronds, under: Map<string, string>): Fronds {
   if (under.size === 0) return fronds;
 
@@ -182,11 +156,7 @@ export function parentsFirst(fronds: Fronds, under: Map<string, string>): Fronds
   ]);
 }
 
-/**
- * The same `under` a boot stamps, for a reader that does not boot — `fougere check` and
- * `fougere explain` resolve the model off a scan, and a scan knows nothing of the tree.
- * Without it they report every inherited dependency as a crossing.
- */
+/** The tree a boot stamps, for a reader that does not boot. */
 export function nested(fronds: Fronds, entries: FrondEntries | undefined): Fronds {
   const { under } = nestingOf(entries, fronds, undefined, true);
   for (const frond of fronds) {

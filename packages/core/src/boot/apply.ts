@@ -10,11 +10,10 @@ export interface ConfigApplication {
   pending: string[];
 }
 
-/** The keys read at use rather than consumed at boot, so a re-read moves them. */
 const CONSULTED = new Set(['logLevel', 'maxBodyBytes']);
 
 /**
- * What a (re-)read config changes in a process that is already running.
+ * What a re-read config changes in a running process.
  *
  * Documented: [lifecycle](https://fougere.dev/docs/run/lifecycle).
  */
@@ -22,15 +21,6 @@ export function applyConfig(next: FougereConfig, inForce?: FougereConfig): Confi
   const applied: string[] = [];
   const pending: string[] = [];
 
-  // The CLI speaks through the environment, so it keeps winning over the file — read
-  // through `envLevel`, which is where the environment is already validated. Casting it
-  // here was a second reader that validated nothing: `FOUGERE_LOG_LEVEL=verbose` set
-  // the threshold to `undefined` and every log passed.
-  // A process that declares no level keeps the one it started with — `info`, or whatever
-  // the host set for itself before booting. Defaulting to `debug` here meant every caller
-  // of this function silently raised the threshold: the CLI sets `warn` and got `debug`
-  // back, and the day a web host started calling it, `pnpm dev` would have traced every
-  // dispatch of an app that asked for nothing.
   const wanted = envLevel() ?? next.logLevel ?? logLevel();
   const before = logLevel();
   if (wanted !== before) {

@@ -11,6 +11,5 @@ export const RUNTIME_PACKAGES: readonly string[] = [
   '@fougere/auth-better',
   'better-sqlite3',
   'jiti',
-  // Optional, and imported only to scan: a bundle that held it would ship TypeScript.
   '@fougere/compiler',
 ];

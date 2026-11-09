@@ -1,10 +1,6 @@
 import { b64url, bytesOf, textOf, unb64url } from '../../crypto/encoding.js';
 
-/**
- * What the caller keeps, signed: `<value>.<signature>`, the value readable and never changeable — a
- * changed one no longer matches its signature, and reads as absent. Signed, not encrypted: what must
- * stay hidden from a caller is not handed to it, a reference is.
- */
+/** What the caller keeps, signed and readable; a changed value reads as absent. */
 export class Seal {
   private constructor(private readonly mac: (data: Uint8Array) => Promise<Uint8Array>) {}
 
@@ -34,7 +30,6 @@ export class Seal {
   }
 }
 
-/** In constant time: how long a comparison takes says nothing of how much matched. */
 function same(given: Uint8Array, expected: Uint8Array): boolean {
   if (given.length !== expected.length) return false;
   let difference = 0;

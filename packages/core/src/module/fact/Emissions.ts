@@ -13,42 +13,28 @@ import type { OperationsMap } from '../../wire/OperationsMap.js';
 import type { RemoteListeners } from './RemoteListeners.js';
 import { LOG_LINE } from '../../builtin/LogLine.js';
 
-/** The facts being announced up the stack, so a fact cannot cause itself. */
 const chain = ambient.slot<readonly string[]>('chain');
 
-/** A facade and the op on it that accepts a fact. */
 interface Listener {
   facade: string;
   op: string;
 }
 
-/** Carries an announced fact out of this process — see `CreateAppOptions.onEmit`. */
 type Carrier = (fact: string, payload: unknown) => void | Promise<void>;
 
 /** Emissions — the only place in Fougere where an initiator names a SUBJECT. */
 export class Emissions {
-  /** Who listens to what. Filled as each facade's contracts are resolved. */
   private readonly subscribers = new Map<string, Listener[]>();
 
-  /** Who FINISHES a fact, in the order they run — see `orderPipes`. */
   private readonly pipes = new Map<string, Listener[]>();
 
-  /** The order its OWNER declared, by fact — `pipes:` in `frond.config.ts`. */
   private readonly ordered: Map<string, string[]>;
 
-  /**
-   * What is announced here, read from the DEPS and not from the subscribers: a handler declaring
-   * `Emit<PostPublished>` must resolve it whether or not anybody listens, and announcing to nobody
-   * is legal.
-   */
   private readonly announced: Set<string>;
 
-  /** What is announced AND waited for — `Emit<T, A>`, where the second type says so. */
   private readonly awaited: Set<string>;
-  /** Under which keys each awaited fact is asked for — the answer's type is in the key, as written. */
   private readonly awaitKeys: string[];
 
-  /** Where each facade and each frond was written, so a refusal here names a file to open. */
   private readonly fileOf = new Map<string, string>();
 
   constructor(
@@ -67,8 +53,6 @@ export class Emissions {
     this.announced = new Set(fronds.flatMap((frond) => factsAnnouncedBy(frond.handlers)));
     this.awaited = new Set(fronds.flatMap((frond) => factsAwaitedBy(frond.handlers)));
     this.awaitKeys = fronds.flatMap((frond) => awaitKeysIn(frond.handlers));
-    // Read from the frond that OWNS the fact: ordering is a decision about the fact, and
-    // a decision has one owner. A frond ordering a neighbour's fact is refused below.
     this.ordered = new Map(fronds.flatMap((frond) => {
       const owned = new Set(frond.entities.map((entity) => entity.name));
 
@@ -90,10 +74,7 @@ export class Emissions {
     }));
   }
 
-  /**
-   * Who listens to what — read from the PLAN, where `{ kind: 'fact' }` is a sentence
-   * `computeBindingPlan` already wrote, so nothing re-derives what a parameter is.
-   */
+  /** Who listens to what, read from the binding plans. */
   note(contracts: OperationsMap, facade: string): void {
     for (const [op, contract] of contracts) {
       for (const bound of contract.binding ?? []) {
@@ -109,7 +90,6 @@ export class Emissions {
     }
   }
 
-  /** One more op that finishes this fact. What ORDER they run in is settled at `register`. */
   private addPipe(fact: string, taking: Listener): void {
     const pipes = this.pipes.get(fact) ?? [];
     if (pipes.some((one) => `${one.facade}.${one.op}` === `${taking.facade}.${taking.op}`)) return;
@@ -117,13 +97,6 @@ export class Emissions {
     this.pipes.set(fact, pipes);
   }
 
-  /**
-   * Put the links in the order their fact's owner declared, and refuse what it did not.
-   *
-   * Two links with no order refuse: nothing would say which finished the fact, and scan
-   * order is not an answer — the same reason two implementations of a port refuse. One
-   * link needs no declaration, because there is nothing to order.
-   */
   private orderPipes(): void {
     for (const [fact, links] of this.pipes) {
       const declared = this.ordered.get(fact);
@@ -176,11 +149,6 @@ export class Emissions {
     return (this.subscribers.get(fact) ?? []).map(({ facade }) => facade);
   }
 
-  /**
-   * What a listener is handed a fact through: the calls a door makes, never the facade code
-   * holds. A fact arrives as the invocation's input and the listener's binding plan places it,
-   * wherever it sits in the signature.
-   */
   private calls: (facade: string) => Record<string, Function> | undefined = () => undefined;
 
   /** Register one emission value per fact — announced here, or merely listened to. */
@@ -191,10 +159,6 @@ export class Emissions {
       this.container.registerValue(emitKeyOf(fact), (raw: unknown) => this.announce(fact, raw));
     }
     for (const fact of this.awaited) {
-      // Waiting means knowing WHO, and a carrier publishes to whoever subscribed elsewhere
-      // without bringing anything back — so the answers would hold this process's
-      // subscribers only, and say nothing about it. Refused here rather than half-answered
-      // at the first call: the second type is in a signature, so a boot can read it.
       if (this.carrier) {
         this.refused.push({
           severity: 'blocking',
@@ -217,19 +181,12 @@ export class Emissions {
     }
   }
 
-  /** Announcing. */
   private async announce(fact: string, raw: unknown, waiting = false): Promise<unknown[]> {
-    /**
-     * A fact announced inside a frame that then rolls back is a lie, and nothing can take it back:
-     * announcing is DISPATCH — every subscriber has been handed the fact and the carrier has
-     * already put it on the wire — while the frame's writes are still provisional.
-     */
     await ambient.beforeAnnounce(fact);
 
     const payload = await this.finished(fact, this.stamped(fact, raw));
     const listeners = [...(this.subscribers.get(fact) ?? []), ...await this.remoteListenersOf(fact, waiting)];
 
-    /** Whoever is not in this process — and it is the ONLY way to reach them. */
     const delivery = this.carrier?.(fact, payload);
     if (delivery) void Promise.resolve(delivery).catch((cause) => this.log.error(`${fact} — carrier refused it`, cause));
 
@@ -245,14 +202,6 @@ export class Emissions {
     return this.answersOf(fact, handed);
   }
 
-  /**
-   * A subscriber that did not answer REFUSES the announcement, it does not shrink it: an
-   * announcer handed the survivors cannot tell three answers from two, and its own law then
-   * reads silence as consent — the room one would have refused gets booked.
-   *
-   * What answers NOTHING contributes nothing: a subscriber is free to have no opinion, and
-   * `Promise<void>` is how it says so.
-   */
   private async answersOf(
     fact: string,
     handed: (Listener & { done: Promise<unknown> })[],
@@ -299,23 +248,11 @@ export class Emissions {
     }
   }
 
-  /**
-   * What the declared link answers, or the value as it stands when nothing declared one.
-   *
-   * Before anyone is handed anything, and once: every subscriber reads the same fact, which
-   * is the whole reason a fact can be said to be what happened. A link that refuses stops
-   * the announcement — it was finishing the fact, and half a fact is not one.
-   */
   private async finished(fact: string, payload: unknown): Promise<unknown> {
     let current = payload;
     for (const link of this.pipes.get(fact) ?? []) {
       const answer = await this.reach(link.facade, fact)[link.op]({ ...Invocation.empty, input: current });
 
-      // A link that answers nothing SUPPRESSES the fact — every subscriber was then handed
-      // `null` and crashed reading it, one message each. It is refused rather than named,
-      // because a fact is what HAPPENED: the announcer already said so and cannot be told
-      // otherwise, `Emit` returning void. Filtering belongs to whoever announces, or to
-      // each reader; it is not a link's to decide for everyone.
       if (answer === null || answer === undefined) {
         throw new Error(
           `${namedOf(link)} takes Pipe<${fact}> and returned nothing. `
@@ -328,10 +265,6 @@ export class Emissions {
     return current;
   }
 
-  /**
-   * The announcement realizes the fact's own `lifecycle.create` — a `created()` stamped, an id
-   * generated, a default applied.
-   */
   private stamped(fact: string, raw: unknown): unknown {
     const shape = this.shapes.get(fact);
 
@@ -340,12 +273,6 @@ export class Emissions {
       : raw;
   }
 
-  /**
-   * The listeners another process serves, read off its card — minus those already noted here,
-   * since a remote frond whose code this process read is noted twice.
-   *
-   * A line never crosses: delivering it is a call, and a call writes lines.
-   */
   private async remoteListenersOf(fact: string, waiting: boolean): Promise<Listener[]> {
     if (!this.remoteListeners || fact === LOG_LINE) return [];
 
@@ -363,7 +290,6 @@ export class Emissions {
       .filter(({ facade, op }) => !here.has(`${facade}.${op}`));
   }
 
-  /** Hand the fact to every listener named, those of THIS process when none are, and give back one promise each. */
   private handToListeners(
     fact: string,
     payload: unknown,
@@ -399,7 +325,6 @@ export class Emissions {
     return calls;
   }
 
-  /** A subscriber refusing the SHAPE, said in one line instead of dumped as an error. */
   private describeRefusal(fact: string, cause: unknown): string | undefined {
     const refusals = validationErrorsOf(cause);
     if (!refusals?.length) return undefined;
@@ -410,7 +335,6 @@ export class Emissions {
 }
 
 /** The container key a declared CLASS NAME answers under — `RedactHandler` → `redactHandler`. */
-/** A listener as an op is named everywhere else — `index.reindex`. */
 function namedOf(listener: Listener): string {
   return `${addressOf(listener.facade)}.${listener.op}`;
 }

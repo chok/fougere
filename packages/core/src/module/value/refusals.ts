@@ -11,10 +11,7 @@ interface Declared {
   filePath: string;
 }
 
-/**
- * An entity is rows or one value, and asking for it the other way is said at boot — the
- * container would only answer that the key is not registered.
- */
+/** Refuses an entity asked for as rows when it is a value, or the other way. */
 export function refuseValuesAsRows(
   frond: FrondDescriptor,
   valued: (entity: string) => boolean,

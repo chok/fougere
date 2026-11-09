@@ -4,12 +4,7 @@ import type { Diagnostic } from '../diagnostic.js';
 import type { FrondDescriptor } from '../descriptor/FrondDescriptor.js';
 import { HOST_PORTS } from './ports.js';
 
-/**
- * What a constructor asks for and nothing where it is built answers — refused at boot rather than
- * at its first call, once the extensions have risen, since `up` registers too. Read off what each
- * class DECLARES, in the scope of the frond that declares it. A seam is answered by the link that
- * wraps it, and a facade another process serves by the stand-in `facadeServedRemotely` names.
- */
+/** What a constructor asks for that nothing in its frond's scope answers. */
 export function unregistered(
   container: Container,
   fronds: readonly FrondDescriptor[],

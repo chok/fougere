@@ -6,7 +6,6 @@ import type { DoorAround } from '../entry/door.js';
 import type { Plugged } from '../wire/Plugged.js';
 import { StepPort } from './StepPort.js';
 
-/** One step per door whose package names a port — `rest` → `Rest` — read off what registered, never named here. */
 const STEPS = new Map<string, StepPort>();
 
 export function doorPorts(): { door: string; step: StepPort }[] {
@@ -24,11 +23,7 @@ export function doorStepOf(key: string): StepPort | undefined {
   return doorPorts().find(({ step }) => step.covers(key))?.step;
 }
 
-/**
- * At a door, a refusal IS an answer: what a link there throws leaves it as the door's answer, so a link
- * standing outside it still sees one — and adds its headers to a `413` as to a `200`. The door says the
- * refusal in its own terms, and the link writes no `catch` for it.
- */
+/** Makes a refusal at a door an answer, so the links outside it still see one. */
 export function answeringAtDoor(link: object, step: StepPort): void {
   const answer = (link as { answer?: (received: object) => Promise<unknown> }).answer;
   if (typeof answer !== 'function') return;
@@ -51,8 +46,8 @@ export function answeringAtDoor(link: object, step: StepPort): void {
 export type Reserve = (key: string, value: unknown, says: string) => void;
 
 /**
- * A bare key core answers in every frond — `Dispatcher`, `Rest` — is not a name a class of the frond may
- * take: it would collide with the rest of the step. A key with a subject cannot collide at all.
+ * Refuses a class of the frond named after a bare key core answers.
+ * Ex: `Dispatcher`, `Rest`.
  */
 export function reserving(frond: FrondDescriptor, scope: Container, refused: Diagnostic[]): Reserve {
   const taken = new Map(frond.providers.map((provider) => [nameOf(provider), provider] as const));
@@ -76,9 +71,7 @@ export function reserving(frond: FrondDescriptor, scope: Container, refused: Dia
 }
 
 /**
- * What stands at a door for this frond, once its links are chained: the frond's whole chain, and each
- * handler's at that handler's addresses. A method of a handler's link naming no op of it is refused —
- * a misspelt op would stand around nothing.
+ * What stands at a door for this frond, once its links are chained.
  *
  * Documented: [surfaces](https://fougere.dev/docs/serve/rest-graphql).
  */

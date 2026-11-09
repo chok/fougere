@@ -25,7 +25,6 @@ import type { PresenterFieldMeta } from './descriptor/PresenterFieldMeta.js';
 import { FrondConfigReading } from './descriptor/FrondConfigReading.js';
 
 
-/** The class as the boot builds it: seated on what it says it is built on, or as written. */
 const ctorOf = (d: Declared | DeclaredHandler): Ctor => {
   const written = (typeof d === 'function' ? d : d.ctor) as Ctor;
   const { collects, presents } = typeof d === 'function' ? {} : d as Seating;
@@ -40,11 +39,6 @@ const seatingOf = (d: Declared | DeclaredHandler): readonly Entity[] => {
   return stated === undefined ? [] : Array.isArray(stated) ? stated : [stated as Entity];
 };
 
-/**
- * What a prefab was BUILT ON — `Present<Post>` and `Collect<User>` both keep it under
- * `__entity`, which is the only place it survives: nothing in the FORM of `PostPresenter` says
- * `Post`.
- */
 function subjectOf(ctor: Ctor, kind: string): { name: string } {
   const subject = targetOf(ctor);
   if (!subject?.name) {
@@ -59,11 +53,6 @@ function subjectOf(ctor: Ctor, kind: string): { name: string } {
 
 const depsOf = (d: Declared | DeclaredHandler): string[] => [...(typeof d === 'function' ? [] : d.deps ?? []), ...seatsOf(seatingOf(d))];
 
-/**
- * A Map either way — a statement is read as code, and an object literal is what code
- * looks like there. What a prefab declares of itself is merged BELOW: a method the author
- * wrote over `create` is the one that runs, so its contract is the one that answers.
- */
 function declaredOperations(h: Ctor | DeclaredHandler): Map<string, OperationContract> {
   const declared = typeof h === 'function' ? undefined : h.operations;
   const own = opsOf(ctorOf(h));
@@ -89,10 +78,7 @@ export interface FrondDeclaration extends Pick<FrondConfig, 'pipes' | 'surfaces'
   scope?: string;
   /** What `frond.config.ts` states — the third producer of an operation contract. */
   operationsOverrides?: FrondDescriptor['operationsOverrides'];
-  /**
-   * The file each value is declared in — `[[PostHandler, '/app/fronds/blog/handlers/PostHandler.ts']]` —
-   * which a refusal names. The scan writes it; a statement written by hand may leave it out.
-   */
+  /** The file each value is declared in, which a refusal names. */
   files?: readonly (readonly [unknown, string])[];
   /** The frond's `frond.config.ts`, imported — read the way the scan reads the file. */
   config?: FrondConfig;
@@ -127,8 +113,6 @@ export function frond(name: string, declared: FrondDeclaration = {}): FrondDescr
       name: ctor.name,
       address,
       ctor,
-      // A handler about no stored row is ordinary — the address is not a promise that an
-      // entity carries it, which is why this is not looked up.
       entityName: address,
       operations: declaredOperations(h),
       deps: depsOf(h),
@@ -138,10 +122,6 @@ export function frond(name: string, declared: FrondDeclaration = {}): FrondDescr
     };
   });
 
-  // Read off the class, never restated: `Present<Post>` keeps `Post` in `__entity` and a
-  // computed field IS a method, which `getPresenterFields` already reads from the prototype.
-  // Asking for `entityName` and `fields` made a statement copy what the class carries — and
-  // a copy that drifts silently, since nothing compares the two.
   const presenters: PresenterEntry[] = (declared.presenters ?? []).map((p) => {
     const ctor = ctorOf(p);
     const fields = getPresenterFields(ctor);
@@ -157,16 +137,10 @@ export function frond(name: string, declared: FrondDeclaration = {}): FrondDescr
     };
   });
 
-  // `Collect<User>` keeps `User` the same way — the type a handler names to receive it.
   const collectors: CollectorEntry[] = (declared.collectors ?? []).map((c) => {
     const ctor = ctorOf(c);
 
     return {
-      // `lowerFirst`, the way the scan spells it: the boot looks a collector up by the key
-      // `computeBindingPlan` derives from a parameter's type, and that key is lowerFirst.
-      // Written as `User` here, the set held `User` while every lookup asked for `user` —
-      // so a handler taking one fell through to the request input, and the boot refused a
-      // contract it had everything to resolve.
       typeName: lowerFirst(subjectOf(ctor, 'collector').name),
       ctor,
       deps: depsOf(c),
@@ -177,8 +151,6 @@ export function frond(name: string, declared: FrondDeclaration = {}): FrondDescr
   });
 
   const providers: ProviderEntry[] = (declared.providers ?? []).map((p) => ({
-    // Written down where a statement says it, read off the class otherwise — the class's
-    // own name is what a bundler is free to rewrite.
     ...(typeof p === 'function' || !p.name ? {} : { name: p.name }),
     ctor: ctorOf(p),
     deps: depsOf(p),

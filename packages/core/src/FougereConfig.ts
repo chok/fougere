@@ -13,37 +13,28 @@ import type { StateEntry } from './FougereStates.js';
 import type { ServerConfig } from './ServerConfig.js';
 
 export interface FougereConfig {
-  /**
-   * Where entities live — a name, a type and what it admits, then `rows:` and `values:`. The one
-   * writable entry with no `rows:` is the default source; no source holding rows keeps them in memory.
-   */
+  /** Where entities live: a name, a type and its options, then `rows:` and `values:`. */
   sources?: Record<string, SourceConfig>;
-  /**
-   * The names the scan reads instead of deriving them — the import scope, the fronds directory,
-   * every convention directory.
-   */
+  /** The names the scan reads: the import scope, the fronds directory, every convention directory. */
   conventions?: ConventionsInput;
   /** How much every logger says. */
   logLevel?: LogLevel;
   /** How many bytes a caller may send in one call — 2 MiB when unsaid. Consulted at every door. */
   maxBodyBytes?: number;
-  /**
-   * What this app is made of, and who inherits code from whom. The key is a frond name or a
-   * module specifier; nesting says only that a child resolves what its parent declared.
-   */
+  /** What this app is made of, keyed by frond name or module specifier. */
   fronds?: FrondEntries;
   /** What answers a port — a name, or the chain from the outside in. */
   ports?: PortChoice;
   /** The protocols this app serves beside its own calls — named here, made available by an import. */
   protocols?: ProtocolConfig;
   /**
-   * How each name of the caller's state is kept between requests — `{ cart: { cookie: { maxAge:
-   * 604800 } } }` — named here, the way to keep it brought by an import (`@fougere/state-cookie`).
+   * How each name of the caller's state is kept between requests.
+   * Ex: `{ cart: { cookie: { maxAge: 604800 } } }`.
    */
   state?: Record<string, StateEntry>;
   /**
-   * What stands around the requests `fougere serve` answers browsers — `{ use: [cors()] }`, srvx
-   * middlewares, outside in. A host with a server of its own uses that server's.
+   * The srvx middlewares around what `fougere serve` answers, outside in.
+   * Ex: `{ use: [cors()] }`.
    */
   server?: ServerConfig;
 }
@@ -65,11 +56,7 @@ export function statementFileIn(dir: string): string | undefined {
   return STATEMENT_FILES.map((file) => resolve(dir, file)).find((path) => existsSync(path));
 }
 
-/**
- * The project an app belongs to: the nearest directory, from `dir` up, that holds the fronds —
- * or, holding none yet, a config file. An app under `apps/` finds its workspace, and an app that
- * keeps its own fronds is its own project, with nothing written in either.
- */
+/** The project an app belongs to: the nearest directory, from `dir` up, holding the fronds or a config file. */
 export function projectRootOf(dir: string): string {
   const up = (holds: (at: string) => boolean): string | undefined => {
     for (let at = resolve(dir); ; at = dirname(at)) {
@@ -85,8 +72,6 @@ async function loadConfigFrom(dir: string, fresh?: boolean): Promise<FougereConf
   const path = configFileIn(dir);
   if (!path) return {};
 
-  // A module is cached by its specifier, so a second load of an EDITED file hands back what
-  // was read the first time. The loader owns its own cache, so it is the one told.
   const mod = await getModuleLoader()(path, fresh ? { fresh } : undefined);
 
   return ((mod as { default?: FougereConfig }).default ?? mod) as FougereConfig;
@@ -97,11 +82,7 @@ export async function loadConfig(root: string, options?: { fresh?: boolean }): P
   return loadConfigFrom(root, options?.fresh);
 }
 
-/**
- * Where each frond answers — the `remote` of its entry in `fronds:`, the one place a config says
- * it. `CreateAppOptions.remotes` still takes this shape: the option is what the whole boot
- * reads, and translating here is what keeps it from learning about the tree.
- */
+/** Where each frond answers: the `remote` of its entry in `fronds:`. */
 export function remotesOf(config: FougereConfig): Record<string, string> {
   const addresses: Record<string, string> = {};
   for (const entry of keyedFrondEntries(config.fronds)) {
@@ -111,10 +92,7 @@ export function remotesOf(config: FougereConfig): Record<string, string> {
   return addresses;
 }
 
-/**
- * The config an app reads: the nearest file, from `dir` up. Its host's own options override it,
- * and nothing else does — a workspace's file and an app's are never folded into one.
- */
+/** The config an app reads: the nearest file, from `dir` up. */
 export async function loadNearestConfig(dir: string): Promise<FougereConfig> {
   const file = configFileNear(dir);
 

@@ -23,7 +23,6 @@ export function computeBindingPlan(
   }));
 }
 
-/** The first source that claims the parameter, then the request's own parts — the input last. */
 function sourceOf(param: Param, collectorTypeNames: ReadonlySet<string>): BindingSource {
   for (const source of BindingSources.all) {
     const bound = source.bind(param, collectorTypeNames);

@@ -1,14 +1,8 @@
 import { BootRefusal } from './BootRefusal.js';
 
-/**
- * One thing that does not hold, in the terms of whoever has to fix it — raised by the scan,
- * by a boot rule, or by `fougere check`, which is why it belongs to no phase.
- */
+/** One thing that does not hold, in the terms of whoever has to fix it. */
 export interface Diagnostic {
-  /**
-   * `blocking` — the app now serves less than its source declares, and no caller can know it: a
-   * handler that failed to parse contributes zero operations.
-   */
+  /** `blocking` means the app serves less than its source declares. */
   severity: 'blocking' | 'warning';
   /** Stable rule name — `handler-parse-failed`, `directory-unreadable`. */
   code: string;
@@ -17,9 +11,8 @@ export interface Diagnostic {
   /** The frond it belongs to, when whoever raised it got far enough to know. */
   frond?: string;
   /**
-   * What the diagnostic is ABOUT — `PostHandler.publish` — when the rule holds it as a fact
-   * rather than inside its sentence. Two ops of one handler breaking the same rule read as
-   * one repeated line without it.
+   * What the diagnostic is about, when the rule holds it as a fact.
+   * Ex: `PostHandler.publish`.
    */
   subject?: string;
   /** What does not hold, and what it costs. One sentence, for a human. */
@@ -28,10 +21,7 @@ export interface Diagnostic {
   cause?: unknown;
 }
 
-/**
- * Every blocking diagnostic in ONE refusal, so a boot names all of them rather than the
- * first — the shape `fougere check` renders, read back by whoever has to fix it.
- */
+/** Every blocking diagnostic in one refusal. */
 export function refusalOf(diagnostics: readonly Diagnostic[], what: string): BootRefusal | undefined {
   const blocking = diagnostics.filter((one) => one.severity === 'blocking');
   if (blocking.length === 0) return undefined;

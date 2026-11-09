@@ -25,31 +25,19 @@ export interface App extends DispatchPort {
   fronds: Fronds;
   /** Resolve from root container (shortcut). */
   resolve<T>(name: string): T;
-  /**
-   * Resolve an entity's schema — the local `entityClass` when it's hosted or scanned here, else
-   * reconstructed from the remote's identity card (`rpc.discover` to `Card.toSchema`).
-   */
+  /** An entity's schema: its class when hosted here, else rebuilt from the remote's card. */
   schemaFor(entity: string): Promise<SchemaView>;
   /** The facade a name exposes to one audience, or `undefined` when it exposes none. */
   facadeFor(address: string, surface?: string): Record<string, Function> | undefined;
-  /**
-   * The canonical contracts served beside a facade, after prefab + scan + config, binding, kind,
-   * topology and surface resolution.
-   */
+  /** The resolved contracts served beside a facade. */
   operationsFor(address: string, surface?: string): EffectiveOperationsMap | undefined;
   /** The facts this app has a listener for — what a carrier must subscribe to on its behalf. */
   listensTo(): string[];
-  /**
-   * Whether an announcement calls this op — read off its code when this process read it, off its
-   * frond's card when the frond answers elsewhere. A door open to callers names no such op.
-   */
+  /** Whether an announcement calls this op. */
   listens(address: string, op: string): Promise<boolean>;
   /** Hand a fact that came from OUTSIDE to the listeners in this process — and stop there. */
   deliver(fact: string, payload: unknown): Promise<void>;
-  /**
-   * The storage an entity is backed by, resolved through its owning frond's scope — the dual of
-   * {@link facadeFor}.
-   */
+  /** The storage an entity is backed by, through its owning frond's scope. */
   storageFor<T = Record<string, unknown>>(entity: string): Storage<T> | undefined;
   /** The presenter of an entity, resolved through its owning frond's scope. */
   presenterFor(entity: string): unknown | undefined;
@@ -63,10 +51,7 @@ export interface App extends DispatchPort {
   inFlight(): number;
   /** The same disposal, spelled so the language does it: `await using app = await createApp(…)`. */
   [Symbol.asyncDispose](): Promise<void>;
-  /**
-   * What this app took on, in the order it will release them. The reading of
-   * `CreateAppOptions.extensions` after the boot resolved it.
-   */
+  /** The extensions this app took on, in the order it will release them. */
   extensions(): string[];
   /** Declare one `rpc` op — what the app says about ITSELF, beside the card. */
   serveRpc(operationName: string, answer: RpcAnswer): void;

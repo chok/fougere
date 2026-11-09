@@ -9,31 +9,19 @@ export interface Conventions {
   dirs: {
     entities: string;
     handlers: string;
-    /**
-     * Every class the frond injects, told apart by what it extends: a repository extends
-     * `Repository<Post>`, a collector `Collect<User>`, a presenter `Present<Post>`.
-     */
+    /** Every class the frond injects, told apart by what it extends. */
     services: string;
     seeds: string;
-    /**
-     * What the domain computes with nothing injected. Read into the type program, because
-     * a handler names one of its types in a signature, and registered nowhere: no class
-     * here answers a container key.
-     */
+    /** What the domain computes with nothing injected; registered nowhere. */
     rules: string;
     /** What its shapes used to be — written by `fougere freeze`, replayed by `migrate`. */
     versions: string;
     /**
-     * The words this frond adds to the declaration — a generator, a format, a boundary codec.
-     * Read BEFORE `entities`, alone among the directories: an entity may write
-     * `generate: 'ulid'`, and a name a registry does not hold yet is a name it refuses.
+     * The words this frond adds to the declaration; read before `entities`.
+     * Ex: a generator, a format, a boundary codec.
      */
     vocabulary: string;
-    /**
-     * What rises and falls with the process, written beside the code it instruments.
-     * Recognized by its FORM — a module stating `up` or `down` — and it travels with its
-     * frond: moved behind `remotes:`, it mounts on the process that serves it there.
-     */
+    /** What rises and falls with the process, recognized by stating `up` or `down`. */
     extensions: string;
   };
 }
@@ -77,6 +65,5 @@ export function directoryOf(frond: string, dir: keyof Conventions['dirs'], conve
 export function frondDirsOf(conventions: Conventions): string[] {
   const { vocabulary, entities, handlers, services, seeds, rules, versions, extensions } = conventions.dirs;
 
-  // `vocabulary` first, and the order is the point: an entity may name what it registers.
   return [...new Set([vocabulary, entities, handlers, services, seeds, rules, versions, extensions])];
 }

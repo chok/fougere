@@ -1,7 +1,3 @@
-/**
- * Contract surface — what a sender needs to speak to a receiver, and nothing that assumes a
- * runtime: the error vocabulary, the invocation shape, the call value, the naming convention.
- */
 import { lowerFirst } from '@fougere/schema';
 import { Invocation } from './wire/Invocation.js';
 import { type InvocationContext } from './wire/InvocationContext.js';
@@ -9,15 +5,11 @@ import type { FrondCall } from './wire/FrondCall.js';
 
 export { ErrorCode } from './wire/ErrorCode.js';
 export { FougereError, validationErrorsOf } from './wire/FougereError.js';
-// What a read may ask about one field. Here rather than on the main entry because an
-// adapter reads it to compile a query, and an adapter carries no boot.
 export { comparisonOf, comparisonsIn } from './storage/Comparison.js';
 export type { Comparison } from './storage/Comparison.js';
 export { isChange } from './storage/Change.js';
 export { Turns } from './storage/Turns.js';
 export type { Change } from './storage/Change.js';
-// A receiver turns a refusal into what may cross a process boundary, and it is not
-// core's boot — reaching it through the main entry dragged the scanner into a bundle.
 export { toPublicError } from './wire/http-error.js';
 export { Invocation } from './wire/Invocation.js';
 export type { InvocationContext } from './wire/InvocationContext.js';
@@ -28,14 +20,10 @@ export type { FrondCall } from './wire/FrondCall.js';
 export type { SignedCall } from './wire/SignedCall.js';
 export type { Transport } from './wire/Transport.js';
 export { ENVELOPE_BYTES, maxBodyBytes, maxFrameBytes, readWithin, setMaxBodyBytes } from './wire/BodyLimit.js';
-// The reserved entity, VALUE and not type: a consumer that wants to leave it alone — a
-// call log ignoring its own reader — has to be able to name it.
 export { RPC_ADDRESS } from './wire/RpcAnswer.js';
 export type { CallPage } from './wire/CallPage.js';
 export { Page, asPage } from './wire/Page.js';
 export type { CallRecord } from './wire/CallRecord.js';
-// The comparison of two cards, which a consumer runs about a producer — browser-safe on
-// purpose: a panel showing the drift holds only the two cards, never the app.
 export { driftOf, agrees, explain } from './wire/drift.js';
 export type { CardDrift } from './wire/drift.js';
 
@@ -74,8 +62,8 @@ export interface CallValue {
 }
 
 /**
- * Fabricate the call value — one designation, two spellings: `callValueOf(Post, 'list', { query
- * })` (class + verb) or `callValueOf({ address, op }, input)` (raw, for dynamic bridges).
+ * The call value, from a class and a verb or from a raw address.
+ * Ex: `callValueOf(Post, 'list', { query })`.
  */
 export function callValueOf(
   target: { name: string } | FrondCall,

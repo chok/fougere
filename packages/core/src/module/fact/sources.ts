@@ -3,15 +3,6 @@ import type { BindingCall, BindingSourceType } from '../../wire/BindingSourceTyp
 import type { Param } from '../../wire/Param.js';
 import { validateInput } from '../../dispatch/validateInput.js';
 
-/**
- * `Fact<PostPublished>` and `Pipe<PostPublished>` — a fact IS the payload, the whole of what
- * happened, never a piece of it; and a link that finishes one is handed all of it and answers all
- * of it. Asked FIRST: a fact names itself, and asked later it would be taken for the caller's input.
- *
- * Identical to the request input today, and deliberately not sharing its branch: the two agree by
- * coincidence, not by rule, and the day the input learns to look up a value by parameter name a
- * subscriber would receive ONE FIELD of the fact it subscribed to.
- */
 const announcedIn = (param: Param, typeName: 'Fact' | 'Pipe'): string | undefined => {
   const fact = param.type.name === typeName ? param.type.generics?.[0]?.name : undefined;
 

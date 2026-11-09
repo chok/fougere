@@ -11,27 +11,15 @@ type AnyFacade = Record<string, (...args: unknown[]) => Promise<unknown>>;
 /** Serialize what the app hosts, for one audience. */
 export function identityCardOf(app: App, surface?: string): IdentityCard {
   const declared = app.fronds.schemas();
-  // An op's output that IS an entity travels under the entity's name, so a reader of the card
-  // ties it to that entity instead of guessing from the address.
-  // Each frond's own view too: two fronds may declare one table, and an op answers its frond's.
   const entityNames = new Map<unknown, string>([
     ...[...declared].map(([name, schema]) => [schema, name] as const),
     ...app.fronds.flatMap((frond) => frond.entities.map((entity) => [entity.entityClass, entity.name] as const)),
   ]);
 
   return {
-    // What this app SERVES, never what instruments it. A frond an extension BROUGHT is a
-    // subscriber — `@fougere/calls` and `@fougere/observability` each bring one — and it is
-    // in every process that installed the extension, so two remotes then claimed the same
-    // facade and routing refused: `Two remotes serve 'export'`. `FrondDescriptor.fromExtension` is
-    // the mark `calls`' panel and `rpc.topology` already read.
     fronds: app.fronds.filter((frond) => !frond.fromExtension).map((frond) => {
-      // What the frond answers to, and apart from it what it stores: an address is where a
-      // call goes, an entity is the shape of a row, and a handler may carry none.
       const addresses = [...new Set(frond.handlers.map((handler) => handler.address))];
 
-      // An entity no served op takes or answers stays off the card: publishing it would give
-      // away the shape of a table nobody can reach — the auth tables, typically.
       const reached = new Set<string>();
       const facades = addresses.flatMap((address) => {
         const ops = facadeOps(app, address, entityNames, reached, surface);
@@ -71,7 +59,6 @@ function facadeOps(
     return [];
   }
 
-  // The façade is the list of names; the model is the resolved terms.
   const effective = app.operationsFor(address, surface);
   if (!effective) {
     throw new Error(

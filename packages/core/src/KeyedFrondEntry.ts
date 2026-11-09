@@ -15,7 +15,6 @@ export interface KeyedFrondEntry {
   descriptor?: FrondDescriptor;
 }
 
-/** What an entry says. A string is refused here, the one door every reader goes through. */
 function attributesOf(entry: FrondEntry, key: string): FrondAttributes {
   if (typeof entry === 'string') {
     const written = statesModule(key) ? `{ options: '${entry}' }` : `{ remote: '${entry}' }`;
@@ -26,13 +25,7 @@ function attributesOf(entry: FrondEntry, key: string): FrondAttributes {
   return isFrondDescriptor(entry) ? {} : entry;
 }
 
-/**
- * Every frond the config states, those inheriting from nothing first — which is also the order
- * a boot installs them in, since a scope hangs off the one above it.
- *
- * A partition and not a sort: with one level, a frond that inherits has nothing under it, so
- * two passes put every parent before every child without knowing the tree.
- */
+/** Every frond the config states, the ones inheriting from nothing first. */
 export function keyedFrondEntries(fronds: FrondEntries | undefined): KeyedFrondEntry[] {
   const entries = Object.entries(fronds ?? {}) as [string, FrondEntry | undefined][];
 

@@ -15,10 +15,7 @@ export function registerPresenters(frond: FrondDescriptor, scope: Container, own
   }
 }
 
-/**
- * A presenter is about an entity — computed fields sit on a shape — so this walks entities.
- * Exposed lazily: the bridge resolves the chain on first access.
- */
+/** Exposes each entity's presenter chain, resolved on first access. */
 export function exposePresenters(frond: FrondDescriptor, container: Container, scope: Container): void {
   for (const entity of frond.entities) {
     const presenterKey = presenterKeyOf(entity.name);

@@ -30,7 +30,7 @@ class StateRegistry extends Registry<StateKeeper> {
 }
 
 /**
- * The ways a caller's state can be kept, by the word `state:` names them with — `cookie`, brought by
- * `@fougere/state-cookie`. Core keeps none: what a value travels in is a door's, never core's.
+ * The ways a caller's state can be kept, by name.
+ * Ex: `cookie`, from `@fougere/state-cookie`.
  */
 export const States = new StateRegistry('state keeper', 'import the package that keeps it, @fougere/state-cookie for `cookie`');

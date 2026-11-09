@@ -3,10 +3,7 @@ import type { Diagnostic } from '../diagnostic.js';
 import type { FrondDescriptor } from '../descriptor/FrondDescriptor.js';
 import { directoryOf, resolveConventions, type Conventions } from '../Conventions.js';
 
-/**
- * A term an entity names and nothing in this process answers — refused at boot rather than at the
- * first value judged, which answered a 500 when a `vocabulary/` file was never loaded.
- */
+/** The terms an entity names that nothing in this process answers. */
 export function termRefusals(fronds: readonly FrondDescriptor[], conventions: Conventions = resolveConventions()): Diagnostic[] {
   return fronds.flatMap((frond) => frond.entities.flatMap(({ entityClass, filePath }) =>
     NamedTerm.in(entityClass).filter((term) => !term.answered()).map((term) => ({

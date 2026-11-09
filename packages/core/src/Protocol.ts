@@ -11,26 +11,22 @@ export type ProtocolConfig = { [K in keyof FougereProtocols]?: FougereProtocols[
 export interface ProtocolType<Options = any> {
   readonly format: Format<Options>;
   /**
-   * The port its door's links stand in front of — `'Rest'` for REST: `implements Partial<Rest>` around
-   * every route of a frond, `Rest<NoteHandler>` around one handler's, keyed as written. Core reads the name and knows
-   * no door.
+   * The port its door's links stand in front of.
+   * Ex: `'Rest'`.
    */
   readonly port?: string;
   /** What the entry may not say of the fronds this app is made of — a sentence per refusal. */
   refusals?(options: Options, fronds: readonly FrondDescriptor[]): string[];
   /**
-   * Where an operation answers on this protocol — `PATCH /api/blog/posts/:id`, `query posts` — or
-   * `undefined` when it has no place here.
+   * Where an operation answers on this protocol, or `undefined`.
+   * Ex: `PATCH /api/blog/posts/:id`.
    *
    * Documented: [REST and GraphQL](https://fougere.dev/docs/serve/rest-graphql).
    */
   answersAt?(operation: EffectiveOperation, options: Options, frond: FrondDescriptor): string | undefined;
 }
 
-/**
- * Which adapter serves a protocol. Importing one makes it available; naming it in `protocols:`
- * is what serves it — a helper imported elsewhere opens nothing.
- */
+/** Which adapter serves a protocol; naming it in `protocols:` is what serves it. */
 export const Protocols = new Registry<ProtocolType>(
   'protocol',
   'import the adapter that provides it',

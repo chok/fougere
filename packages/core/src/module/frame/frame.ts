@@ -1,7 +1,3 @@
-/**
- * The compensated realization of a frame — what `Together` becomes when its members do not share
- * an engine.
- */
 import { FieldSet, type SchemaView } from '@fougere/schema';
 import { dequal } from 'dequal';
 import { declares } from '../../Source.js';
@@ -15,10 +11,6 @@ export interface Undo {
   run(): Promise<void>;
 }
 
-/**
- * The subset of the port a frame has to watch: every gesture that writes, plus the reads that take
- * one back.
- */
 interface Undoable {
   create(input: Record<string, unknown>, ...rest: unknown[]): Promise<Record<string, unknown>>;
   createAll?(inputs: readonly Record<string, unknown>[], ...rest: unknown[]): Promise<Record<string, unknown>[]>;
@@ -34,7 +26,6 @@ interface Undoable {
 const pick = (row: Record<string, unknown>, keys: readonly string[]): Record<string, unknown> =>
   Object.fromEntries(keys.map((key) => [key, row[key]]));
 
-/** Refused where it is used, naming the group that makes the inverse ambiguous. */
 function refuseAmbiguousUpsert(entity: string, operation: string): never {
   throw new Error(
     `${entity}.${operation}() cannot be undone inside Together: ${entity} has a unique field besides its key, `
@@ -42,11 +33,6 @@ function refuseAmbiguousUpsert(entity: string, operation: string): never {
   );
 }
 
-/**
- * The storage a member is handed inside a compensated frame: the same port, writing the same rows,
- * leaving an inverse behind each time.
- */
-/** What one member's writes are recorded against, inside one frame. */
 interface Recording {
   base: Undoable;
   recorded: Undoable;
@@ -78,7 +64,6 @@ export function recording<T extends object>(storage: T, entity: string, schema: 
   return recorded;
 }
 
-/** The inverse of an insertion is a deletion by the key the write handed back. */
 function recordCreate({ base, recorded, entity, key, journal }: Recording): void {
   recorded.create = async function (...args) {
     const row = await base.create.apply(this, args);
@@ -101,10 +86,6 @@ function recordCreate({ base, recorded, entity, key, journal }: Recording): void
   };
 }
 
-/**
- * Compared against what the WRITE produced, not against the patch: an `update: 'now'` field is
- * stamped by the storage, so the patch is not what the row now holds.
- */
 function recordUpdate({ base, recorded, entity, journal }: Recording): void {
   recorded.update = async function (...args) {
     const [id, input] = args;
@@ -124,7 +105,6 @@ function recordUpdate({ base, recorded, entity, journal }: Recording): void {
   };
 }
 
-/** The same inverse, one per row a set of keys updated. */
 function recordUpdateByKeys({ base, recorded, entity, key, journal }: Recording): void {
   const updateByKeys = base.updateByKeys;
   if (typeof updateByKeys !== 'function') return;
@@ -163,10 +143,6 @@ function undoOf(
     run: async () => {
       const current = await base.findById.call(self, id);
       if (!current) throw new Error(`${entity}#${id} is gone`);
-      // Reading and restoring are two statements, and there is no transaction here to make
-      // them one — a write landing between them is overwritten unseen. So this names what it
-      // FOUND, and claims nothing about what it did not: the frame was built because no
-      // engine could isolate it, and a check does not put the isolation back.
       const moved = touched.filter((field) => !dequal(current[field], wrote[field]));
       if (moved.length > 0) {
         throw new Error(
@@ -179,7 +155,6 @@ function undoOf(
   };
 }
 
-/** Nothing to take back when the row was already gone. */
 function recordDelete({ base, recorded, entity, journal }: Recording): void {
   recorded.delete = async function (id) {
     const before = await base.findById.call(this, id);
@@ -192,11 +167,6 @@ function recordDelete({ base, recorded, entity, journal }: Recording): void {
   };
 }
 
-/**
- * An upsert says neither what it wrote over nor what it inserted, so the frame reads the keys
- * first: what was there is restored, what was not is deleted. One extra query for the page,
- * the same bargain `update` already makes for one row.
- */
 function recordUpserts({ base, recorded, entity, key, journal }: Recording, schema: SchemaView): void {
   const undoUpsert = async function (this: unknown, rows: readonly Record<string, unknown>[]): Promise<Undo> {
     const ids = rows.map((row) => String(row[key]));

@@ -25,13 +25,6 @@ import type { Placement } from './wire/Placement.js';
 import { opsOf } from './prefab/opsOf.js';
 import { normalizeBinding, validateProvenance, type BoundContract } from './bindingRefusals.js';
 
-/**
- * Where an op's work goes: the fronds its handler reaches, and how many are a process away.
- *
- * A frond this app never scanned is not among them. The report can say a call LEFT — that is
- * `placement` — but naming what is on the far side of an address means reading its card, and a
- * card is a discovery rather than a declaration.
- */
 function reachOf(
   deps: readonly string[],
   from: string,
@@ -45,10 +38,7 @@ function reachOf(
   return { fronds, hops: fronds.filter((one) => one.placement === 'remote').length };
 }
 
-/**
- * One resolved program. The handler map preserves object identity from the scan, so the
- * boot never has to find a handler again by an order-dependent name lookup.
- */
+/** One resolved program, keeping each handler's identity from the scan. */
 export class EffectiveOperationModel {
   constructor(
     readonly operations: EffectiveOperation[],
@@ -62,7 +52,6 @@ export class EffectiveOperationModel {
   }
 }
 
-/** What one handler's operations are resolved against. */
 interface Resolving {
   fronds: readonly FrondDescriptor[];
   frond: FrondDescriptor;
@@ -88,7 +77,6 @@ export function resolveEffectiveOperations(
   );
   const served = servedBy(fronds);
 
-  // Input ambiguity is found by the scanner, where schemas are, but it is a resolution failure.
   const diagnostics = scanDiagnostics.filter((diagnostic) => diagnostic.code === 'input-contract-ambiguous');
 
   for (const frond of fronds) {
@@ -102,7 +90,6 @@ export function resolveEffectiveOperations(
       const effective = new Map<string, EffectiveOperation>();
       byHandler.set(handler, effective);
       const contracts = resolveContracts(handler, overrides.at(handler.address), collectorNames);
-      // A statement wins over the scan on purpose; saying so is what keeps the win from hiding a rename.
       diagnostics.push(...statementDrift(frond, handler));
       diagnostics.push(...operationsWithoutMethod(frond, handler, contracts.keys()));
 
@@ -127,7 +114,6 @@ export function resolveEffectiveOperations(
   );
 }
 
-/** One operation, or nothing when a refusal was written for it. */
 function resolveOperation(resolving: Resolving, name: string, rawContract: OperationContract): EffectiveOperation | undefined {
   const { fronds, frond, handler, schemas, served, collectorsByType, chainsByType, options, diagnostics } = resolving;
   const contract = normalizeBinding(rawContract, handler, frond, name, diagnostics);
@@ -143,8 +129,6 @@ function resolveOperation(resolving: Resolving, name: string, rawContract: Opera
     return undefined;
   }
 
-  // A fact is validated by the entity it names, and an op that FINISHES one answers its shape —
-  // left to the ordinary projection, the subscriber got a value with no `id`.
   const announced = contract.binding.find((binding) => binding.source.kind === 'fact' || binding.source.kind === 'pipe');
   const fact = announced?.source.kind === 'fact' || announced?.source.kind === 'pipe'
     ? schemas.get(announced.source.factName)
@@ -191,11 +175,6 @@ function resolveOperation(resolving: Resolving, name: string, rawContract: Opera
   };
 }
 
-/**
- * An operation answers DATA — what JSON keeps. A declared output is converted by its fields; an
- * undeclared one has nothing to convert it. Measured 2026-09-18: `{ at: new Date(0) }` reaches a
- * local caller as a `Date` and a remote one as a string.
- */
 function answersData({ frond, handler, diagnostics }: Resolving, name: string, contract: OperationContract): boolean {
   if (contract.output || !contract.signature?.notData) return true;
 
@@ -213,7 +192,6 @@ function answersData({ frond, handler, diagnostics }: Resolving, name: string, c
   return false;
 }
 
-/** Stated in `frond.config.ts`, or read off the name: an operation reads when every verb it names reads. */
 function kindOf({ frond, handler }: Resolving, name: string): OperationKind {
   return OperationOverrides.of(frond).get(handler.address, name)?.kind ?? inferOperationKind(name);
 }
@@ -237,7 +215,6 @@ function parametersOf(contract: BoundContract): EffectiveParameter[] {
   });
 }
 
-/** A dependency on a frond that actually runs elsewhere is a refusal, not the warning a future split deserves. */
 function placementRefusals(fronds: readonly FrondDescriptor[], options: EffectiveOperationOptions): Diagnostic[] {
   return verify({ fronds }).map((misplaced) => {
     const remoteBoundary = options.remotes?.[misplaced.frond] !== undefined
@@ -304,8 +281,6 @@ function effectiveOutput(
   name: string,
   contract: OperationContract,
 ): { schema?: SchemaView; closed: boolean } {
-  // An op answering a VIEW — a derivation not anchored, `PostCard` — named what leaves: closed. One
-  // answering the entity leaves it open, so a computed field rides along.
   if (contract.output) return { schema: contract.output, closed: isView(contract.output) };
   const handlerWide = handler.outputOverride
     ?? (handler.ctor as { __output?: SchemaView }).__output;
@@ -339,7 +314,6 @@ function uniqueDiagnostics(diagnostics: readonly Diagnostic[]): Diagnostic[] {
   });
 }
 
-/** The contract of every operation a handler serves — the three producers, merged once. */
 function resolveContracts(
   handler: Pick<HandlerEntry, 'ctor' | 'operations'>,
   overrides: Map<string, OperationOverrideEntry>,
@@ -370,11 +344,6 @@ function resolveContracts(
   return contracts;
 }
 
-/**
- * A binding the scan wrote saw the frond's own collectors only. A parameter it read from the request,
- * whose type a collector of the frond it extends answers, comes from that collector — and is no
- * longer the body the request is judged against.
- */
 function collectedInScope(contract: OperationContract, collectorTypeNames: Set<string>): OperationContract {
   const params = contract.signature?.params ?? [];
   const typeOf = (name: string) => params.find((param) => param.name === name)?.type.name ?? '';
@@ -390,7 +359,6 @@ function collectedInScope(contract: OperationContract, collectorTypeNames: Set<s
   return { ...contract, binding, ...(body && { input: undefined }) };
 }
 
-/** A declared binding states the exceptions: each entry stands in for the derived one of its name. */
 function mergedBinding(derived: BindingPlan | undefined, declared: BindingPlan): BindingPlan {
   if (!derived) return declared;
   const byName = new Map(declared.map((entry) => [entry.name, entry]));

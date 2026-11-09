@@ -39,10 +39,7 @@ export class AppLifecycle {
   }
 }
 
-/**
- * Every level told to close even when one refuses, the refusals leaving together in one
- * `AggregateError` — one already carried by a level is flattened into the list.
- */
+/** Closes every level even when one refuses; the refusals leave together in one `AggregateError`. */
 export async function closeAll(levels: readonly (() => unknown)[], refusals: string): Promise<void> {
   const refused: unknown[] = [];
   for (const level of levels) {
@@ -58,9 +55,7 @@ export async function closeAll(levels: readonly (() => unknown)[], refusals: str
 }
 
 /**
- * The schema slot, as every boot fills it: the database is READ against the entities, and a
- * boot that finds it behind refuses rather than writing to it. Writing is `fougere migrate`,
- * or `migrating()` stated by a process whose database is born with it.
+ * The schema check every boot runs: the database is read against the entities, never written.
  *
  * Documented: [lifecycle](https://fougere.dev/docs/run/lifecycle).
  */

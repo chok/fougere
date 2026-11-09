@@ -5,17 +5,7 @@ import { basesOf } from '../descriptor/bases.js';
 import type { Diagnostic } from '../diagnostic.js';
 
 /**
- * The framework's own ports — a class core exports that a user class may stand in front of.
- *
- * They differ from a port in one way, and it decides everything else: their realization is
- * HANDED IN rather than scanned (`storageFactory` builds one per entity), so a class that
- * extends one can only be a wrapper.
- *
- * The scope is the FROND, like every other provider, and there is no key that widens it: a
- * link that must be everywhere is a frond that is everywhere, which `Extension.fronds`
- * already answers — `@fougere/calls` brings one into every app that installs it. A
- * process-wide key would break the gradient, since a frond moved behind `remotes:` would
- * silently leave the reach of a link its own code never mentioned.
+ * The ports whose realization is handed in rather than scanned.
  *
  * Documented: [ports](https://fougere.dev/docs/concepts/port).
  */
@@ -24,10 +14,7 @@ export const HOST_PORTS = new Set(['Storage']);
 /** Where a chain of wrappers finds what the scope already answered under its port — a builtin's own instance. */
 export const ownKeyOf = (port: string): string => `held:${port}`;
 
-/**
- * What stands in front of each seam, outermost first — the same reading `portBindings`
- * does, with no realization to find.
- */
+/** What stands in front of each host port, outermost first. */
 export function hostPortChains(
   providers: ProviderEntry[],
   chosen: Record<string, string | readonly string[]> | undefined,
@@ -66,8 +53,6 @@ export function wrapping<T extends object>(
   resolve: (name: string) => unknown,
 ): T {
   let current = inner;
-  // From the INSIDE out, so each link is handed the one it stands in front of — the same
-  // order `install.ts` registers a port's chain in, for the same reason.
   for (const link of [...links].reverse()) {
     const Link = linkOf(link, hostPort) as unknown as new (...args: unknown[]) => T;
     current = new Link(...link.deps.map((dep) => (dep === hostPort ? current : resolve(dep))));
@@ -76,11 +61,7 @@ export function wrapping<T extends object>(
   return current;
 }
 
-/**
- * The class a link is built from. One that `implements Partial<Port>` writes only what it changes,
- * so the rest of the port is handed to the `inner` it was given — once, as it is built, and only
- * what it does not define itself. One that extends the port inherits the rest already.
- */
+/** The class a link is built from, forwarding to `inner` what it does not define. */
 export function linkOf(link: ProviderEntry, port: string): ProviderEntry['ctor'] {
   const at = link.deps.indexOf(port);
   const forwards = link.implements?.includes(port) === true && at >= 0;
@@ -100,7 +81,6 @@ export function linkOf(link: ProviderEntry, port: string): ProviderEntry['ctor']
   return Forwarding as unknown as ProviderEntry['ctor'];
 }
 
-/** Every method of `inner` the link does not define, called on `inner`. */
 function forward(link: object, inner: unknown): void {
   if (!inner || typeof inner !== 'object') return;
   for (let level = Object.getPrototypeOf(inner); level && level !== Object.prototype; level = Object.getPrototypeOf(level)) {
@@ -113,16 +93,7 @@ function forward(link: object, inner: unknown): void {
   }
 }
 
-/**
- * A port is a class something already answers under, and what answers it may be a CHAIN:
- * the realization, wrapped by whoever stands in front of it.
- *
- * A wrapper DECLARES the port — it extends it, or `implements Partial<Port>` — AND asks for it.
- * Nothing more declares it, the way nothing declares a realization.
- *
- * Returns, per port, the chain from the OUTSIDE IN: the last entry is the realization,
- * every one before it wraps what follows.
- */
+/** Per port, the chain from the outside in; the last entry is the realization. */
 export function portBindings(
   providers: ProviderEntry[],
   answers: (name: string) => boolean,
@@ -133,7 +104,6 @@ export function portBindings(
 
   const bound = new Map<string, ProviderEntry[]>();
   for (const [port, all] of candidates) {
-    /** It extends the port and asks for it: it stands in front of what answers. */
     const wraps = (one: ProviderEntry) => one.deps.includes(port);
     const wrappers = all.filter(wraps);
     const impls = all.filter((one) => !wraps(one));
@@ -159,11 +129,6 @@ function chain(
   return [...wrappers, ...impls];
 }
 
-/**
- * The whole chain, outside in — a string is a chain of one, and the last name is what actually
- * answers. What a deployment wraps its realization with is the same kind of decision as which
- * realization it uses, so it is the same key.
- */
 function declaredChain(
   port: string,
   all: ProviderEntry[],
@@ -188,11 +153,6 @@ function declaredChain(
   });
 }
 
-/**
- * Two realizations, or two wrappers, and nothing saying which — refused rather than settled by
- * scan order, the same reason `remotes` refuses two owners of one entity: whichever won would
- * depend on the order files were read, and the handler would charge the wrong provider silently.
- */
 function refuseUndecided(
   port: string,
   impls: ProviderEntry[],

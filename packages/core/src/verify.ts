@@ -16,10 +16,8 @@ export type Misplaced = Diagnostic & {
   dependsOn: { key: string; frond: string; kind: string };
 };
 
-/** A dependency declared in a frond's scope, and what kind of thing it is. */
 type Registration = { frond: string; kind: string };
 
-/** Everything above a frond in the tree — what its scope reaches by walking up. */
 function ancestors(frond: FrondDescriptor, byName: Map<string, FrondDescriptor>): Set<string> {
   const above = new Set<string>();
   for (let at = frond.extends; at !== undefined && !above.has(at); at = byName.get(at)?.extends) {
@@ -29,10 +27,6 @@ function ancestors(frond: FrondDescriptor, byName: Map<string, FrondDescriptor>)
   return above;
 }
 
-/**
- * The container keys a frond registers in its own scope, keyed as a handler's `deps` spell them —
- * DI resolves by type name, so both sides are PascalCase.
- */
 function registrationsOf(frond: FrondDescriptor): Map<string, Registration> {
   const out = new Map<string, Registration>();
   const put = (key: string, kind: string) => out.set(key, { frond: frond.name, kind });
@@ -48,7 +42,6 @@ function registrationsOf(frond: FrondDescriptor): Map<string, Registration> {
   return out;
 }
 
-/** Everything in a frond that is constructed by DI, so carries `deps`. */
 function injectablesOf(frond: FrondDescriptor) {
   return [
     ...frond.handlers.map((h) => ({ name: h.ctor.name, deps: h.deps, filePath: h.filePath })),
@@ -57,10 +50,7 @@ function injectablesOf(frond: FrondDescriptor) {
   ];
 }
 
-/**
- * Does this app survive being split? A frond runs in-process or in its own process behind JSON-RPC
- * with identical user code — that is the whole claim.
- */
+/** Whether this app survives being split into processes. */
 export function verify(app: { fronds: readonly FrondDescriptor[] }): Misplaced[] {
   const index = new Map<string, Registration>();
   const byName = new Map(app.fronds.map((frond) => [frond.name, frond]));
@@ -68,9 +58,6 @@ export function verify(app: { fronds: readonly FrondDescriptor[] }): Misplaced[]
     for (const [key, reg] of registrationsOf(frond)) index.set(key, reg);
   }
 
-  // Which frond declares a collector for which entity. Collectors are the one
-  // thing a handler asks for by OPERATION PARAMETER, never by constructor, so
-  // they need their own index and their own rule.
   const collectorFronds = new Map<string, string>();
   for (const frond of app.fronds) {
     for (const collector of frond.collectors) collectorFronds.set(collector.typeName, frond.name);
@@ -78,21 +65,10 @@ export function verify(app: { fronds: readonly FrondDescriptor[] }): Misplaced[]
 
   const violations: Misplaced[] = [];
   for (const frond of app.fronds) {
-    // Rule 1 — a constructor dependency declared in another frond's scope.
-    // Façade keys are exempt by construction, not by omission: a `Facade<X>`
-    // dependency is spelled camelCase (`articleHandler`) while every type key
-    // here is PascalCase, so the two namespaces cannot collide. The façade IS
-    // the sanctioned crossing — see tests/cross-frond.test.ts.
     for (const subject of injectablesOf(frond)) {
       for (const dep of subject.deps) {
         const declared = index.get(dep);
-        // Not in the index at all = a builtin (Logger), a
-        // façade key, or an unresolved name. None is a boundary crossing, and
-        // an unresolved dependency is the container's complaint, not this rule's.
         if (!declared || declared.frond === frond.name) continue;
-        // An ANCESTOR is not across: the frond tree says this one resolves what that one
-        // declared, and its scope hangs off it. A sibling, a descendant or a stranger stays
-        // refused — inheriting code is not calling a frond.
         if (ancestors(frond, byName).has(declared.frond)) continue;
         violations.push({
           code: 'cross-frond-dependency',
@@ -108,8 +84,6 @@ export function verify(app: { fronds: readonly FrondDescriptor[] }): Misplaced[]
       }
     }
 
-    // Rule 2 — a parameter read from the request while another frond collects its type. A warning,
-    // not a refusal: `inviteUser(user: User)` reads its user from the request on purpose.
     const own = new Set(collectorsInScope(frond, app.fronds).map((collector) => collector.typeName));
     const declared = OperationOverrides.of(frond);
     for (const handler of frond.handlers) {
@@ -117,15 +91,9 @@ export function verify(app: { fronds: readonly FrondDescriptor[] }): Misplaced[]
         const declaredBinding = declared.get(handler.address, opName)?.binding ?? [];
         for (const param of op.signature?.params ?? []) {
           if (declaredBinding.some((entry) => entry.name === param.name)) continue;
-          // Same key the scan writes and the binding plan looks up — `toLowerCase()`
-          // here missed a two-word type in BOTH directions: neither confirmed the
-          // collector was local nor found it elsewhere, so the rule reported nothing.
           const wanted = lowerFirst(param.type.name);
           if (own.has(wanted)) continue;
           const inOtherFronds = collectorFronds.get(wanted);
-          // No collector anywhere for that type may be an ordinary input parameter.
-          // Only a collector that exists in the wrong place makes that interpretation
-          // provably false.
           if (!inOtherFronds) continue;
           violations.push({
             code: 'collector-in-another-frond',
@@ -149,10 +117,7 @@ export function verify(app: { fronds: readonly FrondDescriptor[] }): Misplaced[]
   return violations;
 }
 
-/**
- * The same verdict, as an assertion. Throws naming every rule that failed, so a
- * test is one line and its output is the sentence — not a diff of two objects.
- */
+/** The same verdict as an assertion, naming every rule that failed. */
 export function assertSplittable(app: { fronds: readonly FrondDescriptor[] }): void {
   const violations = verify(app);
   if (violations.length === 0) return;

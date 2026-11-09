@@ -3,11 +3,7 @@ import { Graph } from '@fougere/graph';
 import type { Diagnostic } from '../diagnostic.js';
 import type { FrondDescriptor } from '../descriptor/FrondDescriptor.js';
 
-/**
- * Classes that ask for each other — refused at boot rather than at the first call that builds one.
- * Read off what the container was HANDED, since a port's chain hands a wrapper the next link where
- * its constructor names the port, and per scope, since a dependency is resolved where it is held.
- */
+/** Classes that ask for each other, refused at boot. */
 export function dependencyCycles(container: Container, fronds: readonly FrondDescriptor[]): Diagnostic[] {
   const refused: Diagnostic[] = [];
   const scopes: [Container, FrondDescriptor | undefined][] = [

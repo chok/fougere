@@ -1,9 +1,6 @@
 import type { FougereConfig } from './FougereConfig.js';
 
-/**
- * Identity helper for fougere.config.ts — preserves literal types for autocomplete while
- * validating against FougereConfig.
- */
+/** Types a `fougere.config.ts` while keeping its literals. */
 export function defineFougere<T extends FougereConfig>(config: T): T {
   return config;
 }

@@ -17,11 +17,8 @@ export interface WrittenName<Options = unknown> extends KeeperEntry<Options> {
 export type StorageFor = (entity: string) => Storage | undefined;
 
 /**
- * A way to keep a caller's state between two requests — a cookie, a session — as the package that
- * brings it writes it. It reads and writes TOKENS, already signed: what a value is, core decides.
- * `over` names what it travels in, and a door carrying something else realizes none of it. It is
- * handed every name it keeps in one request at once, so names sharing one place are read and
- * written once.
+ * A way to keep a caller's state between two requests, handed every name it keeps at once.
+ * Ex: a cookie, a session.
  */
 export interface StateKeeper<Carrier = unknown, Options = unknown> {
   /** What a door must carry for this to work — `http`, the word both sides agree on. */

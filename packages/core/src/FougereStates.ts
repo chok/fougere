@@ -1,7 +1,3 @@
-/**
- * What `state:` may say of each way to keep a value, augmented by the package that brings it —
- * `@fougere/state-cookie` adds `cookie`. Empty here: core keeps none.
- */
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface FougereStates {}
 

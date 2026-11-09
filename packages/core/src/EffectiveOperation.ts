@@ -39,18 +39,7 @@ export interface EffectiveOperation extends OperationContract {
   placement: Placement;
   /** The address it is reached at, when it answers a process away. */
   remote?: string;
-  /**
-   * What running this op reaches, and how much of that crosses a process.
-   *
-   * `placement` says where the op ANSWERS; this says where it GOES. The pair is what every
-   * number a process hard-codes is really a function of — how often a trace is sampled, where
-   * a latency histogram's bounds should sit, what a load threshold may assume. An op that
-   * answers here and hops twice is not the same subject as one that answers here and hops none.
-   *
-   * Read from the handler, never from the op: a dependency is declared on the constructor, so
-   * the crossing belongs to the CLASS. Every op of one handler reaches the same fronds, and
-   * saying otherwise would dress a structural fact as a precise effect.
-   */
+  /** The fronds this op's handler reaches, and how many of them are a process away. */
   reach: {
     fronds: { frond: string; placement: Placement }[];
     /** How many of them are a process away — zero when everything it reaches runs here. */

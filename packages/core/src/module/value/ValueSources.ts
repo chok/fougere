@@ -1,7 +1,7 @@
 import type { SchemaView } from '@fougere/schema';
 
 /**
- * The entities `sources:` holds as ONE value each — the dual of `sourceOf` for rows.
+ * The entities `sources:` holds as one value each.
  *
  * Documented: [values](https://fougere.dev/docs/data/values).
  */

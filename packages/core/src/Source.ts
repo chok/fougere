@@ -20,13 +20,7 @@ export function declares(schema: SchemaView, constraint: Constraint): boolean {
  */
 export interface Source {
   storageFactory: StorageFactory;
-  /**
-   * Bring the shape of what lives here up to date, and say what it could not bring.
-   *
-   * A pass is additive by design and leaves what already exists alone — which is a
-   * promise worth keeping and a silence worth breaking: what it declined to change is
-   * still a difference, and a boot is where a reader can act on it.
-   */
+  /** Brings the shape of what lives here up to date, and says what it could not. */
   migrate?(view: SourceView): Promise<void | string>;
   /** What `migrate` would create, READ and never written — one line per table or column. */
   pending?(view: SourceView): Promise<string[]>;
@@ -37,10 +31,7 @@ export interface Source {
   close?(): Promise<void>;
   /** What distinguishes it when a query is reported. */
   name?: string;
-  /**
-   * An entity listed in `values:`, as this source holds it. Absent, the value is the row of
-   * `FougereValue` keyed by its name — a source holding rows holds values with no code of its own.
-   */
+  /** An entity listed in `values:`, as this source holds it. */
   value?(entity: SchemaView, name: string): Promise<Record<string, unknown> | undefined>;
   /** Where that value is changed — a file, a variable; with a field, the place of that field. */
   valueAt?(entity: SchemaView, name: string, field?: string): string;
@@ -54,7 +45,6 @@ export interface SourceType<Entry = any> {
   open(entry: Entry): Source;
 }
 
-/** Which adapter answers a source type — one per process, no subject to hold. */
 class SourceRegistry extends Registry<SourceType> {
   /** `open` is handed what `format` admitted, so the entry is typed by the format alone. */
   override register<Entry>(name: string, type: SourceType<Entry>): SourceType<Entry> {

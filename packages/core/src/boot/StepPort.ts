@@ -3,7 +3,6 @@ import type { FrondDescriptor } from '../descriptor/FrondDescriptor.js';
 import type { Plugged } from '../wire/Plugged.js';
 import { subjectKeyOf } from '../descriptor/bases.js';
 
-/** What a step was handed for one value it carries: the rest of the step, and how its door says a refusal. */
 interface Handed {
   next: () => Promise<unknown>;
   refused?: (failure: unknown) => unknown;
@@ -16,9 +15,8 @@ export interface Standing {
 }
 
 /**
- * The port of a STEP — `Dispatcher` around a call, `Rest` around a REST request — whose realization is the
- * rest of that step. Bare, it stands around every one of its frond; `Dispatcher<PostHandler>` around that
- * handler's alone. A link hands on the value it was given, and the innermost reaches the rest.
+ * The port of a step, whose realization is the rest of that step.
+ * Ex: `Dispatcher` around a call, `Rest` around a REST request.
  *
  * Documented: [ports](https://fougere.dev/docs/concepts/port).
  */

@@ -5,10 +5,7 @@ import type { PresenterEntry } from '../../descriptor/PresenterEntry.js';
 import type { ArgumentResolver } from '../../dispatch/ArgumentResolver.js';
 import type { PresenterArgs } from './PresenterArgs.js';
 
-/**
- * Where each computed field's extra arguments come from — read off the declaration, so a
- * field that takes only the page is absent and asks for nothing.
- */
+/** Where each computed field's extra arguments come from. */
 export function presenterPlans(
   meta: PresenterEntry,
   collectorTypes: ReadonlySet<string>,

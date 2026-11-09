@@ -1,8 +1,6 @@
 /**
- * Where a value is read — `Env<Meili>` — the port a link stands in front of to change what a source
- * gave before it is judged: `class MeiliFromVault implements Partial<Env<Meili>>`, asking for
- * `inner: Env<Meili>`, touches Meili and nothing else. The value is read through it ONCE, at boot,
- * and handed to whoever names `Meili`.
+ * Where a value is read; a link in front of it changes what a source gave.
+ * Ex: `implements Partial<Env<Meili>>`.
  *
  * Documented: [values](https://fougere.dev/docs/data/values).
  */

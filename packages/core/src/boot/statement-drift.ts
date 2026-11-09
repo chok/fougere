@@ -6,7 +6,6 @@ import type { Diagnostic } from '../diagnostic.js';
 import type { BindingPlan } from '../wire/binding.js';
 import type { Signature } from '../wire/Signature.js';
 
-/** The parameters a binding plan names, against the ones the method declares. */
 function namesDisagreeing(plan: BindingPlan, signature: Signature): string[] {
   const declared = new Set(signature.params.map((p: { name: string }) => p.name));
 
@@ -20,8 +19,6 @@ export function statementDrift(frond: FrondDescriptor, handler: HandlerEntry): D
   for (const [name, override] of OperationOverrides.of(frond).at(handler.address)) {
     if (!override.binding) continue;
 
-    // The scan's own reading of this method. Absent means config is stating what nothing
-    // read — an installed base class, a handler outside the workspace — which is legal.
     const signature = handler.operations.get(name)?.signature;
     if (!signature) continue;
 
@@ -42,11 +39,7 @@ export function statementDrift(frond: FrondDescriptor, handler: HandlerEntry): D
   return found;
 }
 
-/**
- * A contract with no method under its name. The scan cannot produce one; a declaration can, and
- * its first call used to fail as `instance[method] is not a function` — a server error for what
- * is a typo in the declaration.
- */
+/** The contracts with no method under their name. */
 export function operationsWithoutMethod(
   frond: FrondDescriptor,
   handler: HandlerEntry,

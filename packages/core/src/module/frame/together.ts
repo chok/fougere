@@ -1,8 +1,3 @@
-/**
- * Building a frame — what a handler asking for `Together<[…]>` receives.
- *
- * Documented: [together](https://fougere.dev/docs/data/together).
- */
 import { ambient } from '#ambient';
 import { lifetimeOf } from '../../lifetime.js';
 import { upperFirst, lowerFirst, type SchemaView } from '@fougere/schema';
@@ -31,13 +26,11 @@ export interface FrameWorld {
   log: Logger;
 }
 
-/** An entity the block writes through, and a provider rebuilt so that its writes count too. */
 interface Members {
   entities: { name: string; schema: SchemaView }[];
   providers: ProviderEntry[];
 }
 
-/** Each declared name, resolved to what it designates — or nothing, and why. */
 function resolve(
   names: { entities: string[]; providers: string[] },
   declared: readonly ProviderEntry[],
@@ -52,7 +45,6 @@ function resolve(
   return refused.length === before ? { entities, providers } : undefined;
 }
 
-/** The first list names ENTITIES — a class of this frond goes in the second. */
 function entitiesNamed(
   named: readonly string[],
   world: FrameWorld,
@@ -75,10 +67,6 @@ function entitiesNamed(
   });
 }
 
-/**
- * The second list names the classes to REBUILD inside the frame — a service, a mirror, a
- * repository — so that what they write is covered by the unwind.
- */
 function providersNamed(
   named: readonly string[],
   declared: readonly ProviderEntry[],
@@ -100,10 +88,8 @@ function providersNamed(
   });
 }
 
-/** Who asked for the frame, and where they wrote it — the same three fields every refusal here carries. */
 type Asked = { severity: 'blocking'; filePath: string; subject: string };
 
-/** A member that cannot write here at all — its frond is hosted elsewhere. */
 function remoteMembers(members: Members, world: FrameWorld, asked: Asked, refused: Diagnostic[]): void {
   for (const member of members.entities) {
     const frond = world.frondOf.get(member.name);
@@ -118,7 +104,6 @@ function remoteMembers(members: Members, world: FrameWorld, asked: Asked, refuse
   }
 }
 
-/** A provider member writing an entity the frame does not name. */
 function uncoveredWrites(members: Members, world: FrameWorld, asked: Asked, refused: Diagnostic[]): void {
   const covered = new Set(members.entities.map((member) => member.name));
   for (const provider of members.providers) {
@@ -136,7 +121,6 @@ function uncoveredWrites(members: Members, world: FrameWorld, asked: Asked, refu
   }
 }
 
-/** Open the block. */
 async function inScope<R>(
   parent: Container,
   members: Members,
@@ -152,7 +136,6 @@ async function inScope<R>(
 
       return storage;
     });
-    // Providers after every storage is in place: one may depend on another member's.
     const instances = members.providers.map((provider) => {
       scope.register(provider.ctor.name, provider.ctor, { deps: provider.deps, ...lifetimeOf(provider.ctor) });
 
@@ -195,7 +178,6 @@ export function registerFrames(
     }
 
     const members = resolve(names, providers, world, asked, refused);
-    // Nothing left to build a frame out of, and the refusals above already say what is missing.
     if (!members) continue;
 
     remoteMembers(members, world, asked, refused);
@@ -211,13 +193,6 @@ export function registerFrames(
   }
 }
 
-/**
- * A transaction when one engine holds every member, a compensation otherwise.
- *
- * One engine and a way into it: the engine gives the unwind AND the isolation. The question goes
- * to the SOURCE these members live in — a composition answering for the default one would
- * compensate a frame whose own engine holds transactions.
- */
 function frameOver(key: string, members: Members, scope: Container, world: FrameWorld): Frame {
   const sources = new Set(members.entities.map((member) => world.sourceOf?.(member.name) ?? 'default'));
   const source = sources.size === 1 ? [...sources][0]! : undefined;
@@ -231,9 +206,6 @@ function frameOver(key: string, members: Members, scope: Container, world: Frame
     };
   }
 
-  // Split, or an engine that hands out no transaction: the frame keeps the before-image of every
-  // write and replays the inverses itself. `recording` stands INSIDE the links and the guards, so
-  // the journal holds what reached the rows: never a refused write, and every one a link made.
   const why = sources.size > 1
     ? members.entities.map((one) => `${one.name} in '${world.sourceOf?.(one.name) ?? 'default'}'`).join(', ')
     : 'this storage hands out no transaction';
@@ -253,7 +225,6 @@ function frameOver(key: string, members: Members, scope: Container, world: Frame
   };
 }
 
-/** What a `Together<[…]>` key resolves to — the block, and nothing else. */
 interface Frame {
   run<R>(fn: (entities: never, providers: never) => Promise<R>): Promise<R>;
 }
