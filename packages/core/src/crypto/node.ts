@@ -11,7 +11,6 @@ export const crypto: CryptoPort = {
   },
 
   async signerOf(privateKeyPem): Promise<Signer> {
-    // Parsed here and captured, so a call signs against a KeyObject and never a string.
     const key = createPrivateKey(privateKeyPem);
 
     return { async sign(data) { return new Uint8Array(sign(null, data, key)); } };

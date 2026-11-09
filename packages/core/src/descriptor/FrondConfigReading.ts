@@ -3,19 +3,11 @@ import type { EntityEntry } from './EntityEntry.js';
 import type { FrondDescriptor } from './FrondDescriptor.js';
 import type { HandlerEntry } from './HandlerEntry.js';
 
-/**
- * What a frond's `frond.config.ts` says about its descriptor — read the same way whether the scan
- * found the file or a statement imported it.
- */
+/** What a frond's `frond.config.ts` says about its descriptor, scanned or imported. */
 export class FrondConfigReading {
   constructor(private readonly config: FrondConfig | undefined) {}
 
-  /**
-   * The only thing that needs flattening is the handler CLASS, which becomes its name — that is the
-   * DI key. Everything else travels verbatim, so a slot added to `OperationOverride` reaches its
-   * reader without a stop here; enumerating keys by hand is what used to drop whatever was added
-   * last, the same invariant `cloneField` holds one layer down.
-   */
+  /** The operation overrides, with each handler class turned into its name. */
   operationsOverrides(): FrondDescriptor['operationsOverrides'] {
     const operations = this.config?.operations;
     if (!operations) return undefined;

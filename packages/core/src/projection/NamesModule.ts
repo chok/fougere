@@ -1,36 +1,13 @@
-/**
- * The names this project contains, as TYPES — what an operator may write in a config file.
- *
- * A fourth projection of one scan, beside the facade, the emitted module and the stated frond.
- * It exists because `fougere.config.ts` and `frond.config.ts` designate classes, entities and
- * fronds by STRING, and a string is the one thing in this framework that nothing reads back:
- * `ports: { Payment: 'StripePayment' }` survives renaming `StripePayment`, and says so at boot.
- *
- * Ports are written as a RELATION rather than one more union. Two unions would admit
- * `ports: { Payment: 'FileStorage' }` — both names exist, and nothing would say that one does
- * not answer the other.
- *
- * Documented: [ports](https://fougere.dev/docs/concepts/port).
- */
 import { basesOf, realizationsOf } from '../descriptor/bases.js';
 import type { FrondDescriptor } from '../descriptor/FrondDescriptor.js';
 import type { ScanResult } from '../scan.js';
 
-/** Sorted, deduplicated, and quoted — the union as it is written. */
 function union(names: Iterable<string>): string {
   const all = [...new Set(names)].sort();
 
   return all.length > 0 ? all.map((name) => `'${name}'`).join(' | ') : 'never';
 }
 
-/**
- * The classes a frond declares, whatever convention directory they came from.
- *
- * `basesOf` asks whether a name is answered, which the boot settles against its container. A
- * scan has no container, so what stands in for it is the project itself: a port is a class this
- * scan read. That is the same line drawn from the other side — core's `Repository` is declared in no
- * file of the project, so it is excluded here for the reason the boot excludes it.
- */
 function declaredIn(frond: FrondDescriptor): Set<string> {
   return new Set([
     ...frond.providers.map((one) => one.ctor.name),
@@ -50,9 +27,6 @@ export function emitNames(scan: ScanResult): string {
 
   for (const frond of scan.fronds) {
     fronds.add(frond.name);
-    // BOTH spellings, because the boot admits both: `sources:` lowercases what it is
-    // given (`lowerFirst`), so `['Ledger']` and `['ledger']` name one entity. A union of
-    // one form would be stricter than what runs, and refuse code that works.
     for (const entity of frond.entities) {
       entities.add(entity.name);
       entities.add(entity.entityClass.name);
@@ -94,7 +68,6 @@ export function emitNames(scan: ScanResult): string {
   ].join('\n');
 }
 
-/** A port as an interface member: a key with a subject — `Collect<User>` — is no identifier, so it is quoted. */
 function memberOf(port: string): string {
   return /^[A-Za-z_$][\w$]*$/.test(port) ? port : `'${port}'`;
 }

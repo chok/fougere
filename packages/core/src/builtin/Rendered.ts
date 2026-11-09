@@ -1,15 +1,6 @@
 import type { LogLevel } from './LogLevel.js';
 
-/**
- * One line, ready for a terminal — the console arguments and which method takes them.
- *
- * Here rather than inside the class because the boot is not the only writer: a destination
- * that prints (`@fougere/log`) hands its own record to the same formatting, so the two
- * outputs cannot drift.
- *
- * One console method per level: `debug` and `info` both went to `console.log`, so nothing
- * downstream — a terminal filter, a collector — could tell them apart.
- */
+/** One line, ready for a terminal: the console arguments and the method that takes them. */
 export interface Rendered {
   level: Exclude<LogLevel, 'silent'>;
   name: string;

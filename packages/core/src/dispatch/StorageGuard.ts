@@ -6,7 +6,6 @@ import { ErrorCode } from '../wire/ErrorCode.js';
 import { FougereError } from '../wire/FougereError.js';
 import type { GuardReport } from './GuardReport.js';
 
-/** The gestures this guard grafts onto. */
 interface Writer {
   create(...args: [Record<string, unknown>, ...unknown[]]): Promise<unknown>;
   createAll?(...args: [readonly Record<string, unknown>[], ...unknown[]]): Promise<unknown>;
@@ -19,7 +18,6 @@ interface Writer {
 
 /** Judges storage writes and list options without narrowing the storage interface. */
 export class StorageGuard {
-  /** What has already been said, so a filter in a loop says it once. */
   private readonly said = new Set<string>();
 
   constructor(
@@ -40,7 +38,6 @@ export class StorageGuard {
     return guarded;
   }
 
-  /** Every gesture that puts a row down: judged first, and handed on the value it parsed. */
   private guardWrites(guarded: Writer, writer: Writer): void {
     const validation = this;
 
@@ -61,7 +58,6 @@ export class StorageGuard {
 
     const createAll = writer.createAll;
     if (typeof createAll === 'function') {
-      // Every row before the first write, as a page is.
       guarded.createAll = async function (...args) {
         args[0] = args[0].map((row, index) => validation.validated(row, 'createAll', index));
 
@@ -90,7 +86,6 @@ export class StorageGuard {
 
     const upsertAll = writer.upsertAll;
     if (typeof upsertAll === 'function') {
-      // Every row before the first write: a page refused on its fourth row has already written three.
       guarded.upsertAll = async function (...args) {
         args[0] = args[0].map((row, index) => validation.validated(row, 'upsertAll', index));
 
@@ -99,7 +94,6 @@ export class StorageGuard {
     }
   }
 
-  /** A criterion is read where the entity declares it, so a page is asked for what it can answer. */
   private guardList(guarded: Writer, writer: Writer): void {
     const list = writer.list;
     if (typeof list !== 'function') return;
@@ -114,11 +108,6 @@ export class StorageGuard {
     };
   }
 
-  /**
-   * The values this write carries, validated and handed on PARSED — the rule the client facade
-   * already holds (`InputValidator`), applied to a write that never passed through it. What a
-   * handler is allowed to write is not asked here: only the value is.
-   */
   private rowAt(row: unknown, index: number): string {
     const primary = FieldSet.of(this.fields).primary;
     const key = primary === undefined ? undefined : (row as Record<string, unknown>)[primary];
@@ -126,14 +115,6 @@ export class StorageGuard {
     return key === undefined ? `row ${index} of this page` : `row ${primary} ${JSON.stringify(key)}`;
   }
 
-  /**
-   * What a read may ask for. The write facade judges what LANDS in a row; this one judges
-   * what a caller says about one — and it was the single entrance to the port with no
-   * judge at all, while `params.filter` from a browser reaches it verbatim.
-   *
-   * A criterion may name a SET, which is the one thing the write facade would refuse: an
-   * array is judged member by member, since that is what `IN` binds.
-   */
   private criteria(where: Record<string, unknown>): Record<string, unknown> {
     const errors: string[] = [];
     const parsed: Record<string, unknown> = {};
@@ -158,12 +139,6 @@ export class StorageGuard {
     return parsed;
   }
 
-  /**
-   * One criterion, told from a value by the FIELD and never by its own shape.
-   *
-   * A comparison names its own vocabulary, and a typo in it would otherwise be a criterion that
-   * filters nothing — the silent truncation this facade exists to stop.
-   */
   private criterion(key: string, asked: unknown): Verdict {
     const field = this.fields[key];
     if (!field) return { message: InputRefusal.unknownField };
@@ -185,15 +160,6 @@ export class StorageGuard {
     return { value: Array.isArray(asked) ? each.map(unwrap) : unwrap(each[0]) };
   }
 
-  /**
-   * A filter on a field this facade does not hand back.
-   *
-   * `output(schema)` narrows what is RETURNED and has never narrowed what is asked, so a
-   * caller can already sort a hidden column into existence one comparison at a time — and
-   * the admin facade copies a browser's filter here verbatim. Said rather than refused: it
-   * is legal today, GraphQL batches a relation on a key a view may not carry, and a
-   * refusal would break that on the way to fixing this.
-   */
   private beyondTheView(field: string): void {
     const view = this.report.view;
     if (!view || view[field] || this.said.has(field)) return;
@@ -204,15 +170,9 @@ export class StorageGuard {
     );
   }
 
-  /** One value against one field — validated, then decoded the way the wire hands it. */
-  /**
-   * One key a handler wrote. A key the entity does not declare has no column to land in and no
-   * judge to pass: on the client facade it is a typo, and on this one a mapping that went stale.
-   */
   private written(key: string, item: unknown): Verdict {
     const field = this.fields[key];
     if (!field) return { message: InputRefusal.unknownField };
-    // Declared, and still nothing to write: the other side of the relation carries the key.
     if (Role.of(field).isCollection()) return { message: InputRefusal.readOnly };
     if (item === undefined) return { value: item };
 

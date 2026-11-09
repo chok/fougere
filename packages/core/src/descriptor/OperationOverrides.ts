@@ -9,8 +9,8 @@ import type { DeclaredAnswer } from './DeclaredAnswer.js';
 export type OperationOverrideEntry = NonNullable<FrondDescriptor['operationsOverrides']>[string];
 
 /**
- * What a frond's `operations:` says, keyed the way an op is named everywhere else — `post.list`.
- * A bare `list` named every handler's `list` at once.
+ * What a frond's `operations:` says, keyed by address and operation.
+ * Ex: `'post.list'`.
  */
 export class OperationOverrides {
   private constructor(private readonly frond: FrondDescriptor) {}
@@ -30,10 +30,7 @@ export class OperationOverrides {
     return this.frond.operationsOverrides?.[new RouteAddress({ address, operation }).toString()];
   }
 
-  /**
-   * What the op says to each protocol this process can serve — `rest`, `graphql` — and, beside what
-   * `operations:` states, the answers a door middleware bound to its handler declares it may give.
-   */
+  /** What the op says to each protocol this process serves, with the answers its door links declare. */
   protocols(address: string, operation: string): FougereOperationProtocols {
     const entry = { ...this.get(address, operation) } as Record<string, Record<string, unknown> | undefined>;
     for (const { door, answers } of this.declaredAt(address, operation)) {
@@ -44,10 +41,6 @@ export class OperationOverrides {
     return Object.fromEntries(Object.entries(entry).filter(([key]) => Protocols.find(key))) as FougereOperationProtocols;
   }
 
-  /**
-   * The answers this frond's links at a door declare for one op of the handler they stand at — a link
-   * of `Rest<PostHandler>` stands at `PostHandler`'s routes, and the protocol says which door `Rest` is.
-   */
   private declaredAt(address: string, operation: string): { door: string; answers: DeclaredAnswer[] }[] {
     const handlers = this.frond.handlers.filter((one) => one.address === address).map((one) => one.name);
 

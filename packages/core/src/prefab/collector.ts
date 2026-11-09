@@ -1,9 +1,3 @@
-/**
- * `Collect<User>` — resolves one handler input parameter from the invocation context, by the type it
- * collects: `constructor`-free, a parameter `user: User` of an op receives what `collect` answered.
- *
- * Documented: [collectors](https://fougere.dev/docs/access/authentication#know-who-calls).
- */
 import { subjectKeyOf } from '../wire/SubjectKey.js';
 import { upperFirst } from '@fougere/schema';
 import type { InvocationContext } from '../wire/InvocationContext.js';
@@ -11,8 +5,9 @@ import type { InvocationContext } from '../wire/InvocationContext.js';
 const COLLECT = Symbol.for('fougere.collect');
 
 /**
- * What a collector is: `collect`, and `missing` when a required parameter found nothing. TypeScript
- * erases `<User>`, so the scan reads it, and a frond written by hand says it — `collects: User`.
+ * `Collect<User>`: `collect` fills a parameter of that type, `missing` refuses when a required one found nothing.
+ *
+ * Documented: [collectors](https://fougere.dev/docs/access/authentication#know-who-calls).
  */
 export abstract class Collect<T> {
   abstract collect(context: InvocationContext): Promise<T | undefined> | T | undefined;

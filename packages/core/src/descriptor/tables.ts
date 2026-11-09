@@ -10,13 +10,7 @@ export interface Contradiction {
   filePath: string;
 }
 
-/**
- * What each entity name is in this process: its TABLE, the union of what every frond declaring it
- * says. A frond declares the fields it cares about — a view — and the table holds them all, so two
- * `Author`s of different fields are two views of one table, not a conflict. A field some declaring
- * frond leaves out is optional in the table: what is required is each frond's to judge on its own
- * writes. A field two fronds declare differently is a contradiction, which the boot refuses.
- */
+/** Each entity name's table: the union of what every frond declaring it says. */
 export function tablesOf(
   fronds: readonly { readonly name?: string; readonly entities: readonly (Pick<EntityEntry, 'name' | 'entityClass'> & { filePath?: string })[] }[],
 ): { tables: Map<string, SchemaView>; contradictions: Contradiction[] } {
@@ -57,7 +51,6 @@ export function tablesOf(
   return { tables, contradictions };
 }
 
-/** What a column is: the field's shape and its axes — a relation by the NAME of its target, a function compared by nothing else. */
 function shapeOf(field: Field): string {
   return JSON.stringify(field, (key, value: unknown) =>
     typeof value === 'function' ? (value as () => { name?: string })().name ?? 'anonymous' : value);

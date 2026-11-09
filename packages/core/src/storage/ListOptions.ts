@@ -22,8 +22,8 @@ export interface ListOptions {
   count?: boolean;
 
   /**
-   * Equality criteria, field by field — `{ orderId: '…' }`. Named rather than spread across the
-   * options so an unknown key stays ignored instead of silently becoming a filter.
+   * Equality criteria, field by field.
+   * Ex: `{ orderId: '…' }`.
    */
   where?: Record<string, unknown>;
 }

@@ -5,12 +5,10 @@ import type { Logger } from './Logger.js';
 export type OwnLogger = (className: string, deps: readonly string[]) => string[];
 
 /**
- * A class asking for `Logger` gets one named after it — `app:blog:PricingService` — under a key of
- * its own, so the container builds nothing new. A frond that `replaced` it with a class of its own
- * keeps that class whole: `child()` hands back a bare `Logger`.
+ * Gives a class asking for `Logger` one named after it.
+ * Ex: `app:blog:PricingService`.
  */
 export function ownLoggers(scope: Container, replaced: boolean): OwnLogger {
-  // A link is registered as a provider, then again in its chain: one class, one logger of its own.
   const given = new Set<string>();
 
   return (className, deps) => {

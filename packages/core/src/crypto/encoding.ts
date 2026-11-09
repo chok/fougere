@@ -1,4 +1,3 @@
-/** What both realizations spell identically — bytes in, bytes out, no platform. */
 
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
@@ -10,8 +9,6 @@ export const textOf = (bytes: Uint8Array): string => decoder.decode(bytes);
 export function b64url(input: Uint8Array | string): string {
   const bytes = typeof input === 'string' ? bytesOf(input) : input;
   let binary = '';
-  // One character at a time: `String.fromCharCode(...bytes)` overflows the argument
-  // limit on a key, and a signature is small enough that the loop costs nothing.
   for (const byte of bytes) binary += String.fromCharCode(byte);
 
   return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');

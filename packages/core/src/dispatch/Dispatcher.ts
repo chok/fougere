@@ -10,9 +10,8 @@ import type { InFlight } from './InFlight.js';
 import type { Journal } from '../wire/Journal.js';
 
 /**
- * Resolves and executes every call through the same transverse lifecycle — and the port a link stands
- * in front of: `Dispatcher` around every call of its frond, `Dispatcher<PostHandler>` around that
- * handler's alone, the argument naming what it stands at and nothing else.
+ * Runs every call through the same lifecycle, and the port a link stands in front of.
+ * Ex: `Dispatcher` for its frond, `Dispatcher<PostHandler>` for that handler.
  */
 export class Dispatcher<H = never> implements DispatchPort {
   declare private readonly standsAt?: H;
@@ -25,7 +24,6 @@ export class Dispatcher<H = never> implements DispatchPort {
     private readonly journalOf?: () => Journal | undefined,
   ) {}
 
-  /** The route that answers this address, or the refusal naming what is served instead. */
   private async routeFor(call: Call): Promise<Route> {
     const known = this.routes.find(call.address);
     const resolved = known ?? await this.routes.resolve(call.address);
@@ -38,14 +36,6 @@ export class Dispatcher<H = never> implements DispatchPort {
     return route;
   }
 
-  /**
-   * A kept call publishes no dispatch event and enters no flight: it has not been answered,
-   * and counting it here would report one call spanning the days until its hour.
-   *
-   * Its address is resolved all the same. What is kept is made hours later, by then against
-   * whatever the app still serves — so an address nothing answers is refused to the caller who
-   * can still fix it, rather than to a beat nobody is watching.
-   */
   private async keep(call: Call, runAt: number): Promise<undefined> {
     await this.routeFor(call);
 

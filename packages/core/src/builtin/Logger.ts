@@ -6,7 +6,6 @@ import type { Rendered } from './Rendered.js';
 
 const LEVELS: Record<LogLevel, number> = { debug: 0, info: 1, warn: 2, error: 3, silent: 4 };
 
-/** The level, held ONCE for the process and CONSULTED at every emission. */
 let threshold: number = LEVELS[envLevel() ?? 'info'];
 
 /** The level the PROCESS was started with. */
@@ -76,9 +75,8 @@ export class Logger {
   private during?: () => string | undefined;
 
   /**
-   * A name — `new Logger('app')` — or the logger it stands in front of, whose line, carry and
-   * operation it then writes with: `class Masking extends Logger { constructor(inner: Logger) {
-   * super(inner) } }` loses nothing it leaves out.
+   * A name, or the logger it stands in front of.
+   * Ex: `new Logger('app')`, `super(inner)`.
    */
   constructor(prefix?: string | Logger, options?: Omit<LoggerOptions, 'name'>) {
     if (typeof prefix === 'object') {
@@ -119,23 +117,14 @@ export class Logger {
 
     this.lineBuffer?.push({ ...record, args: args.map(objectOf) });
 
-    // The console ALWAYS, whoever else took the line. Skipping it once a destination
-    // existed made `calls()` — a devtools ring that prints nothing — silence the
-    // operator's terminal: 306 per-operation lines in `demos/observability` became 2.
-    // A destination sends a line ELSEWHERE; it does not take over stderr.
     const { method, text } = formatted(record, this.color);
     console[method](...text);
   }
 }
 
-/** A line travels as a fact, where `args` states `json()` — an object. */
 const objectOf = (arg: unknown): object =>
   typeof arg === 'object' && arg !== null && !Array.isArray(arg) ? arg : { value: arg };
 
-/**
- * The operation as the line's writer sees it: bare when the writer is the class that runs it —
- * `app:blog:PostHandler (publish)` — and whole when a service writes during another's.
- */
 function operationSeenFrom(name: string, during: string): string {
   const dot = during.lastIndexOf('.');
 

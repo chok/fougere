@@ -1,7 +1,6 @@
 import type { Entity } from '@fougere/schema';
 import type { PresenterViews } from './PresenterViews.js';
 
-/** What a prefab class declares about ITSELF, at runtime. */
 interface Prefab {
   /** The shape this class was built on. `Mirror` calls it a shape; it is the same slot. */
   readonly __entity?: Entity;
@@ -26,10 +25,7 @@ export function outputOf(ctor: unknown): Entity | undefined {
   return (ctor as Prefab | undefined)?.__output;
 }
 
-/**
- * The class the boot builds from one written on an erased generic — `Collect<User>`, `Present<Post>` —
- * carrying the subject the scan read or the statement said, and nothing else of its own.
- */
+/** The class the boot builds from one written on an erased generic, carrying its subject. */
 export function builtOn<T extends abstract new (...args: never[]) => unknown>(ctor: T, subject: Entity): T {
   const built = BUILT.get(ctor) ?? new Map<Entity, unknown>();
   const known = built.get(subject);

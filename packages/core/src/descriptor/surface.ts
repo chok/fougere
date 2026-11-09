@@ -1,11 +1,7 @@
 import type { FrondDescriptor } from './FrondDescriptor.js';
 import type { HandlerEntry } from './HandlerEntry.js';
 
-/**
- * The surfaces a handler answers on — its own when it has one, otherwise the default
- * and every surface that names its address without opening a facade of its own.
- * `undefined` is the default surface, as `facadeKeyOf` and `RouteAddress` spell it.
- */
+/** The surfaces a handler answers on; `undefined` is the default surface. */
 export function servedSurfaces(
   frond: FrondDescriptor,
   handler: HandlerEntry,

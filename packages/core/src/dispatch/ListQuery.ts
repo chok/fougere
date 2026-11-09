@@ -2,9 +2,8 @@ import { Shapes, type Fields } from '@fougere/schema';
 import { LIST_OPTION_KEYS } from '../storage/Storage.js';
 
 /**
- * A list's options as a URL writes them: every value is text, and a criterion is the field's own
- * name — `?limit=20&name=Bob`. A key that is neither an option nor a field stays where it was, for
- * the storage to refuse by name.
+ * A list's options as a URL writes them: text values, criteria by field name.
+ * Ex: `?limit=20&name=Bob`.
  */
 export class ListQuery {
   private static readonly SHAPES = {

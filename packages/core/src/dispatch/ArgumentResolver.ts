@@ -45,7 +45,6 @@ export class ArgumentResolver {
           const source = BindingSources.resolve(binding.source.kind);
           const call = { ctx, scope: this.scope };
           const value = await source.resolve(binding.source, call);
-          // No `?`, so the absence is a refusal — said by the source when it has words for it.
           if (value === undefined && !binding.optional) {
             source.missing?.(binding.source, call);
             throw refused(binding.name, 'Required');
@@ -58,12 +57,7 @@ export class ArgumentResolver {
     return args;
   }
 
-  /**
-   * The arguments code wrote, judged where a door would have judged them: the input against
-   * the op's view, a value a binding source fills judged by that source —
-   * which also puts back a `Date` that crossed a wire as text. Nothing is collected: what the
-   * caller left out stays out.
-   */
+  /** The arguments code wrote, judged as a door would have judged them. */
   given(plan: BindingPlan, input: SchemaView | undefined, ctx: InvocationContext): unknown[] {
     const args = ctx.args ?? [];
 
@@ -86,12 +80,6 @@ export class ArgumentResolver {
     });
   }
 
-  /**
-   * The body, when it carries the change of a row the call designates rather than an input —
-   * `PATCH /posts/:id/retitle { title }`. Only a FIELD of that row is read there: a plain
-   * parameter never comes from a body. Once one is, a key naming no parameter is refused, the way
-   * an input refuses one.
-   */
   private static bodyOf(plan: BindingPlan, ctx: InvocationContext): Record<string, unknown> | undefined {
     if (plan.some((binding) => binding.source.kind === 'input')) return undefined;
     if (!ctx.input || typeof ctx.input !== 'object' || Array.isArray(ctx.input)) return undefined;
@@ -110,10 +98,6 @@ export class ArgumentResolver {
     return Object.fromEntries(changed.map(({ name }) => [name, body[name]]));
   }
 
-  /**
-   * A value the caller typed in a path, a query string, or a body that carries parameters. `null`
-   * is a value, not a miss: only `undefined` means absent, so `T | null` stays apart from `T | undefined`.
-   */
   private static param(source: ParamSource, optional: boolean, ctx: InvocationContext, body?: Record<string, unknown>): unknown {
     const { name, coerce } = source;
     const value: unknown = [ctx.params[name], ctx.query[name], body?.[name]].find((one) => one !== undefined);
@@ -130,10 +114,8 @@ export class ArgumentResolver {
     return coerced;
   }
 
-  /** What a parameter typed `number` or `boolean` is read as, when it arrives as text. */
   private static readonly SHAPES = { number: { type: 'number' }, boolean: { type: 'boolean' } } as const satisfies Record<string, Shape>;
 
-  /** `age: Sample['age']` obeys what `Sample.age` declares, after the query string was read. */
   private validatedByField(source: ParamSource, value: unknown): unknown {
     if (value === undefined || !source.field) return value;
 

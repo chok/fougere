@@ -24,16 +24,7 @@ export function dynamicOperations(operation: (name: string) => Operation): Recor
   });
 }
 
-/**
- * The facade code calls: each operation takes the handler's own arguments.
- *
- * `received` is what this side puts back before handing the answer over: a row leaves as data
- * and `date-time` means a `Date` on both sides. A facade built without one hands over what the
- * wire carried, which is what a caller holding no schema can do.
- *
- * The trailing `undefined`s are dropped because a JSON array writes them `null`, and the far
- * side would read a value where the caller left one out. An optional parameter is always last.
- */
+/** The facade code calls: each operation takes the handler's own arguments. */
 export function facadeOperations(
   dispatcher: DispatchPort,
   address: string,
@@ -46,11 +37,7 @@ export function facadeOperations(
   return operationsOf((name) => (...args: unknown[]) => send(name, { args: withoutTrailingAbsence(args) }), operationNames);
 }
 
-/**
- * What a door sends: the invocation it received, as a `Call`. A door holds a request, not the
- * handler's arguments, so the binding plan reads it on the far side — collectors and presenter
- * included.
- */
+/** What a door sends: the invocation it received, as a `Call`. */
 export function callOperations(
   dispatcher: DispatchPort,
   address: string,

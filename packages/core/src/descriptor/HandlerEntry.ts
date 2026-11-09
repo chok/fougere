@@ -7,8 +7,8 @@ export interface HandlerEntry extends Subject {
   /** Registration key (e.g. 'postHandler'). */
   name: string;
   /**
-   * The name this handler answers to — its class name minus `Handler`, lowercased (`PostHandler` →
-   * `post`).
+   * The address this handler answers at.
+   * Ex: `PostHandler` → `post`.
    */
   address: string;
   /** All operations with full signatures for binding. */

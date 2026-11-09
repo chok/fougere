@@ -5,31 +5,13 @@ import type { ScanResult } from '../scan.js';
 import { servedSurfaces } from '../descriptor/surface.js';
 import type { FacadeOptions } from './FacadeOptions.js';
 
-/**
- * The specifier a handler is reached by, from where the generated file sits.
- *
- * The type is written WITHOUT `typeof`: that names the CONSTRUCTOR, whose `keyof` is
- * `'prototype'`, and every operation would fail to compile against it.
- */
 function specifierOf(filePath: string, outFile: string): string {
   const path = relative(dirname(outFile), filePath).replace(/\.tsx?$/, '.js');
 
   return path.startsWith('.') ? path : `./${path}`;
 }
 
-/**
- * A union of enum MEMBERS — BOTH halves of what a call can come back refusing.
- *
- * `refusalsOf` is core's own table, read here rather than restated: what an op declares is
- * walked from its throw sites, and what the framework adds follows from `kind` and `input`.
- * Writing only the first half would tell a page that an op refuses nothing, when every op can
- * meet a draining facade.
- *
- * `ErrorCode` is a string enum, so `'CONFLICT'` is not assignable to it — a literal would read
- * as the right thing and refuse to narrow `FougereError<Code>`, which is the whole point. A code
- * this version does not know is dropped rather than written — a card read by `fougere sync` may
- * come from a newer far side, and a name that resolves to nothing would stop the consumer's build.
- */
+/** The codes a call can come back refusing, as a union of `ErrorCode` members. */
 export function codesOf(contract: Refusable): string {
   const known = refusalsOf(contract).filter((code) => code in ErrorCode);
   if (known.length === 0) return 'never';
@@ -38,30 +20,14 @@ export function codesOf(contract: Refusable): string {
 }
 
 /**
- * An augmentation of `FougereOperations`, keyed the way a facade is ADDRESSED — `post.publish`, and
- * `public:post.publish` for a named surface.
- *
- * It AUGMENTS rather than declares, so a page reaches the keys through the package it already
- * imports: `useQuery('checkout', 'pay')` narrows against them without naming this file. The
- * interface it fills is empty in `@fougere/core/contract` — the facade is addressed the same way
- * on both sides of the wire, and a backend project builds without a front-end package.
- *
- * The prefix is `facadeKeyOf`'s own spelling, because it is the same distinction: a surface is a
- * second facade in front of the same handler, serving a subset of its operations. What each op can
- * refuse does not change with the surface — the code that throws is the same — but WHICH ops
- * exist does, and a client pointed at `/_fougere/call/public` must not be offered the rest.
- *
- * A browser reaches the default surface unless it is handed another endpoint, which is why the
- * unprefixed keys are the ones a composable narrows against.
+ * The facade module: an augmentation of `FougereOperations`, keyed as a facade is addressed.
+ * Ex: `post.publish`, `public:post.publish`.
  */
 export function emitFacade(scan: ScanResult, options: FacadeOptions): string {
   const served: Served[] = [];
 
   for (const frond of scan.fronds) {
     for (const handler of frond.handlers) {
-      // NOT `handler.surface`: a surface is also declared in `frond.config.ts`, which names an
-      // address without opening a directory for it. `servedSurfaces` is the one reader of both,
-      // and it answers `undefined` for the default the way `facadeKeyOf` spells it.
       for (const surface of servedSurfaces(frond, handler)) {
         served.push({
           at: surface ? `${surface}:${handler.address}` : handler.address,
@@ -82,11 +48,8 @@ export function emitFacade(scan: ScanResult, options: FacadeOptions): string {
 export interface Served {
   at: string;
   /**
-   * The TYPE EXPRESSION the handler is reached by, whole — `import('./x.js').default` for a
-   * scanned class, `import('./x.js').PostHandler` for the synthetic interface `sync` writes.
-   *
-   * The expression and not a specifier: a scan's handler is a default export and a synced one
-   * is named, and a producer that hands over only the path leaves the reader to guess which.
+   * The type expression the handler is reached by.
+   * Ex: `import('./x.js').default`.
    */
   handler: string;
   ops: { name: string; codes: string }[];
@@ -95,22 +58,11 @@ export interface Served {
 /** Where the facades sit, from the project's root — one file, since one scan reads every app's fronds. */
 export const FACADE = '.fougere/facade.generated.ts';
 
-/**
- * The module itself — written once, from a scan or from a card.
- *
- * `fougere sync` has the same three facts about a frond in ANOTHER repository: the card names
- * the addresses, the operations, and what each one refuses. What it does not have is the
- * handler's class, so it writes a synthetic interface and points here at that instead. Two
- * producers, one spelling — a second copy of this format would drift the day one gained a
- * member.
- */
+/** The facade module, written from a scan or from a card. */
 export function facadeModule(served: readonly Served[], header: readonly string[]): string {
   const rows = served.flatMap((one) => one.ops.map((op) => `  '${one.at}.${op.name}': { errors: ${op.codes} };`));
   const handlers = new Map(served.map((one) => [one.at, one.handler]));
 
-  // A named surface shares its handler's class name, so two of them would declare one const.
-  // A browser reaches the DEFAULT surface unless it was handed another endpoint, which is the
-  // one a page names; the prefixed keys stay in `FougereOperations` for whoever reads them.
   const facades = [...handlers].filter(([at]) => !at.includes(':')).sort();
 
   return [

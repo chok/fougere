@@ -8,21 +8,13 @@ import type { Storage } from '../storage/Storage.js';
 import { storageKeyOf } from '../storage/Storage.js';
 import { crudOps } from './RepositoryOps.js';
 
-/** Shared by name, so two copies of this module — a test and the build it imports — hand rows to each other. */
 const ROWS = Symbol.for('fougere.rows');
 
 type Rows<A, B, C, D> = [Storage<A>, ...([B] extends [never] ? [] : [Storage<B>]), ...([C] extends [never] ? [] : [Storage<C>]), ...([D] extends [never] ? [] : [Storage<D>])];
 
 /**
- * The rows of an entity, and what a class built on it may name on top. `extends Repository<Post>`:
- * a handler serves the five operations it brings — `list`, `findById`, `create`, `update`, `delete`
- * — beside its own, and a class anywhere else holds them as gestures. From two entities on —
- * `Repository<Account, Ledger>` — it is a boundary: no gesture is forwarded and nowhere else writes
- * those tables, `storages` being the way in. Four at most: a boundary wider than that is two.
- *
- * Which entity is read where TypeScript erases it — the scan reads the type arguments, a `frond()`
- * written by hand says `repository: Post` — and the boot hands the rows over once the class is
- * built, so a constructor of its own does not reach them yet.
+ * The rows of an entity; extended by a handler, it serves `list`, `findById`, `create`, `update`, `delete`.
+ * Ex: `Repository<Account, Ledger>` owns both tables and forwards nothing.
  *
  * Documented: [repositories](https://fougere.dev/docs/concepts/repository).
  */
@@ -77,12 +69,7 @@ export function isRepository(ctor: unknown): boolean {
 const REPOSITORY = Symbol.for('fougere.repository');
 Object.defineProperty(Repository.prototype, REPOSITORY, { value: true });
 
-/**
- * The class the boot builds from one written on `Repository<…>`: the same class, carrying what the
- * entities say of it — the shape it is built on, the five operations, what it owns — and handed
- * each entity's rows as it is built, after the constructor it was given. Its own dependencies come
- * first, the storages last.
- */
+/** The class the boot builds from one written on `Repository<…>`, handed each entity's rows after its own dependencies. */
 export function seated<T extends abstract new (...args: never[]) => unknown>(ctor: T, entities: readonly Entity[]): T {
   const seats = SEATED.get(ctor) ?? [];
   const known = seats.find((seat) => seat.entities.length === entities.length && seat.entities.every((one, i) => one === entities[i]));
@@ -92,7 +79,6 @@ export function seated<T extends abstract new (...args: never[]) => unknown>(cto
   const count = entities.length;
   const stored = entities.map(storedOf);
   const Seated = class extends Written {
-    // A view — `Repository<PostPublic>` — speaks the view and keeps the rows of what it was cut from.
     static readonly __entity = stored[0];
     static readonly __output = entities[0];
     static readonly __owns = count > 1 ? stored : undefined;
@@ -105,19 +91,12 @@ export function seated<T extends abstract new (...args: never[]) => unknown>(cto
     }
   };
   Object.defineProperty(Seated, 'name', { value: Written.name });
-  // What it takes is what it was written to take, and the rows after: the arity the boot checks.
   Object.defineProperty(Seated, 'length', { value: Written.length + count });
   SEATED.set(ctor, [...seats, { entities, seated: Seated }]);
 
   return Seated as unknown as T;
 }
 
-/**
- * One seated class per written one AND the values it is seated on: the descriptor reads it several
- * times and a class is compared by identity, while a second scan in one process may load the entities
- * again under a handler its module cache kept — and a seat keyed by the class alone handed back the
- * first scan's `Author`.
- */
 const SEATED = new WeakMap<object, { entities: readonly Entity[]; seated: unknown }[]>();
 
 /** The storage keys a seated class is handed after its own dependencies, in the order it owns them. */
@@ -125,7 +104,6 @@ export function seatsOf(entities: readonly Entity[]): string[] {
   return entities.map((entity) => storageKeyOf(lowerFirst(storedOf(entity).name)));
 }
 
-/** The entity whose rows a schema reads: itself, or what a view not anchored was cut from. */
 function storedOf(entity: Entity): Entity {
   const { derivation, anchored } = entity as unknown as { derivation?: { anchor: Entity }; anchored?: boolean };
 

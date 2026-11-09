@@ -1,7 +1,4 @@
-/**
- * Writes on one key, one after the other — what a row lock is to a store that has none. Held per
- * store, so every storage a source builds over the same rows waits in the same line.
- */
+/** Writes on one key, one after the other: a row lock for a store that has none. */
 export class Turns {
   private static held = new WeakMap<object, Turns>();
 

@@ -1,12 +1,6 @@
 import { type Field, Shapes } from '@fougere/schema';
 
-/**
- * The comparisons a criterion may name.
- *
- * `eq` and `in` are not here: a bare value already means equality and an array already
- * means membership, and giving them a second spelling would make one criterion sayable
- * two ways. What is added is what those two could not say at all.
- */
+/** The comparisons a criterion may name, besides equality and membership. */
 export interface Comparison {
   gte?: unknown;
   lte?: unknown;
@@ -26,17 +20,9 @@ export const COMPARISONS = Object.keys({
   gte: true, lte: true, gt: true, lt: true, ne: true, between: true, contains: true, notIn: true, isNull: true,
 } satisfies Record<ComparisonName, true>);
 
-/**
- * Is this criterion a comparison, or a value that happens to be an object?
- *
- * Read off the FIELD, never off the value. `json()` admits any shape, so `{ gte: … }` is
- * a legal thing to store — telling the two apart by looking at the criterion would make a
- * stored object unfilterable the day its keys happened to spell an operator. The shape
- * knows, and it is the only thing that does.
- */
+/** Whether a criterion is a comparison, read off the field rather than the value. */
 export function comparisonOf(field: Field | undefined, asked: unknown): Comparison | undefined {
   if (asked === null || typeof asked !== 'object' || Array.isArray(asked)) return undefined;
-  // The type is read off the base, so `optional(json())` still answers `object`.
   if (!field || Shapes.typeOf(field.shape) === 'object') return undefined;
 
   return asked as Comparison;

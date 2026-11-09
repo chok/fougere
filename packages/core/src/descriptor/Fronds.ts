@@ -42,10 +42,7 @@ export class Fronds extends Array<FrondDescriptor> {
     return this.flatMap((frond) => frond.entities.map((e) => e.name)).sort();
   }
 
-  /**
-   * Whether a named surface serves an entity, as its owning frond declared it — `undefined` when
-   * that frond declares no such surface, and a facade registered there answers as it is.
-   */
+  /** Whether a named surface serves an entity; `undefined` when the frond declares no such surface. */
   admits(surface: string, entity: string): boolean | undefined {
     const declared = this.owner(entity)?.surfaces?.[surface];
 

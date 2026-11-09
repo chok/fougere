@@ -46,7 +46,6 @@ export class HandlerFacade {
     );
     handler.operations = this.contracts;
 
-    // Register model-selected implementations in the same execution scope.
     for (const [name, operation] of facade.operations) {
       if (this.isBaseImplementation(operation)) continue;
       const implementation = this.implementationHandler(name);
@@ -93,10 +92,6 @@ export class HandlerFacade {
       .catch(addressed);
   }
 
-  /**
-   * What the handler answers, once the middlewares let the call through: the input judged, the
-   * arguments bound, the row projected onto the view this audience sees.
-   */
   private async answer(
     op: string,
     contract: OperationContract,
@@ -111,8 +106,6 @@ export class HandlerFacade {
 
     const args = await this.argumentsOf(contract, validated);
     const { instance, method } = this.resolveImplementation(op);
-    // A page crosses as an envelope: the array `Storage.list` answers keeps `total` as a property,
-    // which JSON drops, so an op answering one is read as the page it is.
     const returned = await instance[method](...args);
     const answer = contract.cardinality === 'page' && Array.isArray(returned) ? Page.of(returned) : returned;
 
@@ -122,7 +115,6 @@ export class HandlerFacade {
     return view.project(computed);
   }
 
-  /** What code wrote, judged; or what a door received, read through the binding plan. */
   private async argumentsOf(contract: OperationContract, invocation: InvocationContext): Promise<unknown[]> {
     if (!contract.binding) return [];
     if (invocation.args !== undefined) return this.arguments.given(contract.binding, contract.input, invocation);
@@ -130,7 +122,6 @@ export class HandlerFacade {
     return this.arguments.resolve(contract.binding, invocation, contract.output);
   }
 
-  /** The facade's steps over the answer, in order, each handed what the one before it answered. */
   private async stepped(answer: unknown, invocation: InvocationContext): Promise<unknown> {
     let value = answer;
     for (const step of this.facade.steps) value = await step(value, invocation, this.arguments);
@@ -138,11 +129,6 @@ export class HandlerFacade {
     return value;
   }
 
-  /**
-   * Its own class name: a class of its frond asking for `PostHandler` is handed this instance, and one
-   * of another frond is refused at boot, pointed at `Facade<PostHandler>` — the bare handler skips the
-   * validation, the middlewares and the placement, and would break the day the frond moved.
-   */
   private get handlerKey(): string {
     return this.handler.name;
   }
@@ -151,10 +137,6 @@ export class HandlerFacade {
     return handler.deps.length > 0 ? this.facade.ownLogger(handler.ctor.name, handler.deps) : [];
   }
 
-  /**
-   * A class extending `Repository` the boot has nothing to seat on: TypeScript erases `<Post>`, and
-   * nothing said it — it would reach no rows, at its first call.
-   */
   private refuseUnseated(handler: HandlerEntry): void {
     if (!isRepository(handler.ctor) || seatOf(handler.ctor).length > 0) return;
     throw new Error(
@@ -163,7 +145,6 @@ export class HandlerFacade {
     );
   }
 
-  /** Resolve and cache the output view declared for one operation. */
   private viewOf(op: string): OutputView {
     const known = this.cachedViews.get(op);
     if (known) return known;
@@ -179,7 +160,6 @@ export class HandlerFacade {
     return resolved;
   }
 
-  /** The handler itself, resolved on first call — never at boot. */
   private resolveHandler(): any {
     if (!this.instance) this.instance = this.scope.resolve(this.handlerKey);
 
@@ -192,7 +172,6 @@ export class HandlerFacade {
       && operation.implementation.filePath === this.handler.filePath;
   }
 
-  /** The exact handler entry the pure model selected; no name-only retry or fallback. */
   private implementationHandler(operationName: string): HandlerEntry {
     const operation = this.effectiveOperations.get(operationName)!;
     const matches = this.facade.handlers.filter((handler) =>

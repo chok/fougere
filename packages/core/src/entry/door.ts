@@ -12,28 +12,20 @@ import { toPublicError } from '../wire/http-error.js';
 export type DoorOutcome = { answered: unknown } | { refused: FougereError };
 
 /**
- * A way in, as the package that brings it writes it — its edges, in its own terms. Core names no
- * door: it runs the one cycle over whichever it is handed.
+ * A way in, as the package that brings it writes it.
  *
  * Documented: [surfaces](https://fougere.dev/docs/serve/rest-graphql).
  */
 export interface Door<Received, Decoded, Answer> {
   /** The package's word for it — `rest`, `graphql` — which core never reads but to say where. */
   readonly name: string;
-  /**
-   * Its caller is the operator — a terminal on the machine — so a refusal reaches it whole, an
-   * accident's own message included, where every other door reads `Internal error`.
-   */
+  /** Its caller is the operator, so a refusal reaches it whole. */
   readonly trusted?: boolean;
-  /**
-   * The one address it answers for, when it answers for one — a REST route. Its frond's door
-   * middlewares then stand around it; a door spanning several (a GraphQL document) has none.
-   */
+  /** The one address it answers for, when it answers for one. */
   readonly address?: string;
   /**
-   * What it carries a caller's state in — `http` — and the carrier of one request: what a keeper of
-   * `state:` reads the arriving state from and writes the leaving state to. A door carrying nothing
-   * keeps no state, and `state.set` there says so.
+   * What it carries a caller's state in.
+   * Ex: `http`.
    */
   readonly carries?: string;
   carrier?(received: Received): unknown;
@@ -65,14 +57,9 @@ export interface DoorCycle {
   keeping?: Keeping;
 }
 
-/** A cycle nobody watches — a host holding a runner and no app, or a boot that refused. */
 const UNWATCHED: DoorCycle = { enterRequest: (_request, fn) => fn(), lifecycle: { publish: () => {}, observed: () => false } };
 
-/**
- * The one cycle every door runs: the request entered so each call it makes says which, its
- * steps announced beside the calls, and a refusal made public by one rule before the door says it.
- * `app.answer` runs it watched; a host with no app runs it as it is.
- */
+/** The one cycle every door runs. */
 export function answerAt<Received, Decoded, Answer>(
   door: Door<Received, Decoded, Answer>,
   received: Received,
@@ -106,7 +93,6 @@ export function answerAt<Received, Decoded, Answer>(
         const decoded = await door.decode(received);
         if (watched) lifecycle.publish(DoorEvent.decoded(request));
         const answer = await door.run(decoded);
-        // What the calls wrote leaves with an answer, never with a refusal: a failed op keeps nothing.
         for (const [keeper, names] of namesByKeeper) {
           const written = await Promise.all(names.filter(({ name }) => request.written.has(name)).map(async ({ name, options }) => {
             const value = request.written.get(name);
@@ -122,8 +108,6 @@ export function answerAt<Received, Decoded, Answer>(
       }
     };
 
-    // Outermost first: the first one stands around all the others. A refusal becomes the door's
-    // answer where it is thrown, so a link standing outside it still sees an answer.
     const standing = door.address ? (middlewaresAt?.(door.address) ?? []).filter((one) => one.door === door.name) : [];
     const through = standing.reduceRight<() => Promise<Answer>>(
       (next, one) => async () => {
@@ -143,7 +127,6 @@ export function answerAt<Received, Decoded, Answer>(
   });
 }
 
-/** The names a door carries, by the keeper that keeps them — names sharing one place are read and written once. */
 function byKeeper(declared: readonly DeclaredState[]): Map<StateKeeper, DeclaredState[]> {
   const byKeeper = new Map<StateKeeper, DeclaredState[]>();
   for (const one of declared) byKeeper.set(one.keeper, [...(byKeeper.get(one.keeper) ?? []), one]);
@@ -151,14 +134,12 @@ function byKeeper(declared: readonly DeclaredState[]): Map<StateKeeper, Declared
   return byKeeper;
 }
 
-/** A failure in the vocabulary every door speaks — an accident framed as `INTERNAL_ERROR`. */
 function framedOf(failure: unknown): FougereError {
   return failure instanceof FougereError
     ? failure
     : new FougereError({ code: ErrorCode.INTERNAL_ERROR, message: (failure as Error)?.message ?? String(failure), cause: failure });
 }
 
-/** A refusal as its caller may read it: its own words, or `Internal error` for an accident. */
 function publicOf(failure: unknown): FougereError {
   const framed = framedOf(failure);
 

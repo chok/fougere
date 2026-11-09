@@ -16,9 +16,6 @@ export class OutputView {
       return preserveArrayProperties(result, result.map((item) => this.project(item)));
     }
 
-    // A paged op answers an envelope, so what a view applies to is its ROWS. Projecting the
-    // envelope itself let every field of every row through — `Visibility.encode` finds none of
-    // its own keys on `{ items, total }` and hands the object back.
     const page = asPage(result, this.fields);
     if (page) return { ...page, items: page.items.map((item) => this.project(item)) };
 

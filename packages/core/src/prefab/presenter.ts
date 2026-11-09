@@ -1,8 +1,3 @@
-/**
- * `Present<Entity>` — enriches an entity's output with computed fields.
- *
- * Documented: [presenters](https://fougere.dev/docs/data/computed-field).
- */
 
 import { subjectKeyOf } from '../wire/SubjectKey.js';
 import { upperFirst } from '@fougere/schema';
@@ -10,9 +5,9 @@ import { upperFirst } from '@fougere/schema';
 const PRESENT = Symbol.for('fougere.present');
 
 /**
- * `Present<Order>` — each method a computed field of `Order`'s output, handed the page and answering
- * one value per row, its type read off what it returns. TypeScript erases `<Order>`, so the scan reads
- * it, and a frond written by hand says it — `presents: Order`.
+ * `Present<Order>`: each method is a computed field, handed the page and answering one value per row.
+ *
+ * Documented: [presenters](https://fougere.dev/docs/data/computed-field).
  */
 export abstract class Present<T> {
   declare private readonly presented?: T;

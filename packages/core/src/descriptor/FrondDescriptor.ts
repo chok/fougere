@@ -11,10 +11,7 @@ import type { FrondSource } from './FrondSource.js';
 import type { ExtensionEntry } from './ExtensionEntry.js';
 import type { FougereFrondProtocols } from '../FougereFrondProtocols.js';
 
-/**
- * The key a provider answers under. What the source said, and the class's own name only
- * where nobody wrote it down — a statement is read as code, and code can say it.
- */
+/** The key a provider answers under: the name the source wrote, or its class name. */
 export const nameOf = (provider: ProviderEntry): string => provider.name ?? provider.ctor.name;
 
 export interface FrondDescriptor extends Pick<FrondConfig, 'pipes' | 'surfaces' | 'reads' | 'ports'> {
@@ -28,19 +25,9 @@ export interface FrondDescriptor extends Pick<FrondConfig, 'pipes' | 'surfaces' 
   seeds: SeedEntry[];
   /** What this frond mounts on the process that serves it. Absent when it declares none. */
   extensions?: ExtensionEntry[];
-  /**
-   * Brought by an EXTENSION rather than by the app — `@fougere/calls` keeping its lines,
-   * `@fougere/observability` sending them on. It is installed like any other, and it is not
-   * what the app SERVES: a report that lists it describes the instrumentation, not the
-   * domain. Set by the boot, never by a declaration.
-   */
+  /** Brought by an extension rather than by the app; set by the boot. */
   fromExtension?: true;
-  /**
-   * The frond this one inherits code from — its scope hangs off that one's, so a service, a
-   * repository, a port or a middleware declared there answers here too. The same word the
-   * config uses, set by the boot from `FougereConfig.fronds` and never by a scan: the disk is
-   * flat, and a directory says nothing about who shares its code.
-   */
+  /** The frond this one inherits code from; set by the boot from `fronds:`. */
   extends?: string;
   /** What `frond.config.ts` says to each protocol about the whole frond. */
   protocols?: FougereFrondProtocols;
@@ -51,10 +38,7 @@ export interface FrondDescriptor extends Pick<FrondConfig, 'pipes' | 'surfaces' 
   }>;
 }
 
-/**
- * Read from this project's sources, so it has a `frond.config.ts` of its own to be told things in.
- * A frond written with `frond()` — what a package brings, `betterAuth()` — has no directory here.
- */
+/** Whether the frond was read from this project's sources, rather than written with `frond()`. */
 export function isScanned(frond: Pick<FrondDescriptor, 'source'>): boolean {
   return frond.source.path !== '';
 }

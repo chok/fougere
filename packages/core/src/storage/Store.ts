@@ -27,12 +27,7 @@ export function storageOver(open: (entity: SchemaView, name: string) => Store): 
     const store = open(entity, name);
     const turns = Turns.of(store);
     const pk = Object.entries(fields).find(([, field]) => Role.of(field).isPrimary())?.[0] ?? 'id';
-    // `Storage.findById(id: string)` — but a key can hold a number, and a Map keyed on
-    // `1` does not answer `'1'`. SQL never had the question; here the divergence was
-    // silent and only on this storage.
     const keyOf = (value: unknown) => String(value);
-    // Same contract as SQL: a criterion may name a SET, and an empty set matches nothing.
-    // A comparison is told from a value by the FIELD, never by the criterion's own shape.
     const matches = (values: Record<string, unknown>, criteria: Record<string, unknown>) =>
       Object.entries(criteria).every(([key, value]) => {
         const comparison = comparisonOf(fields[key], value);
@@ -43,19 +38,11 @@ export function storageOver(open: (entity: SchemaView, name: string) => Store): 
           : Object.is(values[key], value);
       });
 
-    // A store holds whole instances and reads them whole, so the scope SQL puts in its
-    // SELECT is applied here on the way out. Same set of gestures either way: everything
-    // that hands back an instance, which leaves `delete` and `upsertAll` alone.
-    // A store may hold what another frond's view of the same rows declares: this one answers its own.
     const own = new Set(Object.keys(fields));
     const scoped = (selected?: Set<string>): Storage => {
       const shown = selected ?? own;
       const pick = (values: Values): Values => Object.fromEntries(Object.entries(values).filter(([key]) => shown.has(key)));
 
-      // Same contract as SQL: a row that is already there is UPDATED, so what the write leaves
-      // out stays where it was.
-      // Named, and not reached through `this`: a caller may have wrapped these gestures,
-      // and a derived one that goes back through the front facade is judged twice.
       const upsert = async (input: Partial<Record<string, unknown>>): Promise<Values> => {
         const created = applyCreate(fields, applyUpdate(fields, input));
         const id = created[pk] as string | undefined;
@@ -67,21 +54,12 @@ export function storageOver(open: (entity: SchemaView, name: string) => Store): 
         return pick(values);
       };
 
-      /** A create's row and its key, refused before anything is written. */
       const prepared = async (input: Partial<Record<string, unknown>>): Promise<[string, Values]> => {
         const values = applyCreate(fields, input);
         const id = values[pk] as string | undefined;
-        // `primary(text())` declares no generator, so nothing fills the hole and the
-        // caller has to. Keying on `undefined` would let the second create overwrite the
-        // first, in silence — the old version hid this by inventing an `id` field the
-        // entity never declared.
         if (id === undefined) {
           throw new Error(`${name}.create() needs a ${pk}: nothing generates it. Pass one.`);
         }
-        // A create is not an upsert. `Map.set` overwrites, so a second create under the
-        // same key answered "created" while destroying the previous instance — SQL answers a
-        // constraint violation, and a store that loses data silently is worse than one
-        // that fails.
         if (await store.has(keyOf(id))) {
           throw new FougereError({ code: ErrorCode.CONFLICT, message: `${name}.create: '${pk}' ${JSON.stringify(id)} already exists.` });
         }
@@ -111,7 +89,6 @@ export function storageOver(open: (entity: SchemaView, name: string) => Store): 
         async findAllBy(criteria: Record<string, unknown>) {
           return (await store.all()).filter((values) => matches(values, criteria)).map(pick);
         },
-        // Same contract as SQL: a map keyed by the primary key, a miss being an absent key.
         async findByKeys(ids: readonly string[]) {
           const found = new Map<string, Record<string, unknown>>();
           for (const id of ids) {
@@ -121,7 +98,6 @@ export function storageOver(open: (entity: SchemaView, name: string) => Store): 
 
           return found;
         },
-        // The dual, same contract as SQL: grouped by the value read off the instance.
         async findAllByKeys(field: string, keys: readonly string[]) {
           const grouped = new Map<string, Record<string, unknown>[]>();
           if (keys.length === 0) return grouped;
@@ -147,7 +123,6 @@ export function storageOver(open: (entity: SchemaView, name: string) => Store): 
 
           return pick(values);
         },
-        // Every row judged before the first lands, the way one statement fails whole.
         async createAll(inputs: readonly Values[]) {
           const rows = await Promise.all(inputs.map(prepared));
           const keys = rows.map(([key]) => key);
@@ -159,7 +134,6 @@ export function storageOver(open: (entity: SchemaView, name: string) => Store): 
 
           return rows.map(([, values]) => pick(values));
         },
-        // Its turn on the key covers the read and the write, so a change reads what it replaces.
         async update(id: string, input: Values | Change<Values>) {
           return turns.take(keyOf(id), async () => {
             const existing = await store.get(keyOf(id));
@@ -199,10 +173,6 @@ export function storageOver(open: (entity: SchemaView, name: string) => Store): 
   };
 }
 
-/**
- * The same comparisons SQL compiles, answered in memory. Every one a criterion names has
- * to hold — the rule two criteria already follow.
- */
 function compares(stored: unknown, comparison: Comparison): boolean {
   return comparisonsIn(comparison).every(([name, asked]) => {
     switch (name) {
@@ -223,20 +193,16 @@ function compares(stored: unknown, comparison: Comparison): boolean {
   });
 }
 
-/** A row that holds nothing compares to nothing — the answer SQL gives for NULL. */
 const ordered = (stored: unknown, asked: unknown, holds: (a: number, b: number) => boolean): boolean =>
   stored === null || stored === undefined ? false : holds(order(stored), order(asked));
 
-/** What a Date and a number have in common, and a string keeps for itself. */
 const order = (value: unknown): number =>
   value instanceof Date ? value.getTime() : (value as number);
 
-/** The ORDER BY the engine would have compiled, answered over the rows the store held. */
 const sorted = (rows: Values[], field: string, direction: 'asc' | 'desc' | undefined): Values[] =>
   [...rows].sort((left, right) =>
     (direction === 'desc' ? -1 : 1) * rank(left[field], right[field]));
 
-/** A row that holds nothing sorts first, and two of them tie. */
 const rank = (left: unknown, right: unknown): number => {
   if (left === null || left === undefined) return right === null || right === undefined ? 0 : -1;
   if (right === null || right === undefined) return 1;
@@ -245,13 +211,6 @@ const rank = (left: unknown, right: unknown): number => {
   return held === against ? 0 : held < against ? -1 : 1;
 };
 
-/**
- * The page cut out of what matched.
- *
- * `total` is held BEFORE the cut and after the filter — it answers "how many match", which is
- * what a paginator divides. Reading the store's size at the end answered a different question:
- * everything it holds, including the rows the filter exists to keep out of this caller's sight.
- */
 function paged(
   matched: Values[],
   options: { limit?: number; page?: number; offset?: number; count?: boolean } | undefined,
@@ -266,13 +225,10 @@ function paged(
   const hasMore = limit ? items.length > limit : false;
   if (limit) items = items.slice(0, limit);
 
-  // The cursor is read before the scope cuts: a view that drops the key still pages, the way it
-  // does over SQL.
   const endCursor = items.length > 0
     ? String((items[items.length - 1] as Record<string, unknown>)[pk] ?? '')
     : undefined;
 
-  // An array that carries the page's terms on itself — what `ListResult` is.
   const result = items.map(pick) as ListResult<Values>;
   result.hasMore = hasMore;
   result.endCursor = endCursor;

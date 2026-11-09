@@ -12,14 +12,9 @@ export const LIST_OPTION_KEYS = Object.keys({
   limit: true, offset: true, page: true, after: true, orderBy: true, order: true, count: true, where: true, select: true,
 } satisfies Record<keyof (ListOptions & SelectOption), true>);
 
-/** What a count must be — a text that did not read as a number arrives as `NaN`. */
 const COUNTS = ['limit', 'offset', 'page'] as const;
 
-/**
- * Refuse an option the port does not answer to, a count that is not one, and an order by a
- * field the entity does not declare — an unhonoured `orderBy` returns the page in whatever order
- * the engine chose. Refused as BAD_REQUEST: a plain Error left as INTERNAL_ERROR, its message hidden.
- */
+/** Refuses, as `BAD_REQUEST`, an option the port does not take, a bad count, or an order by an unknown field. */
 export function assertListOptions(
   options: object | undefined,
   entity: string,
@@ -56,14 +51,12 @@ export interface Storage<T = Record<string, unknown>> {
   list(options?: ListOptions & SelectOption): Promise<ListResult<T>>;
   findById(id: string, options?: SelectOption): Promise<T | undefined>;
   /**
-   * Read by criteria — `findBy({ email })` for the one, `findAllBy({ orderId })` for the many,
-   * which is what a one-to-many relation *is*.
+   * Reads by criteria.
+   * Ex: `findBy({ email })`, `findAllBy({ orderId })`.
    */
   findBy(criteria: Partial<T> | Record<string, unknown>, options?: SelectOption): Promise<T | undefined>;
   findAllBy(criteria: Partial<T> | Record<string, unknown>, options?: SelectOption): Promise<T[]>;
-  /**
-   * Read a SET of rows by their key, in one go — the gesture every other one was being bent into.
-   */
+  /** Reads a set of rows by their key, in one go. */
   findByKeys(ids: readonly string[], options?: SelectOption): Promise<Map<string, T>>;
   /** The dual of `findByKeys`: many rows per key, not one. */
   findAllByKeys(field: string, keys: readonly string[], options?: SelectOption): Promise<Map<string, T[]>>;
@@ -75,61 +68,27 @@ export interface Storage<T = Record<string, unknown>> {
   /** A whole page in one statement — what an import writes through. */
   upsertAll(inputs: readonly Partial<T>[], options?: SelectOption): Promise<number>;
   /**
-   * Write these values, or the ones `change` computes from the row as it stands — read and
-   * written with no other write in between: `update(id, (row) => ({ stock: row.stock - 1 }))`.
+   * Writes these values, or the ones `change` computes from the row, with no other write in between.
+   * Ex: `update(id, (row) => ({ stock: row.stock - 1 }))`.
    */
   update(id: string, input: Partial<T> | Change<T>, options?: SelectOption): Promise<T>;
-  /**
-   * `update(id, change)` over a SET of rows: every row is held at once, in the order of its key, so
-   * two callers asking for the same rows cannot hold one each. A key with no row refuses them all.
-   */
+  /** `update(id, change)` over a set of rows, all held at once; a missing key refuses them all. */
   updateByKeys(ids: readonly string[], change: Change<T>, options?: SelectOption): Promise<Map<string, T>>;
   delete(id: string): Promise<boolean>;
   /** Returns a scoped storage that restricts all read results to the fields of the given schema. */
   output(schema: SchemaView): Storage<T>;
 }
 
-/**
- * What each link of a chain stands in front of.
- *
- * A SYMBOL on the instance, set through a cast so it joins no declaration: `Storage` is an
- * interface as well as a class, and the realizations satisfy it structurally —
- * `storageOver` returns an object literal, and one more member would stop it being a
- * storage. A `#private` field says the same thing and makes the class NOMINAL, which
- * refuses every realization at once.
- *
- * On the instance and not in a `WeakMap` beside it, because `StorageGuard.guard` hands out
- * `Object.create(storage)` — a new object whose prototype is the link. A symbol is found
- * through that chain; a map keyed on the link is not, and the guarded object read
- * `undefined`.
- */
 const BEHIND = Symbol('fougere.storage.behind');
 
 const behind = <T>(link: object): Storage<T> =>
   (link as Record<symbol, unknown>)[BEHIND] as Storage<T>;
 
 /**
- * A storage that stands in front of another — the base a wrapper extends, and the only
- * thing that makes `Storage` a seam rather than a shape.
+ * A storage standing in front of another: the base a wrapper extends, forwarding what it does not override.
+ * Ex: `class Audit extends Storage { constructor(private inner: Storage) { super(inner); } }`.
  *
- * Merged with the interface above, so the class carries the thirteen gestures as a TYPE
- * while its prototype carries them as a FORWARD. A wrapper writes what it changes and
- * nothing else:
- *
- * ```ts
- * class Audit extends Storage {
- *   constructor(private inner: Storage) { super(inner); }
- *   async create(row) { await say(row); return this.inner.create(row); }
- * }
- * ```
- *
- * `ports: { Storage: ['Audit'] }` orders the chain when a frond declares two, which is the
- * same key, the same order and the same refusals a port gets. A realization does not extend
- * this: it is handed in by `storageFactory` and is the last link, so what a wrapper does not
- * override reaches it through these forwards.
- *
- * Documented: [storage](https://fougere.dev/docs/extending/source-adapter) and
- * [ports](https://fougere.dev/docs/concepts/port).
+ * Documented: [storage](https://fougere.dev/docs/extending/source-adapter) and [ports](https://fougere.dev/docs/concepts/port).
  */
 export abstract class Storage<T = Record<string, unknown>> {
   constructor(inner: Storage<T>) {
@@ -182,8 +141,8 @@ export function entityOfStorageKey(key: string, known: (entity: string) => boole
 }
 
 /**
- * The container key of a frame — `[['Account', 'Ledger'], ['RateMirror']]` →
- * `Together<[Account, Ledger], [RateMirror]>`, spelled as the type is written.
+ * The container key of a frame, spelled as the type is written.
+ * Ex: `[['Account', 'Ledger']]` → `Together<[Account, Ledger]>`.
  */
 export function togetherKeyOf(entities: readonly string[], providers: readonly string[] = []): string {
   const tuple = (names: readonly string[]) => `[${names.map(upperFirst).join(', ')}]`;

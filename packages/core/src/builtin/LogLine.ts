@@ -1,15 +1,6 @@
 import { entity, oneOf, text, json, list, optional, created } from '@fougere/schema';
 
-/**
- * One line. A fact about the process, announced like any other — which is what makes a
- * destination an ordinary handler and `remotes:` the only thing that decides where it runs.
- *
- * Here and not in `@fougere/log`, because the BOOT announces: core would otherwise have to
- * name an optional package's entity to reach its own lines. What is optional is where a
- * line GOES, and that is what `@fougere/log` ships.
- *
- * No `primary()`: nothing addresses a line by an id. `at` is `created()`, so announcing is what fills it.
- */
+/** One log line, announced like any other fact. */
 export default class LogLine extends entity({
   level: oneOf('debug', 'info', 'warn', 'error'),
   /** Who wrote it — 'app', 'app:catalog'. */
@@ -25,15 +16,5 @@ export default class LogLine extends entity({
 /** The fact a boot announces, spelled once. */
 export const LOG_LINE = 'logLine';
 
-/**
- * The addresses whose operations CARRY a line — every destination this app installed.
- *
- * Whatever carries a fact must not produce one, or the emission refuses it by name:
- * keeping a line is a DISPATCH, so logging it announces a line inside the announcement of
- * one. FILLED BY THE BOOT from what binds `logLine`, not written down — a hard-coded list
- * cannot know a third party's destination, and the app already knows who subscribed.
- *
- * Read by `@fougere/log`'s `callLines` and by `observability`'s `trace()`, both of which observe
- * every operation and would otherwise observe the observation.
- */
+/** The addresses whose operations carry a line; filled by the boot. */
 export const CARRIES_LINE = new Set<string>();

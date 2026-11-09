@@ -2,13 +2,7 @@ import { Repository } from './Repository.js';
 import type { Refreshed } from './Refreshed.js';
 
 /**
- * `Mirror<BookCard>` — a `Repository<BookCard>` that fills itself from a source that cannot be
- * queried directly. Its author writes `pull`, the pages the source hands out; `refresh(since)` writes
- * every page, and the copy reads like any other rows — `this.list()`. Extended by a handler, the
- * copy and `refresh` are served; in `services/`, by nobody.
- *
- * The mark is the CALLER's: only it knows whether a pass completed, and a pass that throws must not
- * advance it.
+ * A repository that fills itself from a source it cannot query: its author writes `pull`, `refresh(since)` writes every page.
  *
  * Documented: [the base](https://fougere.dev/docs).
  */

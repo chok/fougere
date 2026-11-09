@@ -39,7 +39,6 @@ export class DispatchLifecycle {
         try {
           this.diagnose(error, event);
         } catch {
-          // Diagnostics remain observational too.
         }
       }
     }

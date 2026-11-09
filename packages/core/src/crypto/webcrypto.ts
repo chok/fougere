@@ -21,7 +21,6 @@ interface WebSubtle {
 const ED25519 = { name: 'Ed25519' } as const;
 const HMAC = { name: 'HMAC', hash: 'SHA-256' } as const;
 
-/** Read at call time — a Worker has the global, and reading it at module load does not. */
 const subtle = (): WebSubtle =>
   (globalThis as unknown as { crypto: { subtle: WebSubtle } }).crypto.subtle;
 
@@ -31,8 +30,6 @@ export const crypto: CryptoPort = {
   },
 
   async signerOf(privateKeyPem): Promise<Signer> {
-    // Imported once, at boot. Doing it per call would put an async key parse inside
-    // every outgoing request — the reason the port hands back a signer at all.
     const key = await subtle().importKey('pkcs8', derOf(privateKeyPem), ED25519, false, ['sign']);
 
     return { async sign(data) { return new Uint8Array(await subtle().sign(ED25519, key, data)); } };

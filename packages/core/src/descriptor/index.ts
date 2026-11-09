@@ -1,7 +1,3 @@
-/**
- * What it takes to PRODUCE a descriptor — the surface a scan reads, whoever wrote it.
- * The main entry serves what an app RUNS; this one serves what fills it in.
- */
 export * from './ProviderEntry.js';
 export * from './EntityEntry.js';
 export * from './HandlerEntry.js';
@@ -36,7 +32,6 @@ export { builtOn } from '../prefab/prefab.js';
 export { targetOf, viewsOf, outputOf } from '../prefab/prefab.js';
 export { isRepository, ownedBy, repositoryKeyOf, seated, seatOf, seatsOf } from '../prefab/Repository.js';
 
-// The surfaces a handler answers on — a directory names one, and so does `frond.config.ts`.
 export { servedSurfaces } from './surface.js';
 export { basesOf } from './bases.js';
 export { subjectKeyOf, subjectsOf } from '../wire/SubjectKey.js';
