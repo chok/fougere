@@ -40,6 +40,7 @@ function launch(settings, log) {
   let stopped = false;
   const event = (name) => {
     if (!events.has(name)) events.set(name, Promise.withResolvers());
+
     return events.get(name);
   };
   const exited = Promise.withResolvers();
@@ -80,6 +81,7 @@ function launch(settings, log) {
       child.send({ id, method, args });
       const result = await within(pendingCall.promise, `${settings.side}.${method}`);
       out({ method, args, result });
+
       return result;
     },
     async kill() {
@@ -98,8 +100,10 @@ function snapshot(paths) {
     const db = new Sqlite(path, { readonly: true, fileMustExist: true });
     try {
       const tables = db.prepare("select name from sqlite_master where type = 'table' and name not like 'sqlite_%' order by name").all();
+
       return [name, Object.fromEntries(tables.map(({ name: table }) => {
         const quoted = `"${table.replaceAll('"', '""')}"`;
+
         return [table, {
           rows: db.prepare(`select * from ${quoted} order by id`).all(),
           fk: db.pragma(`foreign_key_list(${quoted})`).map(({ table, from, to, on_delete }) => ({ table, from, to, on_delete })),
@@ -113,11 +117,13 @@ function snapshot(paths) {
 
 const success = ({ ok, error, value }) => {
   assert.equal(ok, true, JSON.stringify(error));
+
   return value;
 };
 const refused = ({ ok, error }, pattern) => {
   assert.equal(ok, false, 'operation succeeded');
   if (pattern) assert.match(JSON.stringify(error), pattern);
+
   return error;
 };
 const capture = async (call) => {
@@ -140,6 +146,7 @@ async function run(config, name, test, options = {}) {
     const child = launch({ ...settings, side, ...extra }, log);
     live.push(child);
     await child.ready();
+
     return child;
   };
   let users;
@@ -150,6 +157,7 @@ async function run(config, name, test, options = {}) {
   const remotesFor = (side) => {
     if (!splitProcess || side === 'both') return {};
     if (options.oneWay === side) return {};
+
     return side === 'users' ? { orders: portUrl(orders.port) } : { users: portUrl(users.port) };
   };
   const boot = (child, side) => child.send('boot', remotesFor(side));
@@ -178,6 +186,7 @@ async function run(config, name, test, options = {}) {
     snap(label) {
       const state = snapshot(paths);
       log({ snapshot: label, state });
+
       return state;
     },
     rows(table) {
@@ -190,6 +199,7 @@ async function run(config, name, test, options = {}) {
     },
     async migrate(extra) {
       const coordinator = await start(extra.side ?? 'both', { migrate: true, ...extra });
+
       return coordinator.send('boot', {});
     },
   };
@@ -235,6 +245,7 @@ const relationRpc = async (world, child, op, params) => {
   const transport = createHttpTransport(portUrl(child.port), { timeoutMs: 1200, retries: 0 });
   const result = await capture(() => transport({ address: RPC_ADDRESS, op }, { params, query: {}, state: {} }));
   world.log({ probe: op, port: child.port, params, result });
+
   return result;
 };
 const hold = (world, child, keys) => relationRpc(world, child, 'holds', { entity: 'user', keys });

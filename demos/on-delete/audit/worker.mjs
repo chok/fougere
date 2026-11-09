@@ -69,23 +69,28 @@ function descriptors() {
 
 function observing(factory, after) {
   const reached = async (name) => { if (after) after.push(name); else await checkpoint(name); };
+
   return (schema, name) => {
     const base = factory(schema, name);
+
     return Object.assign(Object.create(base), {
       async create(...args) {
         await checkpoint(`before:create:${name}:${args[0].id}`);
         const result = await base.create(...args);
         await reached(`after:create:${name}:${args[0].id}`);
+
         return result;
       },
       async findByKeys(...args) {
         await checkpoint(`before:findByKeys:${name}`);
+
         return base.findByKeys(...args);
       },
       async delete(id) {
         await checkpoint(`before:delete:${name}:${id}`);
         const result = await base.delete(id);
         await reached(`after:delete:${name}:${id}`);
+
         return result;
       },
     });
@@ -104,8 +109,10 @@ function database(path) {
     const after = [];
     const result = await transacted((factory) => fn(observing(factory, after)));
     await committed(after);
+
     return result;
   };
+
   return source;
 }
 
@@ -124,6 +131,7 @@ function placed() {
       rows: ['Order', 'Line', 'CycleOrder', ...(side === 'orders' ? runRows : [])],
     };
   }
+
   return sources;
 }
 
@@ -132,8 +140,10 @@ let storage;
 let runner;
 const transport = (url) => {
   const send = createHttpTransport(url, { timeoutMs: 800, retries: 0 });
+
   return async (call, invocation) => {
     log({ sent: call, params: invocation.params });
+
     return send(call, invocation);
   };
 };
@@ -144,6 +154,7 @@ const receiver = ['C', 'D'].includes(config) && side !== 'both'
     await checkpoint(`receive:${call.address}.${call.op}`);
     const result = await runner(call, invocation);
     await checkpoint(`respond:${call.address}.${call.op}`);
+
     return result;
   }, { port: settings.port ?? 0 })
   : undefined;
@@ -166,6 +177,7 @@ async function boot(remotes) {
     ],
   });
   runner = createLocalRunner(app);
+
   return Object.fromEntries(['user', 'order', 'line', 'cycleUser', 'cycleOrder', 'run']
     .map((entity) => [entity, Boolean(app.storageFor(entity))]));
 }
@@ -176,12 +188,14 @@ async function dispatch(method, args) {
     case 'gate': {
       const { promise, resolve } = Promise.withResolvers();
       gates.set(args[0], { promise, resolve });
+
       return true;
     }
     case 'resume': {
       const gate = gates.get(args[0]);
       gates.delete(args[0]);
       gate.resolve();
+
       return true;
     }
     case 'rpc': return runner({ address: RPC_ADDRESS, op: args[0] }, Invocation.from({ params: args[1] }));
@@ -189,6 +203,7 @@ async function dispatch(method, args) {
     case 'rows': return app.storageFor(args[0])[args[1]](...args.slice(2));
     case 'raw-delete': {
       const result = await app.storageFor('user').client.deleteFrom('users').where('id', '=', args[0]).executeTakeFirst();
+
       return Number(result.numDeletedRows);
     }
     case 'sweep': return runner({ address: 'run', op: 'sweep' }, Invocation.empty);
@@ -196,6 +211,7 @@ async function dispatch(method, args) {
       await receiver?.close();
       await app?.dispose();
       await storage?.close?.();
+
       return true;
     default: throw new Error(`Unknown worker command ${method}`);
   }
