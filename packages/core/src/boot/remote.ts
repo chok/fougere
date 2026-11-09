@@ -13,6 +13,14 @@ import { Card, type SchemaView } from '@fougere/schema';
 import { dynamicOperations } from '../entry/facade.js';
 import { decoded } from '../dispatch/decoded.js';
 import type { RemoteListener } from '../module/fact/RemoteListener.js';
+import type { Fronds } from '../descriptor/Fronds.js';
+import { type Assembly } from './install.js';
+import { Transports, transportsOf } from '../Transports.js';
+import { identityFromEnv } from '../CallIdentity.js';
+import type { CreateAppOptions } from './CreateAppOptions.js';
+import { addressOf, isFacadeKey } from '../wire/Facade.js';
+import { remoteRoutes } from '../dispatch/remoteRoutes.js';
+import { facadeOperations } from '../entry/facade.js';
 
 interface Route {
   frond: string;
@@ -181,4 +189,48 @@ function listenedBy({ label, url, answer }: RemoteAnswer, byFact: Map<string, Re
       }
     }
   }
+}
+
+export async function transportAtOf(options: CreateAppOptions): Promise<((address: string) => Transport) | undefined> {
+  const remotes = options.remotes ?? {};
+  if (Object.keys(remotes).length === 0) return undefined;
+
+  const hosted = options.remoteTransport;
+  if (hosted) return transportsOf(remotes, (address) => hosted(address));
+
+  const identity = await identityFromEnv();
+
+  return transportsOf(remotes, (address, label) => Transports.open(address, identity, `fronds.${label}.remote`));
+}
+
+export function remoteRouterOf(options: CreateAppOptions, transportAt: ((address: string) => Transport) | undefined): RemoteRouter | undefined {
+  if (!transportAt) return undefined;
+
+  return createRemoteRouter(options.remotes ?? {}, transportAt);
+}
+
+export function answerRemotes(
+  { container, routeRegistry, dispatcher, getMiddlewares, options, state }: Pick<Assembly, 'container' | 'routeRegistry' | 'dispatcher' | 'getMiddlewares' | 'options' | 'state'>,
+  remoteRouter: RemoteRouter,
+  fronds: Fronds,
+): (name: string) => boolean {
+  const servedRemotely = (address: string): boolean => {
+    const owner = fronds.owner(address);
+
+    return owner === undefined || owner.name in (options.remotes ?? {});
+  };
+  const facadeServedRemotely = (name: string): boolean => isFacadeKey(name) && servedRemotely(addressOf(name));
+  container.setFallback((name) => (facadeServedRemotely(name) ? facadeOperations(dispatcher, addressOf(name)) : undefined));
+
+  const remoteFacades = new Map<string, Record<string, Function>>();
+  routeRegistry.addResolver(remoteRoutes((address) => {
+    const known = remoteFacades.get(address);
+    if (known) return known;
+    const facade = createRemoteFacade(address, remoteRouter, getMiddlewares, state);
+    remoteFacades.set(address, facade);
+
+    return facade;
+  }));
+
+  return facadeServedRemotely;
 }
