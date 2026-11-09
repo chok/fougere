@@ -17,6 +17,10 @@
     "directory": "packages/transport/http"
   },
   "type": "module",
+  "sideEffects": [
+    "./dist/index.js",
+    "./dist/transports.js"
+  ],
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {

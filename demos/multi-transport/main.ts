@@ -86,16 +86,14 @@ async function main() {
     console.log('');
   }
 
-  // And the topology statement itself, over a protocol that is not HTTP. The
-  // two lines below are the entire difference between a monolith and a split —
-  // `remoteTransport` picks the transport off the address, so a second frond on
-  // `http://` would simply come back through the other factory.
+  // And the topology statement itself, over a protocol that is not HTTP. The line
+  // below is the entire difference between a monolith and a split — `tcp` is the
+  // scheme `socket-transport.ts` registered, so a second frond on `http://` would
+  // simply be carried by the transport `@fougere/transport-http` registered.
   const consumer = await createApp({
     ...(await statementOf(`${import.meta.dirname}/empty`)),
     createContainer,
     remotes: { sensors: `tcp://127.0.0.1:${socket.port}` },
-    remoteTransport: (url) =>
-      url.startsWith('tcp://') ? createSocketTransport(Number(new URL(url).port)) : createHttpTransport(url),
   });
 
   type Facade = Record<string, (...args: unknown[]) => Promise<unknown>>;

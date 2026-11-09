@@ -21,6 +21,9 @@ import type { FrondDescriptor } from '../descriptor/FrondDescriptor.js';
 import { installFrond, type Assembly } from './install.js';
 import { releasing, unpaired } from '../module/relation/relations.js';
 import { rowHostsFor } from '../module/relation/rowHostsFor.js';
+import { Transports, transportsOf } from '../Transports.js';
+import { identityFromEnv } from '../CallIdentity.js';
+import type { Transport } from '../wire/Transport.js';
 import { serveRelationReadings } from '../module/relation/readings.js';
 import { warnAboutRelations } from '../module/relation/warnAboutRelations.js';
 import type { RowHosts } from '../module/relation/RowHosts.js';
@@ -300,18 +303,27 @@ function registerBuiltins(container: Container, lineBuffer: LineBuffer): void {
   container.registerValue('Logger', new Logger('app', { lineBuffer, during: operation.current }));
 }
 
+/**
+ * What carries a call to each address `remotes` names — the host's transport when it gave one, the
+ * scheme's otherwise. The environment is read for a key only in the second case.
+ */
+async function transportAtOf(options: CreateAppOptions): Promise<((address: string) => Transport) | undefined> {
+  const remotes = options.remotes ?? {};
+  if (Object.keys(remotes).length === 0) return undefined;
+
+  const hosted = options.remoteTransport;
+  if (hosted) return transportsOf(remotes, (address) => hosted(address));
+
+  const identity = await identityFromEnv();
+
+  return transportsOf(remotes, (address, label) => Transports.open(address, identity, `fronds.${label}.remote`));
+}
+
 /** `remotes:` IS the topology statement: the frond's code may sit here, it runs elsewhere. */
-function remoteRouterOf(options: CreateAppOptions): RemoteRouter | undefined {
-  const declared = Object.entries(options.remotes ?? {});
-  if (declared.length === 0) return undefined;
+function remoteRouterOf(options: CreateAppOptions, transportAt: ((address: string) => Transport) | undefined): RemoteRouter | undefined {
+  if (!transportAt) return undefined;
 
-  if (!options.remoteTransport) {
-    throw new Error(
-      'createApp: fronds have an address, but no remoteTransport is given. Pass one, e.g. from @fougere/transport-http.',
-    );
-  }
-
-  return createRemoteRouter(Object.fromEntries(declared), options.remoteTransport);
+  return createRemoteRouter(options.remotes ?? {}, transportAt);
 }
 
 /** Every check of a phase, said at once — a boot that stops at the first shows the next after a restart. */
@@ -454,7 +466,8 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     const declaredState = States.declared(options.state);
     const { fronds, operationModel } = await readFronds(options, log, keeperFronds(declaredState));
     appLifecycle.add(...frondExtensions(fronds));
-    const remoteRouter = remoteRouterOf(options);
+    const transportAt = await transportAtOf(options);
+    const remoteRouter = remoteRouterOf(options, transportAt);
     const { inflight, routeRegistry, dispatchLifecycle, dispatcher, localDispatcher, getMiddlewares, use } =
       dispatching(options, log, fronds, () => journalOf());
 
@@ -467,7 +480,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     const storageFor = <T = Record<string, unknown>>(entity: string): Storage<T> | undefined =>
       ownedBy<Storage<T>>(fronds, container, entity, storageKeyOf(entity));
     const { hosting, journalOf } = rowHostsFor({
-      fronds, container, options, remoteRouter, entityByName, frondOf, storageOf: storageFor,
+      fronds, container, options, transportAt, remoteRouter, entityByName, frondOf, storageOf: storageFor,
     });
 
     const relations: RelationCheck[] = [];

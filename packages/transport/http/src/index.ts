@@ -1,3 +1,4 @@
+import './transports.js';
 export { createHttpTransport, frameCall, unframeResponse } from './client.js';
 export { handleRpc, pageDoor, peerDoor, type ReceiveOptions } from './server.js';
 export type { RpcCall } from './jsonrpc/RpcCall.js';

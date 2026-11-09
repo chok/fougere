@@ -14,7 +14,7 @@ import { log } from '@fougere/log';
 import { createApp, createLocalRunner, declaredTopologyOf, resolveEffectiveOperations, type Storage } from '@fougere/core';
 import { loadConfig, remotesOf } from '@fougere/core/node';
 import { createContainer } from '@fougere/container';
-import { createHttpTransport, serve } from '@fougere/transport-http';
+import { serve } from '@fougere/transport-http';
 import { createHash } from 'node:crypto';
 import { readdir, readFile } from 'node:fs/promises';
 import { join, relative } from 'node:path';
@@ -44,7 +44,6 @@ const boot = (stated: Statement, elsewhere: Record<string, string>) => createApp
   createContainer,
   storageFactory: shelf,
   remotes: elsewhere,
-  remoteTransport: (url) => createHttpTransport(url),
   extensions: [log()],
 });
 

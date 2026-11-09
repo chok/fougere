@@ -24,10 +24,11 @@ export interface Hosted {
   /** The placement half of the app's options — where each frond answers, and what each source keeps. */
   options: {
     remotes?: Record<string, string>;
-    remoteTransport?: (url: string) => Transport;
     sourceOf?: (entityName: string) => string | undefined;
     enforces?: (source: string, constraint: Constraint) => boolean;
   };
+  /** What carries a call to an address `remotes` names — the one table the router reads too. */
+  transportAt: ((address: string) => Transport) | undefined;
   remoteRouter: Routing | undefined;
   entityByName: Map<string, SchemaView>;
   frondOf: Map<string, string>;
@@ -51,7 +52,7 @@ function peerBehind(entity: string, router: Routing): Peer {
 }
 
 export function rowHostsFor(
-  { fronds, container, options, remoteRouter, entityByName, frondOf, storageOf }: Hosted,
+  { fronds, container, options, transportAt, remoteRouter, entityByName, frondOf, storageOf }: Hosted,
 ): { hosting: RowHosts; journalOf: () => Journal | undefined } {
   // What carries a release writes none: an instrumentation frond's own rows are kept while a
   // release happens, and journalling them would begin one inside the one being written down.
@@ -87,8 +88,8 @@ export function rowHostsFor(
     // Built from `remotes:` itself and not from the router: the router indexes by ENTITY, read
     // off a card, while the question here is asked of a PROCESS about rows it may be alone in
     // knowing about. Nothing is cached — a peer that was down at boot answers the next call.
-    peers: () => (options.remoteTransport
-      ? Object.values(options.remotes ?? {}).map((url) => peerOver(options.remoteTransport!(url)))
+    peers: () => (transportAt
+      ? Object.values(options.remotes ?? {}).map((url) => peerOver(transportAt(url)))
       : []),
     peerOf: (entity) => (remoteRouter ? peerBehind(entity, remoteRouter) : undefined),
   };

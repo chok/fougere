@@ -28,10 +28,10 @@ interface BootOptions {
   fronds?: string[];
   /**
    * Remote fronds — label → address. A declared remote wins over local
-   * presence (the frond runs elsewhere). Requires `remoteTransport`.
+   * presence (the frond runs elsewhere), reached by the transport its scheme names.
    */
   remotes?: Record<string, string>;
-  /** Builds the transport to reach `remotes`. Supplied by a layer-2 package. */
+  /** Replaces the transport every address of `remotes` names by its scheme. */
   remoteTransport?: (url: string) => Transport;
   /** Carries an announced fact out of this process. */
   onEmit?: CreateAppOptions['onEmit'];

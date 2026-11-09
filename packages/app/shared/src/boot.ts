@@ -7,7 +7,7 @@ import { frondAliases, loadNearestConfig, remotesOf, setModuleLoader, configModu
 
 import type { App, AuthRuntime, CreateAppOptions, FougereConfig, Transport } from '@fougere/core';
 import { authOf } from './auth.js';
-import { layerOf, remoteTransport, statementOf, type ResolvedStorage, type Statement } from '@fougere/defaults';
+import { layerOf, statementOf, type ResolvedStorage, type Statement } from '@fougere/defaults';
 
 // ── Public types ─────────────────────────────────
 
@@ -186,13 +186,6 @@ async function boot(): Promise<App> {
   // What the config names by module — imported here, because core resolves no specifier.
   const stated = await configModules(fileConfig.fronds);
   const remotes = remotesOf(fileConfig);
-  // The host's word wins — and where it speaks, the environment is never read for a key.
-  let transport: ((url: string) => Transport) | undefined = _config.remoteTransport;
-  if (!transport && Object.keys(remotes).length > 0) {
-    log.debug(`remotes declared (${Object.keys(remotes).join(', ')}) — wiring HTTP transport`);
-    transport = await remoteTransport();
-  }
-
   // Named nothing, the host boots from the project's statement — written by hand, or by the scan.
   const declared: Partial<Statement> = _config.fronds
     ? { fronds: _config.fronds, vocabulary: _config.vocabulary }
@@ -213,7 +206,7 @@ async function boot(): Promise<App> {
     remotes,
     /** Who inherits code from whom — the tree, whole, so a refusal can name where an entry sits. */
     under: fileConfig.fronds,
-    remoteTransport: transport,
+    remoteTransport: _config.remoteTransport,
     extensions: [
       ...(_config.migrates ? [migrating((app) => storage.migrate?.(app))] : []),
       ...stated.extensions,

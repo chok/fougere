@@ -141,6 +141,7 @@ export type { Source } from './Source.js';
 export type { SourceConfig } from './SourceConfig.js';
 export { sourceViewOf, type SourceView } from './SourceView.js';
 export { Sources, type SourceType } from './Source.js';
+export { Transports, type TransportType } from './Transports.js';
 export type { FougereSources } from './FougereSources.js';
 export { storageOver } from './storage/Store.js';
 export type { Store } from './storage/Store.js';
@@ -172,7 +173,7 @@ export { verify, type Misplaced } from './verify.js';
 // Who is calling, established rather than accepted — the proof beside `state`'s claim.
 // `generateKeyPair` and `issueGrant` are NOT here: they make keys at a deployment and
 // need `node:crypto` for a gesture WebCrypto has no equal of. They sit on `/node`.
-export { signEnvelope, verifyEnvelope, identityFromEnv } from './CallIdentity.js';
+export { signEnvelope, verifyEnvelope, identityFromEnv, type CallIdentity } from './CallIdentity.js';
 export type { FrondIdentity } from './FrondIdentity.js';
 export type { SignedCall } from './wire/SignedCall.js';
 export type { Plugged } from './wire/Plugged.js';

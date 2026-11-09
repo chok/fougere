@@ -3,11 +3,10 @@ import { migrating, type App, type CreateAppOptions } from '@fougere/core';
 import { boot } from './boot.js';
 import { loadConfig, remotesOf } from '@fougere/core/node';
 import { resolveStorage, type ResolvedStorage } from './storage/ResolvedStorage.js';
-import { remoteTransport } from './transport/RemoteTransport.js';
+import '@fougere/transport-http';
 
 export { boot, statementOf } from './boot.js';
 export type { Statement } from '@fougere/core/node';
-export { remoteTransport } from './transport/RemoteTransport.js';
 export { declaresStorage } from './storage/DeclaredStorage.js';
 export { layerOf, resolveStorage, storageFrom } from './storage/ResolvedStorage.js';
 export type { SourceEntities } from './storage/SourceEntities.js';
@@ -43,7 +42,6 @@ export async function bootApp(root: string, opts: BootAppOptions = {}): Promise<
   // `fougere serve blog` refused to start on a config that places `blog` at an address.
   const served = new Set(opts.only ?? opts.fronds ?? []);
   const elsewhere = Object.fromEntries(Object.entries(remotesOf(config)).filter(([frond]) => !served.has(frond)));
-  const useRemotes = Object.keys(elsewhere).length > 0;
   let storage: ResolvedStorage | undefined;
 
   return boot({
@@ -51,8 +49,7 @@ export async function bootApp(root: string, opts: BootAppOptions = {}): Promise<
     built: opts.built,
     only: opts.only ?? opts.fronds,
     // `{}` and never undefined: `boot` reads the config's own `fronds:` when handed nothing.
-    remotes: useRemotes ? elsewhere : {},
-    remoteTransport: useRemotes ? await remoteTransport() : undefined,
+    remotes: elsewhere,
     // One resolver, one place that reads `sources:`.
     storage: (cfg) => (storage = resolveStorage(cfg.sources, root)),
     extensions: [...(opts.migrates ? [migrating((app) => storage?.migrate?.(app))] : []), ...(opts.extensions ?? [])],

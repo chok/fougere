@@ -1,7 +1,7 @@
 import { migrating, type App } from '@fougere/core';
 import { loadConfig, projectRootOf } from '@fougere/core/node';
 import { boot } from '@fougere/defaults';
-import { remoteTransport, resolveStorage } from '@fougere/defaults';
+import { resolveStorage } from '@fougere/defaults';
 import { installStubs, type Stub } from '../stub/Stub.js';
 import type { Port } from '../stub/Port.js';
 import { scopeOfRun } from '../scope.js';
@@ -41,7 +41,7 @@ export async function testApp(options: TestAppOptions = {}): Promise<TestApp> {
     // `boot` merges this over the file: an empty tree states no address, so nothing is
     // placed elsewhere and a test runs what it declares.
     config: options.topology ? undefined : { fronds: {} },
-    ...(options.topology ? { remoteTransport: await remoteTransport() } : { remotes: {} }),
+    ...(options.topology ? {} : { remotes: {} }),
     storage: () => storage,
     extensions: [migrating(storage.migrate)],
   });

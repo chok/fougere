@@ -41,17 +41,20 @@ per request and a fresh connection per call; a socket hands you neither, so `id`
 pairs the answers and a dead connection has to strand the calls in flight itself.
 That is the honest cost of a new transport — not the framing, the failures.
 
-**`main.ts`, last block** — the topology statement:
+**`main.ts`, last block** — the topology statement, and the line that answers it:
 
 ```ts
+// main.ts
 remotes: { sensors: `tcp://127.0.0.1:${port}` },
-remoteTransport: (url) =>
-  url.startsWith('tcp://') ? createSocketTransport(...) : createHttpTransport(url),
+
+// socket-transport.ts
+Transports.register('tcp', { open: (address) => createSocketTransport(Number(address.port)) });
 ```
 
-`remoteTransport` receives the address, so the URL scheme picks the transport —
-the same convention as `postgres://` or `amqp://`. A second frond reachable over
-`http://` needs no extra configuration. **The transport belongs to the link, not
+The scheme of the address names the transport — the same convention as `postgres://`
+or `amqp://` — and the boot opens what is registered under it, or refuses naming the
+schemes it knows. A second frond reachable over `http://` needs no extra
+configuration: `@fougere/transport-http` registered `http`. **The transport belongs to the link, not
 to the frond**: two consumers may reach the same frond differently, and the frond
 does not get a say.
 

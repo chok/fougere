@@ -16,7 +16,7 @@ import { createApp, createLocalRunner, type Storage } from '@fougere/core';
 import { statementOf } from '@fougere/defaults';
 import { frondAliases, setModuleLoader } from '@fougere/core/node';
 import { createContainer } from '@fougere/container';
-import { serve, createHttpTransport } from '@fougere/transport-http';
+import { serve } from '@fougere/transport-http';
 import { createJiti } from 'jiti';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -87,7 +87,6 @@ const shop = await createApp({
     catalog: `http://127.0.0.1:${CATALOG}`,
     shipping: `http://127.0.0.1:${SHIPPING}`,
   },
-  remoteTransport: (url) => createHttpTransport(url),
   extensions: [observed('shop', deepest), log(), calls({ panel: 4401 })],
 });
 const shopReceiver = await serve(createLocalRunner(shop), { port: SHOP });

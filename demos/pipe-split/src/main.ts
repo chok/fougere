@@ -23,7 +23,7 @@ import { createApp, createLocalRunner, Invocation } from '@fougere/core';
 import { statementOf } from '@fougere/defaults';
 import { frondAliases, setModuleLoader } from '@fougere/core/node';
 import { createContainer } from '@fougere/container';
-import { createHttpTransport } from '@fougere/transport-http';
+import '@fougere/transport-http';
 import { createJiti } from 'jiti';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -40,7 +40,7 @@ const remotes = process.env.SPLIT
 const app = await createApp({
   ...(await statementOf(root)),
   createContainer,
-  ...(remotes ? { remotes, remoteTransport: (url: string) => createHttpTransport(url) } : {}),
+  ...(remotes ? { remotes } : {}),
 });
 
 console.log(`\n  the two links are ${remotes ? 'in TWO other processes' : 'here, in this process'}\n`);

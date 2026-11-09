@@ -16,7 +16,7 @@
  * and the failure vocabulary is yours to write.
  */
 import { createServer, connect, type Server, type Socket } from 'node:net';
-import { FougereError, ErrorCode, type Transport } from '@fougere/core';
+import { FougereError, ErrorCode, Transports, type Transport } from '@fougere/core';
 import { frameCall, unframeResponse, handleRpc, type RpcResponse } from '@fougere/transport-http';
 
 /** One JSON value per line — the whole framing a stream protocol needs. */
@@ -112,3 +112,5 @@ export function createSocketTransport(
 
   return transport;
 }
+
+Transports.register('tcp', { open: (address) => createSocketTransport(Number(address.port)) });

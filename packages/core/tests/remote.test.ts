@@ -250,11 +250,6 @@ describe('remote façade (repli)', () => {
       .rejects.toThrow(/Remote 'catalog' \(http:\/\/catalog.test\).*frond 'blog' has no valid facades array/s);
   });
 
-  it('remotes without remoteTransport is a boot-time config error', async () => {
-    await expect(
-      createApp({ fronds: [], createContainer, remotes: { catalog: 'http://x' } }),
-    ).rejects.toThrow(/remoteTransport/);
-  });
 
   it('schemaFor reconstructs a live, validating schema for an entity with no local class', async () => {
     const host = await bootHost();

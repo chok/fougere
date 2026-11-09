@@ -305,7 +305,7 @@ Pinned by `schema/tests/axis-registration.test.ts`.
 
 **A registry is an instance of `Registry<T>`** (`@fougere/registry`, the one package under schema).
 `StringFormats`, `Generators`, `CardForms`, the three of `Boundaries`, `Protocols`, `Verbs` and
-`BindingSources` are bare instances; `Sources` extends it to add `open`, and `Axes` to rebuild the
+`BindingSources` are bare instances; `Sources` and `Transports` extend it to add `open`, and `Axes` to rebuild the
 composed format a registration changes. A name has ONE answer: the same answer registered again is a
 no-op, a different one is refused naming the registry, `replace` says standing in its place is the
 point. It used to be a `Map.set`, so two packages registering `sqlite` lost the first in silence. A
@@ -975,6 +975,17 @@ import alone serves nothing, since a helper imported anywhere would otherwise op
 The host reads the registry (`app/shared/src/graphql.ts`) and never imports a package by name.
 It replaced `adapters: { rest: true }`, whose open index admitted `grapql: true` in silence and
 whose word already meant the storage engines on an entity.
+
+**`remote:` names its transport by its scheme** — `Transports` (`core/src/Transports.ts`), a
+registry answering `http`, `https` and `binding` once `@fougere/transport-http` is imported (`binding://CATALOG`
+is a Cloudflare service binding, read off `cloudflare:workers` at the first call, the way `d1` reads its
+database). The boot opens each address ONCE, before the router (`transportsOf`, `transportAtOf` in
+`boot/bootstrap.ts`), so a scheme nothing registered refuses the boot naming `fronds.<frond>.remote`, and the
+router and the relation readings (`peers`, `rowHostsFor.ts`) read one table — the readings used to build a
+transport per read, and five places built their own from the address. `remoteTransport:` is the host's word
+and wins whole: no scheme and no key is read then. `@fougere/defaults` imports the package for its effect, so
+the conventional boot answers `http` with nothing in the config. Pinned by `core/tests/transports.test.ts`
+and `transport/http/tests/transports.test.ts`.
 
 **`enforces?` is not a gesture but a promise** — the constraints a source refuses AT THE ROWS,
 which the judge at the door cannot: it refuses the duplicate it can SEE, and two writes arriving

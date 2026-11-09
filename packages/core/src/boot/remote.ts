@@ -44,7 +44,7 @@ export interface RemoteRouter {
 
 export function createRemoteRouter(
   remotes: Record<string, string>,
-  makeTransport: (url: string) => Transport,
+  transportAt: (url: string) => Transport,
 ): RemoteRouter {
   const byAddress = new Map<string, Route>();
   const stored = new Map<string, SchemaView>();
@@ -52,7 +52,6 @@ export function createRemoteRouter(
   // The remotes config key is a label for the address — the identity card is
   // what decides which addresses answer behind it.
   const pending = new Map(Object.entries(remotes));
-  const transports = new Map<string, Transport>();
 
   /** Which remote label claimed a facade name — so a second claim can name the first. */
   const remoteOfFacade = new Map<string, string>();
@@ -63,8 +62,7 @@ export function createRemoteRouter(
     // first, so the same two remotes could resolve differently between two runs.
     const cards = await Promise.all(
       [...pending].map(async ([label, url]) => {
-        const transport = transports.get(url) ?? makeTransport(url);
-        transports.set(url, transport);
+        const transport = transportAt(url);
         try {
           const answer = await transport({ address: RPC_ADDRESS, op: 'discover' }, Invocation.empty);
 
