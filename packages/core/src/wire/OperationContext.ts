@@ -1,11 +1,7 @@
-// ── Types ───────────────────────────────────────
 export interface OperationContext {
   /** The address the operation answers at — `checkout` in `checkout.pay`. */
   address: string;
-  /**
-   * Which frond owns this operation — the unit that gets deployed, and therefore the
-   * one a reader groups by first. Absent only where no frond claims the call.
-   */
+  /** The frond that owns this operation, absent only where none claims the call. */
   frond?: string;
   /** The class that answers, as the scan named it — `PostHandler`. */
   handler?: string;

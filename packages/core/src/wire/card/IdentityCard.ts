@@ -9,10 +9,7 @@ export interface IdentityCard {
     name: string;
     /** What the frond STORES — one schema per entity, under the entity's name. */
     entities: { name: string; schema: SchemaDescriptor }[];
-    /**
-     * What the frond ANSWERS — one entry per address, each op carrying its own input and output.
-     * An output that IS an entity is titled with the entity's name.
-     */
+    /** What the frond answers: one entry per address, each op with its own input and output. */
     facades: { name: string; ops: CardOp[] }[];
     /** The facts this frond ANNOUNCES — one entry per `Emit<T>` its handlers inject. */
     facts: { name: string; schema?: SchemaDescriptor }[];

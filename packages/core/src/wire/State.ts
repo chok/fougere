@@ -3,10 +3,8 @@ import { FougereError } from './FougereError.js';
 import type { DoorRequest } from './DoorRequest.js';
 
 /**
- * The caller's state as an op reads and writes it — what arrived with the request, and what goes
- * back with the answer — by the names `state:` declares. Asked for by type, as a fact is:
- * `addToCart(id: Product['id'], state: State)`. A value written here is signed before it leaves, so
- * the caller may read it and never change it.
+ * The caller's state, read and written by the names `state:` declares; signed before it leaves.
+ * Ex: `addToCart(id: Product['id'], state: State)`.
  */
 export class State {
   constructor(private readonly request: DoorRequest | undefined) {}

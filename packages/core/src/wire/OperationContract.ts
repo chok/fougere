@@ -21,14 +21,7 @@ export interface OperationContract {
   cardinality?: Cardinality;
   /** The argument names and TYPES — the one thing `binding` cannot say. */
   signature?: Signature;
-  /**
-   * The refusals a path from this operation can reach, walked from every `throw` upward.
-   *
-   * What the FRAMEWORK refuses is not here: `VALIDATION_FAILED` follows from `input`,
-   * `SERVICE_UNAVAILABLE` from being dispatched at all, the gateway pair from a remote
-   * placement — all already on the card, so listing them per op would write one fact twice.
-   * `refusalsOf` puts the two halves together for whoever reads.
-   */
+  /** The refusals this operation can reach, walked from every `throw` upward; the framework's are not here. */
   errors?: ErrorCode[];
 }
 
@@ -44,7 +37,6 @@ export function cardinalityOf(type: TypeRef | undefined): OperationContract['car
   return inner.nullable || inner.undefined ? 'maybe' : 'one';
 }
 
-/** A return that carries no schema — the card has nothing to project onto it. */
 const PRIMITIVE_RETURNS = new Set(['boolean', 'string', 'number', 'void', 'undefined', 'unknown', 'any']);
 
 const COMPOUND_CONNECTORS = new Set(['and', 'or', 'then']);
@@ -60,9 +52,8 @@ export function wordsOf(name: string): string[] {
 }
 
 /**
- * An operation reads when its name says so: every verb it names — the first word, and each word
- * after `and`, `or` or `then` — is a read verb. Anything else is a command, which promises nothing:
- * a read taken for a command still answers, a command taken for a read would be cached.
+ * An operation reads when every verb its name uses is a read verb; anything else is a command.
+ * Ex: `listAndCount` reads, `listAndPurge` is a command.
  *
  * Documented: [business logic](https://fougere.dev/tutorial/3-a-rule).
  */

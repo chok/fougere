@@ -4,12 +4,7 @@ import { computeBindingPlan } from '../bindingPlan.js';
 import type { OperationContract } from './OperationContract.js';
 import type { OperationsMap } from './OperationsMap.js';
 
-/**
- * What an emitter injects. PARTIAL, because announcing is what REALIZES the fact's
- * `lifecycle.create` — an `at: created()` is stamped by `Emissions`, so requiring it from
- * the announcer made every emitter cast its way past its own type. A missing field is
- * still refused, by the judge that reads the fact at announce time.
- */
+/** What an emitter injects; partial, because announcing fills the fact's `created()` fields. */
 export type Emit<T, A = never> = (fact: Partial<T>) => Promise<A[]>;
 
 /** The container key of an emission — `Emit<PostPublished>`, spelled as the type is written. */
@@ -18,9 +13,8 @@ export function emitKeyOf(fact: string): string {
 }
 
 /**
- * The key of an emission that WAITS — `Emit<CanBook, Verdict>`, where the second type is
- * the whole difference. A separate key because they are two functions: one hands the fact
- * over and returns, the other waits for every subscriber and gives back what they said.
+ * The key of an emission that waits for its answers.
+ * Ex: `Emit<CanBook, Verdict>`.
  */
 export function awaitKeyOf(fact: string, answer: string): string {
   return subjectKeyOf('Emit', upperFirst(fact), upperFirst(answer));
@@ -55,11 +49,7 @@ export function factsAwaitedBy(handlers: readonly { deps: readonly string[] }[])
   return factsIn(handlers, factOfAwaitKey);
 }
 
-/**
- * What a set of handlers LISTENS to — the dual of what it announces, and the half no
- * dependency spells: accepting a `Fact<T>` IS the subscription, so it is read from the
- * binding plan, where `Emissions` reads it too.
- */
+/** What a set of handlers listens to, read off their binding plans. */
 export function factsListenedTo(handlers: readonly { operations: OperationsMap }[]): string[] {
   const taken = (contract: OperationContract): string[] => {
     const plan = contract.binding
@@ -72,15 +62,11 @@ export function factsListenedTo(handlers: readonly { operations: OperationsMap }
   return [...new Set(handlers.flatMap((handler) => [...handler.operations.values()].flatMap(taken)))];
 }
 
-/**
- * An op an announcement calls — it takes a `Fact<T>` or a `Pipe<T>` — and so one no caller names: a
- * door open to callers serves no route to it. What enters from outside is a command, which announces.
- */
+/** Whether an op is called by an announcement, through a `Fact<T>` or a `Pipe<T>`. */
 export function listens(op: { binding?: readonly { source: { kind: string } }[] }): boolean {
   return (op.binding ?? []).some(({ source }) => source.kind === 'fact' || source.kind === 'pipe');
 }
 
-/** `Fact` and `Pipe` name themselves, and the plan reads them before it reads a collector. */
 const NO_COLLECTOR = new Set<string>();
 
 function factsIn(

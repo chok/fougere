@@ -2,10 +2,7 @@ import type { SchemaDescriptor } from '@fougere/schema';
 import type { OperationContract } from '../OperationContract.js';
 import type { OperationKind } from '../OperationKind.js';
 
-/**
- * One operation, as a stranger meets it — its name, what it is for, what it takes and whether it
- * reads or writes.
- */
+/** One operation, as a caller from another process meets it. */
 export interface CardOp extends Pick<OperationContract, 'description' | 'cardinality' | 'errors'> {
   name: string;
   /** JSON Schema of what it accepts, when the contract names a view. */

@@ -1,13 +1,11 @@
 import type { RouteAddressInput } from './RouteAddressInput.js';
 
-/** Refuses an empty segment, so no address can be built that nothing can serve. */
 function required(value: string, name: string): string {
   if (value.trim().length === 0) throw new TypeError(`Route ${name} cannot be empty`);
 
   return value;
 }
 
-/** Applies the same refusal to a segment that may be absent, but not blank. */
 function optional(value: string | undefined, name: string): string | undefined {
   return value === undefined ? undefined : required(value, name);
 }

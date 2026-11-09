@@ -1,21 +1,17 @@
 /** Semantic error codes — transport-agnostic. Each bridge maps them to its own format. */
 export enum ErrorCode {
-  // Input
   VALIDATION_FAILED = 'VALIDATION_FAILED',
   BAD_REQUEST = 'BAD_REQUEST',
 
-  // Auth
   UNAUTHORIZED = 'UNAUTHORIZED',
   FORBIDDEN = 'FORBIDDEN',
 
-  // Resources
   NOT_FOUND = 'NOT_FOUND',
   GONE = 'GONE',
   CONFLICT = 'CONFLICT',
   LOCKED = 'LOCKED',
   METHOD_NOT_ALLOWED = 'METHOD_NOT_ALLOWED',
 
-  // Limits
   PRECONDITION_FAILED = 'PRECONDITION_FAILED',
   PAYLOAD_TOO_LARGE = 'PAYLOAD_TOO_LARGE',
   UNSUPPORTED_MEDIA_TYPE = 'UNSUPPORTED_MEDIA_TYPE',
@@ -23,7 +19,6 @@ export enum ErrorCode {
   TOO_MANY_REQUESTS = 'TOO_MANY_REQUESTS',
   REQUEST_TIMEOUT = 'REQUEST_TIMEOUT',
 
-  // Server
   INTERNAL_ERROR = 'INTERNAL_ERROR',
   NOT_IMPLEMENTED = 'NOT_IMPLEMENTED',
   BAD_GATEWAY = 'BAD_GATEWAY',
@@ -31,4 +26,3 @@ export enum ErrorCode {
   GATEWAY_TIMEOUT = 'GATEWAY_TIMEOUT',
 }
 
-// ── FougereError ────────────────────────────────

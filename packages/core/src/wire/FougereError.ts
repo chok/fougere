@@ -3,12 +3,7 @@ import { ErrorCode } from './ErrorCode.js';
 import type { FougereErrorOptions } from './FougereErrorOptions.js';
 
 /**
- * A refusal, and which one — narrowed by the operation that answered it where the caller knows.
- *
- * `Code` defaults to every code there is, so a thrower writes what it always wrote. What it buys
- * is on the READING side: a client generated from a card gets `FougereError<'NOT_FOUND' |
- * 'CONFLICT'>`, and a `switch` over `code` with a `never` in its default stops compiling the day
- * the op learns to refuse something else.
+ * A refusal, and which one; `Code` narrows to what an operation can refuse.
  *
  * Documented: [observability](https://fougere.dev/docs/run/observe).
  */
@@ -27,10 +22,7 @@ export class FougereError<Code extends ErrorCode = ErrorCode> extends Error {
     this.details = options.details;
   }
 
-  /**
-   * Where the call was refused. The facade a refusal crosses first is where it happened, so a
-   * facade further out leaves what a deeper one wrote.
-   */
+  /** Where the call was refused; the innermost facade wins. */
   at(address: string, operation: string): this {
     this.address ??= address;
     this.operation ??= operation;
@@ -63,10 +55,7 @@ export class FougereError<Code extends ErrorCode = ErrorCode> extends Error {
   }
 }
 
-/**
- * The refusals behind a VALIDATION_FAILED, or nothing — the ONE place that reads `details` under
- * that code.
- */
+/** The refusals behind a `VALIDATION_FAILED`, or nothing. */
 export function validationErrorsOf(error: unknown): ValidationError[] | undefined {
   if (!(error instanceof FougereError) || error.code !== ErrorCode.VALIDATION_FAILED) return undefined;
   const { details } = error;

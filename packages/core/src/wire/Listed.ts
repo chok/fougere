@@ -1,5 +1,2 @@
-/**
- * What a type says of a list a storage answered, and a plain array never says — it exists in no value.
- * It is how an answer is read as the page it crosses as (`Answer`), so it sits with what travels.
- */
+/** The mark a storage's list carries in its type, which a plain array lacks. */
 export declare const listed: unique symbol;

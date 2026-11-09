@@ -4,9 +4,6 @@ import type { Placement } from '../Placement.js';
 export interface DeclaredFrond {
   frond: string;
   placement: Placement;
-  /**
-   * Host and port of the address `remotes:` names, absent when the frond runs here. Never the
-   * whole address: a declared one may carry credentials, and this answer leaves the process.
-   */
+  /** The host and port `remotes:` names, absent when the frond runs here. */
   at?: string;
 }

@@ -1,7 +1,6 @@
 import { ErrorCode } from './ErrorCode.js';
 import { FougereError } from './FougereError.js';
 
-/** How much a caller may send — held ONCE for the process and CONSULTED at every door, like the log level. */
 let limit = 2 * 1024 * 1024;
 
 /** The room a hop keeps for what it adds around a call — trace, identity, state — which never counts against the caller. */
@@ -20,9 +19,7 @@ export function setMaxBodyBytes(bytes: number): void {
 }
 
 /**
- * What a process forwarding a call may frame and a receiver may read: the caller's limit, and the
- * envelope's room. Measured against the caller's limit alone, a body just under it passed in
- * process and was refused a hop away.
+ * What a forwarding process may frame: the caller's limit, plus the envelope's room.
  *
  * Documented: [gradient](https://fougere.dev/docs/concepts/configuration).
  */
@@ -30,10 +27,7 @@ export function maxFrameBytes(): number {
   return limit + ENVELOPE_BYTES;
 }
 
-/**
- * A body as text, refused past `max` — on the length it declares, before a byte is read, then while
- * counting, since a declared length can lie or be absent. A Web stream and a Node request both read.
- */
+/** A body as text, refused past `max`: on its declared length first, then while counting. */
 export async function readWithin(
   body: ReadableStream<Uint8Array> | AsyncIterable<Uint8Array> | null | undefined,
   max: number,

@@ -15,18 +15,11 @@ export interface BindingCall {
   input?: SchemaView;
 }
 
-/**
- * One way a parameter gets its value, beyond the request itself: it BINDS a parameter from its
- * signature, RESOLVES it from a call, and judges a value code wrote in its place (`given`).
- */
+/** One way a parameter gets its value besides the request: it binds, resolves, and judges a value code wrote. */
 export interface BindingSourceType<K extends BindingSource['kind'] = BindingSource['kind']> {
   bind(param: Param, collectorTypeNames: ReadonlySet<string>): BindingSourceOf<K> | undefined;
   resolve(source: BindingSourceOf<K>, call: BindingCall): unknown;
-  /**
-   * A parameter with no `?` it resolved nothing for — refused here, in this source's own words
-   * (`UNAUTHORIZED` for a user nobody signed in). Returning means it has none: core refuses with
-   * `Required`. Never asked of an optional parameter, whose absence is a value.
-   */
+  /** Refuses a required parameter this source resolved nothing for; returning lets core refuse with `Required`. */
   missing?(source: BindingSourceOf<K>, call: BindingCall): void;
   given(source: BindingSourceOf<K>, value: unknown, call: BindingCall): unknown;
 }

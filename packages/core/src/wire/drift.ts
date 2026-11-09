@@ -14,7 +14,6 @@ export interface CardDrift {
   facts: { fact: string; changes: Change[] | 'gone' }[];
 }
 
-/** Every facade of a card, by name, and what each of its operations answers. */
 function facadesOf(card: IdentityCard, frond: string): Map<string, Map<string, SchemaDescriptor | undefined>> {
   const found = new Map<string, Map<string, SchemaDescriptor | undefined>>();
   for (const one of card.fronds) {
@@ -45,7 +44,6 @@ export function driftOf(mine: IdentityCard, theirs: IdentityCard, frond: string)
   return drift;
 }
 
-/** A door that is gone, an operation it no longer answers, or an answer that changed shape. */
 function driftInDoors(
   mine: Map<string, Map<string, SchemaDescriptor | undefined>>,
   theirs: Map<string, Map<string, SchemaDescriptor | undefined>>,
@@ -65,16 +63,12 @@ function driftInDoors(
       const theirs = there.get(op);
       if (!output || !theirs) continue;
 
-      // `Card.diff` never guesses a rename — a field gone plus a field appeared lands in
-      // `ambiguous`, and only a declaration settles it. Here nobody can declare one, so the
-      // pair is reported as it is and a human reads it.
       const moved = Card.fromDescriptor(output).diff(Card.fromDescriptor(theirs));
       if (moved.changes.length > 0) drift.shapes.push({ facade: name, op, changes: moved.changes });
     }
   }
 }
 
-/** A fact nobody announces any more, or one whose payload moved under its readers. */
 function driftInFacts(
   mine: Map<string, SchemaDescriptor | undefined>,
   theirs: Map<string, SchemaDescriptor | undefined>,

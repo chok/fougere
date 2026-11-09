@@ -1,7 +1,6 @@
 /**
- * The container key of a port with a subject, spelled as the type is written — `Repository<Post>`,
- * `Emit<CanBook, Verdict>`, `Together<[Account, Ledger]>`. A class name cannot hold a `<`, so no class
- * of a frond can take one, and the scan reads the same key wherever the type is written.
+ * The container key of a port with a subject, spelled as the type is written.
+ * Ex: `subjectKeyOf('Repository', 'Post')` → `Repository<Post>`.
  *
  * Documented: [ports](https://fougere.dev/docs/concepts/port).
  */
@@ -16,7 +15,6 @@ export function subjectsOf(key: string, port: string): string[] | undefined {
   return topLevel(key.slice(port.length + 1, -1));
 }
 
-/** Splits on the commas no bracket encloses: `[Account, Ledger], [RateMirror]` is two subjects. */
 function topLevel(inside: string): string[] {
   const parts: string[] = [];
   let depth = 0;

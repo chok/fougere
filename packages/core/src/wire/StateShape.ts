@@ -9,9 +9,7 @@ export interface StateDeclaration {
 }
 
 /**
- * What a call's `state` may hold in this process: the members its extensions declare, each one
- * absent until a host fills it. Judged at the facade, so a member arriving over the wire is
- * rebuilt by its field exactly as it would have been handed over in-process.
+ * What a call's `state` may hold in this process: the members its extensions declare.
  *
  * Documented: [collectors](https://fougere.dev/docs/access/authentication#know-who-calls).
  */
@@ -42,10 +40,7 @@ export class StateShape {
     return new StateShape(schema);
   }
 
-  /**
-   * The members written since `entered` rebuilt by their fields, or a refusal naming the member
-   * and what this process declares. What `entered` already held was judged where it entered.
-   */
+  /** The members written since `entered`, rebuilt by their fields, or a refusal naming the member. */
   judge(
     state: Record<string, unknown>,
     address: string,

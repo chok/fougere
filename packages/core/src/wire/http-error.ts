@@ -2,10 +2,6 @@
 import { ErrorCode } from './ErrorCode.js';
 import { FougereError } from './FougereError.js';
 import { Logger } from '../builtin/Logger.js';
-/**
- * An INTERNAL_ERROR is the one class of error whose message never leaves: it was not written for a
- * caller and may quote a path, a query or a row.
- */
 const log = new Logger('error');
 
 const HTTP_STATUS: Record<ErrorCode, number> = {
@@ -31,7 +27,6 @@ const HTTP_STATUS: Record<ErrorCode, number> = {
   [ErrorCode.GATEWAY_TIMEOUT]: 504,
 };
 
-/** Map a FougereError code to its HTTP status. */
 function httpStatusFor(code: ErrorCode): number {
   return HTTP_STATUS[code] ?? 500;
 }
@@ -55,8 +50,6 @@ export function toHttpError(err: unknown): { status: number; body: ReturnType<Fo
   if (err instanceof FougereError) {
     return { status: httpStatusFor(err.code), body: toPublicError(err) };
   }
-  // A throw that never became a FougereError is masked by the same rule, so it goes
-  // through the same facade rather than growing a second, quieter one here.
   const framed = new FougereError({
     code: ErrorCode.INTERNAL_ERROR,
     message: (err as { message?: string })?.message ?? 'Internal error',

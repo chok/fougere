@@ -1,8 +1,4 @@
-/**
- * What answers one extension point in this app — a registry's names, a port's chain, the order a
- * frond's middlewares stand in, the extensions that step over a facade's answers. A report: it
- * describes what booted and drives nothing.
- */
+/** What answers one extension point in this app, as a report. */
 export interface Plugged {
   /** The question — `source type`, `Payment`, `middleware`, `answer step`. */
   point: string;

@@ -1,18 +1,7 @@
 import { lowerFirst, upperFirst } from '@fougere/schema';
 import { subjectKeyOf, subjectsOf } from './SubjectKey.js';
 
-/**
- * The facade built in front of a handler — the framework's second port, after `Storage`.
- *
- * It takes what the handler takes: code calling it already holds the values, so nothing is
- * collected for it and nothing is presented — that is a door's work, done on what a door
- * received. A promise comes back where the handler may answer a bare value, because a facade
- * is a crossing and a crossing is awaited, whether or not a transport carries it.
- *
- * `Awaited` because a promise does not stack: `Promise.resolve(p)` IS `p`, so writing
- * `Promise<R>` over an async handler would describe a `Promise<Promise<Post>>` that no value can
- * have — `.then` would hand its callback a promise the runtime never delivers.
- */
+/** The facade in front of a handler: it takes what the handler takes, and always answers a promise. */
 export type Facade<T> = {
   [K in keyof T]: T[K] extends (...args: infer A) => infer R
     ? (...args: A) => Promise<Awaited<R>>
@@ -27,8 +16,8 @@ export function facadeKeyOf(entityName: string, surface?: string): string {
 }
 
 /**
- * The address a handler answers at, read off its class name or its facade key — the dual of
- * `facadeKeyOf`. `PostHandler` → `post`, `Facade<PostHandler>` → `post`.
+ * The address a handler answers at, read off its class name or its facade key.
+ * Ex: `PostHandler` → `post`.
  */
 export function addressOf(name: string): string {
   const handler = subjectsOf(name, 'Facade')?.[0] ?? name;

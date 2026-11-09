@@ -1,12 +1,10 @@
 import type { InvocationContext } from './InvocationContext.js';
 import type { PartialInvocation } from './PartialInvocation.js';
 
-/** What this module already made canonical: `withInput` hands the other members back as they are. */
 const canonical = new WeakSet<object>();
 const EMPTY: Record<string, unknown> = Object.freeze({});
 canonical.add(EMPTY);
 
-/** Freezes plain data deeply, and leaves a class instance alone — a `Date` is not a record. */
 function canonicalValue(value: unknown): unknown {
   if (value === null || value === undefined || typeof value !== 'object') return value;
   if (canonical.has(value)) return value;
@@ -23,7 +21,6 @@ function canonicalValue(value: unknown): unknown {
   return canonicalRecord(value);
 }
 
-/** Drops the keys set to `undefined`, so an input and its JSON round-trip agree. */
 function canonicalRecord(value: unknown): Record<string, unknown> {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return EMPTY;
   if (canonical.has(value)) return value as Record<string, unknown>;
@@ -55,14 +52,11 @@ export class Invocation implements InvocationContext {
   readonly runAt?: number;
   readonly fromAnotherProcess?: true;
 
-  /** Gives every entry and every transport the same ten-member value, frozen. */
   private constructor(context: PartialInvocation) {
     this.params = canonicalRecord(context.params);
     this.query = canonicalRecord(context.query);
     this.input = canonicalValue(context.input);
     if (context.args !== undefined) this.args = canonicalValue(context.args) as readonly unknown[];
-    // State is host-owned and may still be enriched by existing middlewares. Moving it
-    // to immutable lifecycle context is a separate migration.
     this.state = context.state ?? {};
     if (context.trace !== undefined) this.trace = context.trace;
     if (context.identity !== undefined) this.identity = context.identity;
