@@ -3,7 +3,6 @@ import { NodeRequest, sendNodeResponse } from 'srvx/node';
 import { answer } from './answer.js';
 import { useFougereApp } from './boot.js';
 
-/** What the middleware reads off an Express request. Structural, not imported. */
 interface ExpressRequest {
   method: string;
   originalUrl?: string;
@@ -19,10 +18,7 @@ interface ExpressRequest {
 type Next = (err?: unknown) => void;
 export type ExpressMiddleware = (req: any, res: any, next: Next) => void;
 
-/**
- * Every door of the app. What each one SERVES is still the app's declaration — mounting is not
- * publishing — and a request none of them answers goes on to the app's own routes.
- */
+/** Every door of the app; a request none answers goes on to the app's own routes. */
 export function fougere(): ExpressMiddleware {
   return (req, res, next) => {
     const request = requestOf(req, res);
@@ -39,14 +35,12 @@ export function fougere(): ExpressMiddleware {
   };
 }
 
-/** Who the caller is, from what ran before. */
 function stateOf(req: ExpressRequest): Record<string, unknown> {
   if (req.fougereState) return req.fougereState;
 
   return req.user ? { user: req.user } : {};
 }
 
-/** A body a parser already read is gone from the stream, so it is handed over as what it parsed. */
 function requestOf(req: ExpressRequest, res: unknown): Request {
   const method = req.method.toUpperCase();
   if (req.body === undefined || method === 'GET' || method === 'HEAD') return new NodeRequest({ req: req as never, res: res as never });

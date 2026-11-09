@@ -31,5 +31,4 @@ export { jsonBodyOf } from './jsonBody.js';
 
 export { graphqlSurfaceOf, type GraphQLDocument } from './graphql.js';
 
-// Re-exported where every host already looks for it; it lives in its own adapter now.
 export { createMemoryStorage } from '@fougere/adapter-memory';

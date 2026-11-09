@@ -1,7 +1,6 @@
 import { Transports, type CallIdentity, type TransportType } from '@fougere/core';
 import { createHttpTransport } from './client.js';
 
-/** What a Worker binds, read off `env` at the first call, since nothing hands it over sooner. */
 type Bindings = Record<string, { fetch?: (request: Request) => Promise<Response> } | undefined>;
 
 const http: TransportType = {
@@ -9,8 +8,8 @@ const http: TransportType = {
 };
 
 /**
- * `binding://CATALOG` — the same envelope, carried by the Worker's service binding named `CATALOG`,
- * which is the only way two Workers of one account reach each other.
+ * The same envelope, carried by a Worker's service binding.
+ * Ex: `binding://CATALOG`.
  */
 export function bindingOver(env: () => Promise<Bindings>): TransportType {
   return {

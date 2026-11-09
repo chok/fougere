@@ -6,10 +6,7 @@ import { answer, CALL_PATH, type AnswerOptions } from './answer.js';
 import { GRAPHQL_PATH, graphqlSurfaceOf } from './graphql.js';
 import { useFougereApp, useFougereConfig } from './boot.js';
 
-/**
- * The app's answer, for a host that routes by FILE and hands every request of a route here: the app
- * boots at the first one, and a request no door answers is a 404 that says why.
- */
+/** The app's answer for a host that routes by file: boots at the first request, and a request no door answers is a 404. */
 export async function fougere(request: Request, options: AnswerOptions = {}): Promise<Response> {
   const app = await useFougereApp().catch((failure: unknown) => {
     if (failure instanceof BootRefusal) return failure;
@@ -20,10 +17,6 @@ export async function fougere(request: Request, options: AnswerOptions = {}): Pr
   return (await answer(app, request, options)) ?? notFound(request);
 }
 
-/**
- * Every call while the boot is refused, framed like any refused op so a page shows it where it
- * shows one. Its words name tables and columns, so they leave the process only outside production.
- */
 async function refused(refusal: BootRefusal, request: Request): Promise<Response> {
   console.error(refusal.message);
   const message = process.env.NODE_ENV === 'production' ? 'The app refused to start.' : refusal.message;
@@ -34,10 +27,6 @@ async function refused(refusal: BootRefusal, request: Request): Promise<Response
   return Response.json(await answerAt(unavailable, await request.json().catch(() => ({}))));
 }
 
-/**
- * A host that routes by FILE mounts a door where the file sits, and a config cannot move a file.
- * Saying so is what keeps a stale route file from reading as an app with no routes.
- */
 async function notFound(request: Request): Promise<Response> {
   const { pathname } = new URL(request.url);
   if (pathname === GRAPHQL_PATH || graphqlSurfaceOf(pathname)) {

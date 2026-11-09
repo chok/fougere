@@ -22,11 +22,6 @@ export function serve(runner: Transport, options: ServeOptions = {}): Promise<Ru
   return listening(createServer(answering(runner, options)), host!, options);
 }
 
-/**
- * Where a receiver binds and what it admits are two questions. `verify` answers the second —
- * without it this receiver takes the `state` it is handed, and `hosts` is all that stands.
- * Loopback or signed: there is no third way to serve.
- */
 function whyNotHere(host: string | undefined, options: ServeOptions): Error | undefined {
   const allowed = options.hosts ?? LOOPBACK_HOSTS;
   if (allowed.length === 0) {
@@ -49,7 +44,6 @@ function whyNotHere(host: string | undefined, options: ServeOptions): Error | un
   );
 }
 
-/** What answers a request that is not a call — `beside` inside the middlewares, a 404 when nothing does. */
 function besides(options: ServeOptions): (request: Request) => Promise<Response> {
   const inner = async (request: Request) => (await options.beside?.(request)) ?? new Response(null, { status: 404 });
 
@@ -59,11 +53,6 @@ function besides(options: ServeOptions): (request: Request) => Promise<Response>
   );
 }
 
-/**
- * One path, one method, and a body that is refused before it is read whole. The envelope is read
- * off the Node stream itself: through a Web `Request` the same call answered 29 % less (85 227 →
- * 60 378 req/s, measured 2026-10-27), and this is the wire between two processes, not a host's door.
- */
 function answering(runner: Transport, options: ServeOptions) {
   const besideOf = besides(options);
 
@@ -95,7 +84,6 @@ function answering(runner: Transport, options: ServeOptions) {
   };
 }
 
-/** The port a receiver ended up on — asked of the server, since 0 means "whatever is free". */
 function listening(server: Server, host: string, options: ServeOptions): Promise<RunningReceiver> {
   return new Promise((resolve, reject) => {
     server.once('error', reject);

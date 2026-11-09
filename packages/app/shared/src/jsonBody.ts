@@ -1,14 +1,10 @@
 import { ErrorCode, FougereError, maxBodyBytes, readWithin } from '@fougere/core';
 
-/**
- * The JSON body of a request, read within `maxBodyBytes`. No body reads as `undefined`; a body of
- * another type is refused rather than read as `{}`, which left the op to refuse a missing field.
- */
+/** The JSON body of a request, within `maxBodyBytes`; no body reads as `undefined`, another type is refused. */
 export async function jsonBodyOf(request: Request): Promise<unknown> {
   const declared = request.headers.get('content-length');
   if (!request.body || declared === '0') return undefined;
 
-  // A POST with neither a length nor chunks — what `curl -X POST` writes — still hands over a stream.
   const raw = await readWithin(request.body, maxBodyBytes(), declared);
   if (!raw) return undefined;
 

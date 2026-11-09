@@ -11,8 +11,8 @@ export interface GraphQLDocument {
 export const GRAPHQL_PATH = '/graphql';
 
 /**
- * The audience a GraphQL path selects — the one segment after where it is mounted: `/graphql/public`
- * serves the surface `public`, the way `/_fougere/call/public` does for the envelope.
+ * The surface a GraphQL path selects.
+ * Ex: `/graphql/public` → `public`.
  */
 export function graphqlSurfaceOf(path: string, mountPath = GRAPHQL_PATH): string | undefined {
   const bare = path.replace(/\?.*$/, '');

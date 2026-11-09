@@ -1,10 +1,3 @@
-/**
- * The envelope facade for a host that speaks `Request`/`Response` — hono, a Worker, Next, SvelteKit.
- *
- * It reads a `Request` body and `serve` reads a `node:http` stream; the two stay separate
- * because putting Node through this reader HALVED the Node facade — 0.677 to 0.341 of its
- * baseline, measured 2026-08-22.
- */
 import { handleRpc, type ReceiveOptions } from './server.js';
 import { maxFrameBytes, CALL_PATH, parseError, tooLarge } from './policy.js';
 import { ErrorCode, FougereError, readWithin, type Transport } from '@fougere/core/contract';
@@ -23,8 +16,6 @@ export function receive(
   runner: Transport,
   options: ReceiveHttpOptions = {},
 ): (request: Request) => Promise<Response> {
-  // At CONSTRUCTION and not per call, for the reason `serve` refuses at bind: a receiver
-  // that starts and then rejects everything is found in production.
   if (!options.verify && !options.allowUnsigned) {
     throw new Error(
       'This receiver would trust any caller. Pass `verify` (see `verifyEnvelope`, `fougere keys`, `fougere grant`),\n'

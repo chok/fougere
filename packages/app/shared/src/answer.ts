@@ -24,10 +24,7 @@ export interface AnswerOptions {
   state?: Record<string, unknown>;
 }
 
-/**
- * What the app answers to this request — `undefined` when no door of it is the request's, so a host
- * serving other things beside it answers the rest.
- */
+/** What the app answers to this request, or `undefined` when no door of it is the request's. */
 export async function answer(app: App, request: Request, options: AnswerOptions = {}): Promise<Response | undefined> {
   const url = new URL(request.url);
   const { pathname } = url;
@@ -47,7 +44,6 @@ export function surfaceOf(path: string): string | undefined {
   return named?.[1];
 }
 
-/** The page's door, with the state the host resolved server-side. */
 async function call(app: App, request: Request, state: Record<string, unknown>): Promise<Response> {
   let body: unknown;
   try {
@@ -68,15 +64,12 @@ async function call(app: App, request: Request, state: Record<string, unknown>):
   return Response.json(await app.answer(door, body), { headers: response });
 }
 
-/** The URL matched against the canonical table, the call it names invoked, the result shaped for HTTP. */
 async function rest(
   app: App,
   request: Request,
   state: () => Promise<Record<string, unknown>> | Record<string, unknown>,
   url: URL,
 ): Promise<Response | undefined> {
-  // The app decides, not the host: a route file may exist, and if `fougere.config.ts` does not name
-  // `protocols: { rest: {} }` this serves nothing and the request carries on to what the app routes.
   if (!serves(app.protocols, 'rest')) return undefined;
 
   const method = request.method.toUpperCase();
@@ -108,7 +101,6 @@ async function rest(
     body: () => jsonBodyOf(request),
     state: await state(),
   });
-  // A 204 carries no body, and a Response refuses one it was handed.
   if (status === 204) return new Response(null, { status, headers: headersOf(headers) });
 
   return Response.json(data, { status, headers: headersOf(headers) });
@@ -120,7 +112,6 @@ type GraphQLDoor = Door<
   { status: number; data: unknown; headers?: Record<string, string | string[]> }
 >;
 
-/** The app's own operations, executed through the door the imported adapter registered. */
 async function graphql(app: App, request: Request, state: Record<string, unknown>): Promise<Response | undefined> {
   if (!serves(app.protocols, 'graphql')) return undefined;
 
@@ -134,13 +125,11 @@ async function graphql(app: App, request: Request, state: Record<string, unknown
   });
   if (status === 200) return Response.json(data, { status, headers: headersOf(headers) });
 
-  // A request the engine never ran — no query, a body refused — has no result, only its errors.
   const [first] = (data as { errors: { message: string }[] }).errors;
 
   return Response.json({ message: first!.message, ...(data as Record<string, unknown>) }, { status });
 }
 
-/** A document sent over GET, in the query string — a read, so the door refuses a mutation there. */
 function documentOf(search: URLSearchParams): GraphQLDocument {
   const variables = search.get('variables');
   let parsed: Record<string, unknown> | undefined;
@@ -153,7 +142,6 @@ function documentOf(search: URLSearchParams): GraphQLDocument {
   return { query: search.get('query') ?? undefined, variables: parsed, operationName: search.get('operationName') ?? undefined };
 }
 
-/** A header named twice — `set-cookie` — is appended, never joined. */
 function headersOf(written: Record<string, string | string[]> = {}): Headers {
   const headers = new Headers();
   for (const [name, value] of Object.entries(written)) {

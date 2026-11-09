@@ -12,10 +12,7 @@ export interface ServeOptions extends ReceiveOptions {
   allowUnsigned?: boolean;
   /** Time allowed to receive a request. Default: 15 seconds. */
   requestTimeoutMs?: number;
-  /**
-   * What answers a request that is not a call — the REST door of the fronds this process hosts.
-   * `undefined` from it, or no `beside` at all, is a 404.
-   */
+  /** What answers a request that is not a call; `undefined` is a 404. */
   beside?: (request: Request) => Promise<Response | undefined>;
   /** What stands around `beside`, outside in — the envelope stays outside every one of them. */
   use?: ServerMiddleware[];

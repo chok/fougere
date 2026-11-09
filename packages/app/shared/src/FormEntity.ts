@@ -6,19 +6,16 @@ import type { FormErrors, FormFieldName } from './FormRow.js';
 import { rowNameOf } from './RowName.js';
 import type { TableColumn } from './TableColumn.js';
 
-/** The literal a field is born with, when it declares one. */
 function defaultOf(field: Field): unknown {
   return Lifecycle.of(field).literal?.value;
 }
 
-/** The formats a browser has an input type for — the rest stay `text`, validated later. */
 const CONTROL_BY_FORMAT: Record<string, FormField['control']> = {
   'date-time': 'date',
   email: 'email',
   uri: 'url',
 };
 
-/** What the type alone decides. A `text` still asks its format — that list is open. */
 const CONTROL_BY_TYPE: Record<Exclude<ShapeType, 'text'>, FormField['control']> = {
   choice: 'select',
   number: 'number',
@@ -42,11 +39,6 @@ function controlOf(field: Field): FormField['control'] {
   return (format && CONTROL_BY_FORMAT[format]) ?? 'text';
 }
 
-/**
- * What a reference field chooses among. The label is the first text the target shows — never a
- * `writeOnly` one, since a choice is read by whoever fills the form — and its key when it shows none,
- * or when the target is known only by name.
- */
 function referenceOf(field: Field): FormReference | undefined {
   const target = Role.of(field).target;
   if (!target) return undefined;
@@ -56,17 +48,14 @@ function referenceOf(field: Field): FormReference | undefined {
   return { to: lowerFirst(target.name), key, label: rowNameOf(fields) ?? key };
 }
 
-/** A closed set's members, when the shape declares one — `oneOf('draft','live')`. */
 function enumOf(field: Field): readonly (string | number | null)[] | undefined {
   const base = Shapes.of(field.shape).base;
 
   return base && 'enum' in base ? base.enum : undefined;
 }
 
-/** The `<input type>`s a browser checks — `text` is an input's default, and the only one a `<textarea>` may stand for. */
 const INPUT_TYPES = new Set(['email', 'url', 'number']);
 
-/** The shape's bounds, under the names a browser already enforces. */
 function attrsOf(field: Field, control: FormField['control'], required: boolean): NonNullable<FormField['attrs']> {
   const base = Shapes.of(field.shape).base;
   const text = base?.type === 'string' ? base : undefined;
@@ -84,10 +73,6 @@ function attrsOf(field: Field, control: FormField['control'], required: boolean)
   return Object.fromEntries(Object.entries(attrs).filter(([, v]) => v !== undefined));
 }
 
-/**
- * The label convention, spelled once for both projections: an i18n key by convention and
- * the field's own name as the fallback. The schema never carries display text.
- */
 function labelOf(name: string, entityKey: string): Pick<FormField, 'labelKey' | 'label'> {
   return { labelKey: `${entityKey}.${name}`, label: name.charAt(0).toUpperCase() + name.slice(1) };
 }
@@ -117,17 +102,11 @@ export function formFieldsOf<E extends SchemaView>(entity: E, entityKey: string)
   return fields as FormField<FormFieldName<E>>[];
 }
 
-/**
- * What a form opens on. `initial` wins over the declared default: editing a row shows the row,
- * including a value the author deliberately changed away from that default. With no `initial` the
- * form creates, so it opens on what is about to be written — and opens on it again once a row is
- * answered, since the next submission is another row.
- */
+/** What a form opens on: `initial`, else the declared defaults. */
 export function openingOf(fields: FormField[], initial?: Record<string, unknown>): Record<string, unknown> {
   return Object.fromEntries(fields.map((field) => [field.name, initial?.[field.name] ?? field.default]));
 }
 
-/** Asked of the relation before the shape: a reference's own shape is a bare string. */
 const RENDER_BY_TYPE: Record<ShapeType, TableColumn['render']> = {
   number: 'number',
   integer: 'number',
@@ -162,11 +141,7 @@ export function tableColumnsOf(entity: SchemaView, entityKey: string): TableColu
     });
 }
 
-/**
- * The wire body of the form's values. A control left empty or never touched is `null` for a field
- * that admits it — no choice is the answer there — and absent for any other, where the lifecycle axis judges the absence
- * and an empty string would be judged as a present bad value.
- */
+/** The body of the form's values: an empty control is `null` where the field admits it, else absent. */
 export function payloadOf(
   entity: SchemaView,
   values: Record<string, unknown>,

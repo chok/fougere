@@ -9,14 +9,9 @@ import type { App, AuthRuntime, CreateAppOptions, FougereConfig, Transport } fro
 import { authOf } from './auth.js';
 import { layerOf, statementOf, type ResolvedStorage, type Statement } from '@fougere/defaults';
 
-// ── Public types ─────────────────────────────────
 
 export interface FougereServerConfig {
-  /**
-   * The whole data layer, as `resolveStorage` composed it — where the rows are, which source
-   * transacts, what to close. Handed over as ONE subject: a host that passed the factory alone
-   * lost the transaction and the connection's owner, and nothing said so.
-   */
+  /** The whole data layer, as `resolveStorage` composed it. */
   storage?: ResolvedStorage;
   /** What this app takes on beyond its fronds, each stating what it does and what it undoes. */
   extensions?: CreateAppOptions['extensions'];
@@ -31,26 +26,20 @@ export interface FougereServerConfig {
   /** Who performs an outgoing call, when the default cannot. */
   remoteTransport?: (url: string) => Transport;
   /**
-   * This process writes its own schema at boot, instead of refusing a database behind the
-   * entities. Only for a database born with the process — `path: ':memory:'` — since anything
-   * that outlives it is migrated by `fougere migrate --apply`.
+   * This process writes its own schema at boot, for a database born with it.
+   * Ex: `path: ':memory:'`.
    */
   migrates?: boolean;
 }
 
-// ── State ────────────────────────────────────────
 
 let _config: FougereServerConfig = {};
 let _configPromise: Promise<FougereConfig> | null = null;
 let _appPromise: Promise<App> | null = null;
 let _replaced: Promise<App>[] = [];
 
-// ── Public API ───────────────────────────────────
 
-/**
- * Override the data layer — only needed if you don't want the convention-driven
- * setup based on `sources:` in fougere.config.ts.
- */
+/** Overrides the data layer `sources:` would give. */
 export function configureFougere(config: FougereServerConfig) {
   _config = config;
   replace();
@@ -68,10 +57,7 @@ function replace() {
   _configPromise = null;
 }
 
-/**
- * What `fougere.config.ts` says, read once and without booting — what a door asks to tell its own
- * path from a stranger's, so `/healthz` never waits for a scan.
- */
+/** What `fougere.config.ts` says, read once and without booting. */
 export function useFougereConfig(): Promise<FougereConfig> {
   _configPromise ??= readConfig().catch((refusal: unknown) => {
     _configPromise = null;
@@ -82,34 +68,17 @@ export function useFougereConfig(): Promise<FougereConfig> {
 }
 
 async function readConfig(): Promise<FougereConfig> {
-  // The host's word wins, for the reason it wins on `fronds`: it read the file already,
-  // and where there is no file a second read finds nothing and says nothing.
   if (_config.config) return _config.config as FougereConfig;
 
-  // The config names the scope the aliases are built from, so reading it must not need them.
-  // Nothing in `fougere.config.ts` may import `@fronds/*`.
   await installLoader();
 
-  // The nearest file, up from where the app runs — the app's own when it writes one.
   return loadNearestConfig(process.cwd());
 }
 
-/**
- * Whether anything will READ a source. A host that handed in its config and its fronds — scanned
- * or stated — has nothing left to load, and jiti cannot run where there is no module resolver:
- * measured on workerd, `createJiti` threw `Cannot read properties of undefined (reading 'paths')`
- * and every request answered 500 — the loader was being built for files that no longer needed
- * opening.
- */
 function reads(): boolean {
   return _config.fronds === undefined || _config.config === undefined;
 }
 
-/**
- * Nitro serves from a bundle, but the scan still reads frond sources from disk — so the named form
- * a frond uses for its neighbour has to resolve here too. A module key is resolved against
- * whoever made the loader, so it is made from the project.
- */
 async function installLoader(alias?: Record<string, string>): Promise<void> {
   if (!reads()) return;
   const { createJiti } = await import('jiti');
@@ -117,10 +86,7 @@ async function installLoader(alias?: Record<string, string>): Promise<void> {
   setModuleLoader((filePath) => jiti.import(filePath) as Promise<Record<string, unknown>>);
 }
 
-/**
- * Get the booted Fougere app. Lazy — boots on first call, then caches what booted. A refusal is
- * not kept: it names a command — `fougere migrate --apply` — whose effect the next call must see.
- */
+/** The booted app: boots on first call and keeps it; a refusal is not kept. */
 export function useFougereApp(): Promise<App> {
   if (!_appPromise) {
     _appPromise = boot().catch((refusal: unknown) => {
@@ -137,7 +103,6 @@ export async function reloadFougere(timeoutMs?: number): Promise<App> {
   replace();
   const previous = _replaced;
   _replaced = [];
-  // The new one first: a boot that fails leaves the previous app serving, still whole.
   const next = await useFougereApp().catch((refusal: unknown) => {
     _replaced = [...previous, ..._replaced];
     throw refusal;
@@ -151,7 +116,6 @@ export async function reloadFougere(timeoutMs?: number): Promise<App> {
   return next;
 }
 
-// ── Boot ─────────────────────────────────────────
 
 async function boot(): Promise<App> {
   const bootStart = performance.now();
@@ -161,43 +125,26 @@ async function boot(): Promise<App> {
 
   const root = process.env.FOUGERE_ROOT ?? process.cwd();
   const fileConfig = await useFougereConfig();
-  // What a re-read config changes in a running process — the same call `boot()` makes in
-  // core, and the only place `logLevel:` takes effect. Without it a web host read the key
-  // and did nothing with it: the file said `debug` and the threshold stayed where the
-  // module had left it.
   applyConfig(fileConfig);
 
   const conventions = resolveConventions(fileConfig.conventions);
-  // `frondAliases` reads a directory listing, so it is asked only when the loader it
-  // feeds is going to exist at all.
   if (reads()) await installLoader(await frondAliases(root, conventions));
 
-  // Auto-resolve the data layer from `sources:` when the user didn't provide a
-  // custom one via configureFougere. The resolution itself lives in @fougere/defaults
-  // — this host must not know which storage package backs a source.
   let storage = _config.storage;
   if (!storage) {
     const { resolveStorage } = await import('@fougere/defaults');
     storage = resolveStorage(fileConfig.sources, root);
   }
-  // The storage's two halves, kept together: its ascent is an extension, its connection
-  // is not — it is opened here, before the container, so it closes after the container.
 
-  // What the config names by module — imported here, because core resolves no specifier.
   const stated = await configModules(fileConfig.fronds);
   const remotes = remotesOf(fileConfig);
-  // Named nothing, the host boots from the project's statement — written by hand, or by the scan.
   const declared: Partial<Statement> = _config.fronds
     ? { fronds: _config.fronds, vocabulary: _config.vocabulary }
     : await statementOf(root, { conventions: fileConfig.conventions });
 
   const app = await createApp({
-    // The host's word wins: it read the statement at build, and a host that names its fronds
-    // never reaches the compiler — that is what keeps `typescript` out of a production boot.
     ...(declared.fronds || stated.fronds.length > 0 ? { fronds: [...(declared.fronds ?? []), ...stated.fronds] } : {}),
     ...(declared.vocabulary ? { vocabulary: declared.vocabulary } : {}),
-    // The layer, spread whole. Naming a few of its members is how `transacted` and `close`
-    // were left behind once, under Nuxt only.
     ...layerOf(storage),
     protocols: fileConfig.protocols,
     state: fileConfig.state,
@@ -212,9 +159,6 @@ async function boot(): Promise<App> {
       ...stated.extensions,
       ...(_config.extensions ?? []),
     ],
-    // Opened before the container, so released after it — when THIS boot opened it. A storage
-    // the host handed in is the host's to close: a refused boot and a reload both dispose an app
-    // while the next one still holds that connection, and closing it here broke the next.
     onDispose: _config.storage ? undefined : storage.close,
   });
 

@@ -9,8 +9,6 @@ export type RouteMatch =
   /** Not a Fougère path at all: the app's own `/api/*` handlers must still see it. */
   | null;
 
-// Keyed on the app, which `useFougereApp` memoizes — the table derives from the boot, so
-// it changes exactly when the app does.
 const tables = new WeakMap<App, Matchable[]>();
 
 /** The table, per frond. */
@@ -25,7 +23,6 @@ export function tableOf(app: App): Matchable[] {
   return table;
 }
 
-/** The captured params if this pattern accepts these segments, else null. */
 function paramsOf(row: Matchable, segments: string[]): Record<string, string> | null {
   if (row.segments.length !== segments.length) return null;
 
@@ -39,7 +36,6 @@ function paramsOf(row: Matchable, segments: string[]): Record<string, string> | 
   return params;
 }
 
-/** How many segments a pattern leaves open — fewer is more specific. */
 function openness(row: Matchable): number {
   return row.segments.filter((s) => s.startsWith(':')).length;
 }

@@ -18,28 +18,22 @@ export interface BootAppOptions {
   /** @deprecated The name `only:` now carries. */
   fronds?: string[];
   /**
-   * What this app takes on beyond its fronds — `observability()` is the first one.
-   * Appended after the framework's own members, or replacing one by naming it.
+   * What this app takes on beyond its fronds; a member with the same name replaces the framework's.
+   * Ex: `observability()`.
    */
   extensions?: CreateAppOptions['extensions'];
   /**
-   * This process writes its own schema at boot, instead of refusing a database behind the
-   * entities. Only for a database born with the process — `path: ':memory:'`, a test — since
-   * anything that outlives it is migrated by `fougere migrate --apply`.
+   * This process writes its own schema at boot, for a database born with it.
+   * Ex: `path: ':memory:'`.
    */
   migrates?: boolean;
   /** Where `fougere build` wrote the project as JavaScript — read instead of the sources. */
   built?: string;
 }
 
-/**
- * Boot a Fougere app from the `fougere.config.ts` at `root`, wired the
- * conventional way (container + sqlite + http remotes).
- */
+/** Boots the app at `root` the conventional way. */
 export async function bootApp(root: string, opts: BootAppOptions = {}): Promise<App> {
   const config = await loadConfig(opts.built ?? root);
-  // What this process serves is never remote to it, whatever `fronds:` says of it elsewhere:
-  // `fougere serve blog` refused to start on a config that places `blog` at an address.
   const served = new Set(opts.only ?? opts.fronds ?? []);
   const elsewhere = Object.fromEntries(Object.entries(remotesOf(config)).filter(([frond]) => !served.has(frond)));
   let storage: ResolvedStorage | undefined;
@@ -48,9 +42,7 @@ export async function bootApp(root: string, opts: BootAppOptions = {}): Promise<
     root,
     built: opts.built,
     only: opts.only ?? opts.fronds,
-    // `{}` and never undefined: `boot` reads the config's own `fronds:` when handed nothing.
     remotes: elsewhere,
-    // One resolver, one place that reads `sources:`.
     storage: (cfg) => (storage = resolveStorage(cfg.sources, root)),
     extensions: [...(opts.migrates ? [migrating((app) => storage?.migrate?.(app))] : []), ...(opts.extensions ?? [])],
   });

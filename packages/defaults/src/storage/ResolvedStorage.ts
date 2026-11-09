@@ -8,17 +8,11 @@ import type { SourceEntities } from './SourceEntities.js';
 
 export interface ResolvedStorage {
   storageFactory: ((entity: any, name: string) => any) | undefined;
-  /**
-   * The source an entity's rows live in — what decides whether a frame gets a real transaction or
-   * an unwind it replays itself.
-   */
+  /** The source an entity's rows live in. */
   sourceOf?: (entityName: string) => string | undefined;
   /** The rows of one source by its name, whichever entity they belong to. */
   factoryIn?: (source: string) => Source['storageFactory'] | undefined;
-  /**
-   * The engine a source runs on — the dual of `sourceOf`, which names it without
-   * reaching it. A caller that must run DDL per engine needs the handle, not the name.
-   */
+  /** The engine a source runs on. */
   dbOf?: (source: string) => unknown;
   /** Every source that has an engine, the default one first. */
   sources?: () => string[];
@@ -28,10 +22,7 @@ export interface ResolvedStorage {
   enforces?: (source: string, constraint: Constraint) => boolean;
   /** Run `fn` inside one transaction of that source, with a storage factory bound to it. */
   transacted?: <R>(source: string, fn: (storageFactory: (entity: any, name: string) => any) => Promise<R>) => Promise<R>;
-  /**
-   * Brings the schema up to date — what `fougere migrate --apply` runs, and `migrating()` for a
-   * process whose database is born with it. Answers what it could not bring, when anything.
-   */
+  /** Brings the schema up to date, and answers what it could not. */
   migrate?: (app: App) => Promise<string | void>;
   /** What `migrate` would create, READ — the dual the boot checks and never writes past. */
   pending?: (app: App) => Promise<string[]>;
@@ -42,21 +33,10 @@ export interface ResolvedStorage {
   /** Raw synchronous handle, when the engine exposes one. */
 }
 
-/**
- * Resolve the data layer from `sources:`. The one writable entry listing no `rows` holds the rest;
- * when no entry holds rows at all, they are kept in memory, and saying so is the whole fallback.
- */
+/** The data layer from `sources:`; with no entry holding rows, they are kept in memory. */
 export function resolveStorage(
   sources: Record<string, SourceConfig> | undefined,
-  /**
-   * Where a relative `path:` is counted from — the directory of the config that named it.
-   *
-   * Absent, it is counted from the current directory, which is where an app in a
-   * workspace parts ways with the file that configured it: measured, `apps/nuxt` ran from
-   * its own directory and made a SECOND, empty database beside itself while the workspace
-   * held the real one. Nothing was said; the additive migration created every table, the
-   * seeds ran, and the app served an empty domain with a green boot.
-   */
+  /** Where a relative `path:` is counted from: the directory of the config that named it. */
   root?: string,
 ): ResolvedStorage {
   const opened = Object.fromEntries(Object.entries(sources ?? {}).map(([name, entry]) => {
@@ -69,19 +49,11 @@ export function resolveStorage(
   return storageFrom(opened);
 }
 
-/**
- * A relative path, counted from the config that named it. `:memory:` names no file and an
- * absolute path already says where it is — both pass through untouched, which is what
- * keeps this from being a second reader of what a path means.
- */
 function anchored(entry: Record<string, unknown>, root?: string): Record<string, unknown> {
   const path = entry.path;
   if (!root || typeof path !== 'string' || path === ':memory:' || isAbsolute(path)) return entry;
 
   const anchoredPath = resolve(root, path);
-  // Anchoring MOVES a database that a deployment has been running against, and the driver
-  // would create the new one without a word: additive migration, seeds, an empty domain
-  // and a green boot. So the one case where the two disagree is named.
   const beside = resolve(process.cwd(), path);
   if (beside !== anchoredPath && existsSync(beside) && !existsSync(anchoredPath)) {
     process.emitWarning(
@@ -93,11 +65,6 @@ function anchored(entry: Record<string, unknown>, root?: string): Record<string,
   return { ...entry, path: anchoredPath };
 }
 
-/**
- * Where an entity no source names lives, and what it is called — the one writable entry listing no
- * rows. None, while others list rows, is no default at all: the boot then refuses every entity
- * left out, naming it, rather than keeping its rows in memory beside sources that were declared.
- */
 function defaultOf(sources: Record<string, SourceEntities>): [string, Source] | undefined {
   const unlisted = Object.entries(sources).filter(([, placement]) => placement.rows === undefined && !placement.readOnly);
   if (unlisted.length > 1) {
@@ -118,7 +85,6 @@ function defaultOf(sources: Record<string, SourceEntities>): [string, Source] | 
   return ['memory', createMemorySource()];
 }
 
-/** An entity in a source's rows and in another's values is two answers to what it is. */
 function refuseRowsAndValues(sources: Record<string, SourceEntities>): void {
   const valuesIn = new Map(Object.entries(sources).flatMap(([name, placement]) => (placement.values ?? []).map((entity) => [lowerFirst(entity), name] as const)));
   for (const [name, placement] of Object.entries(sources)) {
@@ -134,7 +100,6 @@ function refuseRowsAndValues(sources: Record<string, SourceEntities>): void {
   }
 }
 
-/** Where each entity listed in `values:` is read. Two sources for one value is not built yet. */
 function valuesHomeOf(sources: Record<string, SourceEntities>): Map<string, string> {
   const home = new Map<string, string>();
   for (const [name, placement] of Object.entries(sources)) {
@@ -151,7 +116,6 @@ function valuesHomeOf(sources: Record<string, SourceEntities>): Map<string, stri
   return home;
 }
 
-/** A value read where its source keeps it — its own place, or the `FougereValue` row named after it. */
 function valueSourcesOf(home: Map<string, string>, engineOf: (source: string) => Source): ValueSources {
   const rows = new Map<string, ReturnType<Source['storageFactory']>>();
   const valuesIn = (source: string) => {
@@ -180,19 +144,12 @@ function valueSourcesOf(home: Map<string, string>, engineOf: (source: string) =>
 }
 
 /** The same routing `resolveStorage` performs, over engines the CALLER built. */
-export function storageFrom(sources: Record<string, SourceEntities>): ResolvedStorage {
-  refuseRowsAndValues(sources);
-  const fallback = defaultOf(sources);
-  const DEFAULT = fallback?.[0];
-  const base = fallback?.[1];
-
-  // Where each named entity lives. An entity claimed by two sources is refused naming
-  // both: the rows would be read from one and written to the other, by whichever
-  // registration ran last — the same silent duplicate `remotes:` refuses one level up.
+/** Where each entity's rows live, by source, and the engine of every source but the default. */
+function placementsOf(sources: Record<string, SourceEntities>, fallback: string | undefined): { home: Map<string, string>; engines: Map<string, Source> } {
   const home = new Map<string, string>();
   const engines = new Map<string, Source>();
   for (const [name, placement] of Object.entries(sources)) {
-    if (name === DEFAULT) continue;
+    if (name === fallback) continue;
     engines.set(name, placement.source);
     for (const entity of placement.rows ?? []) {
       const key = lowerFirst(entity);
@@ -206,8 +163,17 @@ export function storageFrom(sources: Record<string, SourceEntities>): ResolvedSt
     }
   }
 
-  // The default source answers to the name the config gave it, so a refusal naming two
-  // sources names things the author can find in their own file.
+  return { home, engines };
+}
+
+export function storageFrom(sources: Record<string, SourceEntities>): ResolvedStorage {
+  refuseRowsAndValues(sources);
+  const fallback = defaultOf(sources);
+  const DEFAULT = fallback?.[0];
+  const base = fallback?.[1];
+
+  const { home, engines } = placementsOf(sources, DEFAULT);
+
   const sourceOf = (entityName: string) => home.get(lowerFirst(entityName)) ?? DEFAULT;
   const engineOf = (source: string) => (DEFAULT !== undefined && source === DEFAULT ? base : engines.get(source));
   const engineFor = (entityName: string): Source => {
@@ -219,8 +185,6 @@ export function storageFrom(sources: Record<string, SourceEntities>): ResolvedSt
   };
   const named = (): string[] => [...(DEFAULT ? [DEFAULT] : []), ...engines.keys()];
   const valuesHome = valuesHomeOf(sources);
-  // What a source holds, as one pass sees it: its rows, and the row each of its values is kept in
-  // when the source keeps them as rows rather than in a place of its own.
   const viewOf = (app: Pick<App, 'fronds'>, source: string): SourceView => {
     const view = sourceViewOf(app.fronds, (name) => sourceOf(name) === source && !valuesHome.has(lowerFirst(name)));
     const engine = engineOf(source);
@@ -235,13 +199,7 @@ export function storageFrom(sources: Record<string, SourceEntities>): ResolvedSt
     factoryIn: (source) => engineOf(source)?.storageFactory,
     dbOf: (source) => (engineOf(source) as { db?: unknown } | undefined)?.db,
     sources: named,
-    // Asked of the source that will run the work, never of the default one: a frame whose
-    // members all live in a transactional source gets its transaction even when the default
-    // source has none. A source that hands out none leaves the answer `false`, and a frame reads it:
-    // `module/frame/together.ts` compensates instead, and says which of the two it built.
     transacts: (source) => engineOf(source)?.transacted !== undefined,
-    // Absent means the judge is alone with it: a source that keeps no constraint of its own
-    // says nothing, the way one that hands out no transaction says nothing.
     enforces: (source, constraint) => engineOf(source)?.enforces?.includes(constraint) ?? false,
     transacted: async (source, fn) => {
       const engine = engineOf(source);
@@ -250,9 +208,6 @@ export function storageFrom(sources: Record<string, SourceEntities>): ResolvedSt
 
       return engine.transacted(fn);
     },
-    // One pass per source, each seeing only its own entities and the NAMES of the others —
-    // which is what makes a cross-source `ref()` a miss rather than a constraint against a
-    // stranger. What a pass DOES is the source's own: it knows its engine, this does not.
     migrate: async (app) => {
       const said = DEFAULT ? [await base?.migrate?.(viewOf(app, DEFAULT))] : [];
       for (const [name, engine] of engines) {
@@ -262,8 +217,6 @@ export function storageFrom(sources: Record<string, SourceEntities>): ResolvedSt
 
       return reports.length > 0 ? reports.join('\n') : undefined;
     },
-    // The same partition `migrate` writes through, read — so what the boot refuses is exactly
-    // what the command would create. A named source says its name; the default one needs none.
     pending: async (app) => {
       const lines = DEFAULT ? [...(await base?.pending?.(viewOf(app, DEFAULT)) ?? [])] : [];
       for (const [name, engine] of engines) {
@@ -274,8 +227,6 @@ export function storageFrom(sources: Record<string, SourceEntities>): ResolvedSt
       return lines;
     },
     ...(valuesHome.size > 0 && { values: valueSourcesOf(valuesHome, (source) => engineOf(source)!) }),
-    // Every source, the default one last: a named source may hold what the default refers
-    // to, and closing in reverse of opening is the rule everywhere else.
     close: async () => {
       for (const engine of [...engines.values()].reverse()) await engine.close?.();
       await base?.close?.();
@@ -283,13 +234,7 @@ export function storageFrom(sources: Record<string, SourceEntities>): ResolvedSt
   };
 }
 
-/**
- * The data layer as `createApp` takes it — one gesture, not eight named by hand.
- *
- * Naming a few of its members is how `transacted` and `close` were left behind once, under
- * Nuxt only: a member added here reached no host, and nothing said so. This is the same
- * lesson one level down — a host spreads the layer instead of listing what it knows of it.
- */
+/** The data layer as `createApp` takes it. */
 export function layerOf(storage: ResolvedStorage) {
   return {
     storageFactory: storage.storageFactory,

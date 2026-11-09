@@ -12,31 +12,23 @@ import { type RpcResponse } from './jsonrpc/RpcResponse.js';
 export interface ReceiveOptions {
   /** Establishes who signed, or throws. */
   verify?: (identity: string, presented: SignedCall) => Promise<{ caller: string; state: Record<string, unknown> }>;
-  /**
-   * Refuse a call carrying no verifiable identity — the whole of "secure by default" at the wire.
-   */
+  /** Refuses a call carrying no verifiable identity. */
   requireIdentity?: boolean;
   /** The app's cycle, which watches the request; a receiver holding only a runner runs it unwatched. */
   answer?: Answering;
 }
 
-/**
- * The door a process calls another through. The caller is a peer: its state is established by
- * `verify` when it signed, and the call is marked `fromAnotherProcess` so the receiver does not judge again
- * what the sender's own boundary already judged.
- */
+/** The door a process calls another through: `verify` establishes its state, and what it judged is not judged again. */
 export function peerDoor(runner: Transport, options: ReceiveOptions = {}): Door<unknown, RpcCall, RpcResponse> {
   return {
     name: 'rpc',
     decode: async (raw) => {
       const { address, op, sent } = envelopeOf(raw);
 
-      /** State is ESTABLISHED here, or it is only claimed. */
       let state: Record<string, unknown> = sent.state ?? {};
       let caller: string | undefined;
       if (options.verify && sent.identity) {
         try {
-          // What ARRIVED, never what we would rather it had been — the comparison is the point.
           ({ caller, state } = await options.verify(sent.identity, { address, op,
             params: sent.params ?? {},
             query: sent.query ?? {},
@@ -51,8 +43,6 @@ export function peerDoor(runner: Transport, options: ReceiveOptions = {}): Door<
         throw unauthorized('this receiver takes signed calls only', address, op);
       }
 
-      // Built field by field, never spread from `sent`: everything here is either validated
-      // above or carried deliberately, and `caller` is ours to write alone.
       return {
         address,
         op,
@@ -74,13 +64,7 @@ export function peerDoor(runner: Transport, options: ReceiveOptions = {}): Door<
   };
 }
 
-/**
- * The door a page calls through — the same wire, another trust boundary. The browser sits outside
- * the topology: its state is what the host resolved server-side, never what the payload claims,
- * and nothing it sends is taken as already judged. Nor does it write `args`, which are taken as
- * written — a peer's right — and `[id, draft, { id: 'admin' }]` would hand the handler a user no
- * collector read.
- */
+/** The door a page calls through: its state is what the host resolved, and it may not write `args`. */
 export function pageDoor(runner: Transport, { state, carrier, listens }: PageDoorOptions): Door<unknown, RpcCall, RpcResponse> {
   return {
     name: 'rpc',
@@ -122,17 +106,11 @@ export function handleRpc(runner: Transport, raw: unknown, options: ReceiveOptio
   return options.answer ? options.answer(door, raw) : answerAt(door, raw);
 }
 
-/**
- * The members a caller may send. `caller` and `fromAnotherProcess` are written by the receiver and never claimed, and
- * a key outside the list is refused by name: `body` used to be dropped, and the call then ran
- * with no input and no validation.
- */
 const SENT = {
   params: true, query: true, input: true, args: true, state: true, trace: true, identity: true, runAt: true, caller: false,
   fromAnotherProcess: false,
 } satisfies Record<keyof InvocationContext, boolean>;
 
-/** Where a refusal of the envelope itself says which JSON-RPC code it is, rather than an app's. */
 const ENVELOPE = 'jsonrpc';
 
 function envelopeOf(raw: unknown): { address: string; op: string; sent: Partial<InvocationContext> } {
@@ -146,7 +124,6 @@ function envelopeOf(raw: unknown): { address: string; op: string; sent: Partial<
   const address = req.method.slice(0, dot);
   const op = req.method.slice(dot + 1);
 
-  // Fresh objects — middlewares deposit into state, nothing may be shared.
   const sent = (req.params ?? {}) as Partial<InvocationContext>;
   const strangers = Object.entries(sent)
     .filter(([key, value]) => value !== undefined && !SENT[key as keyof InvocationContext])
@@ -164,7 +141,6 @@ function envelopeOf(raw: unknown): { address: string; op: string; sent: Partial<
   return { address, op, sent };
 }
 
-/** An accident names the op it happened in, so the receiver's log says where. */
 async function called(runner: Transport, address: string, op: string, invocation: InvocationContext): Promise<unknown> {
   try {
     return await runner({ address, op }, invocation);
@@ -198,7 +174,6 @@ function invalid(message: string): FougereError {
   return new FougereError({ code: ErrorCode.BAD_REQUEST, message, details: { [ENVELOPE]: INVALID_REQUEST } });
 }
 
-/** An admission refusal, framed like any other failure so a caller reads one vocabulary. */
 function unauthorized(why: string, address: string, op: string): FougereError {
   return new FougereError({ code: ErrorCode.UNAUTHORIZED, message: `Refused: ${why}`, address, operation: op });
 }

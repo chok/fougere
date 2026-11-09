@@ -21,10 +21,7 @@ export interface FormField<Name extends string = string> {
   options?: (string | number)[];
   /** What a `reference` control chooses among. */
   reference?: FormReference;
-  /**
-   * What the browser enforces, under the names it already knows — spread this on the input and the
-   * page states no rule of its own.
-   */
+  /** What the browser enforces, under the names it knows; spread this on the input. */
   attrs?: {
     type?: 'email' | 'url' | 'number';
     required?: boolean;

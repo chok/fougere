@@ -10,7 +10,6 @@ type SessionApi = {
 export async function stateFor(headers: Headers, app: App): Promise<Record<string, unknown>> {
   const auth = authOf(app);
   if (!auth) return {};
-  // No cookie, no session — asking the provider would be a round-trip for a known answer.
   if (!headers.get('cookie')) return {};
 
   try {
@@ -21,8 +20,6 @@ export async function stateFor(headers: Headers, app: App): Promise<Record<strin
       return { user: result.user, session };
     }
   } catch {
-    // An unreachable or misconfigured provider leaves the caller anonymous rather
-    // than failing the request — the same choice the Nuxt middleware makes.
   }
 
   return {};

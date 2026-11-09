@@ -18,23 +18,12 @@ import type { CallInput } from './CallInput.js';
 import type { Fetcher } from './Fetcher.js';
 import { Card, type SchemaView } from '@fougere/schema';
 
-/**
- * One facade, built from its address alone — what a project that never generated `@fronds/facade`
- * has, and what a test writes when it stands one up by hand.
- *
- * A page imports its facade instead, so a missing generated module fails to resolve rather than
- * falling back to `string` in silence. A service writes no address at all: the container
- * resolves `Facade<PostHandler>` from the type, and a browser has no container.
- */
+/** One facade from its address alone, for a project that generated none, or a test. */
 export function facade<Address extends Addresses>(address: Address): FacadeName<HandlerOf<Address>, Address> {
   return { address };
 }
 
-/**
- * The facade an ENTITY class names — the one designation computed rather than written, because a
- * form is handed a set of FIELDS and works out where it submits from them. Its operations are
- * not known from a type, which is exactly what `AnyHandler` says.
- */
+/** The facade an entity class names, from which a form works out where it submits. */
 export function facadeOf(entity: EntityClass): FacadeName<AnyHandler, string> {
   return { address: entityKeyOf(entity) };
 }
@@ -86,19 +75,8 @@ async function postCall(
   return unframeResponse(response, call);
 }
 
-/**
- * The schemas this browser reads a row back through, asked ONCE per endpoint.
- *
- * `date-time` means a `Date` on both sides, and a page held the string: three of this repo's own
- * pages wrote `day(iso?: string)` and called `new Date(iso)` by hand, against the type their
- * composable handed them. A server-side caller has the schema by construction — a browser has
- * to ask for it, and the card already carries it (645 bytes for a seven-field entity).
- *
- * An app serving no card decodes nothing, which is what a page had before this existed.
- */
 const schemas = new Map<string, Promise<Map<string, SchemaView>>>();
 
-/** A card read as what each operation answers, indexed the way a call names it — `post.list`. */
 function schemasIn(answer: unknown, endpoint: string): Map<string, SchemaView> {
   const found = new Map<string, SchemaView>();
   const card = assertIdentityCard(answer, `The app at ${endpoint}`);
@@ -113,10 +91,6 @@ function schemasIn(answer: unknown, endpoint: string): Map<string, SchemaView> {
   return found;
 }
 
-/**
- * Learned from a card that went past on its own, so an app already asking for one — the admin
- * panel asks before it draws a resource — pays for a single discovery rather than two.
- */
 function learn(answer: unknown, endpoint: string): void {
   try { schemas.set(endpoint, Promise.resolve(schemasIn(answer, endpoint))); }
   catch { /* not a card: whatever else `rpc` answered */ }
@@ -151,9 +125,7 @@ export async function sendCall(
   return decoded((await schemasOf(fetcher, endpoint)).get(`${call.address}.${call.op}`), answer);
 }
 
-// ── The link ─────────────────────────────────────
 
-/** Mounted queries per entity — the command side of the link reads this. */
 const mounted = new Map<string, Set<string>>();
 
 /** Register a mounted read. Returns the unregistration, for the host's scope teardown. */
@@ -170,7 +142,6 @@ export function mountedKeys(entityKey: string): string[] {
   return [...(mounted.get(entityKey) ?? [])];
 }
 
-/** `mountedKeys` says WHICH reads a command invalidates; these say how to make one happen. */
 const refetchers = new Map<string, Set<() => void>>();
 
 /** Register a mounted read's refetch. Returns the unregistration. */
@@ -197,7 +168,6 @@ export const fetcher: Fetcher = async <T,>(url: string, options: { method: 'POST
   return (await response.json()) as T;
 };
 
-// ── Reading a result ─────────────────────────────
 
 /** A list result reads as items whatever the wire delivered — bare array or envelope. */
 export function itemsOf<T>(data: unknown): T[] {
@@ -226,9 +196,6 @@ export function asFougereError(err: unknown, entityKey: string, op: string): Fou
       });
 }
 
-// The form contract is host-independent too, and a form is client code — so it
-// reaches the browser through this subpath rather than through the package root,
-// which carries the boot.
 export { errorsByField, formFieldsOf, openingOf, payloadOf, tableColumnsOf } from './FormEntity.js';
 export type { SchemaView } from '@fougere/schema';
 export { type FormField } from './FormField.js';
