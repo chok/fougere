@@ -8,6 +8,3 @@ export { Rest, restDoor, type RestRequest } from './door.js';
 export type { RestInvocation } from './RestInvocation.js';
 export type { RestResponse } from './RestResponse.js';
 
-// The document is read off what the process SERVES, and published only on request. A schema GET
-// once published every scanned entity, façade or not: the auth tables of a host that mounted it
-// were readable by anyone.

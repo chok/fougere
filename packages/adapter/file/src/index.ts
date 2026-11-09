@@ -9,7 +9,6 @@ import {
   type Store, type Values, type Source, type SourceView,
 } from '@fougere/core';
 
-/** How a row is written, read off the file's extension. Both hold a date as text. */
 const FORMATS = {
   json: { extensions: ['.json'], parse: (text: string): unknown => JSON.parse(text), stringify: (values: Values) => JSON.stringify(values, null, 2) },
   yaml: { extensions: ['.yaml', '.yml'], parse: (text: string): unknown => parseYaml(text), stringify: (values: Values) => stringifyYaml(values) },
@@ -25,7 +24,6 @@ function formatOf(file: string): FileFormat | undefined {
   return FORMAT_NAMES.find((format) => (FORMATS[format].extensions as readonly string[]).includes(extension));
 }
 
-/** A key becomes a filename, so it may not leave the directory it addresses. */
 function nameOf(key: string): string {
   if (key.includes('/') || key.includes('\\') || key === '.' || key === '..') {
     throw new Error(`source 'file': the key '${key}' cannot be used as a file name.`);
@@ -34,13 +32,11 @@ function nameOf(key: string): string {
   return encodeURIComponent(key);
 }
 
-/** One file per key, under `dir`. A read decodes the dates back. */
 function fileStore(dir: string, entity: SchemaView, written: FileFormat): Store & { fileOf(key: string): string | undefined } {
   const visibility = Visibility.of(entity.getFields());
   const read = async (file: string): Promise<Values> =>
     visibility.decode(FORMATS[formatOf(file)!].parse(await readFile(file, 'utf8')) as Values);
 
-  // A key is one row whatever its extension, so `s1.json` beside `s1.yaml` is two answers to one key.
   const fileOf = (key: string): string | undefined => {
     const base = nameOf(key);
     const found = FORMAT_NAMES
@@ -102,7 +98,6 @@ export interface FileSourceOptions {
 
 export function createFileSource(opts: FileSourceOptions): Source {
   const written = opts.format ?? 'json';
-  // A value is one file named after its entity, beside the directories that hold rows.
   const values = (entity: SchemaView) => fileStore(opts.path, entity, written);
 
   return {
@@ -111,8 +106,6 @@ export function createFileSource(opts: FileSourceOptions): Source {
     value: (entity, name) => values(entity).get(lowerFirst(name)),
     valueAt: (entity, name) => values(entity).fileOf(lowerFirst(name))
       ?? `${join(opts.path, lowerFirst(name))}.${FORMAT_NAMES.join('|')}, which does not exist`,
-    // A directory IS the shape, so bringing it up to date is making it exist. `elsewhere`
-    // is not read: nothing here emits a constraint, so a cross-source `ref()` costs nothing.
     migrate: async (view: SourceView) => {
       for (const name of view.entities.keys()) {
         await mkdir(join(opts.path, lowerFirst(name)), { recursive: true });

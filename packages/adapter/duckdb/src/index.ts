@@ -31,24 +31,18 @@ export interface Reads {
   close(): Promise<void>;
 }
 
-/**
- * What DuckDB attaches, read off the entry's own type — the extension it loads and the key that
- * says where. MSSQL, files and memory have no extension, which is why the list is short.
- */
 const ATTACHABLE: Record<string, { extension: string; target: (entry: SourceEntry) => string | undefined }> = {
   sqlite: { extension: 'sqlite', target: (entry) => entry.path },
   pg: { extension: 'postgres', target: (entry) => entry.url },
   mysql: { extension: 'mysql', target: (entry) => entry.url },
 };
 
-/** DuckDB reserves `main`, `temp` and `system`, and a source may be called any of them. */
 const attachedAs = (source: string): string => `source_${source}`;
 
 /** Open a read-only view of the app's sources. */
 export async function connectSources(options: ConnectOptions): Promise<Reads> {
   const resolve = options.tableName ?? toTableName;
 
-  // Where each named entity lives; anything unnamed is in the one writable source listing no rows.
   const home = new Map<string, string>();
   let fallback: string | undefined;
   for (const [alias, entry] of Object.entries(options.sources)) {
@@ -56,7 +50,6 @@ export async function connectSources(options: ConnectOptions): Promise<Reads> {
     for (const entity of entry.rows ?? []) home.set(lowerFirst(entity), alias);
   }
 
-  // Only what this scope reads is attached — the declaration IS the environment.
   const wanted = new Set<string>();
   const placed = new Map<Entity, { alias: string; table: string }>();
   for (const shape of options.reads) {
@@ -111,7 +104,6 @@ export async function connectSources(options: ConnectOptions): Promise<Reads> {
   };
 }
 
-/** `${Book}` becomes `archive.books` — the alias AND the table, from one declaration. */
 function qualify(ref: unknown, placed: Map<Entity, { alias: string; table: string }>): string {
   const found = placed.get(ref as Entity);
   if (found) return `${quote(attachedAs(found.alias))}.${quote(found.table)}`;
@@ -121,8 +113,6 @@ function qualify(ref: unknown, placed: Map<Entity, { alias: string; table: strin
       `${name} is used in a query but is not in \`reads\`. Add it to \`reads\` in frond.config.ts.`,
     );
   }
-  // A plain value interpolated into SQL is refused: this tag substitutes ENTITIES, and
-  // accepting a value would be a string-built query with no binding in sight.
   throw new Error(
     'Only an entity can go inside ${…} in a source query. Write values in the query text, or filter the result.',
   );
@@ -130,7 +120,6 @@ function qualify(ref: unknown, placed: Map<Entity, { alias: string; table: strin
 
 const quote = (identifier: string): string => `"${identifier.replace(/"/g, '""')}"`;
 
-/** The column set, checked ONCE against the shape. */
 function refuseMismatch(shape: Entity, names: string[], row: Record<string, unknown>, sql: string): void {
   const missing = names.filter((name) => !(toSnakeCase(name) in row) && !(name in row));
   if (missing.length === 0) return;
@@ -141,7 +130,6 @@ function refuseMismatch(shape: Entity, names: string[], row: Record<string, unkn
   );
 }
 
-/** Keep what the shape declares, converted — a column it does not name never leaves. */
 function project(
   names: string[],
   codecs: Map<string, { read(value: unknown): unknown }>,

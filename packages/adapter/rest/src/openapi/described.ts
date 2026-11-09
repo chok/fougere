@@ -3,7 +3,6 @@ import { prefixOf } from '../RestProtocol.js';
 import type { AppLike } from '../routes/RouteDefinition.js';
 import { openApiOf } from './document.js';
 
-/** A file a page loads from a CDN, pinned, and its hash: a browser refuses one that was changed. */
 interface Pinned {
   url: string;
   integrity: string;
@@ -25,7 +24,6 @@ const SCALAR: Pinned = {
   integrity: 'sha384-HWi/QCSPi64AQ0xBXFGDk+7gmvZ4hJ/7sZMIXqWVz6Ikb6+Cxej/hWKaomOStyFb',
 };
 
-/** The page that reads the document, by the word `openapi: { ui }` names it — `true` is Swagger UI. */
 const PAGES = {
   swagger: (url: string) => page(
     `<link rel="stylesheet" href="${SWAGGER.style.url}" integrity="${SWAGGER.style.integrity}" crossorigin="anonymous">`,
@@ -33,7 +31,6 @@ const PAGES = {
   <script src="${SWAGGER.script.url}" integrity="${SWAGGER.script.integrity}" crossorigin="anonymous"></script>
   <script>SwaggerUIBundle({ url: ${JSON.stringify(url)}, dom_id: '#swagger-ui' })</script>`,
   ),
-  // Scalar sends usage to its makers unless told not to.
   scalar: (url: string) => page(
     '',
     `<div id="app"></div>
@@ -45,10 +42,8 @@ const PAGES = {
 export type DocsPage = keyof typeof PAGES;
 
 /**
- * What REST publishes of itself — `{prefix}/openapi.json` when `protocols: { rest: { openapi: {} } }`
- * says so, and `{prefix}/docs` reading it when `ui` says which page — or `undefined` for any other
- * request. Nothing is published without the line: the document names every op and what each refuses
- * at once, and a page loads code from elsewhere, which is a decision of its own.
+ * What REST publishes of itself when `protocols:` says so, or `undefined` for any other request.
+ * Ex: `{prefix}/openapi.json`, `{prefix}/docs`.
  */
 export function describedAt(app: AppLike, method: string, path: string): ResponseResult | undefined {
   const openapi = app.protocols?.rest?.openapi;

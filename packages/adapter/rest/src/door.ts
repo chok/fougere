@@ -16,13 +16,8 @@ export interface RestRequest {
 }
 
 /**
- * What stands at REST's door, the port its links stand in front of. `implements Partial<Rest>`, asking
- * for `inner: Rest`, stands around every route of its frond; `extends Rest<NoteHandler>`, handing its
- * `inner` to `super`, stands around that handler's routes alone, one method per op it names — an op it
- * names nothing for goes straight through. Two are ordered by `ports: { Rest: [...] }`.
- *
- * Throwing before `inner.answer` refuses the request, which the door says in its own shape — before
- * the body is read, since the door reads it inside.
+ * The port REST's links stand in front of; a link throwing before `inner.answer` refuses the request.
+ * Ex: `implements Partial<Rest>` for a frond, `extends Rest<NoteHandler>` for a handler.
  *
  * Documented: [surfaces](https://fougere.dev/docs/serve/rest-graphql).
  */
@@ -41,18 +36,13 @@ export abstract class Rest<H = never> {
   }
 }
 
-/**
- * REST's edges for one route: the body read within the cycle, the op called, and the answer written
- * as HTTP — the one place REST decides a status, read off the contract and never off the op's name.
- * Every host runs it, whoever matched the route: a router by its own paths, a web host by `matchRoute`.
- */
+/** REST's door for one route: the one place a status is decided, read off the contract. */
 export function restDoor(route: RouteDefinition): Door<RestRequest, RestInvocation, ResponseResult> {
   return {
     name: 'rest',
     address: route.address,
     carries: 'http',
     carrier: ({ headers }): HttpCarrier => ({ request: headers, response: new Headers() }),
-    // A read carries no body, so what its input view names arrives in the query string.
     decode: async ({ params, query, body, state }) => ({
       params,
       query,
@@ -67,7 +57,6 @@ export function restDoor(route: RouteDefinition): Door<RestRequest, RestInvocati
   };
 }
 
-/** The fields of an input view the query string carries, read as the shape of each says — a query holds only text. */
 function inputOf(fields: Fields, query: Record<string, unknown>): Record<string, unknown> {
   return Object.fromEntries(Object.entries(fields).flatMap(([key, field]): [string, unknown][] => {
     if (query[key] === undefined) return [];
@@ -89,7 +78,6 @@ function responseOf(route: RouteDefinition, result: unknown): ResponseResult {
 
   const status = route.successStatus ?? (route.creates ? 201 : 200);
   if (route.cardinality === 'page' && Array.isArray(result)) {
-    // The page-level facts ride beside the rows: on the array itself, JSON drops them.
     const page = result as unknown as { total?: number; hasMore?: boolean; endCursor?: string };
 
     return { status, data: { items: [...result], total: page.total, hasMore: page.hasMore, endCursor: page.endCursor } };
@@ -98,7 +86,6 @@ function responseOf(route: RouteDefinition, result: unknown): ResponseResult {
   return { status, data: result };
 }
 
-/** What the keepers of `state:` wrote on the carrier goes out with the answer — every `Set-Cookie` line kept apart. */
 function leaving(answer: ResponseResult, carrier: HttpCarrier | undefined): ResponseResult {
   const cookies = carrier?.response.getSetCookie() ?? [];
   if (cookies.length === 0) return answer;

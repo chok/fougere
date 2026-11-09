@@ -5,13 +5,8 @@ import {
 import { D1Dialect } from 'kysely-d1';
 import { createKyselySource, type SqlSource } from '../source/SqlSource.js';
 
-/** What a Worker binds — read off `env` at the first query, since nothing hands it over sooner. */
 type Bindings = Record<string, unknown>;
 
-/**
- * The binding exists only inside a Worker, and `cloudflare:workers` loads only there — so the
- * driver reaches it at `init()`, which Kysely already awaits, and opening stays synchronous.
- */
 class BoundDriver implements Driver {
   private inner?: Driver;
 
@@ -60,7 +55,6 @@ class BoundDriver implements Driver {
   }
 }
 
-/** D1 is SQLite, so everything but the driver is SQLite's. */
 class BoundDialect implements Dialect {
   constructor(private readonly binding: string) {}
 

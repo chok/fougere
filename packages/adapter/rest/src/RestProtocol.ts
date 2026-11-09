@@ -4,7 +4,6 @@ import { Protocols, RouteAddress, isScanned, listens, type EffectiveOperation, t
 import { routeOf } from './routes/RouteDefinition.js';
 
 /** Where one operation answers, when what its contract derives is not what it should be. */
-/** An answer the op may give besides its own — a redirect, say — and the headers it sets. */
 const RESPONSE = Format.of()
   .key('status', Format.count)
   .key('headers', Format.listOf(Format.text))
@@ -17,15 +16,10 @@ const ROUTE = Format.of('protocol/rest/route')
   .key('responses', Format.listOf(RESPONSE))
   .closed();
 
-/** The page reading the document, at `{prefix}/docs` — `true` is Swagger UI. None without it. */
 const OPENAPI = Format.of('protocol/rest/openapi')
   .key('ui', Format.either(Format.tokens(['swagger', 'scalar'] as const), Format.flag))
   .closed();
 
-/**
- * Where the app mounts REST, and the routes of a frond it cannot edit — `betterAuth()`, a package's.
- * A frond of this project says its own in its `frond.config.ts`.
- */
 const REST = Format.of('protocol/rest')
   .key('prefix', Format.text)
   /** Publish what REST serves at `{prefix}/openapi.json`. Nothing without it. */
@@ -33,7 +27,6 @@ const REST = Format.of('protocol/rest')
   .key('overrides', Format.recordOf(ROUTE))
   .closed();
 
-/** What a frond says of itself: the segment it answers under, `/journal` rather than `/blog`. */
 const FROND = Format.of('protocol/rest/frond')
   .key('path', Format.text)
   .closed();
@@ -59,7 +52,6 @@ export function prefixOf(protocols: ProtocolConfig | undefined): string {
   return protocols?.rest?.prefix ?? PREFIX;
 }
 
-/** An override of `fougere.config.ts` that a `frond.config.ts` should have said, or that names no op. */
 function misplaced(overrides: Record<string, RestRoute> | undefined, fronds: readonly FrondDescriptor[]): string[] {
   return Object.entries(overrides ?? {}).flatMap(([key, route]) => {
     const named = RouteAddress.parse(key);
@@ -76,7 +68,6 @@ function misplaced(overrides: Record<string, RestRoute> | undefined, fronds: rea
   });
 }
 
-/** `PATCH /api/blog/posts/:id` — nothing for an op a fact calls, which no request reaches. */
 function answersAt(operation: EffectiveOperation, options: Accepted<typeof REST>, frond: FrondDescriptor): string | undefined {
   if (listens(operation)) return undefined;
 

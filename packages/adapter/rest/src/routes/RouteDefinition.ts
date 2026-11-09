@@ -26,26 +26,15 @@ export interface RouteDefinition {
   /** A POST on the collection answering one row: what it answers did not exist before, so 201. */
   creates?: boolean;
   /**
-   * What the op may answer besides its own — a door middleware's redirect — as OpenAPI's `responses`
-   * will publish it: stated in `operations:`, or read by the scan off a `RestResponse<…>`.
+   * What the op may answer besides its own, as OpenAPI's `responses`.
+   * Ex: a door link's redirect.
    */
   responses?: RestRoute['responses'];
   /** The operation in words — the method's own doc sentence, carried by the contract. */
   description?: string;
-  // No presenter here. A route used to carry the instance and its field names so the
-  // registration could enrich each row; the façade does that for every facade now
-  // (`PresenterExecutor`), so the rows arrive computed and a second pass was duplicated work.
 }
 
-/** Only what this projection reads of a scanned handler. */
 type HandlerEntry = Pick<CoreHandlerEntry, 'address' | 'surface' | 'exposed'>;
-// No `operations` here, and its absence is the point. It was declared, never read — this
-// file takes its table from `app.operationsFor()` — and it carried `OperationMeta`, whose
-// `kind` is REQUIRED because that is true of an EffectiveOperation. A scanned handler's
-// contract leaves `kind` empty, so the narrow type was not a supertype of the real one and
-// `generateRoutes(app)` did not typecheck against a real `App`. The framework's own caller
-// wrote `generateRoutes(app as never, …)`, and the tests only ever passed narrow literals,
-// so nothing caught it. Declaring what you consume means not declaring the rest.
 
 interface PresenterEntry {
   entityName: string;
@@ -72,22 +61,13 @@ export interface AppLike {
 
 type HandlerFacade = Record<string, Function>;
 
-// ─── Naming conventions ─────────────────────────
 
-/** The five a Crud handler brings answer at the collection or the row, never under their own name. */
 const CRUD = new Set(['list', 'findById', 'create', 'update', 'delete']);
 
-/** The verbs whose op makes the row it designates disappear — the one method still read off the name. */
 const REMOVING = new Set(['delete', 'remove']);
 
-/** Where a request puts what it carries — the path, the query string, the body. */
 const CARRIED = new Set(['param', 'input', 'query']);
 
-/**
- * What an op that designates one row does to it, read off its contract: hand the row whole — a
- * replacement — or hand what changes, a `Partial<Post>` or parameters that are all its fields.
- * Those `fields` travel in the body: the path designates, the body carries the change.
- */
 interface Change {
   kind: 'replacement' | 'modification';
   fields: string[];
@@ -111,10 +91,6 @@ function changeOf({ binding = [], input }: OperationMeta): Change | undefined {
   return fields.length > 0 && fields.length === carried.length ? { kind: 'modification', fields } : undefined;
 }
 
-/**
- * Read off the contract: a query is a GET, an op whose verb removes the row a DELETE, a change of
- * one row a PATCH or a PUT — and anything else a POST, which promises nothing and so cannot lie.
- */
 function deriveMethod(opName: string, meta: OperationMeta): HttpMethod {
   if (!meta.kind) {
     throw new Error(
@@ -131,13 +107,6 @@ function deriveMethod(opName: string, meta: OperationMeta): HttpMethod {
   return change === 'replacement' ? 'PUT' : 'POST';
 }
 
-/**
- * Read off the signature: what designates a row comes before the op, the other required values
- * after it, and an optional one is left to the query string — save the fields a change carries,
- * which the body holds. `publish(id: Post['id'])` → `/posts/:id/publish`,
- * `move(id: Post['id'], position: number)` → `/posts/:id/move/:position`,
- * `retitle(id: Post['id'], title: Post['title'])` → `/posts/:id/retitle`, `byTag(tag: string)` → `/posts/by-tag/:tag`.
- */
 function derivePath(address: string, opName: string, binding: BindingPlan = [], inBody: string[] = []): string {
   const required = binding.flatMap(({ source, optional }) =>
     source.kind === 'param' && !optional && !inBody.includes(source.name) ? [source] : []);
@@ -156,7 +125,6 @@ function segmentOf({ name }: { name: string }): string {
   return `:${name}`;
 }
 
-// ─── Public API ─────────────────────────────────
 
 /** Generate REST route definitions from a fougere App — one route per operation, per address served. */
 export function generateRoutes(app: AppLike, options: GenerateRoutesOptions = {}): RouteDefinition[] {
@@ -165,14 +133,12 @@ export function generateRoutes(app: AppLike, options: GenerateRoutesOptions = {}
       .flatMap((address) => routesOf(app, frond, address, options)));
 }
 
-/** `/api/blog` — where the app mounts REST, then the segment the frond answers under. */
 function baseOf(protocols: ProtocolConfig | undefined, frond: Pick<FrondLike, 'name' | 'protocols'>): string {
   const segment = frond.protocols?.rest?.path ?? `/${frond.name}`;
 
   return prefixOf(protocols) + segment;
 }
 
-/** What `fougere.config.ts` said of a frond it cannot edit, then what the frond said of this op. */
 function statedRoute(protocols: ProtocolConfig | undefined, address: string, opName: string, meta: OperationMeta): RestRoute {
   const thirdParty = protocols?.rest?.overrides?.[new RouteAddress({ address, operation: opName }).toString()];
 
@@ -195,7 +161,6 @@ export function routeOf(
   };
 }
 
-/** What one address answers on REST — nothing, when this surface does not serve it. */
 function routesOf(
   app: AppLike,
   frond: FrondLike,
@@ -203,7 +168,6 @@ function routesOf(
   options: GenerateRoutesOptions,
 ): RouteDefinition[] {
   const surface = options.surface;
-  // Membership is core's answer, not ours — one rule, read here (see App.facadeFor).
   const facade = app.facadeFor(address, surface) as HandlerFacade | undefined;
   if (!facade) return [];
   if (options.filter && !options.filter(address, frond.name)) return [];
@@ -218,9 +182,6 @@ function routesOf(
     throw new Error(`REST cannot project '${address}' without its EffectiveOperation table.`);
   }
 
-  // The resolved table defines the public operation set. An op answering in another process is
-  // that process's to serve: a door follows its frond, and relaying it here answered for a frond
-  // this process does not host. An op an announcement calls is no caller's to name.
   const served = (opName: string) => {
     const meta = effectiveOperations.get(opName);
 
@@ -237,7 +198,6 @@ function routesOf(
   }));
 }
 
-/** One operation at one address, and everything that decides how it is addressed. */
 interface Projecting {
   protocols: ProtocolConfig | undefined;
   frond: FrondLike;
@@ -254,8 +214,6 @@ function routeFor({ protocols, frond, address, facade, opName, meta }: Projectin
     );
   }
 
-  // Handler and method overrides are already executed by the facade, from the same
-  // EffectiveOperation local and RPC use. The adapter never resolves DI itself.
   const op = facade[opName];
   if (typeof op !== 'function') {
     throw new Error(`REST EffectiveOperation table exposes '${opName}' but its facade does not.`);
@@ -279,7 +237,6 @@ function routeFor({ protocols, frond, address, facade, opName, meta }: Projectin
   };
 }
 
-/** Both pass through the client-surface projections — write-only out, read-only in. */
 function inputAndOutput(meta: OperationMeta): { inputFields: Fields | undefined; outputFields: Fields | undefined } {
   return {
     inputFields: meta.input ? Visibility.of(meta.input.getFields()).input : undefined,

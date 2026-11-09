@@ -14,7 +14,6 @@ export interface OpenApiDocument {
   components: { schemas: Record<string, Schema> };
 }
 
-/** What every refusal answers, whatever the door: `toHttpError`'s body. */
 const REFUSAL: Schema = {
   type: 'object',
   properties: {
@@ -25,21 +24,14 @@ const REFUSAL: Schema = {
   required: ['code', 'message'],
 };
 
-/**
- * What this process serves on REST, as OpenAPI 3.1 — read off the routes `generateRoutes` already
- * answers, never declared beside them. A schema is the card's descriptor, which IS JSON Schema; a
- * refusal is the op's own `errors` and the half the framework implies, at the status the door says.
- */
+/** What this process serves on REST, as OpenAPI 3.1, read off its routes. */
 export function openApiOf(app: AppLike): OpenApiDocument {
   const schemas: Record<string, Schema> = { Refusal: REFUSAL };
   const named = new Map<SchemaView, string>();
-  // An entity keeps its own name; a view cut from it is named by where it is used — `PostUpdateInput` —
-  // unless it states what a schema already written states. What a view borrowed from is not a shape.
   const refOf = (view: SchemaView, usedAs: string): Schema => {
     let name = named.get(view);
     if (!name) {
       const { 'x-fougere-derived': derived, ...descriptor } = Card.fromSchema(view).descriptor;
-      // A patch view requires nothing: every field it carries is a change, and none must be sent.
       const patch = view.getOpts().patch === true;
       if (patch) delete descriptor.required;
       descriptor.properties = writtenBy(descriptor.properties as Record<string, Schema>, patch) as typeof descriptor.properties;
@@ -50,7 +42,6 @@ export function openApiOf(app: AppLike): OpenApiDocument {
         const wanted = derived ? title + usedAs : title;
         name = wanted;
         for (let n = 2; schemas[name]; n++) name = `${wanted}${n}`;
-        // A reader shows a schema by its title, so a view says its own name and not its entity's.
         schemas[name] = { ...descriptor, title: name } as unknown as Schema;
       }
       named.set(view, name);
@@ -91,7 +82,6 @@ function operationOf(route: RouteDefinition, meta: OperationMeta, frond: string,
       required: inPath.has(param.name) || !param.optional,
       schema: { type: param.coerce ?? 'string' },
     }));
-  // A read carries no body: the fields of its input view are its query string.
   const queried = route.method === 'GET' && meta.input ? queryOf(meta.input) : [];
 
   const operation = route.operationName[0]!.toUpperCase() + route.operationName.slice(1);
@@ -112,7 +102,6 @@ function queryOf(view: SchemaView): Schema[] {
   return Object.entries(properties).map(([name, schema]) => ({ name, in: 'query', required: required.includes(name), schema }));
 }
 
-/** The input view whole, or the fields a change carries — the path designates, the body carries what changes. */
 function requestBodyOf(
   meta: OperationMeta,
   carried: { name: string; coerce?: string; optional: boolean }[],
@@ -155,7 +144,6 @@ function responsesOf(route: RouteDefinition, meta: OperationMeta, designates: bo
     const { status } = toHttpError(new FougereError({ code, message: code }));
     refusedAt.set(status, [...(refusedAt.get(status) ?? []), code]);
   }
-  // Each status names its own codes, so a reader's example is one this status can answer.
   for (const [status, refused] of refusedAt) {
     responses[String(status)] = {
       description: `Refused: ${refused.join(', ')}.`,
@@ -171,10 +159,6 @@ function responsesOf(route: RouteDefinition, meta: OperationMeta, designates: bo
   return responses;
 }
 
-/**
- * What the lifecycle axis says of who writes a field, in OpenAPI's words: a value the server fills
- * at creation is `readOnly`, so no request sends it; a field no update may change is not in a patch.
- */
 function writtenBy(properties: Record<string, Schema>, patch: boolean): Record<string, Schema> {
   return Object.fromEntries(Object.entries(properties).flatMap(([key, property]) => {
     const lifecycle = (property['x-fougere'] as { lifecycle?: { create?: unknown; update?: unknown } } | undefined)?.lifecycle;

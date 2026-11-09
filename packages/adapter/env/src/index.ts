@@ -4,7 +4,6 @@ import { Sources, storageOver, type Source, type Store, type Values } from '@fou
 
 type Variables = Readonly<Record<string, string | undefined>>;
 
-/** `timeoutMs` → `TIMEOUT_MS`, `catalogConfig` → `CATALOG_CONFIG`. */
 function variableOf(name: string): string {
   return name.replace(/[A-Z]/g, (letter) => `_${letter}`).toUpperCase();
 }
@@ -16,8 +15,8 @@ function processVariables(): Variables {
 }
 
 /**
- * Reading an entity off the environment: one variable per field, named `ENTITY_FIELD`, and for
- * rows `ENTITY_KEY_FIELD` read from the END, since the fields are known and the rest is the key.
+ * Reads an entity off the environment: one variable per field.
+ * Ex: `MEILI_KEY`, and `ENTITY_KEY_FIELD` for rows.
  *
  * Documented: [values](https://fougere.dev/docs/data/values).
  */
@@ -41,10 +40,7 @@ export class Env {
     return [variableOf(name), ...(key === undefined ? [] : [key.toUpperCase()]), variableOf(field)].join('_');
   }
 
-  /**
-   * What reads every row of `name`, keyed by what sits between the entity and a field — its fields
-   * judged when it is made, so two that end alike refuse the boot and not the first read.
-   */
+  /** What reads every row of `name`, its fields judged when it is made. */
   rows(entity: SchemaView, name: string): () => Map<string, Values> {
     const fields = Env.rowFields(entity.getFields(), name);
 
@@ -71,10 +67,6 @@ export class Env {
     return rows;
   }
 
-  /**
-   * The fields a row variable can end with. Two that end alike — `url` and `booksUrl` — make
-   * `MEILI_PROD_BOOKS_URL` two rows at once, so they are refused rather than guessed between.
-   */
   private static rowFields(fields: Fields, name: string): (readonly [string, string])[] {
     const primary = FieldSet.of(fields).primary;
     const suffixes = Object.keys(fields).filter((field) => field !== primary).map((field) => [field, variableOf(field)] as const);
@@ -88,12 +80,10 @@ export class Env {
       }
     }
 
-    // The longest first, so a field never takes the end of another's name.
     return suffixes.sort(([, a], [, b]) => b.length - a.length);
   }
 }
 
-/** Nothing here is written: the environment is changed where the process is started. */
 function readOnlyStore(env: Env, entity: SchemaView, name: string): Store {
   const rows = env.rows(entity, name);
   const refuse = (key: string) => {
