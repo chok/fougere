@@ -1,7 +1,3 @@
-/**
- * The server dual of the couple, in Next — for server components, server actions and route
- * handlers.
- */
 import { invokeOn, sessionOn, useFougereApp, stateFor, type SessionView } from '@fougere/app';
 import type { FrondCall, InvocationContext } from '@fougere/core';
 
@@ -27,7 +23,6 @@ export async function getSession(): Promise<SessionView> {
 
 async function requestState(): Promise<Record<string, unknown>> {
   try {
-    // Awaited on purpose: async in Next 15+, synchronous before — `await` accepts both.
     const { headers } = await import('next/headers');
 
     return await stateFor(await headers(), await useFougereApp());

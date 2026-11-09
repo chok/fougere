@@ -100,14 +100,6 @@ const AddIcon = (props: IconProps) => (
 const unique = (values: readonly (string | undefined)[]): string[] =>
   [...new Set(values.filter((value): value is string => !!value))];
 
-/**
- * Every visible sentence, under a key, with the English wording as its fallback.
- *
- * The keys live under `fougere.admin.*` — react-admin's own namespace is
- * `resources.*` and `ra.*`, and writing into it would collide with what it ships.
- * This is the same convention `FormField.labelKey` states for a field: the schema
- * carries no display text, and neither does a widget.
- */
 function useLabels() {
   const translate = useTranslate();
 
@@ -115,15 +107,6 @@ function useLabels() {
     translate(`fougere.admin.${key}`, { _: fallback, ...options });
 }
 
-/**
- * What names a row, and nothing is guessed.
- *
- * A declared facet says which field is the title; the primary key is the fallback,
- * because a row always has one and it identifies without pretending to describe.
- * The list here used to continue `'title', 'name', 'email'` — recognition by an
- * English word, which is what this package stopped doing on 2026-08-21: an entity
- * spelling `titre` got its id, and nothing said the facet was missing.
- */
 function titleOf(row: Record<string, unknown>, resource: FougereDashboardResource): string {
   const editorial = resource.facets.editorial as EditorialFacet | undefined;
   const users = resource.facets.users as UsersFacet | undefined;
@@ -135,7 +118,6 @@ function titleOf(row: Record<string, unknown>, resource: FougereDashboardResourc
   return '';
 }
 
-/** When a row last moved — from the declared facet only, for the reason `titleOf` gives. */
 function timestampOf(row: Record<string, unknown>, resource: FougereDashboardResource): number {
   const editorial = resource.facets.editorial as EditorialFacet | undefined;
   for (const key of unique([editorial?.updatedAt, editorial?.createdAt])) {
@@ -149,10 +131,6 @@ function timestampOf(row: Record<string, unknown>, resource: FougereDashboardRes
   return 0;
 }
 
-/**
- * The viewer's locale, never a fixed one: react-admin already holds which language is
- * on, and `Intl` is the only thing here that formats without a translation key.
- */
 const dateLabel = (timestamp: number, locale: string, fallback: string): string => timestamp
   ? new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short' }).format(timestamp)
   : fallback;
@@ -329,19 +307,6 @@ function UsersWidget(): ReactElement {
   );
 }
 
-/**
- * What the application IS, as opposed to what it holds.
- *
- * Every other widget counts rows; this one counts the shape that produced them —
- * fronds, facades, operations split by kind, and how wide each entity is. All of it comes
- * from the same card the menu was built from, so it costs no query at all.
- *
- * **Remotes are not in it, and the card is why.** `identityCardOf` maps `app.fronds`,
- * which holds what this process scanned; a frond named in `remotes:` lives in a separate
- * index (`boot/remote.ts`), discovered lazily at the first miss. So a consumer's card
- * announces its own fronds and never the ones it routes to. Saying "1 frond" while three
- * answer would be a lie the panel invented, so the count is labelled for what it is.
- */
 function StructureWidget(): ReactElement {
   const t = useLabels();
   const definitions = useResourceDefinitions();

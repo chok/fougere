@@ -18,7 +18,6 @@ export async function refreshSession(): Promise<void> {
 }
 
 export function useCurrentUser<TUser = Record<string, unknown>>() {
-  // Only reached in the browser, and only when a layout did not hydrate it.
   if (!fetched && typeof window !== 'undefined') void refreshSession();
 
   return {

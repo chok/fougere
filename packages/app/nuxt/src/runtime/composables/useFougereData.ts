@@ -1,7 +1,3 @@
-/**
- * The couple — useQuery (reads) and useCommand (writes), the two dual gestures of a page talking
- * to a Frond, in Vue.
- */
 import { useAsyncData, useRequestFetch, refreshNuxtData } from '#imports';
 import { ref, computed, toValue, onScopeDispose, type MaybeRefOrGetter } from 'vue';
 import type { FougereError } from '@fougere/core/contract';
@@ -42,7 +38,6 @@ export async function useQuery<
   const key = queryKeyOf(entityKey, op, toValue(input));
   const fetcher = useRequestFetch() as Fetcher;
 
-  // Register before any await — the link and scope cleanup need the setup scope.
   if (import.meta.client) {
     onScopeDispose(trackQuery(entityKey, key));
   }
@@ -68,8 +63,6 @@ export async function useQuery<
     hasMore,
     loading: pending,
     error,
-    // Nuxt does not export AsyncDataExecuteOptions, so the inferred signature cannot
-    // be named from outside; callers pass nothing.
     refresh: refresh as () => Promise<void>,
   };
 }
@@ -86,13 +79,11 @@ export function useCommand<
   const loading = ref(false);
   const error = ref<FougereError<Refused<Address, Op>> | null>(null);
 
-  /** The answer, or `null` when the call was refused — the refusal is in `error`, and nothing is thrown. */
   async function execute(input?: CallInput): Promise<Answered | null> {
     loading.value = true;
     error.value = null;
     try {
       const result = (await sendCall(fetcher, call, invocationOf(input))) as Answered;
-      // The link: same entity designated on both sides → revalidate its queries.
       const keys = mountedKeys(entityKey);
       if (keys.length) await refreshNuxtData(keys);
 

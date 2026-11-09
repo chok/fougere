@@ -29,13 +29,10 @@ export function useFormFor<E extends SchemaView>(entity: E, options: FormOptions
 
   const values: Writable<FormValues<E>> = writable(openingOf(fields, options.initial) as FormValues<E>);
   const errors = writable<FormErrors<E>>({});
-  // A form is designated by its ENTITY — it is a set of fields — so the facade it submits to is
-  // an address with no handler type behind it, and what it answers is the entity's row.
   const command = useCommand(options.to ?? facadeOf(entity), options.op ?? 'create');
   const choices = writable<Partial<Record<FormFieldName<E>, Choice[]>>>({});
   const searchable = writable<Partial<Record<FormFieldName<E>, boolean>>>({});
 
-  /** What a reference field offers: its first rows, or those whose label contains `text`. */
   async function search(name: FormFieldName<E>, text = ''): Promise<void> {
     const reference = fields.find((field) => field.name === name)?.reference;
     if (!reference) return;
@@ -52,7 +49,6 @@ export function useFormFor<E extends SchemaView>(entity: E, options: FormOptions
     for (const field of fields) if (field.reference) void search(field.name);
   }
 
-  /** Local pre-verdict — same rules as the handler, saves a lost round-trip. */
   function validator(): boolean {
     const result = entity.validate(payloadOf(entity, get(values)));
     errors.set(result.success ? {} : errorsByField<E>(result.errors));
@@ -75,8 +71,10 @@ export function useFormFor<E extends SchemaView>(entity: E, options: FormOptions
 
   return {
     fields,
-    /** The same fields, keyed by name — spread `fieldsByName.email.attrs` on an input
-     *  and the page states no rule of its own. */
+    /**
+     * The same fields, keyed by name, for a form that binds its inputs one at a time.
+     * Ex: `{...fieldsByName.email.attrs}`.
+     */
     fieldsByName: Object.fromEntries(fields.map((field) => [field.name, field])) as Partial<Record<FormFieldName<E>, FormField<FormFieldName<E>>>>,
     values,
     errors,

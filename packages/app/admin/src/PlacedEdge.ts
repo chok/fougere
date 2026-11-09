@@ -1,9 +1,6 @@
 import type { Point } from './Point.js';
 
-/**
- * One link between two nodes. `count` is absent on a link nothing has travelled: the config
- * declares it and no call has gone down it, which is drawn broken rather than not drawn.
- */
+/** One link between two nodes; `count` is absent when no call travelled it. */
 export interface PlacedEdge {
   from: string;
   to: string;

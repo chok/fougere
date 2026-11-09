@@ -1,19 +1,5 @@
 'use client';
 
-/**
- * The shape of the system, drawn from what the app says about itself.
- *
- * Every other page in this panel renders a DOOR — a list, a form, a row. This one renders
- * the app: which fronds run in the process it is talking to, which answered from somewhere
- * else, who called whom — and which the config names but nothing has ever answered from.
- * The first three are OBSERVED: a frond is elsewhere because it answered, never because
- * `remotes:` said so. The fourth is the only declared one, and it is the only one the
- * observed half cannot hold — a frond that never answered is absent from it.
- *
- * It is served by `@fougere/observability`, so its absence is a legible state and not an
- * error — which is why the entry stays in the menu when nothing answers. Hiding it would
- * hide the one place that can say what is missing.
- */
 import { Box, Card, CardContent, Chip, Skeleton, Typography, type Theme } from '@mui/material';
 import { useEffect, useMemo, useState, type ReactElement } from 'react';
 import { Title, useTranslate } from 'react-admin';
@@ -22,18 +8,12 @@ import { type Edge, type TopologyReport } from '@fougere/core';
 import { fetchTopology, figureOf, isOpaque, layoutOf, nodesOf } from './Drawing.js';
 import { type TopologyNode } from './TopologyNode.js';
 
-/** What the page is: the report, the refusal that means "not observed", or a real failure. */
 type State =
   | { status: 'loading' }
   | { status: 'served'; report: TopologyReport }
   | { status: 'unobserved' }
   | { status: 'failed'; error: unknown };
 
-/**
- * Every sentence this page draws goes through a key. Nothing under `@fougere/admin` is
- * written in a language — the counts below carry `smart_count`, which is what lets a
- * translation pick its own plural rather than inherit English's.
- */
 function useLabels() {
   const translate = useTranslate();
 
@@ -45,7 +25,6 @@ const Row = ({ children }: { children: React.ReactNode }) => (
   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>{children}</Box>
 );
 
-/** One call path, with its refusals — the only number here that is a health signal. */
 function EdgeLine({ edge, direction }: { edge: Edge; direction: 'out' | 'in' }): ReactElement {
   const label = useLabels();
 
@@ -66,11 +45,6 @@ function EdgeLine({ edge, direction }: { edge: Edge; direction: 'out' | 'in' }):
   );
 }
 
-/**
- * A palette path as SVG paint. `sx` resolves `'error.main'` for `color` and `bgcolor` and for
- * nothing else, so `fill` and `stroke` reach CSS verbatim — an invalid value, and SVG falls back
- * to BLACK. Every shape on this page is painted through here.
- */
 function paint(paths: { fill?: string; stroke?: string }) {
   const read = (theme: Theme, path: string) =>
     path.split('.').reduce<unknown>((held, key) => (held as Record<string, unknown>)?.[key], theme.palette) as string;
@@ -81,28 +55,12 @@ function paint(paths: { fill?: string; stroke?: string }) {
   });
 }
 
-/** What a node is painted with, by the one thing that separates the three states. */
 function toneOf(node: TopologyNode): 'primary' | 'grey' | 'warning' {
   if (node.silent) return 'warning';
 
   return node.placement === 'local' ? 'primary' : 'grey';
 }
 
-/**
- * The system, drawn. Placement is `layoutOf`'s — ranks, order and routing.
- *
- * The nodes are HTML over an SVG that draws only the lines, which is how React Flow is built and
- * why its nodes look like the rest of an app: a card is a `Box` with `sx`, so it reads the theme
- * like every other element. An SVG `<text>` positioned by hand does not.
- *
- * Both layers sit on ONE scale — the container takes the drawing's aspect ratio, and every node is
- * sized AND placed in per cent of it. A size in pixels does not grow with the viewBox the SVG
- * scales to its container, and the lines then stop short of the cards they point at.
- *
- * What the drawing says beyond who reaches whom: thickness is volume, a broken line is declared
- * and never travelled, and refusals are a figure rather than a red line — colour alone excludes a
- * reader who cannot see it, and "how many" is the question a red line raises without answering.
- */
 function Graph({ nodes, selected, onSelect }: {
   nodes: readonly TopologyNode[];
   selected: string | undefined;
@@ -273,7 +231,6 @@ export interface FougereTopologyProps {
 export function FougereTopology({ endpoint = CALL_ENDPOINT, fetcher = browserFetcher }: FougereTopologyProps = {}): ReactElement {
   const label = useLabels();
   const [state, setState] = useState<State>({ status: 'loading' });
-  /** Which frond the detail below is about — the drawing answers "where", one card answers "what". */
   const [selected, setSelected] = useState<string>();
 
   useEffect(() => {
@@ -330,9 +287,6 @@ export function FougereTopology({ endpoint = CALL_ENDPOINT, fetcher = browserFet
   }
 
   const nodes = nodesOf(state.report);
-  // Three counts because there are three ways of being known, and `elsewhere` means ANSWERED
-  // from elsewhere: counting a frond that never answered among them makes the summary
-  // contradict the card under it.
   const unheard = nodes.filter((node) => node.silent).length;
   const elsewhere = nodes.filter((node) => node.placement === 'remote' && !node.silent).length;
   const shown = nodes.find((node) => node.frond === selected) ?? nodes[0];

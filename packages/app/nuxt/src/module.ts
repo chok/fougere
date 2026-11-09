@@ -25,17 +25,12 @@ export interface FougereModuleOptions {
   /** Where `fronds/` lives, relative to the app's rootDir — found on its own (`projectRootOf`), so written only when it is elsewhere. */
   root?: string;
 
-  /**
-   * One key per EXTENSION, and the key is the package suffix AND the export name — `calls` is
-   * `import { calls } from '@fougere/calls'`.
-   */
   /** `@fougere/observability` — a span per operation, the four signals, OTLP. */
   observability?: Record<string, unknown> | false;
   /** `@fougere/calls` — the dev panel: a bounded log of what this process dispatched. */
   calls?: Record<string, unknown> | false;
 }
 
-/** The extension keys, in the order they are mounted. */
 const EXTENSION_KEYS = ['observability', 'calls'] as const;
 
 /** What the project asked for, in mount order. `false` is how a key is turned off. */
@@ -45,10 +40,6 @@ export function extensionsOf(options: FougereModuleOptions): { key: string; opti
     .map((key) => ({ key, options: options[key] }));
 }
 
-/**
- * A frond directory as the pattern Nuxt tests for a restart: it matches the changed
- * file against the path relative to the layer's app dir, so that is the base here.
- */
 const restartsOnFrom = (srcDir: string) => (dir: string): RegExp =>
   new RegExp(`^${relative(srcDir, dir).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}[\\\\/]`);
 
@@ -63,20 +54,13 @@ const module = defineNuxtModule<FougereModuleOptions>({
     const runtimeResolve = (...path: string[]) =>
       resolveModule('./runtime', ...path);
     const rootDir = nuxt.options.rootDir;
-    // Fronds may live at the workspace root (app under apps/*).
     const scanRoot = options.root ? resolve(rootDir, options.root) : projectRootOf(rootDir);
-    // The runtime app (fougereApp) scans fronds too; hand it the same root via
-    // env (the Nitro dev worker inherits the parent env, like FORCE_COLOR above).
     process.env.FOUGERE_ROOT = scanRoot;
 
-    // Propagate color support to Nitro dev worker (inherits parent env but has no TTY)
     if (process.stdout?.isTTY && !process.env.NO_COLOR) {
       process.env.FORCE_COLOR ??= '1';
     }
 
-    // Nitro decides which modules run something at load from its own list, and answers no for
-    // every module it leaves external: `import '@fougere/adapter-sql'` in the config was dropped
-    // from `nuxt dev`, and the boot found no source type. Keeping an external import costs nothing.
     (nuxt as any).hook('nitro:init', (nitro: any) => {
       nitro.hooks.hook('rollup:before', (_nitro: unknown, rollupConfig: any) => {
         const decided = rollupConfig.treeshake?.moduleSideEffects;
@@ -85,69 +69,39 @@ const module = defineNuxtModule<FougereModuleOptions>({
       });
     });
 
-    // The compiler stays out of the server bundle, TypeScript with it: a server boots from the
-    // statement the build wrote, and reaches the scan only where a project wrote none and has a
-    // disk. Rollup code-splits a dynamic import into the bundle, so only `external` excludes it —
-    // and an app that states its fronds builds with the compiler not installed at all.
     (nuxt as any).hook('nitro:config', (nitroConfig: any) => {
       nitroConfig.rollupConfig ??= {};
       nitroConfig.rollupConfig.external ??= [];
       if (Array.isArray(nitroConfig.rollupConfig.external)) {
         nitroConfig.rollupConfig.external.push('@fougere/compiler');
       }
-      // invoke reads the current request (state) through nitro's async context
       nitroConfig.experimental = { ...nitroConfig.experimental, asyncContext: true };
-      // A provider's container key IS its class name, read off the constructor at boot.
-      // esbuild lowers `static readonly` fields and renames the declaration doing it, so
-      // `class Communes { static readonly SOURCE = … }` registers as `_Communes` and the
-      // handler that asks for `Communes` gets a container miss — measured on Nitro's dev
-      // pass, ten classes, the six with statics renamed and the four without untouched.
-      // Same statement as `mangle.reserved` below, on the pass that builds the server.
       nitroConfig.esbuild = {
         ...nitroConfig.esbuild,
         options: { ...nitroConfig.esbuild?.options, keepNames: true },
       };
     });
 
-    // ── 0. A TS-aware loader, installed twice on purpose ──
-    // The `paths` below cover `.vue` pages; this covers the SCAN, which loads a
-    // frond's own sources — so `@fronds/user/entities/User.js` inside a handler resolves
-    // for the same reason it does in a page.
-    //
-    // The FIRST install carries no aliases, because the config names the scope they are
-    // built from: reading it must not need them. Safe because nothing in
-    // `fougere.config.ts` may import `@fronds/*` — the one import that would need the
-    // name to read the file that declares it.
     const installLoader = (alias?: Record<string, string>): void => {
       const jiti = createJiti(import.meta.url, { interopDefault: true, ...(alias ? { alias } : {}) });
       setModuleLoader((filePath) => jiti.import(filePath) as Promise<Record<string, unknown>>);
     };
     installLoader();
 
-    // ── 0b. Load the nearest fougere.config.ts, up from the app; module options override. ──
     const fileConfig = await loadNearestConfig(rootDir);
     const optionsOverride = Object.fromEntries(
       Object.entries(options).filter(([, v]) => v !== undefined),
     ) as Partial<FougereConfig>;
     const config: FougereConfig = { ...fileConfig, ...optionsOverride };
 
-    // Nitro replaces `console` with consola, whose own threshold sits at `info` — and a
-    // Logger line at `debug` goes out through `console.debug`, which consola then drops.
-    // The server's consola is built after this runs, so it reads the threshold set here; one
-    // the operator set is theirs to keep.
     if ((process.env.FOUGERE_LOG_LEVEL ?? config.logLevel) === 'debug') {
       process.env.CONSOLA_LEVEL ??= '4';
     }
     const conventions = resolveConventions(config.conventions);
 
-    // Now the names are known, so the loader can resolve them — and the scan below runs
-    // with them installed, which is what lets it read a frond that names its neighbour.
     const aliases = await frondAliases(scanRoot, conventions);
     installLoader(aliases);
 
-    // ── 1. What the app hosts: the `fronds.ts` it wrote, or the scan of its sources ──
-    // Filtered by FOUGERE_FRONDS. The compiler is imported only to scan, so an app that states
-    // its fronds builds without it.
     const frondsFilter = process.env.FOUGERE_FRONDS?.split(',').map((s) => s.trim()).filter(Boolean);
     const frondsFile = statementFileIn(scanRoot);
     const { scan, statement } = frondsFile
@@ -155,10 +109,6 @@ const module = defineNuxtModule<FougereModuleOptions>({
       : await scanned(scanRoot, frondsFilter, conventions);
     const { fronds } = scan;
 
-    // ── 1b. Resolve @fronds/* where TypeScript reads it, and watch the fronds ──
-    // The table answers every frond this start found, on any Vite and in Nitro, which reads no
-    // `paths`. Vite 8 also reads the `paths`, which is what finds a frond created while the
-    // server runs; an older Vite ignores the option and keeps to the table.
     const scope = `${conventions.scope}/*`;
     const local = resolve(scanRoot, conventions.fronds);
     const paths: Record<string, string[]> = {
@@ -175,40 +125,12 @@ const module = defineNuxtModule<FougereModuleOptions>({
       }
     });
 
-    // The frond directories ARE the watch list — nothing to declare. Without this, a
-    // frond under `apps/../..` sits outside rootDir, so Nuxt never restarts: the scan,
-    // the additive migration (once per boot) and the seeds all keep the previous shape,
-    // and a field you just added is simply absent with no error anywhere.
     for (const [specifier, path] of Object.entries(aliases)) {
       nuxt.options.alias[specifier] = path;
       const watched = [path];
-      // Nuxt reads this list TWICE and a directory serves only the first read: the
-      // watcher adds string entries, while the restart test is `pattern === path`
-      // against the changed FILE — which a directory never equals. So each dir goes
-      // in twice, as itself and as the pattern that matches what lives under it.
       nuxt.options.watch.push(...watched, ...watched.map(restartsOnFrom(nuxt.options.srcDir)));
     }
 
-    // ── 1b-bis. Keep entity names through minification ──────────────────────
-    //
-    // A form is designated by its entity: `useFormFor(Post)` reads `Post.name`, and
-    // that name travels — it is the address the form submits to (`post.create`).
-    //
-    // Rollup cannot keep `class Post extends entity({…})` as a hoisted declaration
-    // (its heritage clause is a CALL), so it emits `var Post = class extends …`.
-    // The class is ANONYMOUS; the name comes from JavaScript's inference on the
-    // variable. `keep_classnames` therefore protects nothing — measured, in
-    // `compress` and in `mangle` both. Reserving the IDENTIFIER is what works.
-    //
-    // The list is exact rather than guessed: the scan just ran, so these are the
-    // classes themselves, read before any bundler touched them. `@fougere/vite`
-    // does the same for the hosts that have no module to do it for them.
-    // What this app can DESIGNATE, never what it hosts. A CONSUMER hosts nothing and
-    // designates everything through `remotes:` — and the guard below used to read
-    // `fronds`, so the app most in need of the reservation got none: measured on a Nuxt
-    // worker consuming a remote frond, `Product` minified to `f` and the call left as
-    // `f.list`, answered `No declared remote hosts 'f'`. The error names the mangled
-    // letter, which is the only reason it was findable at all.
     const designated = [
       ...fronds.flatMap((frond) => frond.entities.map((e) => (e.entityClass as unknown as { name: string }).name)),
       ...syncedEntityNames(scanRoot, conventions),
@@ -229,7 +151,6 @@ const module = defineNuxtModule<FougereModuleOptions>({
       mangle.reserved = [...new Set([...(mangle.reserved ?? []), ...entityNames])];
     }
 
-    // ── 2. Composables — the primitives, nothing else ──
     addImports([
       { name: 'facade', from: '@fougere/app/client' },
       { name: 'useQuery', from: runtimeResolve('composables/useFougereData') },
@@ -238,25 +159,17 @@ const module = defineNuxtModule<FougereModuleOptions>({
       { name: 'useCurrentUser', from: runtimeResolve('composables/useCurrentUser') },
     ]);
 
-    // ── 3. Server: call envelope endpoint + catch-all route + shared utils ────
-    // One handler answers every route: it reads the path, and a route it does not serve is a 404 that says why.
     const answering = runtimeResolve('server/answer');
-    // `/_fougere/call/public` serves the surface named `public`, the way `generateRoutes(app, { surface })` does for REST.
     addServerHandler({ route: '/_fougere/call', method: 'post', handler: answering });
     addServerHandler({ route: '/_fougere/call/**', method: 'post', handler: answering });
-    // Session hydration — the page ships with its user, no round-trip
     addPlugin({ src: runtimeResolve('plugins/session.server'), mode: 'server' });
     if (serves(config.protocols, 'rest')) addServerHandler({ route: `${prefixOf(config.protocols)}/**`, handler: answering });
-    // What `protocols: { graphql: {} }` publishes, at `/graphql` and per audience at `/graphql/public`.
     if (serves(config.protocols, 'graphql')) {
       addServerHandler({ route: '/graphql', method: 'post', handler: answering });
       addServerHandler({ route: '/graphql/**', method: 'post', handler: answering });
     }
     addServerImportsDir(runtimeResolve('server/utils'));
 
-    // ── 5b. Auth — mounted always, answered only where a frond brought the engine ──
-    // Whether one did is known once the app is up: the auth is a frond, and `only:` or a
-    // placement decides which process serves it, not this build.
     addServerHandler({
       middleware: true,
       handler: runtimeResolve('server/auth/middleware/auth'),
@@ -266,41 +179,12 @@ const module = defineNuxtModule<FougereModuleOptions>({
       handler: runtimeResolve('server/auth/routes/auth/[...]'),
     });
 
-    // ── 6. What this app hosts ───
-    //
-    // A `fronds.ts` beside `fougere.config.ts` is the app STATING it — the same shape
-    // `configureFougere({ fronds })` gives every other host, made where the author can
-    // make it. The scan still runs at build and stays a CHECK: its diagnostics reach the
-    // console, and it becomes no module.
-    //
-    // Nothing is generated, because a generated module was imported by ABSOLUTE path,
-    // which a bundler sees as `file://` and therefore external. Externalized, Node read
-    // the frond's `.ts` itself — stripping types but resolving `../entities/Post.js`
-    // literally, a file that is not on disk. Measured on demos/nuxt-blog in-process:
-    // 500 on every call in `nuxt dev`, 200 once the statement is the only source.
-    // A codegen inside one repo also had nothing to carry: `fougere sync` writes classes
-    // because its source is ANOTHER repo, and here the author can just import.
-    // No statement of its own: the build writes the one the scan implies, so the runtime
-    // never reaches `scanProject`. That fallback works — it has a disk under Nuxt — but it
-    // loads `typescript` into a production boot, which is the whole of what a build is for.
-    // What is written is the STATEMENT (imports + `frond()`), never the scan result.
-    // `.ts`, and it is not cosmetic: the file spells its imports the way TypeScript sources
-    // do (`Post.js` for `Post.ts`), and Nitro externalizes a `.mjs` it can hand to Node —
-    // which then resolves `@fronds/*` against a package that does not exist, since an alias
-    // is a bundler's. Measured both ways, in-process: `.mjs` answers 500, `.ts` answers.
     const statedPath = frondsFile ?? addTemplate({
       filename: 'fougere-fronds.ts',
       write: true,
       getContents: () => statement!,
     }).dst;
 
-    // The facades, beside the two modules above — one export per address, and nothing but the
-    // address reaches a bundle. What a client cannot otherwise know is which refusals an
-    // operation answers, because TypeScript records nothing about what a function throws.
-    // Rewritten on every boot, so it cannot drift from the handlers it was read off.
-    //
-    // A page IMPORTS its facade from here, which is why the alias is set beside it: a project
-    // that never generated the file fails to resolve rather than falling back to `string`.
     const facadeFile = join(nuxt.options.buildDir, 'fougere-facade.ts');
     addTemplate({
       filename: 'fougere-facade.ts',
@@ -309,16 +193,10 @@ const module = defineNuxtModule<FougereModuleOptions>({
     });
     nuxt.options.alias['@fronds/facade'] = facadeFile;
 
-    // What a config may NAME, from the same scan — `ports:`, `remotes:`, `pipes:` and their
-    // neighbours designate classes by string, and a string is what nothing else here reads back.
-    // The sources are the config's own keys: no scan can find them, and a project with none
-    // states none.
     const names = join(scanRoot, NAMES);
     mkdirSync(dirname(names), { recursive: true });
     writeFileSync(names, emitNames(scan));
 
-    // ── 6b. Boot plugin (virtual — lives in .nuxt/) ───
-    // Planted by the plugin when the scan found them; a stated `fronds.ts` carries its own.
     const { ordered, cycle } = frondsFile ? { ordered: [], cycle: [] } : orderSeeds(fronds);
     const allSeeds = [...ordered, ...cycle];
     const configFile = configFileNear(rootDir);
@@ -334,11 +212,7 @@ const module = defineNuxtModule<FougereModuleOptions>({
 
 export default module;
 
-// ── Boot plugin generation ─────────────────────────
-// Exported (not just module-internal) so its output is unit-testable without
-// spinning up a whole Nuxt build.
 
-/** What of the config a generated plugin can carry: values, never providers. */
 function carried(config: FougereConfig): Partial<FougereConfig> {
   const { fronds, protocols, ports, sources, logLevel } = config;
 
@@ -347,22 +221,15 @@ function carried(config: FougereConfig): Partial<FougereConfig> {
     ...(protocols ? { protocols } : {}),
     ...(ports ? { ports } : {}),
     ...(sources ? { sources } : {}),
-    // The host hands its config over, so nothing re-reads the file at runtime — a key
-    // left out here is a key the app declared and no one applies.
     ...(logLevel ? { logLevel } : {}),
   } as Partial<FougereConfig>;
 }
 
 
-/** The fronds a `fronds.ts` states, read the way the boot will read them — no scan, no compiler. */
 async function statedIn(root: string, frondsFile: string, only: string[] | undefined): Promise<ScanResult> {
   return { root, fronds: Fronds.list((await statementIn(frondsFile, only)).fronds), diagnostics: [] };
 }
 
-/**
- * The fronds read off the sources, and the statement the build writes from them. The compiler is
- * the one package that needs a TypeScript program, so it is imported here and only here.
- */
 async function scanned(root: string, only: string[] | undefined, conventions: Conventions): Promise<{ scan: ScanResult; statement: string }> {
   const compiler = await import('@fougere/compiler').catch((error: NodeJS.ErrnoException) => {
     if (error.code !== 'ERR_MODULE_NOT_FOUND') throw error;
@@ -373,7 +240,6 @@ async function scanned(root: string, only: string[] | undefined, conventions: Co
   return { scan, statement: compiler.emitStatement(scan) };
 }
 
-/** The entity names `fougere sync` brought in: a consumer designates them exactly as it designates its own. */
 function syncedEntityNames(root: string, conventions: Conventions): string[] {
   const remotes = resolve(root, REMOTES);
   if (!existsSync(remotes)) return [];
@@ -394,44 +260,18 @@ export function generateBootPlugin(
   extensions: { key: string; options: unknown }[] = [],
   /** The app's own `fronds.ts`, when it states what it hosts instead of being scanned. */
   statedPath?: string,
-  /**
-   * Where a relative `db.path` is counted from. Written as a LITERAL because the plugin
-   * runs with Nitro's own directory: `apps/nuxt` made a second, empty database beside
-   * itself while the workspace held the real one, and said nothing.
-   */
   root?: string,
-  /**
-   * The config file `fronds:` comes from. A module key's options may hold a class — `user: User`
-   * for `@fougere/auth-better` — which the config's JSON cannot carry, so the plugin imports the
-   * file and hands its `fronds` over as written.
-   */
   configFile?: string,
-  /**
-   * Where a relative source path counts from at runtime — `root` in dev, and `null` for a build:
-   * a build runs elsewhere (`/app` in an image, where `/repo/site` does not exist), and its
-   * deployment puts `.data` beside `.output`, in the directory the server starts from.
-   */
   storageRoot: string | null | undefined = root,
 ): string {
   const lines: string[] = [];
   lines.push(`// Auto-generated by @fougere/nuxt — do not edit`);
-  // Explicit imports — nitro's auto-imports don't reach this template in a prod build
   lines.push(`import { defineNitroPlugin } from 'nitropack/runtime';`);
   lines.push(`import { configureFougere } from '${fougereAppPath}';`);
-  // A STATIC import, because that is the one thing a bundler needs spelled out — and the
-  // whole point is that nothing reads a directory once this file is built.
-  // The extension is DROPPED, and that is what decides who reads the file: an extensionless
-  // specifier cannot be resolved by Node, so the bundler resolves it — and only a bundler
-  // applies the `@fronds/*` aliases the statement's own imports are written with. Left in
-  // place, the path resolves natively, Node reads the frond's `.ts` and every call answers
-  // 500. Measured both ways on demos/nuxt-blog, in-process.
-  // The namespace too: a statement exports `vocabulary` only when the project has terms.
   if (statedPath) lines.push(`import fronds, * as statement from '${statedPath.replace(/\.(m?)[jt]sx?$/, '')}';`);
   if (configFile) lines.push(`import config from '${configFile.replace(/\.(m?)[jt]sx?$/, '')}';`);
   const configArg = configFile ? `{ ...${JSON.stringify(carried(config))}, fronds: config.fronds }` : JSON.stringify(carried(config));
 
-  // A module key is imported by the BUNDLE, like a seed: nothing resolves a specifier once the
-  // app is built, and the loader core falls back to looks from its own directory.
   const moduleKeys = keyedFrondEntries(config.fronds).map((entry) => entry.key).filter(statesModule);
   if (moduleKeys.length > 0) {
     lines.push(`import { getModuleLoader, setModuleLoader } from '@fougere/core/node';`);
@@ -446,18 +286,9 @@ export function generateBootPlugin(
 
   const sources = config.sources;
 
-  // `declaresStorage` is the canonical reader of `sources:` — asked, not re-interpreted.
-  // Reading `dialect` here made this codegen a SECOND reader, and the two disagreed:
-  // any value but 'sqlite' emitted an empty plugin, so no config, no seeds, not a word.
-  // resolveStorage now refuses an unresolvable dialect by name, at boot, out loud.
-  // An app with no storage still has FRONDS, and the scan is what says so. This used to
-  // emit an empty plugin, which threw the scan away with the storage — two unrelated
-  // facts, one early return. What a plugin with no storage states is exactly the scan.
   if (!declaresStorage(sources)) {
     lines.push(``);
     lines.push(`export default defineNitroPlugin(() => {`);
-    // Always configure, even with nothing to host: `hostedBy` is where the absence is
-    // answered, by name and with both keys. Skipping the call boots a silent app instead.
     const states = statedPath ? 'fronds, vocabulary: statement.vocabulary, ' : '';
     lines.push(`  configureFougere({ ${states}config: ${configArg} });`);
     lines.push(`});`);
@@ -465,65 +296,34 @@ export function generateBootPlugin(
     return lines.join('\n') + '\n';
   }
 
-  // The generated plugin names no storage package — resolution lives in
-  // @fougere/defaults, the one place that reads `sources:`.
   lines.push(`import { resolveStorage } from '@fougere/defaults';`);
-  // After the early return above: an app that declares no storage generates no imports.
   if (seeds.length) lines.push(`import { runSeeds } from '@fougere/core';`);
-  // One import per key the project named. The key IS the export and the package suffix, so
-  // a missing package is a build error naming the package — not a boot that silently lacks
-  // the panel someone asked for.
   for (const { key } of extensions) {
     lines.push(`import { ${key} } from '@fougere/${key}';`);
   }
   lines.push(``);
 
-  // Seed imports
   for (let i = 0; i < seeds.length; i++) {
     lines.push(`import seed_${i} from '${seeds[i].filePath}';`);
   }
   if (seeds.length) lines.push(``);
 
-  // Wrap all init in the plugin callback to avoid top-level native calls
   lines.push(`export default defineNitroPlugin(async (nitroApp) => {`);
-  // What it HOSTS first, and on its own line: it names no engine, so nothing below can stop
-  // it from being stated. Measured on workerd — `resolveStorage` threw on a native driver,
-  // Nitro swallowed the plugin whole, and the app came up with zero fronds and not a word.
-  // Two unrelated facts had been sharing one failure. `remotes` rides along for the same
-  // reason: it is the whole of why a consumer that hosts nothing boots at all.
   const states = statedPath ? 'fronds, vocabulary: statement.vocabulary, ' : '';
   lines.push(`  configureFougere({ ${states}config: ${configArg} });`);
   lines.push(``);
   lines.push(`  try {`);
-  // Pass `sources` through unchanged — resolveStorage is the one place that reads them, so both
-  // call sites (this codegen'd plugin and fougereApp.ts's own fallback) land on the same files.
-  // The adapters that answer them are registered by the config file imported above.
   const rootArg = storageRoot ? `, ${JSON.stringify(storageRoot)}` : '';
   lines.push(`    const storage = resolveStorage(${JSON.stringify(sources)}${rootArg});`);
-  // Opened here, so closed here: the app is handed the storage, and a refused boot or a reload
-  // disposes an app while the next one still needs the same connection.
   lines.push(`    nitroApp.hooks.hook('close', () => storage.close?.());`);
   lines.push(``);
   lines.push(`    configureFougere({`);
   if (statedPath) lines.push(`      fronds,`, `      vocabulary: statement.vocabulary,`);
   lines.push(`      config: ${configArg},`);
-  // The whole thing, not a hand-picked few of its members: the three this used to name
-  // left `transacted` and `close` behind, so a `Together` always compensated and the
-  // connection was never released — under Nuxt only, which is where the app really runs.
   lines.push(`      storage,`);
   lines.push(`      extensions: [`);
 
   if (seeds.length) {
-    // The seeding LOOP is core's (`runSeeds`), not written out here: a second copy
-    // drifted, and the one that had lost its storage fallback was this one — the one
-    // that actually runs when you open the app. Codegen's only job is the static
-    // imports, which is the one thing a bundler needs spelled out.
-    //
-    // Naming it 'seeds' REPLACES core's default member rather than running beside it —
-    // which is what the old `afterBoot` claim achieved by taking over the whole post-boot.
-    //
-    // `report` is passed: its default is a no-op, so the boot you actually open said
-    // nothing about a skipped seed — the very silence F-12 was aggravated by.
     lines.push(`        { name: 'seeds', up: (app) => runSeeds(app, [`);
     for (let i = 0; i < seeds.length; i++) {
       lines.push(`          { entityName: '${seeds[i].entityName}', data: seed_${i}, filePath: ${JSON.stringify(seeds[i].filePath)} },`);
@@ -531,18 +331,12 @@ export function generateBootPlugin(
     lines.push(`        ], (message) => console.log('[fougere:seed]' + message)) },`);
   }
 
-  // After the framework's own members, never before: tables, then rows, then what the host
-  // adds. A key named 'seeds' would REPLACE core's, which is the delta rule of AppLifecycle.
   for (const { key, options } of extensions) {
     lines.push(`        ${key}(${JSON.stringify(options ?? {})}),`);
   }
 
   lines.push(`      ],`);
   lines.push(`    });`);
-  // A storage that could not be opened is REPORTED, never swallowed. Nitro takes a
-  // throwing plugin quietly, and the app then serves its pages with an empty domain —
-  // the failure mode this whole file exists to make impossible. The scan above already
-  // stands, so what is lost here is the storage and nothing else, and the line says which.
   lines.push(`  } catch (cause) {`);
   lines.push(`    console.error('[fougere] storage could not be opened — the app serves its fronds with no rows.');`);
   lines.push(`    console.error(cause);`);

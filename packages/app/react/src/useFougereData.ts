@@ -1,8 +1,4 @@
 'use client';
-/**
- * The couple — useQuery (reads) and useCommand (writes), the two dual gestures of a page talking
- * to a Frond, in Vue.
- */
 import { useCallback, useEffect, useState } from 'react';
 import type { FougereError } from '@fougere/core/contract';
 import {
@@ -36,8 +32,6 @@ export function useQuery<
 ) {
   type Answered = Answer<Handler, Op>;
   const entityKey = addressOf(facade);
-  // The key IS the dependency: an input literal is a new object on every render, so
-  // depending on it directly would refetch forever. Its serialization is stable.
   const key = queryKeyOf(entityKey, op, input);
   const immediate = opts?.immediate !== false;
 
@@ -55,7 +49,6 @@ export function useQuery<
     } finally {
       setLoading(false);
     }
-    // `key` stands for (entity, op, input) — see above.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key]);
 
@@ -91,14 +84,12 @@ export function useCommand<
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<FougereError<Refused<Address, Op>> | null>(null);
 
-  /** The answer, or `null` when the call was refused — the refusal is in `error`, and nothing is thrown. */
   const execute = useCallback(
     async (input?: CallInput): Promise<Answered | null> => {
       setLoading(true);
       setError(null);
       try {
         const result = (await sendCall(fetcher, callOf(facade, op), invocationOf(input))) as Answered;
-        // The link: same entity designated on both sides → revalidate its queries.
         revalidate(mountedKeys(entityKey));
 
         return result;

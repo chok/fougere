@@ -36,20 +36,12 @@ export interface FougereViteOptions {
   keepClassNames?: boolean;
   /** Extra identifiers to reserve, for entities that do not live under `fronds/`. */
   reserved?: string[];
-  /**
-   * Where the fronds are, from the app — found on its own (`projectRootOf`), so written only when
-   * they sit elsewhere. The same key `@fougere/nuxt` reads.
-   */
+  /** Where the fronds are, when they sit elsewhere than `projectRootOf` finds. */
   root?: string;
   /** Set false when the host serves the call envelope itself. */
   serve?: boolean;
 }
 
-/**
- * The call envelope, answered by the dev server itself: a Vite app has no server of its own, and
- * the browser calls its own origin. The app boots at the first call, from `fougere.config.ts`, so
- * `fronds:` decides whether a frond answers here or a process away — the same line as under Nuxt.
- */
 function serveDoors() {
   return (req: IncomingMessage, res: ServerResponse, next: () => void): void => {
     if (!(req.url ?? '').startsWith('/_fougere/')) return next();
@@ -67,23 +59,7 @@ function serveDoors() {
   };
 }
 
-/**
- * Where the facade types land — the same place `fougere build` puts them, so a host that runs the
- * command and one that only starts a dev server read one file and not two.
- */
 
-/**
- * The facades this app serves, written when the dev server comes up — one export per address,
- * carrying the handler that answers there as a type.
- *
- * TypeScript records nothing about what a function throws, so a client cannot know which
- * refusals one operation answers without being told. Nuxt writes its own beside the two modules it
- * already generates; every other host reaches this plugin, which is what makes the narrowing
- * something you get from starting the app rather than from remembering a command.
- *
- * A scan that fails is not a failure of the dev server: the types fall back to every code there
- * is, which is what a client had before this existed.
- */
 async function writeDoors(root: string): Promise<void> {
   try {
     const { writeDerived } = await import('@fougere/compiler');
@@ -95,8 +71,6 @@ async function writeDoors(root: string): Promise<void> {
 
 export function fougere(options: FougereViteOptions = {}): Plugin {
   const external = [...new Set([...RUNTIME_PACKAGES, ...(options.external ?? [])])];
-  // Where `config` said the app is, so `buildStart` writes beside the alias it set — and where
-  // its fronds are, which a workspace puts two levels up.
   let app = process.cwd();
   const frondsOf = (from: string) => (options.root ? resolve(from, options.root) : projectRootOf(from));
 
@@ -107,11 +81,6 @@ export function fougere(options: FougereViteOptions = {}): Plugin {
       void writeDoors(frondsOf(root));
       if (options.serve !== false) server.middlewares.use(serveDoors());
     },
-    /**
-     * AWAITED, and that is the whole point: the bundler resolves `@fronds/facade` right after
-     * this hook, and a fire-and-forget write loses the race — `Could not load
-     * .fougere/facade.generated.ts`, measured on `demos/react-router-blog`.
-     */
     async buildStart() {
       await writeDoors(frondsOf(app));
     },
@@ -122,22 +91,11 @@ export function fougere(options: FougereViteOptions = {}): Plugin {
         config.ssr ??= {};
         config.ssr.external = [...new Set([...(config.ssr.external ?? []), ...external])];
 
-        // A page IMPORTS its facade, so the alias sits beside the file that declares them: a
-        // project that never generated it fails to resolve rather than losing its types in
-        // silence.
         app = resolve(config.root ?? app);
-        // Read by the boot, which runs in this process and has no other way to learn it — the
-        // variable `@fougere/nuxt` sets for the same reason.
         process.env.FOUGERE_ROOT = frondsOf(app);
         config.resolve ??= {};
-        // `@fronds/<name>` is read where TypeScript reads it, so a frond created while the server
-        // runs resolves at its first import. Vite 8 states the option; an older one ignores it and
-        // keeps to the table below, which answers every frond this start found.
         config.resolve.tsconfigPaths ??= true;
         const fronds = await frondAliases(frondsOf(app));
-        // Vite admits BOTH shapes and a host picks one: SvelteKit states an array of
-        // `{ find, replacement }`, and spreading an object over it made rolldown refuse the
-        // whole plugin — `StringExpected … on BindingViteAliasPluginAlias.replacement`.
         const facade = join(frondsOf(app), FACADE);
         config.resolve.alias = Array.isArray(config.resolve.alias)
           ? [...config.resolve.alias, { find: '@fronds/facade', replacement: facade }, ...Object.entries(fronds).map(([find, replacement]) => ({ find, replacement }))]
@@ -149,7 +107,6 @@ export function fougere(options: FougereViteOptions = {}): Plugin {
         if (reserved.length === 0) return;
 
         config.build ??= {};
-        // Vite's default minifier is esbuild, which has no per-name option; terser does.
         config.build.minify = 'terser';
         config.build.terserOptions = {
           ...config.build.terserOptions,

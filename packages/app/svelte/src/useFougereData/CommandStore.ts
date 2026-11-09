@@ -22,7 +22,6 @@ export function useCommand<
       store.set({ loading: true, error: null });
       try {
         const result = (await sendCall(fetcher, callOf(facade, op), invocationOf(input))) as Answer<Handler, Op>;
-        // The link: same entity designated on both sides → revalidate its queries.
         revalidate(mountedKeys(entityKey));
         store.set({ loading: false, error: null });
 

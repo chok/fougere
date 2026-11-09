@@ -1,10 +1,6 @@
 import type { H3Event } from 'h3';
 
-/**
- * What a call carries of the request: the session the auth middleware put on the event, without
- * its token, and nothing else of its context — the rest is Nitro's, and a call that crosses
- * would carry it.
- */
+/** What a call carries of the request: the session, without its token, and nothing else. */
 export function stateOf(event: Pick<H3Event, 'context'>): Record<string, unknown> {
   const { user, session } = event.context;
   const { token: _token, ...carried } = (session ?? {}) as Record<string, unknown>;
@@ -15,10 +11,7 @@ export function stateOf(event: Pick<H3Event, 'context'>): Record<string, unknown
   };
 }
 
-/**
- * The state of the request a server-side call runs within — `stateOf` its event, never the whole of
- * Nitro's context, which a call that crosses would carry. Outside a request there is none.
- */
+/** The state of the request a server-side call runs within; none outside a request. */
 export function stateOfRequest(eventNow: () => Pick<H3Event, 'context'> | undefined): Record<string, unknown> {
   try {
     const event = eventNow();

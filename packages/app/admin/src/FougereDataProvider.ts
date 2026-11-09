@@ -5,7 +5,6 @@ import type { ProviderOptions } from './ProviderOptions.js';
 
 type Values = Record<string, unknown>;
 
-/** A refusal, in the shape react-admin reads. */
 function asAdminError(err: unknown): unknown {
   const refusals = validationErrorsOf(err);
   if (!refusals) return err;
@@ -16,7 +15,6 @@ function asAdminError(err: unknown): unknown {
   });
 }
 
-/** The fields `data` holds differently from `before` — all of `data` when there is nothing to compare to. */
 function changed(data: Values, before?: Values): Values {
   if (!before) return data;
 
@@ -45,11 +43,9 @@ export function createDataProvider(options: ProviderOptions) {
     }
   };
 
-  /** The values as react-admin needs them: whatever identifies them, under `id`. */
   const identified = (values: Values | undefined, key: ResourceKey): Values | undefined =>
     values === undefined || key.primary === 'id' ? values : { ...values, id: values[key.primary] };
 
-  /** Its dual — what leaves for the server carries the entity's own field name. */
   const deidentified = (data: Values, key: ResourceKey): Values => {
     if (key.primary === 'id') return data;
     const { id, ...rest } = data;
@@ -142,11 +138,6 @@ export function createDataProvider(options: ProviderOptions) {
       return { data: identified(values as Values, key)! };
     },
 
-    /**
-     * A patch: what the form CHANGED, never the record it was handed. React-admin sends the whole
-     * row back, so an untouched `id`, `createdAt` or read-only `status` came back refused, and the
-     * refusal had no field on the form to show under — "The form is not valid", and nothing red.
-     */
     update: async (resource: string, params: { id: string | number; data: Values; previousData?: Values }) => {
       const key = keyOf(resource);
       const values = await call(resource, 'update', {

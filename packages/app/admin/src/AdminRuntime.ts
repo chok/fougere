@@ -20,7 +20,6 @@ export function createAdminRuntime(options: AdminRuntimeOptions = {}): AdminRunt
   } = options;
   let loading: Promise<LoadedAdmin> | undefined;
 
-  /** One card request, shared — and a REFUSED one is forgotten. */
   const load = (): Promise<LoadedAdmin> => loading ??= fetchCard(endpoint, fetcher)
     .then((card) => {
       const resources = applyAdminExtensions(resourcesOf(card), extensions);

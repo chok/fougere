@@ -11,14 +11,6 @@ import type { ReactAdminRenderers } from './ReactAdminRenderers.js';
 import type { ResourceRenderOptions } from './ResourceRenderOptions.js';
 import type { FougereAdminProps } from './FougereAdminProps.js';
 'use client';
-/**
- * The rendering half — a column becomes a field, a form field becomes an input.
- *
- * Two maps and a loop. Everything that DECIDES lives in `resources.ts`; what is here
- * only spells the decision in react-admin's vocabulary, which is why this file has no
- * conditional beyond the two lookups: a `render` that had to be interpreted would mean
- * the interpretation belonged upstream, in the projection that produced it.
- */
 import {
   Admin, Resource, Datagrid, List, SimpleForm, Edit, Create, Show, SimpleShowLayout,
   TextField, NumberField, BooleanField, DateField, ReferenceField, FunctionField,
@@ -65,29 +57,12 @@ const FIELDS = {
   text: TextField, number: NumberField, boolean: BooleanField, date: DateField,
 } as const;
 
-/**
- * A field's visible name — its i18n key, and the derived name when nothing fills it.
- *
- * `labelKey` is `entity.field`, the convention `FormField` states, and both projections
- * carry it beside the fallback. Passing `label` alone (which is what this file did until
- * 2026-08-21) throws the key away at the last step: a translated admin was impossible
- * from a contract that had said how to translate it all along.
- *
- * react-admin re-translates whatever `label` receives, with itself as the default, so
- * handing it a resolved string is a no-op rather than a second lookup.
- */
 type Translate = (key: string, options: Record<string, unknown>) => string;
 const labelOf = (t: Translate, field: { labelKey: string; label: string }): string =>
   t(field.labelKey, { _: field.label });
 
 function defaultFieldFor(column: TableColumn, t: Translate): ReactElement {
   if (column.render === 'link') {
-    // `to` is the target's registration key, which is also its resource name — the
-    // card writes both with `registrationKeyOf`, so no mapping is needed here.
-    // No child on purpose: with one, `ReferenceField` prints whatever the child names —
-    // here the foreign id, twice over. Without one it renders the target's
-    // `recordRepresentation`, which is the human name, and brings a loading and an error
-    // state for free.
     return (
       <ReferenceField key={column.name} source={column.name} reference={column.to!} label={labelOf(t, column)} />
     );
@@ -105,11 +80,6 @@ function defaultFieldFor(column: TableColumn, t: Translate): ReactElement {
   return <Field key={column.name} source={column.name} label={labelOf(t, column)} />;
 }
 
-/**
- * The bounds ride along under the names a browser already enforces — the same
- * `attrs` a Vue form spreads onto its input. The validator reads the same shape either
- * way; stating them here only means the refusal arrives while typing.
- */
 function defaultInputFor(field: FormField, t: Translate): ReactElement {
   if (field.reference) {
     const { to, label } = field.reference;
@@ -162,20 +132,6 @@ function inputFor(resource: AdminResource, field: FormField, t: Translate, rende
   return cloneElement(rendered, { key: field.name });
 }
 
-/**
- * A business operation, as a button.
- *
- * This is the only thing the panel has that a generic CRUD admin has not, and until now
- * it had no reader at all: `AdminResource.operations` fed the stats widget and nothing
- * else. In the demo that was demonstrable — `publish` is announced by the card, the
- * extension gives it a label and a confirmation sentence, and there was no way to publish
- * an article from the back-office.
- *
- * Three things are derived and none is declared per entity: WHICH ops (everything the
- * facade serves beyond the five verbs), WHETHER it asks for input (`op.input` — then the
- * dialog's form is `formFieldsOf` over the reconstructed schema, the same projection an
- * ordinary form uses), and WHETHER it confirms (`op.confirm`, from an extension).
- */
 function OperationButton({
   resource,
   operation,
@@ -256,7 +212,6 @@ function OperationButton({
   );
 }
 
-/** Row-level actions: the verbs the facade serves, then everything else it serves. */
 function RowActions({ resource }: { resource: AdminResource }): ReactElement {
   const actions = useMemo(() => actionsOf(resource.operations), [resource]);
 
@@ -300,17 +255,6 @@ const showFor = (r: AdminResource, renderers?: ReactAdminRenderers) => function 
     </Show>
   );
 };
-/**
- * `pessimistic`, and the reason is the provider's own work.
- *
- * react-admin edits `undoable` by default: it redirects at once, sends the call five
- * seconds later, and reports a failure in a toast — by which time the form is unmounted.
- * `useEditController` says it outright (`if (!hasValidationErrors || mutationMode !==
- * 'pessimistic')`), so the per-field refusals `asAdminError` builds from
- * `VALIDATION_FAILED` were computed, sent, and thrown away on every edit. Create was
- * always pessimistic, which is why the same form validated differently depending on whether
- * the row existed.
- */
 const editFor = (r: AdminResource, renderers?: ReactAdminRenderers) => function ResourceEdit() {
   const t = useTranslate();
 
@@ -335,8 +279,6 @@ export function resourceFor(r: AdminResource, options: ResourceRenderOptions = {
     label: r.label,
     primary: r.primary,
     facets: r.facets,
-    // The frond it belongs to and what it answers — the card said both, and a widget
-    // reporting on the app's own shape had no other way to reach them.
     frond: r.frond,
     operations: r.operations.map(({ name, kind }) => ({ name, kind })),
     fieldCount: r.columns.length,
@@ -356,10 +298,6 @@ export function resourceFor(r: AdminResource, options: ResourceRenderOptions = {
           ? FougereContentIcon
           : undefined)}
       options={resourceOptions}
-      // What names a row everywhere react-admin needs a name: the Show/Edit page title,
-      // an autocomplete label, the target of a reference. The declared facet says which
-      // field that is; the key is the fallback, and it was the only value used before —
-      // so every one of those places printed `post_1`.
       recordRepresentation={
         (r.facets.editorial as EditorialFacet | undefined)?.title
         ?? (r.facets.users as UsersFacet | undefined)?.name
@@ -369,27 +307,10 @@ export function resourceFor(r: AdminResource, options: ResourceRenderOptions = {
   );
 }
 
-/**
- * The whole back-office — derived defaults first, deltas and renderers second.
- *
- * `<Admin>` accepts a function child returning a promise of resources, so the menu is
- * built at LOAD time from `rpc.discover` rather than at build time from a generator.
- * Which is what lets this bundle be compiled once and shipped: no entity of the host
- * app enters it, so there is nothing per-project left to build.
- */
 type BaseAdminProps = ComponentProps<typeof Admin>;
 
 const EMPTY_EXTENSIONS: readonly AdminExtension[] = [];
 
-/**
- * What the panel shows when it could not ask what to show.
- *
- * The card IS the application as far as this bundle is concerned, so a refused
- * `rpc.discover` leaves nothing to render — and react-admin's async children have no
- * rejection path of their own: the promise rejects, `status` stays `'loading'`, and the
- * operator watches a spinner with no message and no way out. That is the only state
- * where the panel says nothing at all, so it is the one worth building by hand.
- */
 function DiscoveryError({ error, onRetry }: { error: unknown; onRetry: () => void }): ReactElement {
   const t = useTranslate();
   const label = (key: string, fallback: string) => t(`fougere.admin.${key}`, { _: fallback });
@@ -433,9 +354,6 @@ export function FougereAdmin({
   dashboard: dashboardOverride,
   ...adminProps
 }: FougereAdminProps): ReactElement {
-  // A retry rebuilds the runtime, which is what makes it a retry: the previous one
-  // holds a cleared slot, but react-admin only re-runs its async child when the tree
-  // changes, and this key is the change.
   const [attempt, setAttempt] = useState(0);
   const runtime = useMemo(
     () => createAdminRuntime({ endpoint, fetcher, extensions }),

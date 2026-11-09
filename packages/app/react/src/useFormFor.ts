@@ -30,13 +30,10 @@ export function useFormFor<E extends SchemaView>(entity: E, options: FormOptions
 
   const [values, setValues] = useState<FormValues<E>>(() => openingOf(fields, options.initial) as FormValues<E>);
   const [errors, setErrors] = useState<FormErrors<E>>({});
-  // A form is designated by its ENTITY — it is a set of fields — so the facade it submits to is
-  // an address with no handler type behind it, and what it answers is the entity's row.
   const command = useCommand(options.to ?? facadeOf(entity), options.op ?? 'create');
   const [choices, setChoices] = useState<Partial<Record<FormFieldName<E>, Choice[]>>>({});
   const [searchable, setSearchable] = useState<Partial<Record<FormFieldName<E>, boolean>>>({});
 
-  /** What a reference field offers: its first rows, or those whose label contains `text`. */
   const search = useCallback(async (name: FormFieldName<E>, text = '') => {
     const reference = fields.find((field) => field.name === name)?.reference;
     if (!reference) return;
@@ -57,7 +54,6 @@ export function useFormFor<E extends SchemaView>(entity: E, options: FormOptions
     setValues((current) => ({ ...current, [name]: value }));
   }, []);
 
-  /** Local pre-verdict — same rules as the handler, saves a lost round-trip. */
   const validator = useCallback((): boolean => {
     const result = entity.validate(payloadOf(entity, values));
     setErrors(result.success ? {} : errorsByField<E>(result.errors));
@@ -65,7 +61,6 @@ export function useFormFor<E extends SchemaView>(entity: E, options: FormOptions
     return result.success;
   }, [entity, values]);
 
-  /** Validate locally, then send through the command. */
   const submit = useCallback(async (): Promise<FormRow<E> | null> => {
     if (!validator()) return null;
     const answer = await command.execute({ params: options.params, input: payloadOf(entity, values) });
@@ -74,8 +69,6 @@ export function useFormFor<E extends SchemaView>(entity: E, options: FormOptions
     return answer as FormRow<E> | null;
   }, [validator, command, options.params, options.initial, fields, values]);
 
-  // What the server refused lands per field too, read off the command's own state: its `execute` resolves
-  // before React has rendered the refusal, so it cannot be handed over at the call.
   const refusals = command.error ? validationErrorsOf(command.error) : undefined;
   const shown = Object.keys(errors).length === 0 && refusals ? errorsByField<E>(refusals) : errors;
 
@@ -87,8 +80,8 @@ export function useFormFor<E extends SchemaView>(entity: E, options: FormOptions
   return {
     fields,
     /**
-     * The same fields, keyed by name — a form that lays its inputs out by hand binds one at a time
-     * (`v-bind="fieldsByName.email.attrs"`), and still states no rule of its own.
+     * The same fields, keyed by name, for a form that binds its inputs one at a time.
+     * Ex: `{...fieldsByName.email.attrs}`.
      */
     fieldsByName,
     values,

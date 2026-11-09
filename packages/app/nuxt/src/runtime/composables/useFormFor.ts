@@ -13,14 +13,11 @@ export function useFormFor<E extends SchemaView>(entity: E, options: FormOptions
 
   const values = reactive<Record<string, unknown>>(openingOf(fields, options.initial));
   const errors = reactive<Record<string, string>>({});
-  // A form is designated by its ENTITY — it is a set of fields — so the facade it submits to is
-  // an address with no handler type behind it, and what it answers is the entity's row.
   const command = useCommand(options.to ?? facadeOf(entity), options.op ?? 'create');
   const fetcher = useRequestFetch() as Fetcher;
   const choices = reactive<Record<string, Choice[]>>({});
   const searchable = reactive<Record<string, boolean>>({});
 
-  /** What a reference field offers: its first rows, or those whose label contains `text`. */
   async function search(name: FormFieldName<E>, text = ''): Promise<void> {
     const reference = fields.find((field) => field.name === name)?.reference;
     if (!reference) return;
@@ -41,7 +38,6 @@ export function useFormFor<E extends SchemaView>(entity: E, options: FormOptions
     for (const key of Object.keys(errors)) delete errors[key];
   }
 
-  /** Local pre-verdict — same rules as the handler, saves a lost round-trip. */
   function validator(): boolean {
     clearErrors();
     const result = entity.validate(payloadOf(entity, values));
@@ -51,7 +47,6 @@ export function useFormFor<E extends SchemaView>(entity: E, options: FormOptions
     return false;
   }
 
-  /** Validate locally, then send through the command. */
   async function submit(): Promise<FormRow<E> | null> {
     if (!validator()) return null;
     const answer = await command.execute({ params: options.params, input: payloadOf(entity, values) });
@@ -65,8 +60,8 @@ export function useFormFor<E extends SchemaView>(entity: E, options: FormOptions
   return {
     fields,
     /**
-     * The same fields, keyed by name — a form that lays its inputs out by hand binds one at a time
-     * (`v-bind="fieldsByName.email.attrs"`), and still states no rule of its own.
+     * The same fields, keyed by name, for a form that binds its inputs one at a time.
+     * Ex: `v-bind="fieldsByName.email.attrs"`.
      */
     fieldsByName: Object.fromEntries(fields.map((f) => [f.name, f])) as Partial<Record<FormFieldName<E>, FormField<FormFieldName<E>>>>,
     values: values as FormValues<E>,

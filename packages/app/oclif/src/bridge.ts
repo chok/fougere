@@ -1,19 +1,7 @@
-/**
- * An operation's input contract, as oclif's args and flags.
- *
- * The same derivation `@fougere/cli` does for citty, against another target: what an entity
- * states is read once — a closed set becomes an `enum`, a `default(v)` is shown in `--help`,
- * and a field's own sentence is its description. Nothing is written down twice.
- *
- * The ARGUMENTS come from the operation's own input, never from the entity: `list` accepts
- * nothing while `create` accepts a draft, and an entity-wide derivation would demand a price
- * to read a list.
- */
 import { Lifecycle, Role, Shapes, Visibility, type Fields } from '@fougere/schema';
 import { Args, Flags } from '@oclif/core';
 import type { ArgInput, FlagInput } from '@oclif/core/interfaces';
 
-/** What a caller supplies: the fields the axes admit, or the PRIMARY when they admit nothing. */
 function suppliedIn(fields: Fields): Fields {
   const written = Visibility.of(fields).input;
   if (Object.keys(written).length > 0) return written;
@@ -30,16 +18,6 @@ export interface Shape {
   flags: FlagInput;
 }
 
-/**
- * A parameter the scan read off the signature, when the operation names no view.
- *
- * `Crud(Product).findById(id: string)` takes a bare string — there is no entity to read axes
- * from, and the terminal would otherwise offer nothing at all. The signature is what remains,
- * and it says the name, the type, and whether it is optional.
- *
- * A parameter the framework fills is skipped: `user?: User` is resolved from the session, and
- * `invocation` is the envelope. Neither is a caller's to type.
- */
 const RESOLVED = new Set(['user', 'invocation', 'ctx', 'context']);
 
 export function paramsToShape(params: readonly { name: string; type: { name?: string }; optional?: boolean }[]): Shape {
@@ -60,8 +38,6 @@ export function paramsToShape(params: readonly { name: string; type: { name?: st
     }
 
     const at = kebab(param.name);
-    // A flag is text, and `paramsOf` reads it back: `Flags.integer` turned `9.5` away for a
-    // parameter declared `number`, which admits it.
     flags[at] = type === 'boolean' ? Flags.boolean({}) : Flags.string({ required });
   }
 
@@ -85,9 +61,6 @@ export function inputToShape(fields: Fields): Shape {
       ? shape.enum.filter((value) => value !== null).map(String)
       : undefined;
 
-    // The first required plain string becomes positional, the rule `fougere explain --root`
-    // and `fougere graph <root>` already follow. A closed set stays a flag: its legal values
-    // read better named than guessed by position.
     if (!positional && required && type === 'text' && !options) {
       args[key] = Args.string({ description, required: true });
       positional = true;
@@ -96,9 +69,6 @@ export function inputToShape(fields: Fields): Shape {
 
     const at = kebab(key);
     const fallback = Lifecycle.of(field).literal?.value;
-    // A flag is text; `inputOf` reads it back as the shape declares it, so a number needs no
-    // flag of its own — `Flags.integer` refused `9.5` for a `number()` and passed an integer on
-    // as a string.
     flags[at] = type === 'boolean'
       ? Flags.boolean({ description, default: fallback as boolean | undefined })
       : Flags.string({ description, options, required, default: fallback === undefined ? undefined : String(fallback) });
@@ -107,7 +77,6 @@ export function inputToShape(fields: Fields): Shape {
   return { args: args as ArgInput, flags: flags as FlagInput };
 }
 
-/** What oclif parsed, under the names the operation declared: a flag is kebab, a field is not. */
 function renamed(parsed: Record<string, unknown>, names: readonly string[]): Record<string, unknown> {
   const byFlag = new Map(names.map((name) => [kebab(name), name]));
 
@@ -131,8 +100,6 @@ export function paramsOf(
 
   return Object.fromEntries(
     Object.entries(renamed(parsed, params.map((param) => param.name)))
-      // A bare parameter states a TypeScript type, not a shape — `number` is the one that
-      // stands for a value the terminal can only hand over as text.
       .map(([name, value]) => [
         name,
         declared.get(name) === 'number' ? Shapes.fromText({ type: 'number' }, value) : value,

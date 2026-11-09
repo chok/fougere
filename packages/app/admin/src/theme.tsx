@@ -15,30 +15,11 @@ import { SvgIcon, type SvgIconProps } from '@mui/material';
 
 type Mode = 'light' | 'dark';
 
-/**
- * The accent, and only the accent.
- *
- * One saturated colour in the whole panel: the primary action, the focus ring, the
- * active menu item, the mark. Everything else is neutral, and a STATUS is semantic
- * (green/amber/red/grey) rather than brand-tinted — the version before this painted
- * every chip in brand green, so `draft`, `published` and `suspended` were one colour.
- */
 const fern = {
   50: '#EDF9F2', 100: '#D3F0E0', 200: '#A8E1C3', 300: '#74CDA1', 400: '#45B37F',
   500: '#22995F', 600: '#16794D', 700: '#116040', 800: '#0E4C34', 900: '#0B3D2B',
 } as const;
 
-/**
- * The neutrals, by ROLE rather than by lightness.
- *
- * Nine names that each answer one question — what is behind the page, what is behind a
- * card, which line separates two things, which grey is text. Picking a grey per site is
- * what produces borders that jump between components and hovers nobody can see, and it
- * is the difference this file could not state while it held three hex values.
- *
- * Dark is not an inversion: it is the same roles, instantiated again. A dark canvas is
- * `#0B0C0E`, never `#000` — pure black has no room for a surface above it.
- */
 const neutral = {
   light: {
     canvas: '#FCFCFD', surface: '#FFFFFF', subtle: '#F7F8F9', sunken: '#F1F3F5',
@@ -58,11 +39,6 @@ const createFougereTheme = (mode: Mode): RaThemeOptions => {
   const c = neutral[mode];
   const accent = dark ? '#4FC08D' : fern[600];
   const ring = dark ? 'rgba(79,192,141,0.32)' : 'rgba(22,121,77,0.20)';
-  /**
-   * The one shadow in the file, and it is for what FLOATS — a menu, a popover, a dialog.
-   * A card is separated by its edge; a thing that hovers over the page is separated by
-   * the light it blocks, and removing that shadow too would make a menu unreadable.
-   */
   const overlay = dark
     ? '0 10px 30px -10px rgba(0,0,0,.70), 0 2px 8px -4px rgba(0,0,0,.60)'
     : '0 8px 24px -8px rgba(16,24,32,.16), 0 2px 6px -2px rgba(16,24,32,.10)';
@@ -92,17 +68,6 @@ const createFougereTheme = (mode: Mode): RaThemeOptions => {
     sidebar: { width: 232, closedWidth: 56 },
     spacing: 8,
 
-    /**
-     * A short scale, tightly set. A back-office is read at 13px, not 16 — the air
-     * belongs BETWEEN blocks, not inside the controls. Headings climb little (h1 is
-     * 24px, not 32) because nothing on an operator's screen needs to shout.
-     *
-     * The weights are 500/550/600/620, which only a VARIABLE font honours — the host
-     * must load one (`@fontsource-variable/inter`, or any variable family in the stack).
-     * With a static font every one of them rounds to 700, which is what the file did for
-     * its whole life: `Inter` was named here and loaded nowhere, so the panel ran on the
-     * system stack with four bold weights and read as a 2019 Material app.
-     */
     typography: {
       ...base.typography,
       fontFamily: [
@@ -178,11 +143,6 @@ const createFougereTheme = (mode: Mode): RaThemeOptions => {
         styleOverrides: { root: { padding: 16, '&:last-child': { paddingBottom: 16 } } },
       },
 
-      /**
-       * Three weights, one hierarchy: `contained` is the action a screen is FOR,
-       * `outlined` an alternative to it, `text` everything else. A screen showing two
-       * contained buttons has answered no question for the reader.
-       */
       MuiButton: {
         defaultProps: { disableElevation: true, size: 'small' },
         styleOverrides: {
@@ -254,9 +214,6 @@ const createFougereTheme = (mode: Mode): RaThemeOptions => {
             color: dark ? '#8FDCB8' : fern[700],
             borderColor: dark ? 'rgba(79,192,141,.24)' : fern[200],
           },
-          // The root above paints every chip neutral, so a chip asking for `error` used to
-          // come out identical to the count beside it — and a refusal count that reads like
-          // a total is the one number on a topology page that must not.
           colorError: {
             backgroundColor: dark ? 'rgba(240,115,106,.14)' : '#FDF0EF',
             color: dark ? '#F0736A' : '#C1372F',
@@ -268,8 +225,6 @@ const createFougereTheme = (mode: Mode): RaThemeOptions => {
       MuiTableCell: {
         styleOverrides: {
           root: { borderBottomColor: c.borderSubtle, paddingBlock: 8, paddingInline: 12, fontSize: '.8125rem' },
-          // Sentence case. Uppercase headers with positive tracking are the single most
-          // visible 2015-era Material signature, and they cost legibility to boot.
           head: {
             color: c.muted,
             backgroundColor: c.subtle,
@@ -383,23 +338,6 @@ const createFougereTheme = (mode: Mode): RaThemeOptions => {
 export const fougereLightTheme = createFougereTheme('light');
 export const fougereDarkTheme = createFougereTheme('dark');
 
-/** A tiny, code-native mark: crisp at any size and easy for themes to recolor. */
-/**
- * The mark — a sprig of two fronds, computed rather than drawn.
- *
- * It follows the herb glyph the site already brands with (`i-noto-herb`), redrawn here
- * rather than vendored: one mark across the site, the repository and this panel, and no
- * emoji artwork copied into a package that ships to npm.
- *
- * Two quadratic rachises, a leaflet per side at points along each — leaning toward the
- * tip, shortening as they go — and the main one ends in a crozier, a frond that has not
- * finished unrolling. That last curl is the only detail that makes it a FERN rather than
- * a generic leaf at 24 pixels.
- *
- * Generated because that is what makes it editable: the shape is the CURVES and the
- * COUNTS, so widening an arc or adding a pair is a number here. Hand-tuned `d=""`
- * strings can only be redrawn, never adjusted.
- */
 type Sprig = { from: readonly [number, number]; via: readonly [number, number]; to: readonly [number, number] };
 
 const MAIN: Sprig = { from: [14.5, 29.5], via: [11.5, 16.5], to: [18.4, 8.1] };
@@ -433,8 +371,6 @@ function leaflets(
     const length = maxLength * (1 - 0.55 * t);
     const width = maxWidth * (1 - 0.35 * t);
     for (const side of [1, -1]) {
-      // The leaflet's axis: the normal, leaned toward the tip. Both sides lean the same
-      // way, which is what stops a generated frond from looking like a fish bone.
       const kx = -ay * side + ax * 0.52;
       const ky = ax * side + ay * 0.52;
       const k = Math.hypot(kx, ky);
@@ -502,13 +438,6 @@ const TopologyIcon = (props: SvgIconProps) => (
   <SvgIcon {...props}><path d="M12 2a3 3 0 0 1 1 5.83V10h4a3 3 0 0 1 3 3v1.17a3 3 0 1 1-2 0V13a1 1 0 0 0-1-1h-4v2.17a3 3 0 1 1-2 0V12H7a1 1 0 0 0-1 1v1.17a3 3 0 1 1-2 0V13a3 3 0 0 1 3-3h4V7.83A3 3 0 0 1 12 2Z" /></SvgIcon>
 );
 
-/**
- * The derived menu, plus the one entry that is not a facade.
- *
- * `Menu.ResourceItems` keeps the resources the card produced — the menu stays derived, and
- * this adds beside it rather than replacing it. The topology entry shows even when nothing
- * answers: the page is the only place that can say what is missing.
- */
 const FougereMenu = () => {
   const translate = useTranslate();
 

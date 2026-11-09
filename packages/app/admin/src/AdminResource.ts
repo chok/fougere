@@ -20,10 +20,7 @@ export interface AdminResource extends ResourceKey {
   frond: string;
   /** Display fallback. The registration key in `name` never changes. */
   label: string;
-  /**
-   * Declared semantic notions, empty until an extension states one. Nothing is
-   * inferred: what a closed set's member MEANS is not in its shape.
-   */
+  /** What an extension declares a value means; empty until one does. */
   facets: AdminFacets;
   /** What a row shows in a list, and what a reference points at. */
   columns: TableColumn[];
@@ -31,10 +28,7 @@ export interface AdminResource extends ResourceKey {
   fields: FormField[];
   /** Every callable operation, including the five CRUD verbs. */
   operations: AdminOperation[];
-  /**
-   * Which of the five the facade actually serves. A facade answering only `list` gets a
-   * list and no buttons — the card says so, so the UI never offers what would 404.
-   */
+  /** Which of the five the facade serves, so the UI offers nothing that would 404. */
   can: { list: boolean; show: boolean; create: boolean; edit: boolean; delete: boolean };
 }
 
@@ -44,10 +38,7 @@ function labelOf(name: string): string {
   return words.charAt(0).toUpperCase() + words.slice(1);
 }
 
-/**
- * The five verbs react-admin already has pages for. Everything else a facade serves is a
- * business operation, and gets a button rather than a page.
- */
+/** The five verbs react-admin has pages for; any other operation gets a button. */
 export const CRUD_OPS = ['list', 'findById', 'create', 'update', 'delete'] as const;
 
 /** What a facade serves beyond CRUD — the only thing this panel has that a generic one has not. */
@@ -68,7 +59,6 @@ export function capabilitiesOf(operations: readonly Pick<AdminOperation, 'name'>
   };
 }
 
-/** The entity a facade's rows are — what its `list`, else its `findById`, answers. */
 function rowsOf(facade: IdentityCard['fronds'][number]['facades'][number]): string | undefined {
   const reads = facade.ops.find((op) => op.name === 'list') ?? facade.ops.find((op) => op.name === 'findById');
 
@@ -78,8 +68,6 @@ function rowsOf(facade: IdentityCard['fronds'][number]['facades'][number]): stri
 /** A facade that answers no entity's rows is not a resource. */
 export function resourcesOf(card: IdentityCard): AdminResource[] {
   const out: AdminResource[] = [];
-  // Every schema first, so a reference is resolved to the entity it names — its fields say which one
-  // names a row — rather than to a bare name, which left a choice showing its key.
   const schemas = new Map<string, Entity>();
   const resolve = (name: string) => schemas.get(lowerFirst(name));
   for (const frond of card.fronds) {
@@ -93,9 +81,6 @@ export function resourcesOf(card: IdentityCard): AdminResource[] {
       const entity = rows === undefined ? undefined : schemas.get(rows);
       if (!entity) continue;
       const primary = FieldSet.of(entity.getFields()).primary;
-      // No primary means no row identity — a list could be drawn, but nothing could be
-      // opened, edited or deleted. Refusing here is the same answer `FieldSet.primary`
-      // gives by not defaulting to 'id': the caller decides, and this caller declines.
       if (!primary) continue;
       const operations = facade.ops.map((op) => ({ ...op, label: labelOf(op.name) }));
       const columns = tableColumnsOf(entity, facade.name);
