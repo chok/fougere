@@ -1,4 +1,4 @@
-import { Card, FieldSet, lowerFirst, type Entity, type SchemaView } from '@fougere/schema';
+import { Card, FieldSet, lowerFirst, type Entity } from '@fougere/schema';
 import {
   CALL_ENDPOINT,
   fetcher as browserFetcher,

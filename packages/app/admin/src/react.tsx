@@ -1,3 +1,4 @@
+'use client';
 export type { ReactAdminFieldContext } from './ReactAdminFieldContext.js';
 export type { ReactAdminInputContext } from './ReactAdminInputContext.js';
 export type { ReactAdminFieldRenderer } from './ReactAdminFieldRenderer.js';
@@ -10,7 +11,6 @@ import type { ReactAdminRenderers } from './ReactAdminRenderers.js';
 
 import type { ResourceRenderOptions } from './ResourceRenderOptions.js';
 import type { FougereAdminProps } from './FougereAdminProps.js';
-'use client';
 import {
   Admin, Resource, Datagrid, List, SimpleForm, Edit, Create, Show, SimpleShowLayout,
   TextField, NumberField, BooleanField, DateField, ReferenceField, FunctionField,
@@ -35,7 +35,8 @@ import { FougereTopology } from './topology-page.js';
 export { FougereTopology, type FougereTopologyProps } from './topology-page.js';
 
 import { type FougereResourceOptions } from './FougereResourceOptions.js';
-import { FougereContentIcon, FougereDashboard, FougereUsersIcon } from './dashboard.js';
+import { FougereDashboard } from './dashboard.js';
+import { FougereContentIcon, FougereUsersIcon } from './dashboard/icons.js';
 
 export {
   FougereAppBar,
@@ -51,7 +52,10 @@ export { type FougereDashboardResource } from './FougereDashboardResource.js';
 export { type FougereDashboardWidget } from './FougereDashboardWidget.js';
 export { type FougereDashboardZone } from './FougereDashboardZone.js';
 export { type FougereResourceOptions } from './FougereResourceOptions.js';
-export { FOUGERE_DASHBOARD_WIDGETS, FougereContentIcon, FougereDashboard, FougereUsersIcon, applyDashboardExtensions, useFougereDashboard } from './dashboard.js';
+export { FougereDashboard } from './dashboard.js';
+export { FougereContentIcon, FougereUsersIcon } from './dashboard/icons.js';
+export { FOUGERE_DASHBOARD_WIDGETS } from './dashboard/widgets.js';
+export { applyDashboardExtensions, useFougereDashboard } from './dashboard/context.js';
 
 const FIELDS = {
   text: TextField, number: NumberField, boolean: BooleanField, date: DateField,

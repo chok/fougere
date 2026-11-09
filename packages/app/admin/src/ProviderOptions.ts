@@ -1,4 +1,4 @@
-import { fetcher as browserFetcher, type Fetcher } from '@fougere/app/client';
+import { type Fetcher } from '@fougere/app/client';
 import type { ResourceKey } from './ResourceKey.js';
 
 export interface ProviderOptions {
