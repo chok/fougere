@@ -2,13 +2,7 @@
 import type ts from '@typescript/typescript6';
 import { loadTS, checkedSourceOf, findDefaultClass } from './TypeProgram.js';
 
-/**
- * What a scanned class says it IMPLEMENTS, and whether each name is a class.
- *
- * A class is the interesting case: `implements` is erased, so `Object.getPrototypeOf(ctor).name`
- * is empty and the boot binds no port. An interface is the ordinary one — and one of them,
- * `AsyncDisposable`, is how a provider says its scope keeps it and closes it.
- */
+/** What a scanned class implements, and whether each name is a class. */
 export async function parseImplements(filePath: string, projectRoot?: string): Promise<Implemented[]> {
   const typescript = await loadTS();
   const { source, checker } = checkedSourceOf(filePath, projectRoot);
@@ -20,7 +14,6 @@ export async function parseImplements(filePath: string, projectRoot?: string): P
     if (clause.token !== typescript.SyntaxKind.ImplementsKeyword) continue;
 
     for (const base of clause.types) {
-      // `implements Partial<Payment>` names the port inside `Partial`: a link writes only what it changes.
       const partial = typescript.isIdentifier(base.expression) && base.expression.text === 'Partial';
       const argument = partial ? base.typeArguments?.[0] : undefined;
       const written = argument && typescript.isTypeReferenceNode(argument) && typescript.isIdentifier(argument.typeName)
@@ -36,9 +29,8 @@ export async function parseImplements(filePath: string, projectRoot?: string): P
 }
 
 /**
- * The port a class EXTENDS with a type argument — `extends Rest<NoteHandler>` — which the prototype
- * reads as `Rest` alone, so the scan states it whole: `Rest<NoteHandler>`. Four of core's bases are not
- * ports but seats (`Repository<Post>`, `Collect<User>`), read by `parseSeat`; `Env<Meili>` is a port.
+ * The port a class extends with a type argument, as the type is written.
+ * Ex: `extends Rest<NoteHandler>` → `Rest<NoteHandler>`.
  */
 export async function parseExtendedPort(filePath: string, projectRoot?: string): Promise<Implemented | undefined> {
   const typescript = await loadTS();
@@ -54,19 +46,16 @@ export async function parseExtendedPort(filePath: string, projectRoot?: string):
   return { name: keyOf(base.expression.text, subject), isClass: isClass(typescript, checker, base.expression), partial: false };
 }
 
-/** Core's bases that SEAT a class on its entity rather than being a port — read by `parseSeat`. */
 const SEATS = new Set(['Repository', 'Collect', 'Present', 'Mirror']);
 
-/** Where core declares its own bases — a project's class of the same name is not one. */
 const CORE = /[\\/](core[\\/](src|dist)|@fougere[\\/]core)[\\/]/;
 
 /**
- * `Rest<NoteHandler>`, spelled as the type: a class name cannot hold a `<`, so no class of the frond
- * can take the key by its name.
+ * A port key spelled as the type.
+ * Ex: `keyOf('Rest', 'NoteHandler')` → `Rest<NoteHandler>`.
  */
 export const keyOf = (port: string, subject: string | undefined): string => (subject ? `${port}<${subject}>` : port);
 
-/** The one type argument naming a subject — `NoteHandler` in `Rest<NoteHandler>`. */
 function subjectIn(typescript: typeof ts, args: readonly ts.TypeNode[] | undefined): string | undefined {
   const [first] = args ?? [];
 

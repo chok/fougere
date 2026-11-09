@@ -8,12 +8,6 @@ import { dirname, relative } from 'node:path';
 import { type Aliases } from './Aliases.js';
 import { operationsOf, schemaRef, type Live } from './Live.js';
 
-/**
- * A file becomes the specifier the PROJECT already uses for it: `@fronds/blog/…`, the import scope
- * a handler names its neighbour by, and which the Nuxt module registers as an alias for every
- * frond it found. Written where no bundler holds that alias — Node, esbuild for a Worker — it is
- * the path from the file the statement sits in.
- */
 function specifierOf(filePath: string, frond: FrondDescriptor, outFile: string | undefined): string {
   if (outFile) {
     const path = relative(dirname(outFile), filePath).replace(/\.tsx?$/, '.js');
@@ -25,24 +19,17 @@ function specifierOf(filePath: string, frond: FrondDescriptor, outFile: string |
   return `${frond.source.package}/${inside}`;
 }
 
-/** One alias per file, so a class imported twice is one binding and one identity. */
 class Imports implements Aliases {
   private readonly byPath = new Map<string, string>();
   private readonly byValue = new Map<Live, string>();
   private readonly byClassName = new Map<string, Live>();
   private readonly lines: string[] = [];
-  /** The frond a file belongs to — a named import needs the specifier its default got. */
   private frondOfFile = new Map<string, FrondDescriptor>();
 
-  /** Per frond, the file each imported value is declared in — what a refusal names. */
   private readonly declaredIn = new Map<string, Map<string, string>>();
 
   constructor(private readonly root: string, private readonly outFile?: string) {}
 
-  /**
-   * `files: [[_0, 'fronds/blog/entities/Post.ts'], …]` for the values this frond imported. From the
-   * project's root, so a refusal reads the same wherever the build ran and where it was deployed.
-   */
   filesOf(frond: FrondDescriptor): string {
     const declared = [...(this.declaredIn.get(frond.name) ?? [])];
 
@@ -109,25 +96,18 @@ class Imports implements Aliases {
   }
 }
 
-/**
- * What a class is built on, said as the values it was seated on — `repository: Post` — and its
- * dependencies without the rows the boot hands it, which `frond()` adds back from that line.
- */
 function seating(ctor: unknown, deps: string[], filePath: string, imports: Aliases): { deps: string[]; repository: string } {
   const seat = seatOf(ctor);
   if (seat.length === 0) return { deps, repository: '' };
 
-  // A view declared beside the handler — `Repository<AuthorPublic>` — is imported from that file.
   const aliases = seat.map((entity) => schemaRef(entity, filePath, imports)!);
 
-  // The rows come LAST, after the class's own — which may ask for the same storage itself.
   return {
     deps: deps.slice(0, deps.length - seatsOf(seat).length),
     repository: `repository: ${aliases.length === 1 ? aliases[0] : `[${aliases.join(', ')}]`}`,
   };
 }
 
-/** `presents: Post`, `collects: User` — the subject TypeScript erased off `Present<Post>`, said as a value. */
 function builtOnOf(entry: { ctor: unknown; filePath: string }, key: 'presents' | 'collects', imports: Aliases): string {
   const target = targetOf(entry.ctor);
 
@@ -143,7 +123,6 @@ function subject(alias: string, deps: string[], ...extra: string[]): string {
   return parts.length ? `{ ctor: ${alias}, ${parts.join(', ')} }` : alias;
 }
 
-/** What TypeScript erases of a computed field — its type and parameters — and only where it said any. */
 function fieldMetaOf(presenter: PresenterEntry): string {
   const typed = presenter.fieldMeta.filter((meta) => Object.keys(meta).length > 1);
 
@@ -154,13 +133,10 @@ function frondOf(frond: FrondDescriptor, imports: Imports): string {
   const list = (items: string[]): string => `[${items.join(', ')}]`;
   const members: string[] = [];
 
-  // Entities first, and by VALUE: an operation names its input and output as schemas, and
-  // the one a `Partial<X>` derives from is found here rather than imported a second time.
   if (frond.entities.length) {
     members.push(`entities: ${list(frond.entities.map((e) => {
       const alias = imports.default(e.filePath, frond, e.entityClass as Live);
 
-      // A derivation exported directly carries its factory's name; its own is its file's.
       return e.name === lowerFirst(e.entityClass.name) ? alias : `{ entity: ${alias}, name: ${JSON.stringify(e.name)} }`;
     }))}`);
   }
@@ -170,8 +146,6 @@ function frondOf(frond: FrondDescriptor, imports: Imports): string {
       seating(h.ctor, h.deps, h.filePath, imports).deps,
       seating(h.ctor, h.deps, h.filePath, imports).repository,
       h.surface ? `surface: ${JSON.stringify(h.surface)}` : '',
-      // What the scan read from source, and what no class carries at runtime. Without it
-      // a host that boots from this statement serves a prefab's five ops and nothing else.
       h.operations.size ? `operations: ${operationsOf(h.operations, h.filePath, imports, '      ')}` : '',
     )))}`);
   }
@@ -192,8 +166,6 @@ function frondOf(frond: FrondDescriptor, imports: Imports): string {
       imports.default(p.filePath, frond, p.ctor as Live),
       seating(p.ctor, p.deps, p.filePath, imports).deps,
       seating(p.ctor, p.deps, p.filePath, imports).repository,
-      // The container key, and a bundler is free to rewrite the class's own name — it did,
-      // and a handler asking for `Communes` met a provider registered as `_Communes`.
       `name: ${JSON.stringify(nameOf(p))}`,
       p.abstract ? 'abstract: true' : '',
       p.implements?.length ? `implements: ${JSON.stringify(p.implements)}` : '',
@@ -213,8 +185,6 @@ function frondOf(frond: FrondDescriptor, imports: Imports): string {
     members.push(`seeds: ${list(frond.seeds.map((s) =>
       `{ entityName: ${JSON.stringify(s.entityName)}, data: ${imports.default(s.filePath, frond)} }`))}`);
   }
-  // The file itself, which `frond()` reads the way the scan does: the order of a port's links,
-  // what is exposed, the overrides of an op.
   const config = frondConfigFileIn(frond.source.path);
   if (config) members.push(`config: ${imports.default(config, frond)}`);
 
@@ -226,16 +196,10 @@ function frondOf(frond: FrondDescriptor, imports: Imports): string {
   return `  frond(${JSON.stringify(frond.name)}, {\n    ${members.join(',\n    ')},\n  })`;
 }
 
-/** What the scan reports when it could not decide a contract — the statement cannot be written then. */
 const UNDECIDED = new Set(['input-contract-ambiguous', 'output-contract-ambiguous', 'fact-contract-ambiguous']);
 
-/**
- * The scan as a list of `frond()` calls — the file an author writes, written for them. With no
- * `outFile` its imports go through the frond aliases, which resolve the same from anywhere.
- */
+/** The scan as the `fronds.ts` an author would write: one `frond()` call per frond. */
 export function emitStatement(scan: ScanResult, options: { outFile?: string } = {}): string {
-  // A contract the scan could not decide is not written as an incomplete one: the boot reading the
-  // statement would serve an input nobody chose.
   const undecided = refusalOf(scan.diagnostics.filter((one) => UNDECIDED.has(one.code)), 'operation contract(s) the scan could not decide');
   if (undecided) throw undecided;
   const imports = new Imports(scan.root, options.outFile);
@@ -244,8 +208,6 @@ export function emitStatement(scan: ScanResult, options: { outFile?: string } = 
 
     return frond ? [imports.term(filePath, frond, name)] : [];
   });
-  // Every frond's entities first: a class of one frond may be built on another's — `Collect<User>`
-  // beside a `user` frond written after it — and is then said by the alias the entity already has.
   for (const frond of scan.fronds) for (const e of frond.entities) imports.default(e.filePath, frond, e.entityClass as Live);
   const fronds = scan.fronds.map((f) => frondOf(f as FrondDescriptor & { source: Live }, imports));
 
@@ -257,7 +219,6 @@ export function emitStatement(scan: ScanResult, options: { outFile?: string } = 
     "import { ErrorCode, frond } from '@fougere/core';",
     imports.render(),
     '',
-    // Always stated, empty or not, so a host reading `statement.vocabulary` compiles either way.
     `export const vocabulary = [${terms.join(', ')}];`,
     '',
     'export default [',

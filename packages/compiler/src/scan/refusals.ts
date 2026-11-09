@@ -1,23 +1,6 @@
-/**
- * What an operation can refuse, read by walking UP from every refusal to whoever reaches it.
- *
- * Reading a handler's own body answers "at least these", which is not a contract: a guard moved
- * into a helper — a refactor with no change of behaviour — would silently shrink what an app
- * promises. Measured on `site/fronds/blog`, the body of `publish` holds ONE throw and the walk
- * finds four, because the three that matter live in module functions beside it.
- *
- * Walking up rather than down, for the same reason a router indexes forward: there are a handful
- * of refusal sites and many operations, so the search starts from the few. An address resolved
- * through a port lands on the base's method and the union of what its realizations refuse, which
- * OVER-approximates — the honest direction for a contract, where a code that cannot happen costs
- * a dead branch and a code that can costs a surprise in production.
- *
- * It stops at the frond. What another frond refuses is published by ITS card.
- */
 import type ts from '@typescript/typescript6';
 import { ErrorCode } from '@fougere/core';
 
-/** Where a refusal was written, and which one. */
 interface Site {
   /** `ClassName.method`, or `<fn>.name` for a module function. */
   at: string;
@@ -31,13 +14,8 @@ export interface Refusals {
   sites: number;
 }
 
-/** A refusal this package raises about itself never reaches a caller, so it is not a contract. */
 const MASKED = new Set(['INTERNAL_ERROR']);
 
-/**
- * The name a call and a declaration agree on. A method carries its class so two `list` methods
- * are two subjects; a module function has no owner and says so rather than borrowing one.
- */
 function nameOf(typescript: typeof ts, node: ts.Node): string | undefined {
   const named = node as { name?: ts.Node };
   const own = named.name && 'getText' in named.name ? (named.name as ts.Identifier).getText() : undefined;
@@ -50,7 +28,6 @@ function nameOf(typescript: typeof ts, node: ts.Node): string | undefined {
   return `${owner ?? '<fn>'}.${own}`;
 }
 
-/** The method or function a node sits inside — where a refusal is charged. */
 function holderOf(typescript: typeof ts, node: ts.Node): string | undefined {
   let at: ts.Node | undefined = node;
   while (at && !typescript.isMethodDeclaration(at) && !typescript.isFunctionDeclaration(at)) at = at.parent;
@@ -58,13 +35,6 @@ function holderOf(typescript: typeof ts, node: ts.Node): string | undefined {
   return at ? nameOf(typescript, at) : undefined;
 }
 
-/**
- * `new FougereError({ code: ErrorCode.CONFLICT })` → `CONFLICT`, and nothing for a computed one.
- *
- * The member is read as TEXT, so it is judged against the enum before it travels: a walk reaches
- * files the project never compiles, and a name that is not a code would otherwise be published on
- * a card as one.
- */
 function codeIn(typescript: typeof ts, node: ts.NewExpression): ErrorCode | undefined {
   if (node.expression.getText() !== 'FougereError') return undefined;
   const first = node.arguments?.[0];
@@ -79,14 +49,6 @@ function codeIn(typescript: typeof ts, node: ts.NewExpression): ErrorCode | unde
   return member in ErrorCode ? ErrorCode[member as keyof typeof ErrorCode] : undefined;
 }
 
-/**
- * Read one program: every refusal, and every edge from a caller to what it calls.
- *
- * The checker is what makes an edge exact — `this.posts.findById()` resolves to the declaration
- * on `PostRepository`, which is the same node a refusal inside it was charged to. No name
- * matching, and no guess about what a dependency holds.
- */
-/** The set held under a key, created the first time something lands in it. */
 function into<T>(held: Map<string, Set<T>>, key: string): Set<T> {
   const already = held.get(key);
   if (already) return already;
@@ -97,10 +59,10 @@ function into<T>(held: Map<string, Set<T>>, key: string): Set<T> {
   return made;
 }
 
+/** Every refusal a program holds, and every call that reaches one. */
 export function refusalsIn(typescript: typeof ts, program: ts.Program, isOperation: (name: string) => boolean): Refusals {
   const checker = program.getTypeChecker();
   const sites: Site[] = [];
-  /** callee → the callers that reach it. */
   const callers = new Map<string, Set<string>>();
 
   for (const file of program.getSourceFiles()) {
@@ -113,8 +75,6 @@ export function refusalsIn(typescript: typeof ts, program: ts.Program, isOperati
         if (code && at && !MASKED.has(code)) sites.push({ at, code });
       }
 
-      // A call to a port's method may land on any realization standing behind it, so whoever
-      // calls the base reaches what each override refuses — the link's guard before `inner` too.
       if (typescript.isMethodDeclaration(node)) {
         const own = nameOf(typescript, node);
         for (const overridden of overriddenBy(typescript, checker, node)) {
@@ -138,7 +98,6 @@ export function refusalsIn(typescript: typeof ts, program: ts.Program, isOperati
   return { sites: sites.length, byMethod: reached(sites, callers, isOperation) };
 }
 
-/** The methods of the bases this method stands in for, named the way a refusal site is. */
 function overriddenBy(typescript: typeof ts, checker: ts.TypeChecker, method: ts.MethodDeclaration): string[] {
   const owner = method.parent;
   const named = method.name.getText();
@@ -154,16 +113,11 @@ function overriddenBy(typescript: typeof ts, checker: ts.TypeChecker, method: ts
     .filter((name): name is string => name !== undefined);
 }
 
-/** The declaration a call resolves to, named the way a refusal site is. */
 function calleeOf(typescript: typeof ts, checker: ts.TypeChecker, node: ts.CallExpression): string | undefined {
   const target = node.expression;
   const found = checker.getSymbolAtLocation(target)
     ?? (typescript.isPropertyAccessExpression(target) ? checker.getSymbolAtLocation(target.name) : undefined);
 
-  // An IMPORTED function resolves to its import specifier, which is callable in no sense the
-  // test below admits — so the edge was dropped and the refusal never climbed out of its file.
-  // Measured on `site/fronds/blog`: moving three guards into a neighbouring module, which
-  // `fougere check` asks for, cut what `publish` promises from five codes to two.
   const symbol = found && found.flags & typescript.SymbolFlags.Alias ? checker.getAliasedSymbol(found) : found;
 
   const declared = symbol?.declarations?.[0];
@@ -176,7 +130,6 @@ function calleeOf(typescript: typeof ts, checker: ts.TypeChecker, node: ts.CallE
   return callable ? nameOf(typescript, declared) : undefined;
 }
 
-/** From each refusal, climb its callers until an operation holds it. */
 function reached(
   sites: readonly Site[],
   callers: Map<string, Set<string>>,

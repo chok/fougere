@@ -11,13 +11,11 @@ export interface Seat {
   filePath: string;
 }
 
-/** Where core declares the base — so a project's own class named `Repository` is not taken for it. */
 const CORE = /[\\/](core[\\/](src|dist)|@fougere[\\/]core)[\\/]/;
 
 /**
- * The entities a scanned class names on `Repository<Post>` — climbing its bases, so `PostHandler
- * extends PostRepository extends Repository<Post>` answers `Post` — or none for a class not built
- * on it. The arguments are read in order, `never` left out: `Repository<Account, Ledger>` is two.
+ * The entities a class is built on through `Repository<…>`, climbing its bases.
+ * Ex: `Repository<Account, Ledger>` → `Account` and `Ledger`.
  */
 export async function parseSeat(filePath: string, projectRoot?: string, base: 'Repository' | 'Collect' | 'Present' = 'Repository'): Promise<Seat[]> {
   const typescript = await loadTS();
@@ -26,9 +24,6 @@ export async function parseSeat(filePath: string, projectRoot?: string, base: 'R
   const symbol = written?.name ? checker.getSymbolAtLocation(written.name) : undefined;
   if (!symbol) return [];
 
-  // Climbing a generic base — `PartnerCatalog extends Mirror<BookCard>`, `Mirror<T> extends
-  // Repository<T>` — the checker hands back `Repository<T>`, so what each parameter stands for is
-  // carried up the chain.
   const visited = new Set<ts.Type>();
   let bound = new Map<ts.Type, ts.Type>();
   for (let type: ts.Type | undefined = checker.getDeclaredTypeOfSymbol(symbol); type && !visited.has(type);) {

@@ -40,20 +40,7 @@ function subjectsOf(typescript: typeof ts, source: ts.SourceFile): [string, 'val
   return found;
 }
 
-/**
- * Everything a handler file declares that is not the handler itself.
- *
- * A handler names gestures; what a gesture uses is declared where its nature says, and one
- * question settles which: does it arrive INJECTED or IMPORTED? A threshold, a formula, a word
- * list arrive imported and belong under `rules/`. Anything holding a client, a connection or
- * a cursor arrives injected and belongs under `services/`. Neither ever belongs in the file
- * that calls it — nothing there can be reached by a second caller, and the handler grows into
- * the domain it was supposed to address.
- *
- * It names the two addresses, which `outsideConventions` does on the same question one file
- * higher. Saying "a module beside its entities" instead left the reader to invent a place,
- * and inventing one is the drift both rules report.
- */
+/** What a handler file declares besides its handler: a rule belongs in `rules/`, a service in `services/`. */
 export async function handlerDeclarations(
   fronds: readonly {
     name: string;

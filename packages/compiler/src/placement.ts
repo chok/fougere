@@ -13,30 +13,11 @@ export interface OutsideConvention {
   message: string;
 }
 
-/**
- * `tests` is not a convention and is not an offence either: `@fougere/testing` reads the
- * LEVEL a case runs at from where its file sits, so a frond holding its own tests is a
- * supported shape (`demos/test-gradient`). The rest are outputs and installs, which are
- * not the project's source at all.
- */
 const NOT_SOURCE = new Set(['tests', 'node_modules', 'dist', 'build', 'coverage']);
 
-/** The one file a frond states about itself, at its root. */
 const FROND_FILES = new Set(['frond.config.ts', 'package.json', 'tsconfig.json', 'README.md']);
 
-/**
- * What sits in a frond and belongs to no convention — a directory somebody invented, or a
- * module dropped at the root.
- *
- * The eight names are the frond's whole vocabulary, and until now nothing said so: a scan
- * READS them and steps over everything else in silence, so a file outside them is not
- * refused, it is unseen. That silence is what lets a domain word settle wherever it was
- * first needed — most often in the handler that used it, which is a second rule
- * (`handler-declaration`) reporting the same drift one file lower.
- *
- * It names the addresses rather than describing them: a rule that says "put it somewhere
- * better" is advice, and advice is what everybody already had.
- */
+/** What sits in a frond outside its convention directories. */
 export async function outsideConventions(
   fronds: readonly Pick<FrondDescriptor, 'name' | 'source'>[],
   conventions: Conventions,

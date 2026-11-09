@@ -13,8 +13,6 @@ import { parseExtendedPort, parseImplements } from './Implemented.js';
 
 export async function toProvider(filePath: string): Promise<ProviderEntry> {
   const ctor = await loadClass(filePath);
-  // Read here, while the class is the one the source declared. What a bundler does to
-  // that name later is why it is carried rather than asked for again.
   const name = ctor.name;
   const deps = await depsOf(filePath);
 
@@ -22,9 +20,6 @@ export async function toProvider(filePath: string): Promise<ProviderEntry> {
   const extended = await parseExtendedPort(filePath);
   const ports = [...stated.filter((one) => one.isClass), ...(extended?.isClass ? [extended] : [])];
 
-  // A class that implements a port AND asks for it stands in front of it — a link. Implementing
-  // one without asking for it is legal TypeScript and answers nothing, so it is said rather than
-  // refused: only the author knows whether a port was meant.
   for (const { name: port, partial } of stated.filter((one) => one.isClass && !deps.includes(one.name))) {
     record({
       severity: 'warning',
@@ -39,20 +34,12 @@ export async function toProvider(filePath: string): Promise<ProviderEntry> {
     });
   }
   const links = ports.filter((one) => deps.includes(one.name)).map((one) => one.name);
-  // A link at a handler's door — `Rest<PostHandler>` — may answer in an op's place: what its methods'
-  // return types declare is published with the op, the field a `frond()` states by hand.
   const answers = links.some((link) => link.includes('<')) ? Object.fromEntries(await parseDeclaredAnswers(filePath)) : {};
-  // A link in front of `Collect<User>` stands in for its two methods, so what they refuse is read the same way.
   const refusing = links.some((link) => link.startsWith('Collect<')) ? await collectorRefusals(filePath, name) : {};
 
-  // `Repository<Post>` names what the class is built on where TypeScript erases it, so the scan
-  // reads it and the boot seats the class on it, handing it the rows after its own dependencies.
   const seat = await seatOf(filePath);
   if (seat.length > 0) deps.push(...seatsOf(seat));
 
-  // `name` beside `ctor`, and it IS the registration key — what `depKeyOf` returns, since
-  // it reads the type as written. It used to be asked of `ctor.name` at boot, which held
-  // until a bundler lowered a static field and renamed the declaration doing it.
   return {
     name,
     ctor: seat.length > 0 ? seated(ctor, seat) : ctor,
@@ -65,14 +52,7 @@ export async function toProvider(filePath: string): Promise<ProviderEntry> {
   };
 }
 
-/**
- * An extension is recognized by its FORM: a module stating `up`, `down` or `state`.
- *
- * Not a class, unlike every other convention directory — nothing resolves it from a container
- * and nothing asks for it by type. It is handed to the ascent as a value, which is what
- * `CreateAppOptions.extensions` already takes, so a file here and a line there declare the
- * same thing.
- */
+/** An extension file: a module stating `up`, `down` or `state`. */
 export async function toExtensionEntry(filePath: string): Promise<ExtensionEntry | null> {
   const exported = await loadDefault(filePath);
   if (typeof exported !== 'object' || exported === null) return null;
@@ -90,10 +70,6 @@ export async function toEntityEntry(filePath: string): Promise<EntityEntry | nul
   const exported = (await loadOnce(filePath)).default;
   if (!isEntityClass(exported)) return null;
   const runtimeName = (exported as { name?: string }).name;
-  // A derivation returned directly (`export default User.extend(...)`) carries the
-  // factory's own name, which the schema package stamps and exports. The file is then
-  // the declaration site and therefore the only name the author actually supplied;
-  // named classes keep winning.
   const declaredName = runtimeName && runtimeName !== ANONYMOUS_SCHEMA_NAME
     ? runtimeName
     : basename(filePath).replace(/\.[^.]+$/, '');
@@ -117,8 +93,6 @@ export async function toHandlerEntry(
   const seat = await seatOf(filePath, projectRoot);
   const ctor = seat.length > 0 ? seated(written as ProviderEntry['ctor'], seat) : written;
 
-  // Augment module exports with known entity classes so resolveSchema
-  // can find them when T is substituted (e.g. T → Post after parsing Crud(Post))
   const augmented: Record<string, unknown> = { ...mod };
   for (const [className, entityClass] of entityByClassName) {
     if (!(className in augmented)) augmented[className] = entityClass;
@@ -136,9 +110,6 @@ export async function toHandlerEntry(
   );
   const deps = [...await depsOf(filePath), ...seatsOf(seat)];
 
-  // Read output override from Crud(Entity, Output) — static __output property
-  // A handler-wide view, when it is not simply the entity — the two are compared by
-  // identity, which is why both slots are read through the same facade.
   const subject = targetOf(ctor);
   const declared = outputOf(ctor);
   const outputOverride = declared && subject && declared !== subject
@@ -157,7 +128,6 @@ export async function toHandlerEntry(
   };
 }
 
-/** Strip '.seed' suffix → entity name. 'Author.seed.ts' → 'author'. */
 function toSeedEntityName(fileName: string): string {
   const base = fileName.replace(/\.seed\.(ts|js)$/, '').replace(/\.(ts|js)$/, '');
 
@@ -191,26 +161,11 @@ export async function toPresenterEntry(filePath: string): Promise<PresenterEntry
     fieldMeta = parsed.map((m) => ({
       name: m.name,
       returnType: m.returnType?.name,
-      // One array level IS the page — the method answers one value per row. What is left
-      // over is the field's own arity: `string[]` a scalar per row, `string[][]` a list.
       list: (m.returnType?.arrayDepth ?? 0) > 1,
       nullable: m.returnType?.nullable,
-      // Everything after the rows is bound like a handler's argument.
       params: m.params.slice(1),
     }));
 
-    // The rows parameter is stripped just above, and nothing used to check its SHAPE.
-    // A computed field receives the PAGE and answers one value per row, so a method
-    // written `items(order: Order)` compiles and dies at the first call with a 500
-    // (`expected 1 value(s) for 1 row(s), got 0`) — while the information sat here, at
-    // the scan. Every own method of a presenter IS a computed field
-    // (`getPresenterFields`), so there is no private helper to spare.
-    //
-    // An ERROR at boot, not a refusal: a `blocking` scan diagnostic is logged and the
-    // app still starts (`bootstrap.ts`, and the comment above that loop says why). Making
-    // it refuse means deciding that a declaration which cannot work is an unresolved
-    // CONTRACT — the one thing that does stop the boot — and that is a decision, not a
-    // severity.
     for (const method of parsed) {
       const rows = method.params[0];
       if (rows && rows.type.array === true) continue;
@@ -227,7 +182,6 @@ export async function toPresenterEntry(filePath: string): Promise<PresenterEntry
     }
   } catch { /* parse failure — fall back to untyped */ }
 
-  // Declared at runtime on the class, so it survives a scan that resolved nothing.
   return { entityName, ctor, fields, fieldMeta, views: viewsOf(ctor), deps, filePath };
 }
 
@@ -237,13 +191,9 @@ export async function toCollectorEntry(filePath: string): Promise<CollectorEntry
   const ctor = collected ? builtOn(written, collected) : written;
   const target = targetOf(ctor);
   if (!target) return null;
-  // The target's NAME and nothing else — a collector reads no fields, so the class it
-  // was built on needs no schema.
   const typeName = lowerFirst((target as { name: string }).name);
   const deps = await depsOf(filePath);
 
-  // What its `missing()` refuses, walked like an op's — through the helpers it calls —
-  // and what its `collect()` refuses, which every op asking for it meets, `?` or not.
   return { typeName, ctor, deps, filePath, ...await collectorRefusals(filePath, (ctor as { name: string }).name) };
 }
 

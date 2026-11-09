@@ -12,15 +12,7 @@ export interface Compiled {
   files: string[];
 }
 
-/**
- * The files a project's config and statement reach, each transpiled into `out` at the path it had under
- * `root` — so a relative import still lands, and `@fronds/<name>` lands through {@link ALIASES}.
- *
- * Followed from the two entries rather than globbed: what the server never imports is not shipped, and a
- * helper outside `fronds/` that a handler imports is. A package is left where it is installed — and one
- * the config names by key (`'@fougere/log'`) is imported from {@link MODULES}, written here, so the start
- * resolves it the way any import is resolved.
- */
+/** Transpiles the files the config and the statement reach into `out`, at the paths they had under `root`. */
 export async function compileProject(root: string, scan: ScanResult, out: string): Promise<Compiled> {
   const typescript = await loadTS();
   const config = await loadConfig(root);
@@ -70,7 +62,6 @@ export async function compileProject(root: string, scan: ScanResult, out: string
   return { out, files: files.sort() };
 }
 
-/** The project file a specifier names — relative, or under `@fronds/<name>` — or nothing for a package. */
 function localFileOf(specifier: string, from: string, aliases: Record<string, string>): string | undefined {
   const alias = Object.keys(aliases).sort((left, right) => right.length - left.length)
     .find((name) => specifier === name || specifier.startsWith(`${name}/`));

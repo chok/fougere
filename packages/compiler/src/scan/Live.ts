@@ -1,4 +1,4 @@
-import { type FrondDescriptor, type OperationContract } from '@fougere/core/descriptor';
+import { type OperationContract } from '@fougere/core/descriptor';
 import { ANONYMOUS_SCHEMA_NAME, Card, type SchemaView } from '@fougere/schema';
 import type { Aliases } from './Aliases.js';
 
@@ -20,8 +20,6 @@ export function schemaRef(
   const derived = derivationOf(schema, imports);
   if (derived) return derived;
 
-  // A loader handing each importer its own copy of a module gives the scan a second `Author` — the
-  // handler's — where the statement imports one: the entity it already imported answers by name.
   const name = (schema as { name?: string }).name;
   const imported = name ? imports.classNamed(name) : undefined;
   if (imported) return imports.aliasOf(imported)!;
@@ -38,12 +36,6 @@ export function schemaRef(
   );
 }
 
-/**
- * A view cut from an entity this module imports, written as the cut — `Note.pick("title")`. It
- * carries its own name, so read by name it came back as the whole entity: five fields where the
- * config had stated one. A field with no origin (an `extend`) cannot be written, and is left to
- * the reading by name.
- */
 function derivationOf(schema: SchemaView, imports: Aliases): string | undefined {
   const derivation = schema.derivation;
   const alias = derivation ? imports.aliasOf(derivation.source as Live) : undefined;
@@ -79,9 +71,6 @@ export function contractOf(
   if (contract.description !== undefined) parts.push(`description: ${lit(contract.description)}`);
   if (contract.cardinality !== undefined) parts.push(`cardinality: ${lit(contract.cardinality)}`);
   if (contract.signature !== undefined) parts.push(`signature: ${lit(contract.signature)}`);
-  // Written down like every other member: a scan on disk is what an edge deployment reads, and
-  // a contract that loses a field there answers differently depending on how it was booted.
-  // As the enum's members, the way the facade writes them: a string is no `ErrorCode` to a checker.
   if (contract.errors !== undefined) parts.push(`errors: [${contract.errors.map((code) => `ErrorCode.${code}`).join(', ')}]`);
 
   return `[${lit(op)}, { ${parts.join(', ')} }]`;

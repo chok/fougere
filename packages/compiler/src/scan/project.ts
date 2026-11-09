@@ -7,10 +7,6 @@ import { type Entity, type SchemaView } from '@fougere/schema';
 import { loadModule, loadOnce, record } from './run.js';
 import { parseSeat } from './Seat.js';
 
-/**
- * An absent convention directory is the ordinary case — a frond without `seeds/` is not a
- * defect.
- */
 async function readEntries(path: string): Promise<Dirent[]> {
   try {
     return await readdir(path, { withFileTypes: true });
@@ -20,8 +16,6 @@ async function readEntries(path: string): Promise<Dirent[]> {
       severity: 'blocking',
       code: 'directory-unreadable',
       filePath: path,
-      // The path is NOT repeated here: `filePath` carries it, and a renderer that
-      // prints both wraps an absolute path twice into an unreadable box.
       message: 'This directory could not be read, so what it declares is missing from the app.',
       cause,
     });
@@ -50,12 +44,7 @@ export async function loadDefault(filePath: string): Promise<unknown> {
   return mod.default;
 }
 
-/**
- * The entities `Repository<…>` names, as the values the boot seats on — each module loaded ONCE per
- * run (`loadOnce`), so the `Author` a seat names is the `Author` the entities directory gave, in this
- * frond or another: a host loading every module afresh handed back a second one, and the statement
- * imported it from the handler that does not export it.
- */
+/** The entities `Repository<…>` names, as the values this run loaded once. */
 export async function seatOf(filePath: string, projectRoot?: string, base: 'Repository' | 'Collect' | 'Present' = 'Repository'): Promise<Entity[]> {
   const seats = await parseSeat(filePath, projectRoot, base);
 
@@ -71,14 +60,6 @@ export async function seatOf(filePath: string, projectRoot?: string, base: 'Repo
 
 export async function loadClass(filePath: string): Promise<ProviderEntry['ctor']> {
   const ctor = await loadDefault(filePath);
-  // A convention directory holds classes, because a provider is registered under one and
-  // asked for by its type. What is NOT a class — a shared contract, a pure function, a
-  // table of constants — belongs in `rules/`, and saying where costs one line: measured
-  // twice on a real project, both times a file that had to move.
-  //
-  // It named the frond's ROOT until the directories became a closed list, which is where
-  // `outside-convention` now reports a module — so the two messages sent a reader back
-  // and forth. `rules/` is read into the type program and registers nothing.
   if (typeof ctor !== 'function' || !ctor.prototype) {
     throw new Error(
       `${filePath}: the default export is not a class. Export a class, or move plain functions `
@@ -93,7 +74,6 @@ export function isEntityClass(value: unknown): value is SchemaView {
   return typeof value === 'function' && 'getFields' in (value as object);
 }
 
-// Workspace
 
 /** Walk up from project root to find the monorepo root (pnpm-workspace.yaml + packages/). */
 export function findWorkspaceRoot(from: string): string {

@@ -10,13 +10,10 @@ export function parsedParam(param: ts.ParameterDeclaration, source: ts.SourceFil
   return {
     name: ts.isIdentifier(param.name) ? param.name.text : param.name.getText(source),
     type,
-    // `user?: User` and `user: User | undefined` are the same declaration of
-    // absence. A type alias may carry the latter, so only the checker can see it.
     optional: param.questionToken !== undefined || param.initializer !== undefined || type.undefined === true,
   };
 }
 
-/** The transparent markers, kept by NAME because the checker keeps nothing of them. */
 const ANNOUNCED = new Set(['Fact', 'Pipe']);
 
 /** Parse a TypeScript type node into a TypeRef. */
@@ -44,10 +41,6 @@ function readTypeNode(node: ts.TypeNode, source: ts.SourceFile, checker?: ts.Typ
   return fromKeyword(node, raw) ?? { raw, name: raw };
 }
 
-/**
- * `Post['title']` names where the type comes from, which the checker forgets once it answers
- * `string`. Read from the syntax; the scan then says whether it designates a row.
- */
 function fieldOf(node: ts.TypeNode): TypeRef['field'] {
   const ts = getTS();
   if (!ts.isIndexedAccessTypeNode(node)) return undefined;
@@ -58,12 +51,6 @@ function fieldOf(node: ts.TypeNode): TypeRef['field'] {
   return { entity: objectType.typeName.text, name: indexType.literal.text };
 }
 
-/**
- * `Fact<T>` and `Pipe<T>` are deliberately transparent in TypeScript (`= T`), because both
- * receive the payload itself — one reads it, the other answers the value every reader then gets.
- * The checker erases the marker, while the binding plan still needs it to tell either from an
- * ordinary body.
- */
 function announced(node: ts.TypeNode, source: ts.SourceFile, checker: ts.TypeChecker): TypeRef | undefined {
   const ts = getTS();
   if (!ts.isTypeReferenceNode(node) || !ts.isIdentifier(node.typeName) || !ANNOUNCED.has(node.typeName.text)) {
@@ -77,7 +64,6 @@ function announced(node: ts.TypeNode, source: ts.SourceFile, checker: ts.TypeChe
   };
 }
 
-/** `T | null`, `T | undefined`, `T | void` — the absence is an axis, the rest is the type. */
 function fromUnion(node: ts.UnionTypeNode, source: ts.SourceFile, raw: string): TypeRef {
   const ts = getTS();
   const isNull = (one: ts.TypeNode) =>
@@ -97,7 +83,6 @@ function fromUnion(node: ts.UnionTypeNode, source: ts.SourceFile, raw: string): 
   return { ...inner, nullable: nullable || inner.nullable, undefined: undefinable || inner.undefined, raw };
 }
 
-/** `Promise<T>` and `Array<T>` are carriers; anything else keeps its name and its generics. */
 function fromReference(node: ts.TypeReferenceNode, source: ts.SourceFile, raw: string): TypeRef {
   const typeName = node.typeName.getText(source);
 
@@ -156,8 +141,6 @@ export function parseCheckedType(type: ts.Type, raw: string, checker: ts.TypeChe
 
   if (type.isUnion()) return fromCheckedUnion(type, raw, checker, depth);
 
-  // Present at runtime in the supported compiler versions, but intentionally omitted from
-  // TypeScript's public TypeChecker declaration.
   const promised = (checker as ts.TypeChecker & {
     getPromisedTypeOfPromise(candidate: ts.Type): ts.Type | undefined;
   }).getPromisedTypeOfPromise(type);
@@ -173,9 +156,6 @@ export function parseCheckedType(type: ts.Type, raw: string, checker: ts.TypeChe
   const primitive = fromCheckedFlags(type.flags, raw);
   if (primitive) return primitive;
 
-  // A declared alias such as `Emit<PostPublished>` may reduce to a function or object type, so it
-  // is no longer a TypeReference. The checker keeps its arguments beside `aliasSymbol`; losing
-  // them turns DI keys into bare `Emit`/`Facade`.
   const args = (type as ts.Type & { aliasTypeArguments?: readonly ts.Type[] }).aliasTypeArguments
     ?? checker.getTypeArguments(type as ts.TypeReference);
 
@@ -187,16 +167,8 @@ export function parseCheckedType(type: ts.Type, raw: string, checker: ts.TypeChe
 }
 
 /**
- * What an operation ANSWERS is read here, and the question asked of it is whether it is data.
- *
- * Data is what JSON keeps, so every node is asked one thing: can something in it be CALLED? A
- * `Date` carries `toString`, a `Map` carries `clear`, an Effect carries `pipe`. Measured
- * 2026-09-18 over the facade's own exit: `{ at: new Date(0) }` reaches a local caller as a `Date`
- * and a remote one as a string, and an object with methods loses them on both sides, differently.
- *
- * It answers the PATH and the type sitting there — `at: Date` reads as the declaration it came
- * from, where the first callable member (`toString`) names nothing an author wrote. `any` and
- * `unknown` are left alone: nothing was declared to judge.
+ * Where an answer stops being data, as a path and its type; nothing when it is data.
+ * Ex: `{ at: Date }` → `at: Date`.
  *
  * Documented: [handlers](https://fougere.dev/docs/concepts/handler).
  */
@@ -227,7 +199,6 @@ export function notData(
 
   return firstRefused(checker.getPropertiesOfType(type), (property) => {
     const held = checker.getTypeOfSymbol(property);
-    // A symbol key never survives JSON either, and it is how an iterable declares itself.
     if (property.escapedName.toString().startsWith('__@') || held.getCallSignatures().length > 0) {
       return `${path}: ${checker.typeToString(type)}`;
     }
@@ -236,14 +207,6 @@ export function notData(
   });
 }
 
-/**
- * A class the schema declares — `extends entity({…})`, or a projection of one.
- *
- * Read from the HERITAGE rather than from what `resolveSchema` resolved: a frond answering with
- * an entity its neighbour declares (a `Pipe<PostPublished>` finishing a fact) has no schema in
- * its own module exports, so the op carries no output and would be judged as if nothing
- * converted it. Its fields do convert it, wherever the class was written.
- */
 function declaresShape(type: ts.Type): boolean {
   const typescript = getTS();
 
@@ -253,13 +216,6 @@ function declaresShape(type: ts.Type): boolean {
       /entity\(|\.(pick|omit|partial|extend)\(/.test(clause.getText())));
 }
 
-/**
- * What a type holds if it is read as a list — its elements, or nothing.
- *
- * By its numeric INDEX and not by `isArrayType`: `ListResult<T> extends Array<T>` is a subtype,
- * so the array test says no and the walk reached `push` and `map` instead of the rows. What rides
- * beside the rows (`total`, `hasMore`) is data and is judged with everything else.
- */
 function itemsOf(type: ts.Type, checker: ts.TypeChecker): readonly ts.Type[] | undefined {
   const typescript = getTS();
   if (checker.isArrayType(type) || checker.isTupleType(type)) {
@@ -287,7 +243,6 @@ export function answeredBy(signature: ts.Signature | undefined, checker: ts.Type
   return checker.getAwaitedType(returned) ?? returned;
 }
 
-/** A union carries an absence on the side; what remains is the type. */
 function fromCheckedUnion(type: ts.UnionType, raw: string, checker: ts.TypeChecker, depth: number): TypeRef {
   const typescript = getTS();
   const nullable = type.types.some((member) => (member.flags & typescript.TypeFlags.Null) !== 0);
@@ -298,8 +253,6 @@ function fromCheckedUnion(type: ts.UnionType, raw: string, checker: ts.TypeCheck
     (member.flags & (typescript.TypeFlags.Null | typescript.TypeFlags.Undefined | typescript.TypeFlags.Void)) === 0,
   );
 
-  // The checker represents the `boolean` keyword itself as `false | true`. Preserve the
-  // primitive vocabulary consumed by binding and presenter metadata.
   const allBooleans = members.length > 0
     && members.every((member) => (member.flags & typescript.TypeFlags.BooleanLiteral) !== 0);
   if (allBooleans) return { raw, name: 'boolean', nullable, undefined: undefinable };
@@ -321,7 +274,6 @@ function fromCheckedUnion(type: ts.UnionType, raw: string, checker: ts.TypeCheck
   };
 }
 
-/** The keywords, read off the flags the checker already carries. */
 function fromCheckedFlags(flags: ts.TypeFlags, raw: string): TypeRef | undefined {
   const typescript = getTS();
   if ((flags & typescript.TypeFlags.StringLike) !== 0) return { raw, name: 'string' };

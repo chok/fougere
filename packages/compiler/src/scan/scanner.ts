@@ -11,7 +11,6 @@ async function scanFrond(frondPath: string, name: string, source: FrondDescripto
   const {
     entities: entitiesDir, handlers: handlersDir, services: servicesDir, seeds: seedsDir,
   } = conventions.dirs;
-  /** A convention directory, read by whoever knows the shape it holds. */
   const collect = async <T extends object>(
     dir: string,
     read: (filePath: string) => Promise<T | null>,
@@ -21,14 +20,11 @@ async function scanFrond(frondPath: string, name: string, source: FrondDescripto
     return entries.filter((entry): entry is T => entry !== null);
   };
 
-  // vocabulary/ FIRST: a file that still registers at module level does so before an entity
-  // below it is read. What it exports as a term is the process's, and travels in the scan.
   for (const filePath of await files(join(frondPath, conventions.dirs.vocabulary))) {
     const exported = Object.entries(await loadModule(filePath)).filter(([, value]) => Term.is(value));
     vocabulary.push(...exported.map(([exportName, term]) => ({ term: term as Term<unknown>, name: exportName, filePath })));
   }
 
-  // services/ holds every class the frond injects, told apart by the base it extends.
   const services = await collect(servicesDir, async (filePath) => ({ filePath, ctor: await loadClass(filePath) }));
   const extending = (base: (ctor: unknown) => boolean) => services.filter(({ ctor }) => base(ctor)).map(({ filePath }) => filePath);
   const plain = services.filter(({ ctor }) => !isCollect(ctor) && !isPresent(ctor)).map(({ filePath }) => filePath);
@@ -44,15 +40,12 @@ async function scanFrond(frondPath: string, name: string, source: FrondDescripto
       .map(([operation]) => operation),
   );
 
-  // Handlers resolve `T` against the entities, so those come first.
   const entityByClassName = new Map(
     entities.map((e) => [(e.entityClass as { name: string }).name, e.entityClass]),
   );
   const handlers = await collect(handlersDir, (f) =>
     toHandlerEntry(f, entityByClassName, collectorTypeNames, explicitInputs, projectRoot));
 
-  // A subdirectory of handlers/ is a named surface — the one directory whose CHILDREN
-  // are part of the convention too.
   for (const surface of await dirs(join(frondPath, handlersDir))) {
     handlers.push(...await collect(join(handlersDir, surface), (f) =>
       toHandlerEntry(f, entityByClassName, collectorTypeNames, explicitInputs, projectRoot, surface)));
@@ -88,13 +81,8 @@ export async function scanProject(
 
   const frondsDir = join(root, conventions.fronds);
   const dirNames = await dirs(frondsDir);
-  // Resolve workspace root (parent of packages/) for package import resolution
-  // For monorepo: root is the project dir (e.g. demos/nuxt-blog), workspace root is the repo root
   const workspaceRoot = findWorkspaceRoot(root);
 
-  // One program for this run. Seeded here because the parser rebuilds on every root it
-  // has not seen, and a frond lives outside its project's tsconfig `include`. Both keys
-  // are seeded: heritage reads under the workspace root, a constructor under none.
   const declarations = (await Promise.all(
     dirNames.map((dir) => join(frondsDir, dir)).flatMap((frondPath) =>
       frondDirsOf(conventions).map((dir) => files(join(frondPath, dir)))),

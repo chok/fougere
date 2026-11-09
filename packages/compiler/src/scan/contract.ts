@@ -6,21 +6,11 @@ import { FieldSet, type SchemaView } from '@fougere/schema';
 import { record } from './run.js';
 import { parseAllHandlerMethods, parseRefusals } from './handler-parser.js';
 
-/**
- * Resolve a TypeRef to a runtime schema if available in module exports.
- * Handles arrays, generics (uses base name), and simple references.
- */
 function resolveSchema(type: TypeRef, moduleExports: Record<string, unknown>): SchemaView | undefined {
-  // An array's element type IS `type.name` — the arity rides beside it, so nothing has
-  // to be unwrapped here.
-  // For generics like Pagination<Post>, also check inner types
   if (type.generics) {
     for (const g of type.generics) {
       const resolved = moduleExports[g.name];
       if (resolved && typeof resolved === 'function' && 'getFields' in resolved) {
-        // `Partial<X>` in a signature IS the patch declaration (Crud.update) —
-        // project it onto the schema view instead of dropping the wrapper, so
-        // the facade validates in patch mode (absent field → untouched).
         const narrowing = (resolved as { partial?: () => SchemaView }).partial;
         if (type.name === 'Partial' && typeof narrowing === 'function') {
           return narrowing.call(resolved);
@@ -38,14 +28,6 @@ function resolveSchema(type: TypeRef, moduleExports: Record<string, unknown>): S
   return undefined;
 }
 
-/**
- * A convention may omit a declaration only when it has one answer.
- *
- * Only values the caller supplies through the BODY are candidates: a schema-typed collector,
- * fact or context parameter is not input merely because it names an entity. Reading them all
- * ignored provenance and took the first schema it met, so swapping two parameters silently
- * changed the contract the façade validated the request against.
- */
 function inputOf(
   method: Signature,
   handlerName: string,
@@ -79,10 +61,6 @@ function inputOf(
   return undefined;
 }
 
-/**
- * An answer naming an entity beside another type has no view to go through, and an answer with
- * no view leaves whole: a `writeOnly` field included.
- */
 function refuseOutputUnion(method: Signature, read: Reading): void {
   const members = method.returnType?.members ?? [];
   const entities = members.filter((member) => {
@@ -104,7 +82,6 @@ function refuseOutputUnion(method: Signature, read: Reading): void {
   });
 }
 
-/** A binding names one fact, so `Fact<A | B>` would listen to a name nothing can announce. */
 function refuseFactUnion(method: Signature, read: Reading): void {
   for (const param of method.params) {
     const [fact] = param.type.generics ?? [];
@@ -122,7 +99,6 @@ function refuseFactUnion(method: Signature, read: Reading): void {
   }
 }
 
-/** What one method of a handler is read against, while its contract is built. */
 interface Reading {
   handlerName: string;
   filePath: string;
@@ -132,11 +108,6 @@ interface Reading {
   stated: boolean;
 }
 
-/**
- * The contract carries the description; `signature` is the raw material it was read from.
- * Leaving it only on the signature meant every consumer had to look one level down, and only
- * the façade did.
- */
 function contractOf(parsed: Signature, read: Reading): OperationContract {
   const method = { ...parsed, params: parsed.params.map((param) => identifying(param, read)) };
   const meta: OperationContract = {
@@ -154,18 +125,12 @@ function contractOf(parsed: Signature, read: Reading): OperationContract {
   if (method.returnType) {
     refuseOutputUnion(method, read);
     meta.output = resolveSchema(method.returnType, read.moduleExports);
-    // `output` is the shape of one row; this says how many rows come back.
     meta.cardinality = cardinalityOf(method.returnType);
   }
 
   return meta;
 }
 
-/**
- * `id: Post['id']` designates a row when `id` IS Post's primary. `title: Post['title']` borrows
- * the field's rules and designates nothing. A type read from something that is not an entity is
- * an ordinary type.
- */
 function identifying(param: Param, read: Reading): Param {
   const { field, ...type } = param.type;
   if (!field) return param;
@@ -193,10 +158,6 @@ export async function inferOperations(
   try {
     parsed = await parseAllHandlerMethods(filePath, projectRoot);
   } catch (cause) {
-    // The handler still gets a façade — its methods exist at runtime — but with no
-    // contract: no binding plan, no input schema, no doc sentence. It used to
-    // return the empty map, so the app served a stranger's idea of the handler and
-    // said nothing. The operations are gone; the sentence saying so is not.
     record({
       severity: 'blocking',
       code: 'handler-parse-failed',
@@ -208,20 +169,12 @@ export async function inferOperations(
     return map;
   }
 
-  // What every op of this handler can refuse, walked from each `throw` up to whoever reaches
-  // it. Read from the SAME program the signatures came from, so a dependency resolves through
-  // the checker rather than by name — and a guard living in a helper beside the handler is
-  // found, where reading the method's own body would have missed it.
   const refusals = await parseRefusals(
     filePath,
     (name) => name.startsWith(`${handlerName}.`),
     projectRoot,
   ).catch(() => new Map<string, ErrorCode[]>());
 
-  /**
-   * A base class the parse could not open — an installed package, typically, whose source is not
-   * in the workspace.
-   */
   for (const base of parsed.unresolvedHeritage) {
     record({
       severity: 'warning',
@@ -241,8 +194,6 @@ export async function inferOperations(
     }));
   }
 
-  // What the base declares of itself — `Repository<Post>`'s five — under what the author wrote:
-  // a method written over `create` is the one that runs, so its contract is the one that answers.
   for (const [name, contract] of Object.entries(declared)) {
     if (!map.has(name)) map.set(name, contract);
   }

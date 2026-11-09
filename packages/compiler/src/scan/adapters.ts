@@ -1,7 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
-/** Which adapters a PROJECT could load, read off its dependencies. */
 const ADAPTER_PACKAGE = /^@fougere\/adapter-(.+)$/;
 
 /** The adapter names this project depends on — empty when it has no package.json to read. */
@@ -20,8 +19,6 @@ async function read(path: string): Promise<Manifest | undefined> {
   try {
     return JSON.parse(await readFile(path, 'utf8')) as Manifest;
   } catch {
-    // No manifest, or one that is not JSON. Either way this cannot validate a name, and
-    // reporting every `adapters:` key as unknown would be worse than saying nothing.
     return undefined;
   }
 }

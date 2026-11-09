@@ -8,22 +8,14 @@ import { parseClassMethods, type HandlerParse } from './classes.js';
 
 export type { HandlerParse } from './classes.js';
 
-/**
- * Every method a handler declares, its inherited ones included — the raw material of a
- * binding plan. With a `projectRoot`, the heritage clause is followed too.
- */
+/** Every method a handler declares, inherited ones included when `projectRoot` is given. */
 export async function parseAllHandlerMethods(filePath: string, projectRoot?: string): Promise<HandlerParse> {
   await loadTS();
 
   return parseClassMethods(filePath, CONSTRUCTOR_ONLY, projectRoot);
 }
 
-/**
- * What every operation of a file's program can refuse, walked from the refusals upward.
- *
- * It reads the SAME program the signatures came from, so nothing is opened twice and a
- * dependency resolves through the checker rather than by name.
- */
+/** What each operation of a file's program can refuse. */
 export async function parseRefusals(
   filePath: string,
   isOperation: (name: string) => boolean,
@@ -40,15 +32,10 @@ export async function parseRefusals(
 export async function parsePresenterMethods(filePath: string, projectRoot?: string): Promise<Signature[]> {
   await loadTS();
 
-  // No `projectRoot`, so no heritage pass and nothing to report: a presenter's
-  // computed fields are its own methods.
   return parseClassMethods(filePath, CONSTRUCTOR_ONLY, undefined, projectRoot).methods;
 }
 
-/**
- * Parse constructor parameter types from a source file's default class.
- * Returns type names (e.g. ['PostStorage', 'Logger']) for DI resolution.
- */
+/** The parameters of the constructor of a file's default class. */
 export async function parseConstructorParams(filePath: string, projectRoot?: string): Promise<Param[]> {
   const ts = await loadTS();
   const { source, checker } = checkedSourceOf(filePath, projectRoot);
@@ -62,12 +49,7 @@ export async function parseConstructorParams(filePath: string, projectRoot?: str
 
 const CONSTRUCTOR_ONLY = new Set(['constructor']);
 
-/**
- * What each method of a door middleware declares it may answer, read off its return type: every
- * member whose `status` is a number LITERAL, with the keys of its `headers`. A member whose status
- * is `number` is the answer `next()` hands back, not a declaration. The fields are read, never the
- * type arguments, so the reading holds behind any alias.
- */
+/** What each method of a door link declares it may answer: every `status` literal, with its `headers` keys. */
 export async function parseDeclaredAnswers(filePath: string, projectRoot?: string): Promise<Map<string, DeclaredAnswer[]>> {
   const ts = await loadTS();
   const { source, checker } = checkedSourceOf(filePath, projectRoot);

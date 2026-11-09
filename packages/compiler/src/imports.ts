@@ -17,7 +17,6 @@ export interface CrossFrondImport {
   message: string;
 }
 
-/** Is `child` inside `parent`? Path-based, so it says nothing about either existing. */
 function inside(parent: string, child: string): boolean {
   const rel = relative(parent, child);
 
@@ -30,8 +29,6 @@ async function sourcesUnder(dir: string): Promise<string[]> {
   try {
     entries = await readdir(dir, { withFileTypes: true });
   } catch {
-    // Unreadable is the scan's complaint, not this rule's — and an absent directory is
-    // ordinary (a frond with no handlers).
     return out;
   }
   for (const entry of entries) {
@@ -49,8 +46,6 @@ export async function crossFrondImports(
   fronds: readonly Pick<FrondDescriptor, 'name' | 'source'>[],
 ): Promise<CrossFrondImport[]> {
   const typescript = await loadTS();
-  // `source.package` is the scoped name the scan already resolved — the remedy this rule
-  // prints must be the name that actually resolves, not one rebuilt from a prefix here.
   const roots = fronds.map((frond) => ({
     name: frond.name, path: resolve(frond.source.path), package: frond.source.package,
   }));

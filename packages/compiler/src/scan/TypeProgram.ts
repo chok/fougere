@@ -1,9 +1,8 @@
 /** The TypeScript program the scan reads through, and the mutable state it keeps. */
 import type ts from '@typescript/typescript6';
-import { readFileSync, existsSync, statSync } from 'node:fs';
-import { join, dirname, resolve as resolvePath } from 'node:path';
+import { readFileSync, statSync } from 'node:fs';
+import { dirname, resolve as resolvePath } from 'node:path';
 
-/** Lazy-loaded TypeScript module — avoids bundling the 9MB compiler. */
 let _ts: typeof ts | undefined;
 export async function loadTS(): Promise<typeof ts> {
   if (!_ts) _ts = (await import('@typescript/typescript6')).default;
@@ -22,11 +21,9 @@ interface TypeProject {
   program: ts.Program;
 }
 
-/** One checked program per project/configuration during a scan. */
 const typeProjects = new Map<string, TypeProject>();
 const compilerProjects = new Map<string, { key: string; roots: string[]; options: ts.CompilerOptions }>();
 
-/** What survives a run. */
 const sourceFiles = new Map<string, { mtime: number; file: ts.SourceFile }>();
 const retained = new Map<string, { host: ts.CompilerHost; program: ts.Program }>();
 
@@ -84,12 +81,7 @@ function compilerProjectOf(filePath: string, projectRoot?: string): { key: strin
     const parsed = typescript.parseJsonConfigFileContent(read.config, typescript.sys, dirname(configPath));
     const configured = {
       key,
-      // Compiler options belong to the project; its entire include glob does not belong
-      // to this scan. Each declaration inspected below becomes a root and TypeScript
-      // follows its imports. Seeding the monorepo here made a one-file scan compile it all.
       roots: [],
-      // Handlers may be authored or emitted as JavaScript. They still need to belong to
-      // the checked program so constructor parsing does not fail on the first cold scan.
       options: { ...parsed.options, allowJs: true, noEmit: true },
     };
     compilerProjects.set(key, configured);
@@ -120,13 +112,12 @@ function compilerProjectOf(filePath: string, projectRoot?: string): { key: strin
 
 /** Declare every file a run will read, so one program covers it. */
 export async function seedTypeProgram(filePaths: readonly string[], projectRoot?: string): Promise<void> {
-  const typescript = await loadTS();
+  await loadTS();
   const grouped = new Map<string, { options: ts.CompilerOptions; paths: string[] }>();
 
   for (const filePath of filePaths) {
     const absolute = resolvePath(filePath);
-    const typescript = getTS();
-  const configured = compilerProjectOf(absolute, projectRoot);
+    const configured = compilerProjectOf(absolute, projectRoot);
     const group = grouped.get(configured.key) ?? { options: configured.options, paths: [] };
     group.paths.push(absolute);
     grouped.set(configured.key, group);
@@ -146,9 +137,6 @@ export function projectOf(filePath: string, projectRoot?: string): { program: ts
   let project = typeProjects.get(configured.key);
 
   if (!project) {
-    // `path.resolve` is variadic, so handing it directly to `map` also passed the
-    // index and the whole roots array as path segments. A fixture without a warm scan
-    // cache exposed that first-run-only failure.
     const roots = new Set(configured.roots.map((root) => resolvePath(root)));
     roots.add(absolute);
     const program = builtProgram(configured.key, [...roots], configured.options);
@@ -177,13 +165,11 @@ export function sourceOf(filePath: string): ts.SourceFile {
   return ts.createSourceFile(filePath, readFileSync(filePath, 'utf-8'), ts.ScriptTarget.Latest, true);
 }
 
-// ── Class finding ────────────────────────────
 
 /** Find the default exported class in a source file. */
 export function findDefaultClass(source: ts.SourceFile): ts.ClassDeclaration | undefined {
   const ts = getTS();
   for (const stmt of source.statements) {
-    // export default class Foo { ... }
     if (ts.isClassDeclaration(stmt) && stmt.modifiers?.some(
       (m) => m.kind === ts.SyntaxKind.ExportKeyword,
     ) && stmt.modifiers?.some(
@@ -193,7 +179,6 @@ export function findDefaultClass(source: ts.SourceFile): ts.ClassDeclaration | u
     }
   }
 
-  // export default Foo (separate statement) — find the class it points to
   for (const stmt of source.statements) {
     if (ts.isExportAssignment(stmt) && !stmt.isExportEquals && ts.isIdentifier(stmt.expression)) {
       const name = stmt.expression.text;

@@ -3,7 +3,6 @@ import type ts from '@typescript/typescript6';
 import { getTS, checkedSourceOf, sourceOf, findDefaultClass } from './TypeProgram.js';
 import { answeredBy, notData, parseCheckedType, parsedParam, parseTypeNode } from './typeRef.js';
 
-/** The class a returned expression carries, however it is wrapped. */
 function classInExpression(expr: ts.Node, depth = 0): ts.ClassExpression | undefined {
   const ts = getTS();
   if (depth > 8) return undefined;
@@ -23,7 +22,6 @@ function classInExpression(expr: ts.Node, depth = 0): ts.ClassExpression | undef
   return undefined;
 }
 
-/** Find a class declaration inside a function (mixin pattern). */
 function findClassInFunction(source: ts.SourceFile, functionName: string): ts.ClassDeclaration | ts.ClassExpression | undefined {
   const ts = getTS();
   for (const stmt of source.statements) {
@@ -31,14 +29,11 @@ function findClassInFunction(source: ts.SourceFile, functionName: string): ts.Cl
     if (stmt.name?.text !== functionName) continue;
     if (!stmt.body) continue;
 
-    // Walk statements inside the function
     for (const inner of stmt.body.statements) {
-      // return class CrudHandler { … }, or the same class behind a wrapper
       if (ts.isReturnStatement(inner) && inner.expression) {
         const found = classInExpression(inner.expression);
         if (found) return found;
       }
-      // class CrudHandler { ... } (followed by return)
       if (ts.isClassDeclaration(inner)) return inner;
     }
   }
@@ -46,9 +41,6 @@ function findClassInFunction(source: ts.SourceFile, functionName: string): ts.Cl
   return undefined;
 }
 
-/**
- * Extract methods from a class node (no file reading — works on already-parsed AST).
- */
 function extractClassMethods(
   cls: ts.ClassDeclaration | ts.ClassExpression,
   source: ts.SourceFile,
@@ -61,22 +53,12 @@ function extractClassMethods(
   for (const member of cls.members) {
     if (!ts.isMethodDeclaration(member)) continue;
     if (!member.name || !ts.isIdentifier(member.name)) continue;
-    // `private`/`protected` is a statement about the surface, and the AST carries it —
-    // it was read past. Every helper a handler names by intent (`mustOwn`, `readMany`,
-    // `refuse`) became a callable op: measured on the bench, `list.readMany` executed
-    // and `list.mayPublish` validated its argument. A facade is what the author declares
-    // public, and TypeScript already has the word for it. `#name` is private too, but
-    // it is not an identifier, so it never reached here in the first place.
     if (member.modifiers?.some((m) => m.kind === ts.SyntaxKind.PrivateKeyword || m.kind === ts.SyntaxKind.ProtectedKeyword)) continue;
 
     const name = member.name.text;
     if (skip.has(name)) continue;
 
     const params = member.parameters.map((p) => parsedParam(p, source, checker));
-    // An op that annotates nothing still HAS a return type, and the checker holds it — so it
-    // carries an output on the card, a cardinality, and the codecs a caller reads it back
-    // through. Measured 2026-09-18: 18 of the 42 unannotated ops here answer a declared entity,
-    // and every one of them handed a caller the encoded row its type called a `Date`.
     const answered = checker ? answeredBy(checker.getSignatureFromDeclaration(member), checker) : undefined;
     const returnType = member.type ? parseTypeNode(member.type, source, checker)
       : answered && checker ? parseCheckedType(answered, checker.typeToString(answered), checker)
@@ -92,7 +74,6 @@ function extractClassMethods(
   return results;
 }
 
-/** The first sentence of a member's doc comment, or nothing. */
 function docSentenceOf(member: ts.Node, source: ts.SourceFile): string | undefined {
   const ts = getTS();
   const ranges = ts.getLeadingCommentRanges(source.text, member.pos) ?? [];
@@ -111,11 +92,6 @@ function docSentenceOf(member: ts.Node, source: ts.SourceFile): string | undefin
   return sentence?.trim() || undefined;
 }
 
-/**
- * Parse inherited methods from a class's heritage clause.
- * Handles both `extends Repository<Entity>` (mixin) and `extends BaseClass` patterns.
- */
-/** Where a name used here is declared. */
 function declarationFileOf(node: ts.Node, checker: ts.TypeChecker): string | undefined {
   const typescript = getTS();
   let symbol = checker.getSymbolAtLocation(node);
@@ -126,7 +102,6 @@ function declarationFileOf(node: ts.Node, checker: ts.TypeChecker): string | und
 }
 
 /** The methods a base class contributes, read from the INSTANTIATED type. */
-/** Whether a base written in an `extends` clause is core's `Repository`. */
 function isCoreRepository(base: ts.ExpressionWithTypeArguments, checker: ts.TypeChecker): boolean {
   const symbol = checker.getTypeAtLocation(base).getSymbol();
 
@@ -134,7 +109,6 @@ function isCoreRepository(base: ts.ExpressionWithTypeArguments, checker: ts.Type
     && (symbol.declarations ?? []).some((one) => /[\\/](core[\\/](src|dist)|@fougere[\\/]core)[\\/]/.test(one.getSourceFile().fileName));
 }
 
-/** A member core's `Repository` declares — not one a project's base class wrote over it. */
 function isCoreRepositoryMember(declaration: ts.Declaration): boolean {
   const owner = declaration.parent as { name?: { text?: string } } | undefined;
 
@@ -152,11 +126,7 @@ function inheritedFromBase(
   for (const property of checker.getPropertiesOfType(checker.getTypeAtLocation(base))) {
     if (skip.has(property.name)) continue;
 
-    // `private`/`protected` is a statement about the surface, and the declaration carries
-    // it. A facade is what the author declares public.
     const declaration = property.declarations?.[0];
-    // What `Repository<…>` serves is the five it declares itself (`__ops`), never every gesture of
-    // the rows it forwards: those stay the class's own, callable and not served.
     if (declaration && isCoreRepositoryMember(declaration)) continue;
     if (declaration && typescript.canHaveModifiers(declaration)
       && typescript.getModifiers(declaration)?.some((m) => m.kind === typescript.SyntaxKind.PrivateKeyword
@@ -193,10 +163,6 @@ function parseInheritedMethods(
   source: ts.SourceFile,
   checker: ts.TypeChecker,
   skip: Set<string>,
-  /**
-   * Base classes this pass could not open — an INSTALLED one, typically, whose source is not in
-   * the workspace.
-   */
   unresolved: string[],
 ): Signature[] {
   const ts = getTS();
@@ -208,12 +174,8 @@ function parseInheritedMethods(
     for (const base of clause.types) {
       const fromType = inheritedFromBase(base, checker, skip);
       if (fromType.length > 0) return fromType;
-      // Core's `Repository` brings what it declares (`__ops`), and none of its source is to be read.
       if (isCoreRepository(base, checker)) continue;
 
-      // A factory that ERASES its own type — `assertShape<unknown>(class …)`, `as unknown`
-      // — leaves the checker with nothing to enumerate. The written class is still there,
-      // so read it. This is the one case where what the author wrote beats what it means.
       const expression = base.expression;
       const declared = ts.isCallExpression(expression) && ts.isIdentifier(expression.expression)
         ? declarationFileOf(expression.expression, checker)
@@ -254,10 +216,8 @@ export function parseClassMethods(
   const childMethods = extractClassMethods(cls, source, skip, checker);
   const childNames = new Set(childMethods.map((m) => m.name));
 
-  // Parse inherited methods (if projectRoot is provided for resolution)
   if (heritageRoot) {
     const inherited = parseInheritedMethods(cls, source, checker, skip, unresolved);
-    // Merge: child methods win over inherited
     const parentOnly = inherited
       .filter((m) => !childNames.has(m.name))
       .map((m) => ({ ...m, inherited: true }));
