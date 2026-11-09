@@ -22,9 +22,7 @@ import { repositoryKeyOf, seatOf } from '../prefab/Repository.js';
 import { storageKeyOf, type Storage } from '../storage/Storage.js';
 import { declares } from '../Source.js';
 import { relationChecksOf, refuseUnwritableNull, releasing } from '../module/relation/relations.js';
-import { RelationGuard, type Holding } from '../module/relation/RelationGuard.js';
-import { ErrorCode } from '../wire/ErrorCode.js';
-import { FougereError } from '../wire/FougereError.js';
+import { RelationGuard } from '../module/relation/RelationGuard.js';
 import type { Building } from './facades.js';
 import type { Assembly } from './install.js';
 
@@ -82,31 +80,10 @@ function relationGuardOf(assembly: Assembly, entity: { name: string; schema: Sch
   relationGuards.set(assembly, held);
   const { rowHosts } = assembly;
   const guard = held.get(entity.schema)
-    ?? new RelationGuard(entity.name, relationChecksOf(entity.schema, entity.name, rowHosts), releasing(rowHosts), holdingOf(assembly, entity));
+    ?? new RelationGuard(entity.name, relationChecksOf(entity.schema, entity.name, rowHosts), releasing(rowHosts));
   held.set(entity.schema, guard);
 
   return guard;
-}
-
-/** Where the entity's source holds marks: the write runs in its unit of work, through the same chain rebuilt on it. */
-function holdingOf(assembly: Assembly, entity: { name: string; schema: SchemaView }): Holding | undefined {
-  const source = assembly.rowHosts.sourceOf(entity.name);
-  const hold = source === undefined ? undefined : assembly.rowHosts.holdingIn(source);
-  if (!hold) return undefined;
-
-  return (marks, write) => hold(marks, async (factory, gone) => {
-    if (gone.length > 0) {
-      throw new FougereError({
-        code: ErrorCode.VALIDATION_FAILED,
-        message: `${entity.name} names rows being deleted: ${gone.join(', ')}`,
-        details: gone,
-      });
-    }
-    const owner = assembly.frondOf.get(entity.name)!;
-    const scope = assembly.container.resolve<Container>(`frond:${owner}`);
-
-    return write(rowsOf(assembly, owner, scope, entity, factory(entity.schema, entity.name)) as never);
-  });
 }
 
 export function registerStorages(
