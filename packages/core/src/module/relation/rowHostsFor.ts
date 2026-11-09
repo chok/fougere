@@ -7,6 +7,8 @@ import { Invocation } from '../../wire/Invocation.js';
 import { RPC_ADDRESS } from '../../wire/RpcAnswer.js';
 import type { Transport } from '../../wire/Transport.js';
 import type { Constraint } from '../../Constraint.js';
+import type { StorageFactory } from '../../storage/StorageFactory.js';
+import { marksInProcess, marksInTransactions, type Marks } from './Marks.js';
 import type { RowHosts } from './RowHosts.js';
 import { JOURNAL, type Journal } from '../../wire/Journal.js';
 import type { Peer } from './Peer.js';
@@ -25,6 +27,9 @@ export interface Hosted {
   options: {
     remotes?: Record<string, string>;
     sourceOf?: (entityName: string) => string | undefined;
+    factoryIn?: (source: string) => StorageFactory | undefined;
+    transacts?: (source: string) => boolean;
+    transacted?: <R>(source: string, fn: (factory: StorageFactory) => Promise<R>) => Promise<R>;
     enforces?: (source: string, constraint: Constraint) => boolean;
   };
   /** What carries a call to an address `remotes` names — the one table the router reads too. */
@@ -35,7 +40,7 @@ export interface Hosted {
   storageOf: (entity: string) => Storage | undefined;
 }
 
-/** The process that serves an entity, asked the three questions a release travels on. */
+/** The process that serves an entity, asked the questions a release travels on. */
 function peerBehind(entity: string, router: Routing): Peer {
   const ask = async (op: string, params: Record<string, unknown>): Promise<unknown> =>
     (await router.route(entity)).transport(
@@ -47,7 +52,9 @@ function peerBehind(entity: string, router: Routing): Peer {
     dependents: async (named) => await ask('dependents', { entity: named }) as never,
     missing: async (named, keys) =>
       (await ask('holds', { entity: named, keys }) as { missing: readonly unknown[] }).missing,
-    release: async (named, key) => { await ask('release', { entity: named, key }); },
+    release: async (named, key, visited) => { await ask('release', { entity: named, key, visited }); },
+    refuses: async (named, key, visited) => ((await ask('refuses', { entity: named, key, visited })) as { marked: readonly string[] }).marked,
+    forget: async (marks) => { await ask('forget', { marks }); },
   };
 }
 
@@ -77,9 +84,26 @@ export function rowHostsFor(
 
   let relations: Graph | undefined;
 
+  const marksBySource = new Map<string, Marks>();
+  const marksIn = (source: string): Marks | undefined => {
+    const factory = options.factoryIn?.(source);
+    if (!factory) return undefined;
+    const known = marksBySource.get(source);
+    if (known) return known;
+    const { transacted } = options;
+    const marks = transacted && options.transacts?.(source)
+      ? marksInTransactions((fn) => transacted(source, fn), factory)
+      : marksInProcess(factory);
+    marksBySource.set(source, marks);
+
+    return marks;
+  };
+
+  const hostedHere = (entity: string) => !(options.remotes && (frondOf.get(entity) ?? '') in options.remotes);
   const rowHosts: RowHosts = {
-    hostedHere: (entity) => !(options.remotes && (frondOf.get(entity) ?? '') in options.remotes),
-    sourceOf: (name) => options.sourceOf?.(name) ?? 'default',
+    hostedHere,
+    sourceOf: (name) => (options.sourceOf ? options.sourceOf(name) : 'default'),
+    marksIn,
     enforces: (source, constraint) => options.enforces?.(source, constraint) ?? false,
     storageOf,
     entities: () => entityByName,

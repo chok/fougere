@@ -141,10 +141,11 @@ describe('the target in another frond', () => {
     await world.dispose();
   });
 
-  it('announces nothing, because something here holds it', async () => {
+  it('announces that a delete at the same time is not refused, since these sources hold no marks', async () => {
     const world = await booting({ sources: { author: 'archive' }, fronds: twoFronds() });
 
-    expect(world.warned).toEqual([]);
+    expect(world.warned).toHaveLength(1);
+    expect(world.warned[0]).toContain('authorId → author');
     await world.dispose();
   });
 });
@@ -178,11 +179,18 @@ describe('a source that keeps no relation at all', () => {
 });
 
 describe('the target behind remotes:', () => {
-  it('is announced at boot, naming the field and the target', async () => {
-    const world = await booting({ fronds: twoFronds(), remotes: { people: 'http://127.0.0.1:9' } });
+  it('is announced at boot when its rows are in another source, naming the field and the target', async () => {
+    const world = await booting({ sources: { author: 'archive' }, fronds: twoFronds(), remotes: { people: 'http://127.0.0.1:9' } });
 
     expect(world.warned).toHaveLength(1);
     expect(world.warned[0]).toContain('authorId → author');
+    await world.dispose();
+  });
+
+  it('is left to the key when its rows share this source, wherever its frond answers', async () => {
+    const world = await booting({ fronds: twoFronds(), remotes: { people: 'http://127.0.0.1:9' } });
+
+    expect(world.warned).toHaveLength(0);
     await world.dispose();
   });
 });

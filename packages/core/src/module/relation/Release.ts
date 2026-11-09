@@ -4,6 +4,8 @@ import type { Dependent } from './Dependent.js';
 import type { Journal } from '../../wire/Journal.js';
 import { ErrorCode } from '../../wire/ErrorCode.js';
 import { FougereError } from '../../wire/FougereError.js';
+import { ambient } from '../../slots.js';
+import { markOf } from './FougereTarget.js';
 
 /** The gestures a release reaches a dependent's rows through. */
 export interface Rows {
@@ -12,26 +14,32 @@ export interface Rows {
   delete(id: string): Promise<boolean>;
 }
 
+/** What a release asks across, of one process holding rows this one names. */
+export interface ReleasePeer {
+  /** Refuse as a release would, marking what it asked — answered with the marks it set. */
+  refuses(entity: string, key: unknown, visited: readonly string[]): Promise<readonly string[]>;
+  release(entity: string, key: unknown, visited: readonly string[]): Promise<void>;
+  forget(marks: readonly string[]): Promise<void>;
+}
+
 /** What the guard hands a release: who depends on an entity, and how to reach their rows. */
 export interface Releasing {
   dependentsOf(entity: string): readonly Dependent[];
+  namersOf(entity: string): readonly Dependent[];
   rowsOf(entity: string): Rows | undefined;
   schemaOf(entity: string): SchemaView | undefined;
-  /** Written down while it happens, when a package provides one — absent is the plain walk. */
   journal(entity: string): Journal | undefined;
-  /** Every declared remote — each one walks its own tree, and is alone able to. */
-  peers(): readonly { release(entity: string, key: unknown, visited: readonly string[]): Promise<void> }[];
+  peers(): readonly ReleasePeer[];
+  /** Read `namer`'s rows naming these keys of `target`, marking those keys `gone` in the same unit of work where its source keeps marks. */
+  marking<R>(namer: string, target: string, keys: readonly unknown[], marked: string[], read: (rows: Rows) => Promise<R>): Promise<R>;
+  /** Take these marks out of every source of this process that keeps them. */
+  forget(marks: readonly string[]): Promise<void>;
 }
 
+const released = ambient.slot<Set<string>>('released');
+
 /**
- * The rows that name a key, taken out or emptied, deepest FIRST.
- *
- * Order is the whole guarantee: a child never outlives its parent, so an interruption leaves
- * fewer children and never an orphan. That is what lets a release cross a process without a
- * two-phase commit — and why nothing here needs to be undone, only finished.
- *
- * A row already visited is not visited again, which is what ends a cycle: `Category.parentId`
- * pointing at its own entity walks down and stops when a key repeats.
+ * The rows that name a key, every refusal asked first, then taken out or emptied deepest FIRST.
  *
  * Documented: [entities](https://fougere.dev/docs/concepts/entity).
  */
@@ -42,39 +50,120 @@ export async function release(
   visited: readonly string[] = [],
   row?: () => Promise<unknown>,
 ): Promise<void> {
-  const mark = `${entity}#${String(key)}`;
-  // Already on the trail means SOMEONE upstream is asking every process about this row, so
-  // asking again would be the bounce two processes declaring each other would never end. The
-  // local walk still runs: being asked is exactly the point, and only this process can do it.
+  const mark = markOf(entity, key);
   const asked = visited.includes(mark);
   const trail = asked ? visited : [...visited, mark];
 
-  // Written down before the first hop, so a process that stops mid-way leaves a row saying so.
-  // Absent, the hops are the same and nothing finishes them.
-  const journal = world.journal(entity);
-  if (journal && await journal.open(entity, String(key)) === 'busy') return;
+  const marks = !asked && !answeredByOneStatement(entity, world) ? await refuse(entity, key, world, visited) : [];
 
-  // Every declared remote, and every one of them: a frond behind `remotes:` may have no sources
-  // here, so this process cannot see that its rows name ours — only that process can.
-  if (!asked) for (const peer of world.peers()) await peer.release(entity, key, trail);
+  const journal = asked ? undefined : world.journal(entity);
+  if (journal && await journal.open(entity, String(key)) === 'busy') throw drivenElsewhere(entity, key);
 
   try {
-    await walk(entity, [key], world, new Set([mark]), trail);
+    if (!asked) for (const peer of world.peers()) await peer.release(entity, key, trail);
+    const seen = new Set([...(released.current() ?? []), ...trail]);
+    await released.within(seen, () => walk(entity, [key], world, seen, trail));
+  } catch (stopped) {
+    if (decided(stopped)) {
+      await forgetEverywhere(marks, world);
+      await journal?.close(entity, String(key));
+    } else await journal?.leave(entity, String(key));
+    throw stopped;
+  }
+
+  try {
+    await row?.();
+  } catch (stopped) {
+    await journal?.leave(entity, String(key));
+    throw stopped;
+  }
+
+  await forgetEverywhere(marks, world);
+  await journal?.close(entity, String(key));
+}
+
+/**
+ * What would refuse this release, asked over the whole tree and every peer while nothing moves.
+ *
+ * Documented: [entities](https://fougere.dev/docs/concepts/entity).
+ */
+export async function refuse(
+  entity: string,
+  key: unknown,
+  world: Releasing,
+  visited: readonly string[] = [],
+): Promise<string[]> {
+  const mark = markOf(entity, key);
+  const asked = visited.includes(mark);
+  const trail = asked ? visited : [...visited, mark];
+  const marked: string[] = [];
+
+  try {
+    if (!asked) for (const peer of world.peers()) marked.push(...await peer.refuses(entity, key, trail));
+    await refuseBelow(entity, [key], world, new Set(trail), trail, marked);
   } catch (refusal) {
-    // A refusal is an outcome, not an interruption: the framework decided, and redoing it
-    // would only decide again — a run kept open for one would be swept forever. Anything
-    // else stopped us mid-tree, and THAT is what a run is for.
-    if (refusal instanceof FougereError) await journal?.close(entity, String(key));
+    await forgetEverywhere(marked, world);
     throw refusal;
   }
 
-  // The row itself, LAST — handed in by whoever owns the gesture, so a run covers the whole
-  // thing rather than stopping one statement short of it. Whatever the row answers, the
-  // release did its part: what depends on this one is dealt with, and nothing is left to redo.
-  try {
-    await row?.();
-  } finally {
-    await journal?.close(entity, String(key));
+  return marked;
+}
+
+async function forgetEverywhere(marks: readonly string[], world: Releasing): Promise<void> {
+  if (marks.length === 0) return;
+  await world.forget(marks);
+  for (const peer of world.peers()) await peer.forget(marks);
+}
+
+/** True when a release of this row is already under way in this async context, which deletes it itself. */
+export function beingReleased(entity: string, key: unknown): boolean {
+  return released.current()?.has(markOf(entity, key)) ?? false;
+}
+
+function answeredByOneStatement(entity: string, world: Releasing): boolean {
+  return world.peers().length === 0 && world.dependentsOf(entity).length === 0;
+}
+
+function decided(stopped: unknown): boolean {
+  return stopped instanceof FougereError && stopped.code === ErrorCode.CONFLICT;
+}
+
+function drivenElsewhere(entity: string, key: unknown): FougereError {
+  return new FougereError({
+    code: ErrorCode.LOCKED,
+    message: `Another process is releasing ${entity} ${JSON.stringify(key)}. `
+      + 'Retry once it finishes, or once its lease runs out.',
+  });
+}
+
+async function refuseBelow(
+  entity: string,
+  keys: readonly unknown[],
+  world: Releasing,
+  seen: Set<string>,
+  trail: readonly string[],
+  marked: string[],
+): Promise<void> {
+  for (const dependent of world.namersOf(entity)) {
+    if (!world.rowsOf(dependent.entity)) {
+      for (const key of keys.filter((one) => !trail.includes(markOf(entity, one)))) {
+        for (const peer of world.peers()) marked.push(...await peer.refuses(entity, key, trail));
+      }
+      continue;
+    }
+
+    const found = await world.marking(dependent.entity, entity, keys, marked, async (rows) => {
+      if (dependent.onDelete === 'set null') return [];
+      const naming = [...(await rows.findAllByKeys(dependent.field, keys.map(String))).values()].flat();
+      if (dependent.onDelete === 'restrict' && naming.length > 0) throw restricted(dependent, naming.length);
+
+      return naming;
+    });
+    if (dependent.onDelete !== 'cascade') continue;
+
+    const primary = keyOf(world, dependent.entity);
+    const below = found.map((one) => one[primary]).filter((id) => !taken(seen, dependent.entity, id));
+    if (below.length > 0) await refuseBelow(dependent.entity, below, world, seen, trail, marked);
   }
 }
 
@@ -87,9 +176,6 @@ async function walk(
 ): Promise<void> {
   const dependents = world.dependentsOf(entity);
 
-  // Every refusal of this level BEFORE any of its rows move: two fields of one entity are two
-  // dependents, and declaration order would otherwise let a cascade beside a `restrict` win.
-  // Depth needs no such pass — a level acts only once the level below it came back.
   for (const dependent of dependents.filter((one) => one.onDelete === 'restrict')) {
     await refuseRestricted(entity, dependent, keys, world);
   }
@@ -101,7 +187,7 @@ async function walk(
 
 /** True once, and remembers — a key already on the path is what ends a cycle. */
 function taken(seen: Set<string>, entity: string, key: unknown): boolean {
-  const mark = `${entity}#${String(key)}`;
+  const mark = markOf(entity, key);
   if (seen.has(mark)) return true;
   seen.add(mark);
 
@@ -125,11 +211,13 @@ async function refuseRestricted(
   if (!rows) return;
 
   const found = [...(await rows.findAllByKeys(dependent.field, keys.map(String))).values()].flat();
-  if (found.length === 0) return;
+  if (found.length > 0) throw restricted(dependent, found.length);
+}
 
-  throw new FougereError({
+function restricted(dependent: Dependent, count: number): FougereError {
+  return new FougereError({
     code: ErrorCode.CONFLICT,
-    message: `${found.length} ${dependent.entity} row(s) still point to this one through ${dependent.field}. `
+    message: `${count} ${dependent.entity} row(s) still point to this one through ${dependent.field}. `
       + `Delete them first, or set onDelete on ${dependent.entity}.${dependent.field} ('cascade' or 'set null').`,
   });
 }
@@ -138,8 +226,7 @@ async function refuseRestricted(
  * One dependent level: cleared here, or asked of whoever holds it.
  *
  * Nothing here holds those rows — every declared remote is asked about THIS level, and the one
- * that holds them walks its own tree from there. The trail grows by one mark per level, so a
- * deeper ask is never mistaken for the bounce of a shallower one.
+ * that holds them walks its own tree from there.
  */
 async function releaseLevel(
   entity: string,
@@ -151,10 +238,7 @@ async function releaseLevel(
 ): Promise<void> {
   const rows = world.rowsOf(dependent.entity);
   if (!rows) {
-    for (const key of keys) {
-      // A level already on the trail is one somebody is asking every process about, so asking
-      // again is the bounce — the same reason `release` reads it before crossing.
-      if (trail.includes(`${entity}#${String(key)}`)) continue;
+    for (const key of keys.filter((one) => !trail.includes(markOf(entity, one)))) {
       for (const peer of world.peers()) await peer.release(entity, key, trail);
     }
 
@@ -172,7 +256,6 @@ async function releaseLevel(
   }
 
   const below = found.map((row) => row[primary]).filter((id) => !taken(seen, dependent.entity, id));
-  // Deepest first: what names THESE rows goes before they do, all the way down.
   await walk(dependent.entity, below, world, seen, trail);
   for (const id of below) await rows.delete(String(id));
 }

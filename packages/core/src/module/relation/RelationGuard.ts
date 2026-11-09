@@ -2,10 +2,11 @@ import { ErrorCode } from '../../wire/ErrorCode.js';
 import { FougereError } from '../../wire/FougereError.js';
 import type { RelationCheck } from './RelationCheck.js';
 import { isChange, type Change } from '../../storage/Change.js';
-import { release, type Releasing } from './Release.js';
+import { beingReleased, release, type Releasing } from './Release.js';
+import { markOf } from './FougereTarget.js';
 
 /** The gestures a relation reads before they land. */
-interface Writer {
+export interface Writer {
   create(...args: [Record<string, unknown>, ...unknown[]]): Promise<unknown>;
   createAll?(...args: [readonly Record<string, unknown>[], ...unknown[]]): Promise<unknown>;
   update(...args: [unknown, Record<string, unknown> | Change<Record<string, unknown>>, ...unknown[]]): Promise<unknown>;
@@ -14,6 +15,9 @@ interface Writer {
   upsertAll?(...args: [readonly Record<string, unknown>[], ...unknown[]]): Promise<unknown>;
   delete?(id: string): Promise<boolean>;
 }
+
+/** A unit of work holding these marks, handed the entity's rows bound to it. */
+export type Holding = <R>(marks: readonly string[], write: (rows: Writer) => Promise<R>) => Promise<R>;
 
 /**
  * What a `ref()` asks of a storage: its targets read before a write lands, and what names a row
@@ -24,6 +28,7 @@ export class RelationGuard {
     private readonly entity: string,
     private readonly relations: readonly RelationCheck[] = [],
     private readonly releasing?: Releasing,
+    private readonly holding?: Holding,
   ) {}
 
   guard<T extends object>(storage: T): T {
@@ -48,6 +53,7 @@ export class RelationGuard {
 
     const checking = this;
     guarded.delete = async function (id) {
+      if (beingReleased(checking.entity, id)) return remove.call(this, id);
       let gone = false;
       await release(checking.entity, id, checking.releasing!, [], async () => {
         gone = await remove.call(this, id);
@@ -62,9 +68,7 @@ export class RelationGuard {
     const checking = this;
 
     guarded.create = async function (...args) {
-      await checking.targetsOf([args[0]], 'create');
-
-      return writer.create.apply(this, args);
+      return checking.landing([args[0]], 'create', () => writer.create.apply(this, args), (rows) => rows.create(...args));
     };
 
     guarded.update = async function (...args) {
@@ -76,17 +80,17 @@ export class RelationGuard {
 
           return patch;
         };
-      } else await checking.targetsOf([input], 'update');
 
-      return writer.update.apply(this, args);
+        return writer.update.apply(this, args);
+      }
+
+      return checking.landing([input], 'update', () => writer.update.apply(this, args), (rows) => rows.update(...args));
     };
 
     const createAll = writer.createAll;
     if (typeof createAll === 'function') {
       guarded.createAll = async function (...args) {
-        await checking.targetsOf(args[0], 'createAll');
-
-        return createAll.apply(this, args);
+        return checking.landing(args[0], 'createAll', () => createAll.apply(this, args), (rows) => rows.createAll!(...args));
       };
     }
 
@@ -108,20 +112,43 @@ export class RelationGuard {
     const upsert = writer.upsert;
     if (typeof upsert === 'function') {
       guarded.upsert = async function (...args) {
-        await checking.targetsOf([args[0]], 'upsert');
-
-        return upsert.apply(this, args);
+        return checking.landing([args[0]], 'upsert', () => upsert.apply(this, args), (rows) => rows.upsert!(...args));
       };
     }
 
     const upsertAll = writer.upsertAll;
     if (typeof upsertAll === 'function') {
       guarded.upsertAll = async function (...args) {
-        await checking.targetsOf(args[0], 'upsertAll');
-
-        return upsertAll.apply(this, args);
+        return checking.landing(args[0], 'upsertAll', () => upsertAll.apply(this, args), (rows) => rows.upsertAll!(...args));
       };
     }
+  }
+
+  /** Read the targets, then write — inside a unit of work holding their marks, where the source holds marks. */
+  private async landing<R>(
+    rows: readonly Record<string, unknown>[],
+    operation: string,
+    write: () => Promise<R>,
+    again: (rows: Writer) => Promise<R>,
+  ): Promise<R> {
+    const marks = this.marksOf(rows);
+    const holding = this.holding;
+    if (!holding || marks.length === 0) {
+      await this.targetsOf(rows, operation);
+
+      return write();
+    }
+
+    return holding(marks, again);
+  }
+
+  private marksOf(rows: readonly Record<string, unknown>[]): string[] {
+    const marks = this.relations.filter((relation) => relation.marked).flatMap((relation) => rows
+      .map((row) => row[relation.field])
+      .filter((key) => key !== undefined && key !== null)
+      .map((key) => markOf(relation.target, key)));
+
+    return [...new Set(marks)];
   }
 
   /**

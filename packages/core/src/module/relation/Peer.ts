@@ -12,4 +12,8 @@ export interface Peer {
    * because the two sides share no memory.
    */
   release(entity: string, key: unknown, visited: readonly string[]): Promise<void>;
+  /** Refuse, as a release would over there, marking what it asked — answered with the marks it set. */
+  refuses(entity: string, key: unknown, visited: readonly string[]): Promise<readonly string[]>;
+  /** Take these marks out over there. */
+  forget(marks: readonly string[]): Promise<void>;
 }

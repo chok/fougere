@@ -292,8 +292,8 @@ describe('cascade — the rows that name it go first', () => {
     for (let i = 0; i < 100; i++) await world.posts.create({ id: `p${i}`, title: 'x', authorId: 'ada' });
 
     await world.users.delete('ada');
-    // `post` names `user` twice — authorId and editorId — and each is one read for the key.
-    expect(read).toHaveBeenCalledTimes(2);
+    // `post` names `user` twice — one read each — and the cascade is read once more while every refusal is asked first.
+    expect(read).toHaveBeenCalledTimes(3);
     expect(await rows(world.posts)).toEqual([]);
     await world.dispose();
   });

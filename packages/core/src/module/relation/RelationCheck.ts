@@ -13,6 +13,12 @@ export interface RelationCheck {
   field: string;
   /** What it points at, as the boot files it — `user`. */
   target: string;
+  /** True when the target's rows are in another source than the namer's. */
+  inAnotherSource: boolean;
+  /** True when the namer's source keeps a mark for the target, which a release then waits on. */
+  marked: boolean;
+  /** True when that mark is arbitrated by a lock in this process, the source having no transaction. */
+  arbitratedHereOnly: boolean;
   /**
    * Which of these keys no row answers. Takes a set so a page costs one read, and so the
    * single-row case is the same call with one member.

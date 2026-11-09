@@ -1,7 +1,7 @@
 import type { Logger } from '../../builtin/Logger.js';
 import type { RowHosts } from './RowHosts.js';
 import type { RelationCheck } from './RelationCheck.js';
-import { unfinishable, uncheckableRelations } from './relations.js';
+import { arbitratedHereOnly, unarbitratedRelations, unfinishable } from './relations.js';
 
 /**
  * What no single frond can see about a `ref()`, so it is said once every frond is installed.
@@ -17,10 +17,19 @@ export function warnAboutRelations(relations: RelationCheck[], rowHosts: RowHost
     );
   }
 
-  const uncheckable = uncheckableRelations(relations, rowHosts);
-  if (uncheckable.length > 0) {
+  const hereOnly = arbitratedHereOnly(relations);
+  if (hereOnly.length > 0) {
     log.warn(
-      `[relations] ${uncheckable.join(', ')}: the target lives in another process, so a row may point to one that was deleted.`,
+      `[relations] ${hereOnly.join(', ')}: this source has no transactions, so a write and a delete of its target `
+      + 'are arbitrated in this process only. A second process writing the same rows is not seen.',
+    );
+  }
+
+  const unarbitrated = unarbitratedRelations(relations);
+  if (unarbitrated.length > 0) {
+    log.warn(
+      `[relations] ${unarbitrated.join(', ')}: the target's rows are in another source and this one holds no marks, `
+      + 'so a row may point to one that was deleted.',
     );
   }
 }

@@ -13,6 +13,8 @@ export interface ResolvedStorage {
    * an unwind it replays itself.
    */
   sourceOf?: (entityName: string) => string | undefined;
+  /** The rows of one source by its name, whichever entity they belong to. */
+  factoryIn?: (source: string) => Source['storageFactory'] | undefined;
   /**
    * The engine a source runs on — the dual of `sourceOf`, which names it without
    * reaching it. A caller that must run DDL per engine needs the handle, not the name.
@@ -219,8 +221,8 @@ export function storageFrom(sources: Record<string, SourceEntities>): ResolvedSt
   const valuesHome = valuesHomeOf(sources);
   // What a source holds, as one pass sees it: its rows, and the row each of its values is kept in
   // when the source keeps them as rows rather than in a place of its own.
-  const viewOf = (fronds: Parameters<typeof sourceViewOf>[0], source: string, holds: (name: string) => boolean): SourceView => {
-    const view = sourceViewOf(fronds, (name) => holds(name) && !valuesHome.has(lowerFirst(name)));
+  const viewOf = (app: Pick<App, 'fronds'>, source: string): SourceView => {
+    const view = sourceViewOf(app.fronds, (name) => sourceOf(name) === source && !valuesHome.has(lowerFirst(name)));
     const engine = engineOf(source);
     if (!engine || engine.value || ![...valuesHome.values()].includes(source)) return view;
 
@@ -230,6 +232,7 @@ export function storageFrom(sources: Record<string, SourceEntities>): ResolvedSt
   return {
     storageFactory: (entity: any, name: string) => engineFor(name).storageFactory(entity, name),
     sourceOf,
+    factoryIn: (source) => engineOf(source)?.storageFactory,
     dbOf: (source) => (engineOf(source) as { db?: unknown } | undefined)?.db,
     sources: named,
     // Asked of the source that will run the work, never of the default one: a frame whose
@@ -251,9 +254,9 @@ export function storageFrom(sources: Record<string, SourceEntities>): ResolvedSt
     // which is what makes a cross-source `ref()` a miss rather than a constraint against a
     // stranger. What a pass DOES is the source's own: it knows its engine, this does not.
     migrate: async (app) => {
-      const said = DEFAULT ? [await base?.migrate?.(viewOf(app.fronds, DEFAULT, (name) => !home.has(lowerFirst(name))))] : [];
+      const said = DEFAULT ? [await base?.migrate?.(viewOf(app, DEFAULT))] : [];
       for (const [name, engine] of engines) {
-        said.push(await engine.migrate?.(viewOf(app.fronds, name, (e) => home.get(lowerFirst(e)) === name)));
+        said.push(await engine.migrate?.(viewOf(app, name)));
       }
       const reports = said.filter((report): report is string => Boolean(report));
 
@@ -262,9 +265,9 @@ export function storageFrom(sources: Record<string, SourceEntities>): ResolvedSt
     // The same partition `migrate` writes through, read — so what the boot refuses is exactly
     // what the command would create. A named source says its name; the default one needs none.
     pending: async (app) => {
-      const lines = DEFAULT ? [...(await base?.pending?.(viewOf(app.fronds, DEFAULT, (name) => !home.has(lowerFirst(name)))) ?? [])] : [];
+      const lines = DEFAULT ? [...(await base?.pending?.(viewOf(app, DEFAULT)) ?? [])] : [];
       for (const [name, engine] of engines) {
-        const behind = await engine.pending?.(viewOf(app.fronds, name, (e) => home.get(lowerFirst(e)) === name)) ?? [];
+        const behind = await engine.pending?.(viewOf(app, name)) ?? [];
         lines.push(...behind.map((line) => `${name}: ${line}`));
       }
 
@@ -291,6 +294,7 @@ export function layerOf(storage: ResolvedStorage) {
   return {
     storageFactory: storage.storageFactory,
     sourceOf: storage.sourceOf,
+    factoryIn: storage.factoryIn,
     transacts: storage.transacts,
     enforces: storage.enforces,
     transacted: storage.transacted as never,

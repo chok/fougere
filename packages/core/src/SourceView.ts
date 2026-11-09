@@ -1,6 +1,7 @@
-import type { SchemaView } from '@fougere/schema';
+import { lowerFirst, Role, type SchemaView } from '@fougere/schema';
 import type { EntityEntry } from './descriptor/EntityEntry.js';
 import { tablesOf } from './descriptor/tables.js';
+import FougereTarget, { FOUGERE_TARGET } from './module/relation/FougereTarget.js';
 
 /** The app as ONE source sees it: the entities it holds, by the name the scan wrote down. */
 export interface SourceView {
@@ -17,9 +18,35 @@ export function sourceViewOf(
   // The table each name is — the union of what the fronds declaring it say, not the last one read.
   const all = tablesOf(fronds).tables;
   if (!holds) return { entities: all };
+  const held = new Map([...all].filter(([name]) => holds(name)));
+  const entities = namesElsewhere(held, holds) ? new Map([...held, [FOUGERE_TARGET, FougereTarget as SchemaView]]) : held;
 
   return {
-    entities: new Map([...all].filter(([name]) => holds(name))),
+    entities,
     inOtherSources: [...all.keys()].filter((name) => !holds(name)).sort(),
   };
+}
+
+function namesElsewhere(held: ReadonlyMap<string, SchemaView>, holds: (name: string) => boolean): boolean {
+  return [...held.values()].some((schema) => Object.values(schema.getFields()).some((field) => {
+    const role = Role.of(field);
+
+    return role.isReference() && !holds(lowerFirst(role.target?.name ?? ''));
+  }));
+}
+
+/**
+ * True when one source holds both rows and keeps the relation between them as a foreign key — read off `sources:` alone, never off where a frond answers.
+ *
+ * Documented: [entities](https://fougere.dev/docs/concepts/entity).
+ */
+export function hasForeignKey(
+  namer: string,
+  target: string,
+  sourceOf: (entity: string) => string | undefined,
+  enforces: (source: string) => boolean,
+): boolean {
+  const source = sourceOf(namer);
+
+  return source !== undefined && source === sourceOf(target) && enforces(source);
 }

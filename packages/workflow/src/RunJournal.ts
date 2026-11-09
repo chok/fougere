@@ -24,6 +24,10 @@ export default class RunJournal implements Journal {
   close(entity: string, key: string): Promise<void> {
     return this.runs.close(entity, key);
   }
+
+  leave(entity: string, key: string): Promise<void> {
+    return this.runs.leave(entity, key);
+  }
 }
 
 /** What this process calls itself while it drives a run — enough to tell it from another. */

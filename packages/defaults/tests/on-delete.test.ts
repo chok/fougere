@@ -230,11 +230,11 @@ describe('what the placement costs', () => {
 describe('the crossing goes both ways', () => {
   // The delete travels from the side that owns the users; the WRITE's check travels the other
   // way, and it took a mirrored setup to notice it was not travelling at all.
-  it('refuses a post naming an author the other process does not hold', async () => {
+  it('refuses a post naming an author the other process does not hold — by the key of the file both open', async () => {
     const world = await bench({ apart: true });
 
     await expect(world.posts.create({ id: 'p1', title: 'One', authorId: 'nobody' }))
-      .rejects.toThrow(/authorId "nobody" — no user holds it/);
+      .rejects.toThrow(/FOREIGN KEY/);
 
     await world.users.create({ id: 'ada', name: 'Ada' });
     await expect(world.posts.create({ id: 'p1', title: 'One', authorId: 'ada' })).resolves.toBeDefined();

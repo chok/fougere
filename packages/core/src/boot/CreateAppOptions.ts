@@ -24,6 +24,8 @@ export interface CreateAppOptions {
   /** The entities `sources:` holds as one value each, and how each is read. */
   values?: ValueSources;
   transacted?: <R>(source: string, fn: (storageFactory: StorageFactory) => Promise<R>) => Promise<R>;
+  /** The rows of one source by its name, whichever entity they belong to — where its marks are kept. */
+  factoryIn?: (source: string) => StorageFactory | undefined;
   /** What the sources do not hold yet; the boot refuses when it is not empty. */
   pending?: (app: App) => Promise<readonly string[]>;
   /** Whether that source refuses a constraint at the rows — the boot says so when it does not. */

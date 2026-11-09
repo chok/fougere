@@ -64,6 +64,21 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
   break it, and `drift` is where it would be said — it reads nullability today and the engine's
   introspection carries no foreign key (`ColumnMetadata`, measured 2026-09-14). The fix is one
   statement by hand, or a fresh table. `fougere migrate` does not add it either.
+- **Writes naming one target across two sources go one at a time** — `marksInTransactions`
+  (`core/src/module/relation/Marks.ts`) locks the mark with `update(id, change)`, which is exclusive,
+  and holds it across the call to the owner. Measured 2026-11-09, 8 writers, a 5 ms call: one target
+  144/s against 1163/s unmarked on Postgres, 107 against 1033 on MySQL, 95 against 716 on SQL Server;
+  targets spread 931, 819 and 458. On SQLite the transaction holds the file: 170/s against 1400 either way.
+- **Two processes on SQLite whose rows name each other can wait on each other until the call times out**
+  — each holds its one connection across its call to the other, which needs that connection to answer.
+  Reasoned from `marksInTransactions`, not measured. Stated 2026-11-09.
+- **A source with no transaction arbitrates in one process** — `marksInProcess`, for memory, files and
+  D1. A second process writing the same rows is not seen; the boot names each such `ref()`.
+- **A write inside `Together`, and an `update` handed a function, take no mark** — they read their
+  targets and a delete at the same time still passes. A frame's transaction is already open, and such
+  an update decides its keys inside its own.
+- **`list({ limit })` is refused on SQL Server** — `SqlStorage` calls `.limit()`, and the engine answers
+  `Incorrect syntax near '@1'`. Measured 2026-11-09 on SQL Server 2022.
 - **A process carrying only its own frond cannot MIGRATE a table whose key names an entity it
   has never seen** — `ref(User): no source hosts it`, measured 2026-09-14 while writing
   `defaults/tests/on-delete.test.ts`. It can CHECK it: `pending` reads names and leaves `elsewhere`

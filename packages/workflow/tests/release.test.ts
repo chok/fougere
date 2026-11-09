@@ -35,7 +35,7 @@ const rows = new Map<string, Store>();
 
 interface World { app: App; users: Storage; posts: Storage; runs: Storage }
 
-async function booting(breakAt?: (id: string) => boolean): Promise<World> {
+async function booting(breakAt?: (name: string, id: string) => boolean): Promise<World> {
   const spies = (['debug', 'info', 'log', 'warn', 'error'] as const)
     .map((method) => vi.spyOn(console, method).mockImplementation(() => undefined));
 
@@ -50,11 +50,11 @@ async function booting(breakAt?: (id: string) => boolean): Promise<World> {
     createContainer,
     storageFactory: (schema, name) => {
       const built = base(schema, name) as Storage;
-      if (name !== 'post' || !breakAt) return built;
+      if (name === 'run' || !breakAt) return built;
 
       return Object.assign(Object.create(built), {
         delete: async (id: string) => {
-          if (breakAt(id)) throw new Error('the process went away');
+          if (breakAt(name, id)) throw new Error('the process went away');
 
           return (built as any).delete(id);
         },
@@ -79,7 +79,7 @@ const ids = async (storage: Storage) => (await storage.list()).map((row: any) =>
 describe('a release that was interrupted', () => {
   it('leaves a row saying so, and a sweep finishes it', async () => {
     rows.clear();
-    const first = await booting((id) => id === 'p2');
+    const first = await booting((name, id) => name === 'post' && id === 'p2');
     await first.users.create({ id: 'ada', name: 'Ada' });
     await first.posts.create({ id: 'p1', title: 'One', authorId: 'ada' });
     await first.posts.create({ id: 'p2', title: 'Two', authorId: 'ada' });
@@ -104,6 +104,42 @@ describe('a release that was interrupted', () => {
     expect(swept.resumed).toEqual(['user:ada']);
     expect(await ids(second.posts)).toEqual([]);
     await second.app.dispose();
+  });
+
+  it('leaves the run to the next sweep when the row itself fails, its dependents gone', async () => {
+    rows.clear();
+    let failures = 1;
+    const world = await booting((name) => name === 'user' && failures-- > 0);
+    await world.users.create({ id: 'ada', name: 'Ada' });
+    await world.posts.create({ id: 'p1', title: 'One', authorId: 'ada' });
+
+    await expect(world.users.delete('ada')).rejects.toThrow('the process went away');
+    expect(await ids(world.posts)).toEqual([]);
+    expect(await ids(world.users)).toEqual(['ada']);
+    expect(await world.runs.findById('user:ada')).toMatchObject({ status: 'running' });
+
+    const swept = await createLocalRunner(world.app)(
+      { address: 'run', op: 'sweep' }, Invocation.empty,
+    ) as { resumed: string[] };
+    expect(swept.resumed).toEqual(['user:ada']);
+    expect(await ids(world.users)).toEqual([]);
+    expect(await world.runs.findById('user:ada')).toMatchObject({ status: 'done' });
+    await world.app.dispose();
+  });
+
+  it('refuses a release another driver holds, and moves nothing', async () => {
+    rows.clear();
+    const world = await booting();
+    await world.users.create({ id: 'ada', name: 'Ada' });
+    await world.posts.create({ id: 'p1', title: 'One', authorId: 'ada' });
+    await world.runs.create({
+      id: 'user:ada', entity: 'user', key: 'ada', status: 'running', leaseOwner: 'elsewhere', leaseUntil: Date.now() + 60_000,
+    });
+
+    await expect(world.users.delete('ada')).rejects.toMatchObject({ code: 'LOCKED' });
+    expect(await ids(world.posts)).toEqual(['p1']);
+    expect(await ids(world.users)).toEqual(['ada']);
+    await world.app.dispose();
   });
 
   it('writes no run for the rows that carry one', async () => {

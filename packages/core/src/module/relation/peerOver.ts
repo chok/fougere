@@ -13,5 +13,7 @@ export function peerOver(transport: Transport): Peer {
       ((await ask('holds', { entity, keys })) as { missing: readonly unknown[] }).missing,
     dependents: (entity) => ask('dependents', { entity }),
     release: async (entity, key, visited) => { await ask('release', { entity, key, visited }); },
+    refuses: async (entity, key, visited) => ((await ask('refuses', { entity, key, visited })) as { marked: readonly string[] }).marked,
+    forget: async (marks) => { await ask('forget', { marks }); },
   };
 }

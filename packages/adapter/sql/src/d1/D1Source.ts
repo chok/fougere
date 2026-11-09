@@ -70,6 +70,8 @@ class BoundDialect implements Dialect {
   createIntrospector(db: Kysely<any>) { return new SqliteIntrospector(db); }
 }
 
-export function createD1Source(binding: string): SqlSource {
-  return createKyselySource(new BoundDialect(binding), 'sqlite', { name: binding });
+export function createD1Source(binding: string): Omit<SqlSource, 'transacted'> {
+  const { transacted: _refusedByD1, ...source } = createKyselySource(new BoundDialect(binding), 'sqlite', { name: binding });
+
+  return source;
 }

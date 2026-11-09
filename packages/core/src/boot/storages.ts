@@ -22,7 +22,9 @@ import { repositoryKeyOf, seatOf } from '../prefab/Repository.js';
 import { storageKeyOf, type Storage } from '../storage/Storage.js';
 import { declares } from '../Source.js';
 import { relationChecksOf, refuseUnwritableNull, releasing } from '../module/relation/relations.js';
-import { RelationGuard } from '../module/relation/RelationGuard.js';
+import { RelationGuard, type Holding } from '../module/relation/RelationGuard.js';
+import { ErrorCode } from '../wire/ErrorCode.js';
+import { FougereError } from '../wire/FougereError.js';
 import type { Building } from './facades.js';
 import type { Assembly } from './install.js';
 
@@ -65,25 +67,50 @@ function rowsOf(
   entity: { name: string; schema: SchemaView },
   realization: Storage,
   report?: GuardReport,
+  inUnitOfWork = false,
 ): Storage {
   const links = assembly.hostPortsOf.get(owner)?.get('Storage') ?? [];
   const linked = wrapping('Storage', links, realization, (dep) => scope.resolve(dep));
-  const related = relationGuardOf(assembly, entity).guard(linked);
+  const related = relationGuardOf(assembly, entity, inUnitOfWork).guard(linked);
 
   return new StorageGuard(entity.schema.getFields(), entity.name, report).guard(related);
 }
 
 const relationGuards = new WeakMap<Assembly, Map<SchemaView, RelationGuard>>();
+const relationGuardsInUnitOfWork = new WeakMap<Assembly, Map<SchemaView, RelationGuard>>();
 
-function relationGuardOf(assembly: Assembly, entity: { name: string; schema: SchemaView }): RelationGuard {
-  const held = relationGuards.get(assembly) ?? new Map<SchemaView, RelationGuard>();
-  relationGuards.set(assembly, held);
+function relationGuardOf(assembly: Assembly, entity: { name: string; schema: SchemaView }, inUnitOfWork: boolean): RelationGuard {
+  const guards = inUnitOfWork ? relationGuardsInUnitOfWork : relationGuards;
+  const known = guards.get(assembly) ?? new Map<SchemaView, RelationGuard>();
+  guards.set(assembly, known);
   const { rowHosts } = assembly;
-  const guard = held.get(entity.schema)
-    ?? new RelationGuard(entity.name, relationChecksOf(entity.schema, entity.name, rowHosts), releasing(rowHosts));
-  held.set(entity.schema, guard);
+  const guard = known.get(entity.schema)
+    ?? new RelationGuard(entity.name, relationChecksOf(entity.schema, entity.name, rowHosts), releasing(rowHosts),
+      inUnitOfWork ? undefined : holdingOf(assembly, entity));
+  known.set(entity.schema, guard);
 
   return guard;
+}
+
+/** Where the entity's source holds marks: the write runs in its unit of work, through the same chain rebuilt on it. */
+function holdingOf(assembly: Assembly, entity: { name: string; schema: SchemaView }): Holding | undefined {
+  const source = assembly.rowHosts.sourceOf(entity.name);
+  const kept = source === undefined ? undefined : assembly.rowHosts.marksIn(source);
+  if (!kept) return undefined;
+
+  return (marks, write) => kept.holding(marks, async (factory, gone) => {
+    if (gone.length > 0) {
+      throw new FougereError({
+        code: ErrorCode.VALIDATION_FAILED,
+        message: `${entity.name} names rows being deleted: ${gone.join(', ')}`,
+        details: gone,
+      });
+    }
+    const owner = assembly.frondOf.get(entity.name)!;
+    const scope = assembly.container.resolve<Container>(`frond:${owner}`);
+
+    return write(rowsOf(assembly, owner, scope, entity, factory(entity.schema, entity.name), undefined, true) as never);
+  });
 }
 
 export function registerStorages(
@@ -231,7 +258,7 @@ export function registerFramesOf(frond: FrondDescriptor, assembly: Assembly, sco
     rowsOf: (entity, realization) => {
       const owner = frondOf.get(entity.name) ?? frond.name;
 
-      return rowsOf(assembly, owner, container.resolve<Container>(`frond:${owner}`), entity, realization);
+      return rowsOf(assembly, owner, container.resolve<Container>(`frond:${owner}`), entity, realization, undefined, true);
     },
     log: frondLog,
   }, refused);

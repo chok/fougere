@@ -38,6 +38,11 @@ export default class RunRepository extends Repository<Run> {
     await this.update(`${entity}:${String(key)}`, { status: 'done', finishedAt: this.now() });
   }
 
+  /** Give the lease up and leave the run open, so the next sweep finishes it. */
+  async leave(entity: string, key: string): Promise<void> {
+    await this.update(`${entity}:${String(key)}`, { leaseUntil: this.now() });
+  }
+
   /** Runs whose driver stopped saying it was alive — what a sweep has to finish. */
   async abandoned(): Promise<Run[]> {
     const running = await this.findAllBy({ status: 'running' });

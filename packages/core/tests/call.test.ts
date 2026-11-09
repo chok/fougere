@@ -90,7 +90,7 @@ describe('createLocalRunner', () => {
       await expect(run({ address: 'rpc', op: 'topology' }, Invocation.empty))
         .rejects.toMatchObject({ code: ErrorCode.NOT_FOUND, address: 'rpc', operation: 'topology' });
       await expect(run({ address: 'rpc', op: 'topology' }, Invocation.empty))
-        .rejects.toThrow(/Unknown rpc operation 'topology'\. It serves discover, holds, dependents, release\./);
+        .rejects.toThrow(/Unknown rpc operation 'topology'\. It serves discover, holds, dependents, refuses, forget, release\./);
     });
 
     it('serves what a package declared, on the same wire as the card', async () => {

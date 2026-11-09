@@ -21,6 +21,9 @@ const storage = () => ({
 const authors = (held: string[]): RelationCheck & { missing: ReturnType<typeof vi.fn> } => ({
   field: 'authorId',
   target: 'author',
+  inAnotherSource: false,
+  marked: false,
+  arbitratedHereOnly: false,
   missing: vi.fn(async (keys: readonly unknown[]) => keys.filter((key) => !held.includes(String(key)))),
 });
 
@@ -74,16 +77,23 @@ describe('RelationGuard', () => {
     rows.delete.mockImplementation(async () => { order.push('row'); return true; });
     const releasing: Releasing = {
       dependentsOf: () => [],
+      namersOf: () => [],
+      marking: async (_namer, _target, _keys, _marked, read) => read(undefined as never),
+      forget: async () => undefined,
       rowsOf: () => undefined,
       schemaOf: () => undefined,
       journal: () => undefined,
-      peers: () => [{ release: async () => { order.push('peer'); } }],
+      peers: () => [{
+        refuses: async () => { order.push('asked'); return []; },
+        release: async () => { order.push('peer'); },
+        forget: async () => undefined,
+      }],
     };
 
     const gone = await new RelationGuard('post', [], releasing).guard(rows).delete('p1');
 
     expect(gone).toBe(true);
-    expect(order).toEqual(['peer', 'row']);
+    expect(order).toEqual(['asked', 'peer', 'row']);
   });
 
   it('stands under the validating guard: a row the guard refuses is never read across', async () => {

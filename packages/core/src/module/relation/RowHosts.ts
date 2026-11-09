@@ -1,6 +1,7 @@
 import type { Graph } from '@fougere/graph';
 import type { SchemaView } from '@fougere/schema';
 import type { Constraint } from '../../Constraint.js';
+import type { Marks } from './Marks.js';
 import type { Peer } from './Peer.js';
 import type { Journal } from '../../wire/Journal.js';
 import type { Storage } from '../../storage/Storage.js';
@@ -11,9 +12,12 @@ import type { Storage } from '../../storage/Storage.js';
  * Documented: [entities](https://fougere.dev/docs/concepts/entity).
  */
 export interface RowHosts {
-  /** False behind `remotes:` — whose `sourceOf` still answers the default, and means nothing. */
+  /** False behind `remotes:`. */
   hostedHere(entity: string): boolean;
-  sourceOf(entity: string): string;
+  /** The source `sources:` puts an entity's rows in — whichever process serves its frond. */
+  sourceOf(entity: string): string | undefined;
+  /** How a source keeps its marks, absent where this process cannot reach its rows by its name. */
+  marksIn(source: string): Marks | undefined;
   enforces(source: string, constraint: Constraint): boolean;
   /**
    * Resolved through the frond that owns it, never the asking frond's scope: a scope sees its

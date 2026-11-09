@@ -995,8 +995,9 @@ rather than refusing them. Pinned by `core/tests/enforced.test.ts`.
 
 **A `ref()` is held by a key, read by the guard, or named at boot** — `module/relation/relations.ts`,
 `relationChecksOf`. `relation` is the second member of `Constraint`, and the PAIR decides, never the
-engine: SQL keeps a foreign key over rows it can see, so a key holds only when the target is
-hosted here, in the SAME source, and that source keeps relations. Anything else becomes a
+engine: SQL keeps a foreign key over rows it can see, so a key holds only when `sources:` puts both
+in the SAME source and that source keeps relations (`hasForeignKey`, `core/src/SourceView.ts`, read
+by the migration's view too). Where a frond answers has no part in it. Anything else becomes a
 `RelationCheck` that `RelationGuard` (`module/relation/`) reads before a write, under the `StorageGuard`
 that parsed it — one read per relation and per page —
 and a target nothing in this process answers is named once, after every frond installed. Not a
@@ -1009,6 +1010,16 @@ the same answer as the frond's storage. Pinned by `core/tests/relations.test.ts`
 a presenter handed the PAGE and a collector reading what the door filled — over the same
 matrix, plus the two refusals no placement may soften (a collector where nothing consumes it,
 a frame whose member answers elsewhere).
+
+**Across two sources, a write and the delete of its target wait for each other on a mark** — a row of
+`FougereTarget` in the source that names the target, added to its view by `sourceViewOf`. A write locks
+it across its question to the owner and its write (`Marks.holding`, reached from `RelationGuard.landing`);
+a release sets it `gone` while it reads what names the target (`Marks.marking`), and takes it out once
+it ends (`rpc.forget`), so a recreated key is free. No source writes a line for it:
+`marksInTransactions` is `transacted` and `update(id, change)`, `marksInProcess` a lock here for what has
+no transaction, and the boot says so. Measured over 300 concurrent rounds on SQLite, Postgres, MySQL,
+SQL Server, memory and files: no orphan. Pinned by `defaults/tests/marks.test.ts` and
+`demos/on-delete/audit` (`race`, `race_delete_first`).
 
 **A deletion is the dual of a write, and the ORDER is the guarantee** — `module/relation/Release.ts`,
 `release`. `ref(User, { onDelete })` states `restrict` (the default, since a key with nothing
@@ -1025,8 +1036,8 @@ never an orphan — which is what lets a release cross a process with no two-pha
 is nothing to undo, only something to finish. Pinned by `core/tests/on-delete.test.ts` and
 `defaults/tests/on-delete.test.ts`, the bench that runs one declaration at six placements.
 
-**Core serves four readings in EVERY process** — `discover`, `holds`, `dependents`, `release`
-(`discover` in `boot/bootstrap.ts`, the other three in `module/relation/readings.ts`). All four read the STORAGE and never a facade: a facade answers what its
+**Core serves six readings in EVERY process** — `discover`, `holds`, `dependents`, `refuses`, `forget`, `release`
+(`discover` in `boot/bootstrap.ts`, the rest in `module/relation/readings.ts`). They read the STORAGE and never a facade: a facade answers what its
 handler chose to show, so `PostHandler.list` hiding drafts would hide exactly the row the
 question exists to find. `holds` is the write's question asked across, `release` the delete's;
 `peers()` is built from `fronds:` itself and not from the router, because the router indexes by

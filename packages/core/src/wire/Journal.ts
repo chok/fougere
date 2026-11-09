@@ -11,6 +11,8 @@ export interface Journal {
   /** Take this release on, or say another process is already driving it. */
   open(entity: string, key: string): Promise<'taken' | 'busy'>;
   close(entity: string, key: string): Promise<void>;
+  /** Stop driving this release without finishing it, so a sweep takes it at once. */
+  leave(entity: string, key: string): Promise<void>;
 }
 
 /** The container key a package registers its journal under. */
