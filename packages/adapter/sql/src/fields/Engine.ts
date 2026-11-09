@@ -7,5 +7,4 @@ export type Engine = (typeof ENGINES)[number];
 
 type Assert<T extends true> = T;
 
-/** A fifth dialect does not compile until `ENGINES` names it. */
 type _EnginesMatchDialects = Assert<[Exclude<DialectName, Engine>] extends [never] ? true : false>;

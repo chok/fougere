@@ -1,9 +1,3 @@
-/**
- * The source types this adapter answers, each declared once: its format is what an entry may
- * say — the editor reads it as a type, the boot judges the entry by it — and what opens one.
- *
- * Documented: [sources](https://fougere.dev/docs/data/sql).
- */
 import { Format, type Accepted } from '@fougere/schema';
 import { Sources } from '@fougere/core';
 import { createSqliteSource } from './sqlite/SqliteSource.js';
@@ -17,7 +11,6 @@ const SQLITE = Format.of('source/sqlite')
   .needs('type', 'path')
   .closed();
 
-/** An engine reached over the network: a url, and nothing else to say. */
 const server = <Name extends 'pg' | 'mysql' | 'mssql'>(name: Name) => Format.of(`source/${name}`)
   .key('type', Format.tokens([name]))
   .key('url', Format.text)

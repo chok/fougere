@@ -10,10 +10,7 @@ import type { PlanOptions } from './PlanOptions.js';
 
 export interface Plan {
   changes: StepChange[];
-  /**
-   * Empty means the step is realisable whole. Anything here is a decision the DDL may
-   * not take alone — reported together so one run names every one of them.
-   */
+  /** What the DDL may not decide alone; empty means the step can run whole. */
   refusals: Refusal[];
 }
 
@@ -36,10 +33,6 @@ export function collapseChain(steps: readonly SetDiff[]): SetDiff {
   return { entities, entitiesAdded: [...new Set(added)], entitiesRemoved: [...new Set(removed)] };
 }
 
-/**
- * Add one change to what the chain has said so far, rewriting rather than appending when it
- * continues a field already moved.
- */
 function compose(held: ShapeChange[], change: ShapeChange): void {
   if (change.kind === 'renamed') {
     const at = held.findIndex((each) => each.kind === 'renamed' && each.to === change.from);
@@ -55,8 +48,6 @@ function compose(held: ShapeChange[], change: ShapeChange): void {
     return;
   }
 
-  // Anything else names a field; if the chain renamed it earlier, the tables know it
-  // under the name it started with.
   const field = 'field' in change ? change.field : undefined;
   const at = held.findIndex((each) => each.kind === 'renamed' && each.to === field);
   if (at === -1) {
@@ -66,8 +57,6 @@ function compose(held: ShapeChange[], change: ShapeChange): void {
   }
 
   const origin = held[at] as Extract<ShapeChange, { kind: 'renamed' }>;
-  // A field the chain ends by dropping is dropped under its original name, and the
-  // renames that led there are work nobody has to do.
   if (change.kind === 'removed') held.splice(at, 1);
   held.push({ ...change, field: origin.from });
 }
@@ -82,8 +71,6 @@ export function planStep(step: SetDiff, tables: TableDef[], options: PlanOptions
 
   for (const [entity, answer] of Object.entries(step.entities)) {
     const table = resolve(entity);
-    // A step for an entity this app no longer projects has nothing to act on. Saying so
-    // beats emitting SQL against a table that is not there.
     if (!byName.has(table)) {
       refusals.push({ entity, field: '*', reason: `no table '${table}' in this app — did the entity move?` });
       continue;
@@ -99,7 +86,6 @@ export function planStep(step: SetDiff, tables: TableDef[], options: PlanOptions
   return { changes, refusals };
 }
 
-/** One shape change: a column instruction, nothing to do, or a refusal that names itself. */
 function realise(
   entity: string,
   table: string,
@@ -108,17 +94,12 @@ function realise(
 ): { change?: StepChange } | Refusal {
   switch (change.kind) {
     case 'renamed':
-      // The one thing introspection could never infer, and the reason a step exists.
       return { change: { kind: 'renameColumn', table, from: toSnakeCase(change.from), to: toSnakeCase(change.to) } };
 
     case 'removed':
       return { change: { kind: 'dropColumn', table, column: toSnakeCase(change.field) } };
 
     case 'added': {
-      // The additive pass adds it — unless it cannot: a NOT NULL column with no default
-      // fails on a table that already holds rows, and `addColumn` silently leaves it
-      // nullable instead. Two guarantees for one entity, decided by whether the table
-      // existed yesterday. Refusing here is what makes the declaration true either way.
       if (!change.required) return {};
       const column = target.columns.find((each) => each.field === change.field);
       if (column?.default !== undefined) return {};
@@ -147,8 +128,6 @@ function realise(
       };
 
     case 'reshaped':
-      // A tightened bound is a CHECK, and altering one on a live table is engine-specific
-      // AND may be refused by rows already stored. The validator still enforces it at the facade.
       return {
         entity,
         field: change.field,
@@ -160,7 +139,6 @@ function realise(
   }
 }
 
-/** An axis other than shape moved. */
 function restated(entity: string, change: Extract<ShapeChange, { kind: 'restated' }>): { change?: StepChange } | Refusal {
   const refuse = (reason: string): Refusal => ({ entity, field: change.field, reason });
 
@@ -178,19 +156,14 @@ function restated(entity: string, change: Extract<ShapeChange, { kind: 'restated
   const to = change.to ?? {};
   if (from.primary !== to.primary) return refuse(`primary moved — a key is not something a step may take from live rows`);
   if (!dequal(from.unique, to.unique)) {
-    // The same reason `delta` cannot add one: CREATE UNIQUE INDEX fails on a table that
-    // already holds duplicates, so it is a decision about the rows, not about the DDL.
     return refuse(`unique group moved — rows already stored may contradict it, so it is declared and applied by hand`);
   }
   if (!dequal(from.relation, to.relation)) return refuse(`relation moved — a foreign key is a constraint, and nothing here alters one`);
-  // What is left is the index, and only its appearance: the additive pass proposes every
-  // declared index at every boot, and nothing has ever dropped one.
   if (from.index && !to.index) return refuse(`index gone — nothing drops an index today, so the table keeps it`);
 
   return {};
 }
 
-/** The value a lifecycle declares at create, when it declares one — what reaches DEFAULT. */
 function literalOf(rules: { create?: unknown } | undefined): unknown {
   const create = rules?.create;
 
@@ -199,11 +172,6 @@ function literalOf(rules: { create?: unknown } | undefined): unknown {
 
 const show = (value: unknown): string => (value === undefined ? 'none' : JSON.stringify(value));
 
-/**
- * Has the table already moved? Read off the columns themselves. A table that is not there has
- * nothing to move — the additive pass creates it at its final shape — and a rename whose old
- * name is gone has nothing left to carry.
- */
 function done(change: StepChange, columns: Set<string> | undefined): boolean {
   if (!columns) return true;
 
@@ -219,10 +187,7 @@ export function stepSQL(change: StepChange, dialectName: DialectName = 'sqlite')
     : alter.dropColumn(change.column).compile().sql;
 }
 
-/**
- * Run a step. Refuses whole rather than part-way: a plan with any refusal in it is a
- * plan someone has to read, and half a rename is worse than none.
- */
+/** Runs a step, or refuses it whole when the plan holds a refusal. */
 export async function applyStep(plan: Plan, db: Kysely<any>, dialectName: DialectName = 'sqlite'): Promise<string[]> {
   if (plan.refusals.length > 0) {
     const named = plan.refusals.map((one) => `  ${one.entity}.${one.field} — ${one.reason}`).join('\n');

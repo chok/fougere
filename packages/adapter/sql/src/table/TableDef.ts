@@ -26,15 +26,10 @@ export function toSnakeCase(str: string): string {
   return str.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`);
 }
 
-/**
- * A `many` relation owns no column — the join lives on the other side. Every
- * other field becomes exactly one column.
- */
 function isStored(field: Field): boolean {
   return !Role.of(field).isCollection();
 }
 
-/** The target's primary key column. */
 function primaryColumnOf(target: Partial<SchemaView>): string {
   if (typeof target.getFields !== 'function') return 'id';
   for (const [name, field] of Object.entries(target.getFields())) {
@@ -44,7 +39,6 @@ function primaryColumnOf(target: Partial<SchemaView>): string {
   return 'id'; // declared no primary() field — defensive, shouldn't happen
 }
 
-/** The FK target for a `ref()` field. */
 function referenceFor(
   field: Field,
   resolve: (name: string) => string,
@@ -56,19 +50,6 @@ function referenceFor(
   const target = role.target as Partial<SchemaView> & { name?: string };
   const mapped = tableNameOf?.get(target as SchemaView);
   if (mapped === undefined && hosted !== undefined) {
-    // Three answers, and only the first two are ordinary. Two databases share no
-    // constraint, so a target that lives in another source gets a column and no
-    // foreign key — the relation survives, the pretence does not. A target no source
-    // hosts is a mistake, and staying silent would turn a bad registration into what
-    // reads exactly like a source boundary.
-    //
-    // Decided on the NAME and never on object identity: a target reached through two
-    // specifiers (`./Subscription.js` from a sibling entity, `Subscription.ts` from
-    // the scan) is TWO class objects for one entity, so the identity map misses on an
-    // entity that is right there. Measured on a real app, where this threw on
-    // `ref(Subscription)` while the table was in the very batch being built. Everything
-    // else that resolves a relation target already resolves it by name, for the same
-    // reason — a target rebuilt from a card is a `{ name }` stand-in.
     const key = lowerFirst(target.name ?? '');
     if (hosted.elsewhere.has(key)) return undefined;
     if (!hosted.here.has(key)) {
@@ -84,10 +65,6 @@ function referenceFor(
   return role.onDelete ? { table, column, onDelete: role.onDelete } : { table, column };
 }
 
-/**
- * A key whose generator makes UUIDs, or a reference to one. The target is found by NAME among the
- * tables being built, the way `referenceFor` finds it, so a class and a card answer alike.
- */
 function holdsUuids(field: Field, tableNameOf?: Map<SchemaView, string>): boolean {
   const generator = Lifecycle.of(field).generator();
   if (generator !== undefined) return UUID_GENERATORS.has(generator);
@@ -109,9 +86,6 @@ function toColumn(
   hosted?: HostedNames,
   stated?: SqlField,
 ): ColumnDef {
-  // The column type comes from the `shape` axis alone. `Shapes.of` strips the
-  // nullable union so a nullable integer stays an integer instead of falling
-  // through to text.
   const { base, nullable } = Shapes.of(field.shape);
   const lifecycle = Lifecycle.of(field);
   const column: ColumnDef = {
@@ -125,10 +99,6 @@ function toColumn(
   if (bounds) column.bounds = bounds;
   const literal = lifecycle.literal;
   if (literal) column.default = literal.value;
-  // A primary key is already unique and already indexed — saying it twice would emit a
-  // redundant constraint on every engine. So would indexing what `unique` constrains.
-  // Only a constraint of ONE becomes a column constraint; a group of several is a table
-  // constraint, emitted once from `uniqueGroups` rather than once per member column.
   if (Role.of(field).isUnique() && !column.primary) column.unique = true;
   if (Role.of(field).isIndexed() && !column.primary && !column.unique) column.index = true;
   if (holdsUuids(field, tableNameOf)) column.uuid = true;
@@ -143,11 +113,7 @@ function toColumn(
 export function toTable(tableName: string, schema: SchemaView, relations?: RelationResolve): TableDef {
   const resolve = relations?.resolve ?? toTableName;
   const fields = schema.getFields();
-  // Read off the entity, since that is where it is declared and addressed by field key.
   const configuration = schema.getAdapters().sql;
-  // Judged HERE and not at `entity()`: this runs at boot, after every import, so the
-  // format is always loaded. A validator registered with `schema` would depend on which
-  // module was imported first.
   const refusal = configuration === undefined
     ? undefined
     : sqlEntries.refusalOf(configuration, [`${schema.name}.adapters.sql`]);
@@ -159,9 +125,6 @@ export function toTable(tableName: string, schema: SchemaView, relations?: Relat
   }
   const primaries = columns.filter((column) => column.primary).map((column) => column.name);
   const stored = new Set(columns.map((column) => column.name));
-  // Declared in field names, realized in column names — and a group naming a field the
-  // storage does not keep is not enforceable, so it is dropped rather than emitted against
-  // a column that will not exist.
   const realized = (groups: readonly (readonly string[])[]) => groups
     .map((group) => group.map(toSnakeCase))
     .filter((members) => members.every((column) => stored.has(column)));
@@ -175,10 +138,7 @@ export function toTable(tableName: string, schema: SchemaView, relations?: Relat
   };
 }
 
-/**
- * Is this column part of a key? MySQL and SQL Server refuse an unbounded text column in a primary
- * key or an index, so the dialect needs to know.
- */
+/** Whether this column is part of a key. */
 export function isKeyed(table: TableDef, column: ColumnDef): boolean {
   return column.primary
     || column.unique === true
@@ -188,21 +148,18 @@ export function isKeyed(table: TableDef, column: ColumnDef): boolean {
     || table.uniqueGroups.some((group) => group.includes(column.name));
 }
 
-// ─── App-wide entity collection — shared by generateSQL and desiredTables ──
 
 /** `orderItem` → `order_items`: the plural, then snake_case. */
 export function toTableName(name: string): string {
   return toSnakeCase(pluralOf(lowerFirst(name)));
 }
 
-/** A schema says whether it holds rows; this adapter decides what to emit for it. */
 function verdictOn(entry: EntityEntry): 'table' | 'answer' {
   const { entityClass } = entry;
 
   return !entityClass.derivation || entityClass.anchored ? 'table' : 'answer';
 }
 
-/** Every entity this source holds, once each. */
 function collectEntities(view: SourceView): EntityEntry[] {
   const entries: EntityEntry[] = [];
   const seen = new Set<string>();
@@ -220,10 +177,7 @@ function collectEntities(view: SourceView): EntityEntry[] {
   return entries;
 }
 
-/**
- * Every entity an app hosts, as FK-aware tables — the shared middle step behind `generateSQL` (a
- * from-scratch create pass) and `desiredTables` (the diff's target state).
- */
+/** Every entity an app hosts, as tables aware of their foreign keys. */
 export function toTables(view: SourceView, resolve: (name: string) => string): TableDef[] {
   const entries = collectEntities(view);
   const tableNameOf = new Map<SchemaView, string>(entries.map((entry) => [entry.entityClass, resolve(entry.name)]));
@@ -234,4 +188,3 @@ export function toTables(view: SourceView, resolve: (name: string) => string): T
   return entries.map((entry) => toTable(resolve(entry.name), entry.entityClass, { resolve, tableNameOf, hosted }));
 }
 
-// ─── Ordering — a referenced table before its referrer ─────────────────────

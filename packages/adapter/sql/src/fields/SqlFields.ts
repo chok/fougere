@@ -1,7 +1,3 @@
-/**
- * What an entity may state for THIS adapter, declared from OUTSIDE `@fougere/schema` — which names
- * no engine and no column type, and must not learn one to let this exist.
- */
 import { Format, JsonSchemaValidator, type JsonSchema } from '@fougere/schema';
 import { ENGINES } from './Engine.js';
 import type { SqlField } from './SqlField.js';

@@ -20,20 +20,14 @@ export interface ColumnDef {
   /** `role.index` — realized as a separate `CREATE INDEX`, never a constraint. */
   index?: boolean;
   /**
-   * What the shape bounds beyond its type — `oneOf`, `min`, `max`. Realized as a
-   * `CHECK`, so the rule holds on every write and not only at the façade.
+   * What the shape bounds beyond its type, realized as a `CHECK`.
+   * Ex: `oneOf`, `min`, `max`.
    */
   bounds?: ShapeBounds;
-  /**
-   * The values are UUIDs — a key `uuidv7` or `uuid` generates, or a `ref()` to one. An engine
-   * with a `uuid` type stores them in 16 bytes rather than as text.
-   */
+  /** The values are UUIDs, stored in 16 bytes by an engine with a `uuid` type. */
   uuid?: boolean;
   /** The FK target, from `role.relation` when it's a `ref()` (kind `'one'`). */
   references?: ColumnReference;
-  /**
-   * What the entity stated for THIS adapter — never an axis. It says how the column is
-   * realized here; drop it and the column is still describable.
-   */
+  /** What the entity stated for this adapter. */
   stated?: SqlField;
 }

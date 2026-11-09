@@ -16,23 +16,15 @@ const boolean: ValueCodec = {
 };
 
 const dateTime: ValueCodec = {
-  // A handler may hand over a Date (what the field declares) or an ISO string (what the
-  // pre-fix workarounds passed) — both must keep working.
   write: (v) => (v instanceof Date ? v.toISOString() : v),
   read: (v) => (typeof v === 'string' ? new Date(v) : v),
 };
 
 const json: ValueCodec = {
   write: (v) => (typeof v === 'string' ? v : JSON.stringify(v)),
-  // Already parsed by the driver (Postgres jsonb) → leave it. Text → parse. A column
-  // holding invalid JSON is a corrupt row, not a value to guess at: let it throw.
   read: (v) => (typeof v === 'string' ? JSON.parse(v) : v),
 };
 
-/**
- * A driver may answer a number as a BigInt — DuckDB for every count — or as text: `pg` reads a
- * `bigint` and a `numeric` column that way, so `total` came back `'300'`.
- */
 const numeric: ValueCodec = {
   write: (v) => (typeof v === 'bigint' ? fits(v) : v),
   read: (v) => {
@@ -53,7 +45,6 @@ function fits(value: bigint): number {
 const MIN_SAFE = BigInt(Number.MIN_SAFE_INTEGER);
 const MAX_SAFE = BigInt(Number.MAX_SAFE_INTEGER);
 
-/** Absent stays absent, null stays null — a codec never invents a value. */
 function nullSafe(codec: ValueCodec): ValueCodec {
   const pass = (fn: (v: unknown) => unknown) => (v: unknown) =>
     v === null || v === undefined ? v : fn(v);
@@ -61,11 +52,6 @@ function nullSafe(codec: ValueCodec): ValueCodec {
   return { write: pass(codec.write), read: pass(codec.read) };
 }
 
-/**
- * The pair a column's type calls for — identity where the driver already accepts the value.
- * FR : la paire que le type de la colonne appelle — identité quand le driver accepte déjà.
- * `codecFor('date').write(new Date(0))` → `'1970-01-01T00:00:00.000Z'`
- */
 const CODEC_BY_TYPE: Record<ShapeType, ValueCodec> = {
   boolean: nullSafe(boolean),
   integer: nullSafe(numeric),

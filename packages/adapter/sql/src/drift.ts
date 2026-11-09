@@ -15,17 +15,7 @@ export interface Drift {
   reason: string;
 }
 
-/**
- * A migration is ADDITIVE by design: it creates what is missing and never touches a
- * column that exists. That is a promise worth keeping — nothing is dropped behind your
- * back — but it leaves a second fact unsaid, and unsaid is where it hurt: relax a
- * `required` field and the table keeps its NOT NULL, so the write fails on a row, in
- * production, long after the boot that could have named it.
- *
- * What is read here is what `actualState` already receives and throws away. `SchemaState`
- * stays a set of names on purpose: `done()` reads it to decide whether a frozen step was
- * already applied, and a wider one would make a replayed migration answer wrong.
- */
+/** What a live table holds that differs from its declaration, which a migration leaves alone. */
 export async function drift(db: Kysely<any>, desired: TableDef[]): Promise<Drift[]> {
   const held = new Map(
     (await db.introspection.getTables())
@@ -40,7 +30,6 @@ export async function drift(db: Kysely<any>, desired: TableDef[]): Promise<Drift
 
     for (const column of table.columns) {
       const live = columns.find((one) => one.name === column.name);
-      // A column the table does not have yet is the additive pass's business, not this one.
       if (!live) continue;
 
       if (column.nullable && !live.isNullable) {

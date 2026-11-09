@@ -5,10 +5,9 @@ import { Kysely, SqliteDialect } from 'kysely';
 import type BetterSqlite from 'better-sqlite3';
 import { createStorageFactory } from '../crud/SqlStorage.js';
 import { logQueries } from '../query/QuerySink.js';
-import { drift, driftReport } from '../drift.js';
-import { sqlEnforces, sqlSink, type SqlSource } from '../source/SqlSource.js';
+import { migrating, sqlEnforces, sqlSink, type SqlSource } from '../source/SqlSource.js';
 import { messageOf, modulesOf } from '../driver/Driver.js';
-import { desiredTables, migrate, pendingOf } from '../diff/Change.js';
+import { pendingOf } from '../diff/Change.js';
 import { toTableName } from '../table/TableDef.js';
 import type { SourceView } from '@fougere/core';
 import type { SqliteSourceOptions } from './SqliteSourceOptions.js';
@@ -20,7 +19,6 @@ export interface SqliteSource extends SqlSource {
 
 export function createSqliteSource(opts: SqliteSourceOptions = {}): SqliteSource {
   const path = opts.path ?? 'fougere.db';
-  // A file-backed DB needs its directory — SQLite won't create it.
   if (path !== ':memory:') {
     const fs = builtin<{ mkdirSync: typeof mkdirSync }>('node:fs', 'sqlite');
     const paths = builtin<{ dirname: typeof dirname }>('node:path', 'sqlite');
@@ -37,15 +35,7 @@ export function createSqliteSource(opts: SqliteSourceOptions = {}): SqliteSource
     dialect: 'sqlite',
     storageFactory: createStorageFactory(db, opts.storageFactoryOptions, 'sqlite'),
     sink: sqlSink(db),
-    migrate: async (view: SourceView) => {
-      const options = { dialect: 'sqlite' as const, tableName: opts.storageFactoryOptions?.tableName ?? toTableName };
-      await migrate(view, db, options);
-      // What the additive pass left alone and the entity no longer agrees with. Asked
-      // AFTER, so a column it just created is judged against what it just wrote.
-      const found = await drift(db, desiredTables(view, options));
-
-      return found.length ? driftReport(found) : undefined;
-    },
+    migrate: migrating(db, 'sqlite', opts),
     pending: (view: SourceView) =>
       pendingOf(view, db, { dialect: 'sqlite', tableName: opts.storageFactoryOptions?.tableName ?? toTableName }),
     close: () => db.destroy(),
@@ -55,7 +45,6 @@ export function createSqliteSource(opts: SqliteSourceOptions = {}): SqliteSource
   };
 }
 
-/** The SQLite this runtime has: Bun's own when it runs under Bun, where `better-sqlite3`'s native binding does not load. */
 function open(path: string): BetterSqlite.Database {
   if ((globalThis as { Bun?: unknown }).Bun) return openOnBun(path);
   const [Database] = modulesOf('sqlite') as [typeof BetterSqlite];
@@ -73,11 +62,6 @@ interface BunDatabase {
   close(): void;
 }
 
-/**
- * `bun:sqlite` in the shape Kysely's dialect and this source read. It already prepares, runs and iterates
- * the same way; what it lacks is `reader` — whether a statement answers rows — which its columns say,
- * and `pragma`, which is a statement like any other.
- */
 function openOnBun(path: string): BetterSqlite.Database {
   const { Database } = builtin<{ Database: new (path: string) => BunDatabase }>('bun:sqlite', 'sqlite');
   const database = new Database(path);

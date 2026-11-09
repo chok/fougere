@@ -5,8 +5,7 @@ import { MssqlDialect, MysqlDialect, PostgresDialect, type Dialect as KyselyDial
 import type { Engine } from '../fields/Engine.js';
 
 /**
- * The packages each engine opens with. The APP installs them, never this package, so a
- * project that opens no SQL installs no driver — and nothing native.
+ * The packages each engine opens with; the app installs them.
  *
  * Documented: [sources](https://fougere.dev/docs/data/sql).
  */
@@ -29,11 +28,7 @@ export const DRIVERS: Record<Exclude<Engine, 'sqlite'>, Driver> = {
   }),
 };
 
-/**
- * The packages of `engine`, resolved from the app — loaded at the moment it opens, not before.
- * What is not installed and what is installed but will not load are two refusals, and each
- * names what to do.
- */
+/** The packages of `engine`, resolved from the app when it opens. */
 export function modulesOf(engine: Engine, from = process.cwd()): any[] {
   const { createRequire: requireFrom } = builtin<{ createRequire: typeof createRequire }>('node:module', engine);
   const { join: joined } = builtin<{ join: typeof join }>('node:path', engine);

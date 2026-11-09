@@ -8,7 +8,6 @@ import { comparisonOf, comparisonsIn, ErrorCode, FougereError, isChange, Turns, 
 import { codecsOf, type ValueCodec } from '../values.js';
 import type { StorageFactoryOptions } from './StorageFactoryOptions.js';
 
-/** ListOptions — duplicated from @fougere/core to avoid a runtime dep. */
 interface ListOptions {
   limit?: number;
   offset?: number;
@@ -34,7 +33,6 @@ interface PrimaryKeyInfo {
   isComposite: boolean;
 }
 
-/** The primary key, read off the role axis. */
 function analyzeFields(entity: SchemaView): { pk: PrimaryKeyInfo } {
   const pkNames = Object.entries(entity.getFields())
     .filter(([, field]) => Role.of(field).isPrimary())
@@ -43,10 +41,6 @@ function analyzeFields(entity: SchemaView): { pk: PrimaryKeyInfo } {
   return { pk: { names: pkNames, isComposite: pkNames.length > 1 } };
 }
 
-/**
- * A `ref()` whose target generates UUID keys — read off the target class, which a table built here
- * without its relations does not see. A target known only by name answers no.
- */
 function referencesUuids(field: Field | undefined): boolean {
   if (!field || !Role.of(field).isReference()) return false;
   const target = Role.of(field).target as Partial<SchemaView> | undefined;
@@ -56,7 +50,6 @@ function referencesUuids(field: Field | undefined): boolean {
   return generator !== undefined && UUID_GENERATORS.has(generator);
 }
 
-/** Slice a key set into what one statement may bind. One slice when it already fits. */
 function chunks<T>(values: T[], size: number): T[][] {
   if (values.length <= size) return [values];
   const out: T[][] = [];
@@ -65,7 +58,6 @@ function chunks<T>(values: T[], size: number): T[][] {
   return out;
 }
 
-/** Stand-in for "no upper bound", where the engine still demands a LIMIT. */
 const UNBOUNDED = 1_000_000_000;
 
 function pick<T extends Record<string, unknown>>(obj: T, keys: Set<string>): T {
@@ -87,34 +79,18 @@ function pickList<T extends Record<string, unknown>>(list: ListResult<T>, keys: 
 export class SqlStorage {
   private table: TableDef;
   private pk: PrimaryKeyInfo;
-  /** The axes `applyCreate`/`applyUpdate` read — held once, they are asked per write. */
   private fields: Fields;
   private selectFields?: Set<string>;
-  /** field → column and back; the entity names travel, the SQL names stay inside. */
   private toColumn = new Map<string, string>();
   private toField = new Map<string, string>();
-  /** field → the value pair a driver needs; only for the shapes a driver can't bind. */
   private codecs: Map<string, ValueCodec>;
 
-  /** Kept whole: the engine answers more than one question, and refusals are one of them. */
   private dialect: Dialect;
-  /** How many keys one statement may carry here — see `Dialect.maxBindings`. */
   private maxBindings: number;
-  /**
-   * Who asks this process for a row's lock next, in the order they asked. The engine does not keep
-   * that order: when a lock is released, a write that just arrived can take it before those that
-   * were waiting, which left one write in a hundred waiting ten times the median (measured
-   * 2026-11-03, 10 writers on two rows, Postgres 18). Shared by every connection this table is
-   * bound to, so a transaction waits its turn here rather than racing for it there.
-   */
   private turns = new Turns();
-  /** The type each column holds in the live table, read once and shared by every connection. */
   private readonly live: { types?: Promise<Map<string, string>> } = {};
-  /** The rows each transaction already holds — it does not queue again for its own lock. */
   private static held = new WeakMap<object, Set<string>>();
-  /** Fields whose column this engine types `uuid`, which refuses to compare with any other text. */
   private uuids = new Set<string>();
-  /** How this engine spells an upsert, or `false` when it cannot — see `Dialect.upsert`. */
   private upsertClause: 'on conflict' | 'on duplicate key' | false;
 
   constructor(
@@ -166,12 +142,10 @@ export class SqlStorage {
     return this.toColumn.get(field) ?? field;
   }
 
-  /** The value a driver can bind — `true` becomes 1, a Date becomes its ISO string. */
   private write(field: string, value: unknown): unknown {
     return this.codecs.get(field)?.write(value) ?? value;
   }
 
-  /** Entity keys → column keys, and entity values → bindable values. */
   private toRow(data: Record<string, unknown>): Record<string, unknown> {
     const row: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(data)) row[this.column(key)] = this.write(key, value);
@@ -179,10 +153,6 @@ export class SqlStorage {
     return row;
   }
 
-  /**
-   * Column keys → entity keys, and column values → the values the entity declares — and only those:
-   * a table may hold columns another frond's view of it declares, which this one never answers.
-   */
   private fromRow(row: Record<string, unknown>): Record<string, unknown> {
     const data: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(row)) {
@@ -194,11 +164,6 @@ export class SqlStorage {
     return data;
   }
 
-  /**
-   * A value a filter compares against. On a `uuid` column, text that is no UUID designates no row,
-   * so it becomes the nil UUID, which no generator makes: `GET /posts/missing` finds nothing rather
-   * than failing on `invalid input syntax for type uuid`.
-   */
   private sought(field: string, value: unknown): unknown {
     if (this.uuids.has(field) && !(typeof value === 'string' && SqlStorage.UUID.test(value))) return SqlStorage.NIL;
 
@@ -208,7 +173,6 @@ export class SqlStorage {
   private static readonly UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   private static readonly NIL = '00000000-0000-0000-0000-000000000000';
 
-  /** Apply a primary-key filter (simple or composite). */
   private wherePk<Q extends { where(a: any, b: any, c: any): Q }>(query: Q, id: string | Record<string, unknown>): Q {
     if (this.pk.isComposite) {
       const composite = id as Record<string, unknown>;
@@ -220,14 +184,6 @@ export class SqlStorage {
     return query.where(this.column(name), '=', this.sought(name, id));
   }
 
-  // A filter compares against the COLUMN, so its value crosses the same way a write
-  // does: `findBy({ done: true })` has to look for 1, not for `true`.
-  //
-  // A criterion may name a SET — `where: { id: [a, b, c] }` is `IN`, one query for a
-  // whole page. Without it a relation had no batch form at all: the GraphQL `one`
-  // resolver read row by row (50 calls for a page of 50, measured), while its `many`
-  // dual already went through this same facade. An empty set matches nothing, said in
-  // SQL rather than by returning the whole table.
   private whereAll<Q extends { where(a: any, b: any, c: any): Q }>(query: Q, criteria: Record<string, unknown>): Q {
     return Object.entries(criteria).reduce((q, [key, value]) => {
       const comparison = comparisonOf(this.fields[key], value);
@@ -239,11 +195,6 @@ export class SqlStorage {
     }, query);
   }
 
-  /**
-   * What a bare value and a set could not say. Every comparison a criterion names is
-   * AND-ed, which is the rule two criteria already follow — `{ gte: 100, lte: 400 }` is
-   * one range, not two answers.
-   */
   private compared<Q extends { where(a: any, b: any, c: any): Q }>(
     query: Q,
     key: string,
@@ -286,17 +237,10 @@ export class SqlStorage {
     return sel ? pickList(result, sel) : result;
   }
 
-  /** The filter, the cursor, the order and the page — one query, built in that order. */
   private pageQuery(options?: ListOptions & { where?: Record<string, unknown> }) {
     let query = this.db.selectFrom(this.table.name).selectAll();
 
-    // The criteria a caller states — `list({ where: { orderId } })`, and the whole of
-    // `listBy`. Named `where` rather than spread across the options so an unknown key
-    // stays what it always was (ignored) instead of silently becoming a filter.
     if (options?.where) {
-      // `list` is the ONE read that cannot be split: a limit and an order do not
-      // recompose across slices, so an oversized set here is refused rather than
-      // truncated — and the gesture that does handle it is named.
       this.refuseOversized(options.where, 'list');
       query = this.whereAll(query as any, options.where) as any;
     }
@@ -307,15 +251,12 @@ export class SqlStorage {
     }
 
     const limit = options?.limit;
-    // One extra row, which is how `hasMore` is answered without a second query.
     if (limit !== undefined) query = query.limit(limit + 1);
 
     const offset = options?.page !== undefined && limit !== undefined
       ? (options.page - 1) * limit
       : options?.offset;
     if (offset !== undefined && offset > 0) {
-      // SQLite and MySQL reject OFFSET without a preceding LIMIT — an offset on
-      // its own needs an upper bound that means "everything after".
       if (limit === undefined) query = query.limit(UNBOUNDED);
       query = query.offset(offset);
     }
@@ -323,7 +264,6 @@ export class SqlStorage {
     return query;
   }
 
-  /** The extra row fetched above, turned into `hasMore` and the cursor the next page starts at. */
   private paged(rows: Record<string, unknown>[], limit?: number): ListResult<Record<string, unknown>> {
     const hasMore = limit !== undefined && rows.length > limit;
     const data = hasMore ? rows.slice(0, limit) : rows;
@@ -335,13 +275,6 @@ export class SqlStorage {
     return result;
   }
 
-  /**
-   * What the query matches, over the same FILTER and never the page.
-   *
-   * It used to count the whole table: `list({ where: { authorId }, count: true })` returned this
-   * author's page beside everybody's total, so a paginator computed the wrong number of pages and
-   * a tenant learned how many rows the other tenants have.
-   */
   private async matching(where?: Record<string, unknown>): Promise<number> {
     let counting = this.db.selectFrom(this.table.name).select((eb: any) => eb.fn.countAll().as('count'));
     if (where) counting = this.whereAll(counting as any, where) as any;
@@ -350,10 +283,7 @@ export class SqlStorage {
     return Number((row as any)?.count ?? 0);
   }
 
-  /**
-   * One query for N keys, never N queries — what every page-level read stands on: a computed
-   * field, a relation, a resolver on the other side of a wire.
-   */
+  /** Reads a set of rows by key in one query. */
   async findByKeys(ids: readonly string[], options?: SelectOption): Promise<Map<string, Record<string, unknown>>> {
     if (this.pk.isComposite) {
       throw new Error(`${this.table.name}.findByKeys: the primary key is composite (${this.pk.names.join(', ')}) — read them one by one, or filter with \`findAllBy\`.`);
@@ -362,8 +292,6 @@ export class SqlStorage {
     const name = this.pk.names[0]!;
     const sel = this.resolveSelect(options);
     const found = new Map<string, Record<string, unknown>>();
-    // Split, because a key set comes from a page and a page has no ceiling. One
-    // statement per slice, merged here — the caller never learns there were several.
     for (const slice of chunks([...new Set(ids)], this.maxBindings)) {
       const rows = await this.db
         .selectFrom(this.table.name)
@@ -405,9 +333,6 @@ export class SqlStorage {
         + '(the two steps are not atomic).',
       );
     }
-    // `applyUpdate` FIRST: `updated()` declares both `create: 'now'` and
-    // `update: 'now'`, so filling the creation side first leaves nothing for the
-    // update side to stamp — the row would carry the moment it was inserted forever.
     const data = applyCreate(this.fields, applyUpdate(this.fields, input));
     const replaced = this.toRow(applyUpdate(this.fields, input));
 
@@ -430,8 +355,6 @@ export class SqlStorage {
     }
     if (inputs.length === 0) return 0;
 
-    // One statement replaces the same columns on every row it holds, so rows that name
-    // different fields go in different statements — or one row's gap erases another's value.
     const pages = new Map<string, { replaced: string[]; rows: Record<string, unknown>[] }>();
     for (const input of inputs) {
       const replaced = Object.keys(this.toRow(applyUpdate(this.fields, input))).sort();
@@ -442,7 +365,6 @@ export class SqlStorage {
     let written = 0;
     for (const { replaced, rows } of pages.values()) {
       const incoming = Object.fromEntries(replaced.map((column) => [column, this.incoming(column)]));
-      // A statement binds VALUES: one row costs as many as it has columns.
       const width = new Set(rows.flatMap((row) => Object.keys(row))).size;
       const perStatement = Math.max(1, Math.floor(this.maxBindings / Math.max(1, width)));
 
@@ -455,12 +377,10 @@ export class SqlStorage {
     return written;
   }
 
-  /** The value a refused row brought for a column: `excluded` on SQLite and Postgres, `VALUES()` on MySQL. */
   private incoming(column: string) {
     return this.upsertClause === 'on conflict' ? sql.ref(`excluded.${column}`) : sql`values(${sql.ref(column)})`;
   }
 
-  /** What a row that is already there becomes — and nothing, when the write replaces no column. */
   private onExisting(insert: any, replaced: Record<string, unknown>) {
     const keys = this.pk.names.map((n) => this.column(n));
     const empty = Object.keys(replaced).length === 0;
@@ -472,31 +392,31 @@ export class SqlStorage {
     return insert.onDuplicateKeyUpdate(empty ? { [keys[0]!]: sql.ref(keys[0]!) } : replaced);
   }
 
-  async findById(id: string | Record<string, unknown>, options?: SelectOption): Promise<Record<string, unknown> | undefined> {
-    const row = await this.wherePk(this.db.selectFrom(this.table.name).selectAll() as any, id).executeTakeFirst();
+  private answered(row: Record<string, unknown> | undefined, options?: SelectOption): Record<string, unknown> | undefined {
     if (!row) return undefined;
     const data = this.fromRow(row);
     const sel = this.resolveSelect(options);
 
     return sel ? pick(data, sel) : data;
+  }
+
+  async findById(id: string | Record<string, unknown>, options?: SelectOption): Promise<Record<string, unknown> | undefined> {
+    const row = await this.wherePk(this.db.selectFrom(this.table.name).selectAll() as any, id).executeTakeFirst();
+
+    return this.answered(row, options);
   }
 
   async findBy(criteria: Record<string, unknown>, options?: SelectOption): Promise<Record<string, unknown> | undefined> {
     const row = await this.whereAll(this.db.selectFrom(this.table.name).selectAll() as any, criteria)
       .limit(1)
       .executeTakeFirst();
-    if (!row) return undefined;
-    const data = this.fromRow(row);
-    const sel = this.resolveSelect(options);
 
-    return sel ? pick(data, sel) : data;
+    return this.answered(row, options);
   }
 
   async findAllBy(criteria: Record<string, unknown>, options?: SelectOption): Promise<Record<string, unknown>[]> {
     const sel = this.resolveSelect(options);
     const out: Record<string, unknown>[] = [];
-    // A set criterion may hold more values than the engine binds. Splitting is safe
-    // HERE because this read has no page and no order: the slices simply concatenate.
     for (const slice of this.splitCriteria(criteria)) {
       const rows = await this.whereAll(this.db.selectFrom(this.table.name).selectAll() as any, slice).execute();
       for (const row of rows as any[]) {
@@ -508,7 +428,6 @@ export class SqlStorage {
     return out;
   }
 
-  /** One criteria object per statement — the oversized set is the one that splits. */
   private refuseOversized(criteria: Record<string, unknown>, op: string): void {
     for (const [key, value] of Object.entries(criteria)) {
       if (!Array.isArray(value) || new Set(value).size <= this.maxBindings) continue;
@@ -536,14 +455,9 @@ export class SqlStorage {
   }
 
   async create(input: Record<string, unknown>, options?: SelectOption): Promise<Record<string, unknown>> {
-    // The lifecycle axis, realized where it is declared — a generated id, a stamped
-    // `createdAt`, a declared default. The column DEFAULT below still holds for a
-    // writer that is not us, the way a CHECK does; nothing depends on it any more.
     const data = applyCreate(this.fields, input);
     const insert = this.db.insertInto(this.table.name).values(this.toRow(data));
 
-    // Contract: create returns the COMPLETE row, SQL-realised defaults included — in the same
-    // statement where the engine can say it, read again where it cannot.
     const created = this.dialect.supportsReturning
       ? await this.refusal(() => insert.returningAll().executeTakeFirst()).then((row) => row && this.fromRow(row))
       : await this.refusal(() => insert.execute()).then(() => this.reread(data));
@@ -581,7 +495,6 @@ export class SqlStorage {
     });
   }
 
-  /** The key a row is known by here — one field, or every field of a composite one. */
   private keyOf(row: Record<string, unknown>): string {
     return this.pk.isComposite ? JSON.stringify(this.pk.names.map((name) => row[name])) : String(row[this.pk.names[0]!]);
   }
@@ -605,7 +518,6 @@ export class SqlStorage {
     return sel ? pick(updated, sel) : updated;
   }
 
-  /** The row a create just wrote, read back by its key. */
   private async reread(data: Record<string, unknown>): Promise<Record<string, unknown> | undefined> {
     const id = this.pk.isComposite
       ? Object.fromEntries(this.pk.names.map((name) => [name, data[name]]))
@@ -614,7 +526,6 @@ export class SqlStorage {
     return id === undefined ? undefined : this.findById(id);
   }
 
-  /** The row read under a lock its transaction holds to the end, so the change it hands back lands on what it read. */
   private async changed(
     id: string | Record<string, unknown>,
     change: Change<Record<string, unknown>>,
@@ -664,7 +575,6 @@ export class SqlStorage {
     return new Map([...written].map(([key, row]) => [key, sel ? pick(row, sel) : row]));
   }
 
-  /** Read off the table itself: a `ref()` built here without its target cannot say that the key it names is a uuid. */
   private async columnTypes(): Promise<Map<string, string>> {
     const { rows } = await sql<{ name: string; type: string }>`
       select a.attname as name, format_type(a.atttypid, a.atttypmod) as type
@@ -687,11 +597,6 @@ export class SqlStorage {
     return written;
   }
 
-  /**
-   * Every row of a set in ONE statement, where the engine can say it: `UPDATE … FROM (VALUES …)`,
-   * each value cast to its column's type. Answers nothing where it cannot — another engine, or rows
-   * changing different columns — and the rows are then written one by one.
-   */
   private async writtenTogether(patches: [string, Record<string, unknown>][]): Promise<Map<string, Record<string, unknown>>> {
     const columns = Object.keys(patches[0]?.[1] ?? {});
     const same = patches.every(([, row]) => Object.keys(row).length === columns.length && columns.every((name) => name in row));
@@ -721,7 +626,6 @@ export class SqlStorage {
     }));
   }
 
-  /** Take the lock in this process's order; a row this transaction already holds needs no turn. */
   private inTurn<R>(keys: readonly string[], lock: () => Promise<R>): Promise<R> {
     const mine = SqlStorage.held.get(this.db) ?? new Set<string>();
     SqlStorage.held.set(this.db, mine);
@@ -776,10 +680,6 @@ export class SqlStorage {
     return bound;
   }
 
-  /**
-   * A duplicate is an ANSWER, not a failure — so it leaves as `CONFLICT` and not as the blank
-   * `Internal error` a caller used to get.
-   */
   private async refusal<R>(write: () => Promise<R>): Promise<R> {
     try {
       return await write();
@@ -809,10 +709,6 @@ export class SqlStorage {
   }
 }
 
-/**
- * What a storage reads off its entity — the table, its columns and codecs — is the same for every
- * connection, so it is built once per entity, table and engine. A transaction only binds it.
- */
 const built = new WeakMap<SchemaView, Map<string, SqlStorage>>();
 
 function storageOf(db: Kysely<any>, entity: SchemaView, tableName: string, dialect: DialectName): SqlStorage {

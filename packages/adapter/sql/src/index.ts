@@ -11,8 +11,6 @@ export type { SqlField } from './fields/SqlField.js';
 export type { SqlFields } from './fields/SqlFields.js';
 export { SqlStorage, createStorageFactory } from './crud/SqlStorage.js';
 export { codecsOf } from './values.js';
-// Every engine is registered here, and none loads Node at import: each reads what it needs
-// when it opens, so this entry loads on a runtime that has none.
 import './SqlSourceTypes.js';
 export { createKyselySource } from './source/SqlSource.js';
 export { createSqliteSource, type SqliteSource } from './sqlite/SqliteSource.js';
@@ -25,7 +23,6 @@ export { actualState } from './diff/SchemaState.js';
 export { changeSQL, delta, desiredTables, migrate, pendingOf, undeclaredColumns } from './diff/Change.js';
 export type { Change } from './diff/Change.js';
 export type { SchemaState } from './diff/SchemaState.js';
-// The non-additive half — realised only from a step a human wrote down.
 export { applyStep, collapseChain, planStep } from './step/Plan.js';
 export type { Plan } from './step/Plan.js';
 export type { StepChange } from './step/StepChange.js';

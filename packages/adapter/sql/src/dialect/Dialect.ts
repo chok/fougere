@@ -5,10 +5,7 @@ export interface Dialect {
   name: DialectName;
   /** SQL type for a column. */
   columnType(column: ColumnDef, keyed: boolean): string;
-  /**
-   * Does `INSERT … RETURNING` work? MySQL has no such clause and SQL Server
-   * spells it `OUTPUT`; both take the insert-then-select path instead.
-   */
+  /** Whether `INSERT … RETURNING` works; otherwise an insert is followed by a select. */
   supportsReturning: boolean;
   /** How many values one statement may bind — what splits a batch read into several. */
   maxBindings: number;
@@ -16,25 +13,19 @@ export interface Dialect {
   upsert: 'on conflict' | 'on duplicate key' | false;
   /** Is this the engine refusing a duplicate, rather than failing? */
   isUniqueViolation(error: unknown): boolean;
-  /**
-   * How a transaction keeps a row from every other writer until it ends: `for update` on the read,
-   * or `touch` — an update writing the key onto itself, which every engine locks.
-   */
+  /** How a transaction holds a row: `for update` on the read, or `touch`, an update writing the key onto itself. */
   rowLock: 'for update' | 'touch';
   /** Did the engine give up on this transaction for another one — a deadlock, a lock it waited too long for? */
   isContention(error: unknown): boolean;
 }
 
-/** The message a driver hands up, however it wrapped it. */
 function messageOf(error: unknown): string {
   const e = error as { message?: unknown; code?: unknown; cause?: unknown } | null;
   const own = `${typeof e?.message === 'string' ? e.message : ''} ${typeof e?.code === 'string' ? e.code : ''}`;
 
-  // Kysely wraps a driver error, and D1 wraps it again: the wording is often one level down.
   return e?.cause ? `${own} ${messageOf(e.cause)}` : own;
 }
 
-/** Bounded length for a key column, when the shape doesn't state its own. */
 const KEY_LENGTH = 255;
 
 function keyLength(column: ColumnDef): number {
@@ -44,17 +35,13 @@ function keyLength(column: ColumnDef): number {
 }
 
 export const sqliteDialect: Dialect = {
-  // SQLite: `UNIQUE constraint failed: products.sku` — and D1 relays it verbatim.
   isUniqueViolation: (error) => /UNIQUE constraint failed/i.test(messageOf(error)),
   upsert: 'on conflict',
   rowLock: 'touch',
   isContention: (error) => /SQLITE_BUSY|database is locked/i.test(messageOf(error)),
-  // SQLITE_MAX_VARIABLE_NUMBER is 32766 on any build since 3.32 (measured on better-sqlite3).
   maxBindings: 30000,
   name: 'sqlite',
   supportsReturning: true,
-  // SQLite has one integer, one float and one text type — a boolean is an int,
-  // JSON is text. Any column may be a key, so `keyed` changes nothing.
   columnType(column) {
     switch (column.type) {
       case 'integer':
@@ -69,19 +56,13 @@ export const sqliteDialect: Dialect = {
 };
 
 export const pgDialect: Dialect = {
-  // Postgres: SQLSTATE 23505, which `pg` puts on `code` — the one engine that names it
-  // in a way no translation can blur.
   isUniqueViolation: (error) => /23505/.test(messageOf(error)),
   upsert: 'on conflict',
   rowLock: 'for update',
-  // 40P01 a deadlock, 40001 a serialization failure.
   isContention: (error) => /\b40P01\b|\b40001\b/.test(messageOf(error)),
-  // the wire protocol counts parameters in an int16 — 65535.
   maxBindings: 60000,
   name: 'pg',
   supportsReturning: true,
-  // Postgres has real types for everything, and `text` is indexable — so a key
-  // needs no narrowing.
   columnType(column) {
     if (column.uuid) return 'uuid';
     switch (column.type) {
@@ -103,12 +84,10 @@ export const pgDialect: Dialect = {
 };
 
 export const mysqlDialect: Dialect = {
-  // MySQL: ER_DUP_ENTRY / 1062, `Duplicate entry '…' for key '…'`.
   isUniqueViolation: (error) => /ER_DUP_ENTRY|Duplicate entry/i.test(messageOf(error)),
   upsert: 'on duplicate key',
   rowLock: 'for update',
   isContention: (error) => /ER_LOCK_DEADLOCK|ER_LOCK_WAIT_TIMEOUT/.test(messageOf(error)),
-  // no parameter ceiling of its own; max_allowed_packet is what gives way, and it grows with the VALUES not the count.
   maxBindings: 60000,
   name: 'mysql',
   supportsReturning: false,
@@ -124,20 +103,16 @@ export const mysqlDialect: Dialect = {
       case 'array':
         return 'json';
       default:
-        // TEXT cannot take part in a key without a prefix length.
         return keyed ? `varchar(${keyLength(column)})` : 'text';
     }
   },
 };
 
 export const mssqlDialect: Dialect = {
-  // SQL Server: 2627 for a constraint, 2601 for a unique index — two numbers, one fact.
   isUniqueViolation: (error) => /\b(2627|2601)\b|Violation of UNIQUE KEY/i.test(messageOf(error)),
   upsert: false,
   rowLock: 'touch',
-  // 1205: chosen as the deadlock victim.
   isContention: (error) => /\b1205\b|deadlocked/i.test(messageOf(error)),
-  // 2100 parameters per statement, the lowest of the four by a wide margin.
   maxBindings: 2000,
   name: 'mssql',
   supportsReturning: false,
@@ -153,7 +128,6 @@ export const mssqlDialect: Dialect = {
       case 'array':
         return 'nvarchar(max)';
       default:
-        // nvarchar(max) is not indexable — a key narrows to a bounded length.
         return keyed ? `nvarchar(${keyLength(column)})` : 'nvarchar(max)';
     }
   },
@@ -173,10 +147,7 @@ export function resolveDialect(name: DialectName): Dialect {
   return dialect;
 }
 
-/**
- * The type this column is emitted with — what the entity stated when it named THIS engine, the
- * shape's own answer otherwise.
- */
+/** The type a column is emitted with: what the entity stated for this engine, else the shape's answer. */
 export function columnTypeFor(dialect: Dialect, column: ColumnDef, keyed: boolean): string {
   return column.stated?.columnType?.[dialect.name] ?? dialect.columnType(column, keyed);
 }

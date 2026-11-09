@@ -11,7 +11,7 @@ import {
 import type { SourceView } from '@fougere/core';
 import { type ColumnDef } from '../table/ColumnDef.js';
 import { isKeyed, toTableName, toTables, type TableDef } from '../table/TableDef.js';
-import { orderTables } from '../order/TableOrder.js';
+import { deferredColumnsByTable, orderTables } from '../order/TableOrder.js';
 import { columnTypeFor, resolveDialect } from '../dialect/Dialect.js';
 import { type DialectName } from '../dialect/DialectName.js';
 import { checkFor } from '../check.js';
@@ -44,7 +44,6 @@ export function compiler(name: DialectName): Kysely<any> {
   return engine;
 }
 
-// ─── CREATE TABLE ──────────────────────────────────
 
 /** Render `CREATE TABLE` for one described table. */
 export function createTableSQL(
@@ -67,15 +66,10 @@ export function createTableSQL(
     builder = builder.addPrimaryKeyConstraint(`${table.name}_pk`, table.compositePrimary as any);
   }
 
-  // The pair the entity declared. Named after its columns so a second group on the
-  // same table cannot collide, and so a migration can recognize it later.
   for (const group of table.uniqueGroups) {
     builder = builder.addUniqueConstraint(`${table.name}_${group.join('_')}_unique`, group as any);
   }
 
-  // What the shape says, told to the storage. Table-level rather than inline: a
-  // named constraint is what a later migration can find and replace, and the same
-  // form will hold a cross-field check when one is declared.
   for (const column of table.columns) {
     const check = checkFor(column);
     if (check) builder = builder.addCheckConstraint(`${table.name}_${column.name}_check`, check);
@@ -86,16 +80,10 @@ export function createTableSQL(
 
 /** `CREATE INDEX` for one column that asked for one. */
 export function indexSQL(table: TableDef, column: ColumnDef, dialectName: DialectName): string {
-  // A `unique()` on a table that already exists has nowhere else to land: `createTable`
-  // writes it as a column constraint, and no engine here can ALTER one in. As an index it
-  // arrives — or the statement fails on the rows that already break it, which is the answer.
   return indexOver(table, [column.name], dialectName, column.unique === true);
 }
 
-/**
- * Every index one table asks for — one statement each. A GROUP is not the same thing as its
- * members indexed apart: an index on `(a, b)` serves a filter on `a` alone and never on `b`.
- */
+/** Every index one table asks for, one statement each. */
 export function createIndexSQL(table: TableDef, dialectName: DialectName): string[] {
   return [
     ...table.columns.filter((column) => column.index).map((column) => indexSQL(table, column, dialectName)),
@@ -119,10 +107,7 @@ function indexOver(
   return builder.compile().sql;
 }
 
-/**
- * `ALTER TABLE ADD CONSTRAINT` for one FK `orderTables` deferred — closes a relation cycle once
- * every table in it exists.
- */
+/** `ALTER TABLE ADD CONSTRAINT` for one foreign key `orderTables` deferred. */
 export function addForeignKeyConstraintSQL(table: TableDef, column: ColumnDef, dialectName: DialectName): string {
   const ref = column.references!;
   const name = `${table.name}_${column.name}_fk`;
@@ -134,7 +119,6 @@ export function addForeignKeyConstraintSQL(table: TableDef, column: ColumnDef, d
   return builder.compile().sql;
 }
 
-// ─── App-wide generation ───────────────────────────
 
 /** `CREATE TABLE` for every entity a source holds. */
 export function generateSQL(view: SourceView, options?: GenerateOptions): string[] {
@@ -150,28 +134,18 @@ export function generateSQL(view: SourceView, options?: GenerateOptions): string
   }
 
   const { ordered, deferred } = orderTables(tables);
-  const deferredColumnsOf = new Map<string, Set<string>>();
-  for (const { table, column } of deferred) {
-    const names = deferredColumnsOf.get(table.name) ?? new Set<string>();
-    names.add(column.name);
-    deferredColumnsOf.set(table.name, names);
-  }
+  const deferredColumnsOf = deferredColumnsByTable(deferred);
 
   const creates = ordered.map((table) =>
     createTableSQL(table, dialect, { skipReferences: deferredColumnsOf.get(table.name) }),
   );
   const constraints = deferred.map(({ table, column }) => addForeignKeyConstraintSQL(table, column, dialect));
-  // Indexes last: every table exists by then, and an index on a table that does not is
-  // the one ordering mistake this pass can make.
   const indexes = ordered.flatMap((table) => createIndexSQL(table, dialect));
 
   return [...creates, ...constraints, ...indexes];
 }
 
-/**
- * Anything that can run a statement. `exec` is accepted alongside `execute` so a
- * raw better-sqlite3 handle drops in unchanged.
- */
+/** Anything that can run a statement, a raw better-sqlite3 handle included. */
 export type SqlSink =
   | { execute(sql: string): unknown }
   | { exec(sql: string): unknown };
@@ -189,11 +163,6 @@ export function autoMigrate(view: SourceView, sink: SqlSink, options?: GenerateO
   return pending.length ? Promise.all(pending).then(() => undefined) : undefined;
 }
 
-/**
- * What one column says about itself. A simple key is inline, a composite one becomes a table
- * constraint below; uniqueness is the storage's to enforce, since no shape can express it —
- * validating one value never sees the other rows.
- */
 function stated(
   col: ColumnDefinitionBuilder,
   column: ColumnDef,
@@ -206,10 +175,15 @@ function stated(
   if (column.default !== undefined) built = built.defaultTo(column.default);
   if (column.unique) built = built.unique();
 
-  if (column.references && !skip?.has(column.name)) {
-    built = built.references(`${column.references.table}.${column.references.column}`);
-    if (column.references.onDelete) built = built.onDelete(column.references.onDelete);
-  }
+  return column.references && !skip?.has(column.name) ? referencing(built, column.references) : built;
+}
 
-  return built;
+/** A column builder pointing at its target, with its `onDelete`. */
+export function referencing(
+  col: ColumnDefinitionBuilder,
+  { table, column, onDelete }: NonNullable<ColumnDef['references']>,
+): ColumnDefinitionBuilder {
+  const built = col.references(`${table}.${column}`);
+
+  return onDelete ? built.onDelete(onDelete) : built;
 }

@@ -1,13 +1,13 @@
 import { sql, type Kysely } from 'kysely';
 import { type GenerateOptions } from '../ddl/GenerateOptions.js';
-import { addForeignKeyConstraintSQL, compiler, createTableSQL, indexSQL } from '../ddl/SqlSink.js';
+import { addForeignKeyConstraintSQL, compiler, createTableSQL, indexSQL, referencing } from '../ddl/SqlSink.js';
 import { checkFor } from '../check.js';
 import { columnTypeFor, resolveDialect } from '../dialect/Dialect.js';
 import { type DialectName } from '../dialect/DialectName.js';
 import type { SourceView } from '@fougere/core';
 import { type ColumnDef } from '../table/ColumnDef.js';
 import { isKeyed, toTableName, toTables, type TableDef } from '../table/TableDef.js';
-import { orderTables } from '../order/TableOrder.js';
+import { deferredColumnsByTable, orderTables } from '../order/TableOrder.js';
 import { actualTypes, type ColumnTypes } from './ColumnTypes.js';
 import { actualState, namesOf, type SchemaState } from './SchemaState.js';
 
@@ -35,14 +35,6 @@ export function delta(desired: TableDef[], actual: SchemaState): Change[] {
       if (!existing.has(column.name)) changes.push({ kind: 'addColumn', table, column });
     }
   }
-  // Indexes, unconditionally: this pass reads column NAMES from the live schema, so it
-  // cannot see whether an index exists. `CREATE INDEX IF NOT EXISTS` is idempotent, so
-  // proposing it every time is cheaper and more honest than introspecting to guess —
-  // the alternative would be an index that a `unique()` added later never gets.
-  //
-  // `unique` comes here too, and for that very reason: written as a column constraint it
-  // only ever reached a table being created, so the rule was declared and never realized on
-  // a database that had already lived. A unique index is the one form that can arrive late.
   for (const table of desired) {
     for (const column of table.columns) {
       if (column.index || (column.unique && !column.primary)) changes.push({ kind: 'createIndex', table, column });
@@ -52,10 +44,7 @@ export function delta(desired: TableDef[], actual: SchemaState): Change[] {
   return changes;
 }
 
-/**
- * Order the changes `delta` found, dialect-aware — `delta` itself stays pure and unordered, this
- * is the one place that adds engine knowledge to the plan.
- */
+/** The changes `delta` found, in the order this dialect needs. */
 export function orderChanges(changes: Change[], dialectName: DialectName): Change[] {
   if (dialectName === 'sqlite') return changes;
 
@@ -64,12 +53,7 @@ export function orderChanges(changes: Change[], dialectName: DialectName): Chang
   const indexes = changes.filter((c) => c.kind === 'createIndex');
 
   const { ordered, deferred } = orderTables(creates.map((c) => c.table));
-  const deferredColumnsOf = new Map<string, Set<string>>();
-  for (const { table, column } of deferred) {
-    const names = deferredColumnsOf.get(table.name) ?? new Set<string>();
-    names.add(column.name);
-    deferredColumnsOf.set(table.name, names);
-  }
+  const deferredColumnsOf = deferredColumnsByTable(deferred);
 
   const createChanges: Change[] = ordered.map((table) => {
     const names = deferredColumnsOf.get(table.name);
@@ -78,7 +62,6 @@ export function orderChanges(changes: Change[], dialectName: DialectName): Chang
   });
   const constraintChanges: Change[] = deferred.map(({ table, column }) => ({ kind: 'addConstraint', table, column }));
 
-  // Indexes last: the column they stand on may be one this very batch added.
   return [...createChanges, ...constraintChanges, ...addColumns, ...indexes];
 }
 
@@ -86,7 +69,6 @@ export function orderChanges(changes: Change[], dialectName: DialectName): Chang
 export function changeSQL(change: Change, dialectName: DialectName): string {
   const dialect = resolveDialect(dialectName);
   if (change.kind === 'createTable') {
-    // Reuse the same renderer as a fresh install — one builder, no drift.
     const skip = change.deferredColumns ? new Set(change.deferredColumns) : undefined;
 
     return createTableSQL(change.table, dialectName, { skipReferences: skip });
@@ -95,8 +77,6 @@ export function changeSQL(change: Change, dialectName: DialectName): string {
     return addForeignKeyConstraintSQL(change.table, change.column, dialectName);
   }
   if (change.kind === 'createIndex') {
-    // One statement per change — `migrate` runs them one by one, and no driver here
-    // accepts a batch.
     return indexSQL(change.table, change.column, dialectName);
   }
   const { table, column } = change;
@@ -107,18 +87,8 @@ export function changeSQL(change: Change, dialectName: DialectName): string {
     .addColumn(column.name, sql.raw(type) as any, (col) => {
       let built = col;
       if (column.default !== undefined) built = built.defaultTo(column.default);
-      // Stated whether a default fills it or not: the same declaration gave NOT NULL on a
-      // fresh table and nothing on a migrated one, so two databases of one entity promised
-      // different things. Without a default the engine refuses on a table holding rows —
-      // which is the refusal `planStep` already names, arriving here instead of never.
       if (!column.nullable) built = built.notNull();
-      if (column.references) {
-        built = built.references(`${column.references.table}.${column.references.column}`);
-        if (column.references.onDelete) built = built.onDelete(column.references.onDelete);
-      }
-      // Inline rather than a named table constraint: SQLite cannot ALTER one in, and
-      // the column is new, so no existing row can be caught out by it. A column that
-      // arrives later is bounded like a column that was there from the start.
+      if (column.references) built = referencing(built, column.references);
       const check = checkFor(column);
       if (check) built = built.check(check);
 
@@ -154,15 +124,8 @@ export async function migrate(
   return changes;
 }
 
-/**
- * What the database lacks that the entities ask for, READ and never written — a table, a
- * column. Indexes are left out: this pass reads names, and `CREATE INDEX IF NOT EXISTS` is
- * what `migrate` proposes every time precisely because nothing here can see one.
- */
+/** The tables and columns the database lacks, read and never written. */
 export async function pendingOf(view: SourceView, db: Kysely<any>, options?: GenerateOptions): Promise<string[]> {
-  // Names only, so `elsewhere` is left out: it decides which relations get a foreign key, and
-  // a process carrying only its own frond refers to entities it has never seen — which a
-  // question about names has no reason to refuse.
   const desired = desiredTables({ entities: view.entities }, options);
   const live = await actualTypes(db);
   const missing = delta(desired, namesOf(live)).flatMap((change) => {
@@ -175,10 +138,6 @@ export async function pendingOf(view: SourceView, db: Kysely<any>, options?: Gen
   return [...missing, ...untypedUuids(desired, live, options?.dialect)];
 }
 
-/**
- * A column the entity stores as `uuid` that the live table still keeps as text — a key created
- * before `primary()` generated UUIDs. Read as it is, every id it holds would designate no row.
- */
 function untypedUuids(desired: TableDef[], live: ColumnTypes, dialect: DialectName = 'sqlite'): string[] {
   const engine = resolveDialect(dialect);
 
@@ -194,10 +153,7 @@ function untypedUuids(desired: TableDef[], live: ColumnTypes, dialect: DialectNa
   }));
 }
 
-/**
- * The columns a live table keeps that no field declares, for the tables that also GAIN one —
- * which is what an undeclared rename looks like: the data stays in a column nothing reads.
- */
+/** The columns a live table keeps that no field declares, for the tables that also gain one. */
 export function undeclaredColumns(desired: TableDef[], actual: SchemaState): { table: string; columns: string[]; added: string[] }[] {
   return desired.flatMap((table) => {
     const live = actual.get(table.name);

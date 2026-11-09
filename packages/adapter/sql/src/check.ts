@@ -24,9 +24,6 @@ export function checkFor(column: ColumnDef): Expression<SqlBool> | undefined {
   if (bounds.enum?.length) {
     terms.push(sql<SqlBool>`${col} in (${sql.join(bounds.enum.map((v) => sql.lit(v)))})`);
   }
-  // Length, not value: a text bound is about the string, and `maxLength` is already
-  // spent on the column type where the dialect uses it (varchar(n)) — stating it
-  // again costs nothing and holds where the type does not (text columns).
   if (bounds.minLength !== undefined) terms.push(sql<SqlBool>`length(${col}) >= ${sql.lit(bounds.minLength)}`);
   if (bounds.maxLength !== undefined) terms.push(sql<SqlBool>`length(${col}) <= ${sql.lit(bounds.maxLength)}`);
   if (bounds.minimum !== undefined) terms.push(sql<SqlBool>`${col} >= ${sql.lit(bounds.minimum)}`);

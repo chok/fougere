@@ -8,12 +8,7 @@ export interface TableOrder {
   deferred: FkEdge[];
 }
 
-/**
- * Order a table set so a `ref()`'s target always exists before the table that points at it —
- * required by every engine except SQLite, which resolves FK targets lazily and accepts any order
- * (and has no `ALTER TABLE ADD CONSTRAINT` to close a cycle with — a caller on that dialect skips
- * this function entirely).
- */
+/** Tables ordered so a `ref()`'s target exists before the table pointing at it. */
 export function orderTables(tables: TableDef[]): TableOrder {
   const byName = new Map(tables.map((table) => [table.name, table]));
   const needs = new Map(
@@ -39,9 +34,6 @@ export function orderTables(tables: TableDef[]): TableOrder {
       needs.delete(ready);
       continue;
     }
-    // Every table left waits on another table left — a cycle. Break it by
-    // deferring one edge: every column of the first remaining table that points
-    // at its first unmet dependency.
     const [name, deps] = [...needs.entries()][0];
     const dep = [...deps].find((d) => !done.has(d))!;
     const table = byName.get(name)!;
@@ -52,4 +44,16 @@ export function orderTables(tables: TableDef[]): TableOrder {
   }
 
   return { ordered, deferred };
+}
+
+/** The deferred foreign key columns of each table, by table name. */
+export function deferredColumnsByTable(deferred: readonly FkEdge[]): Map<string, Set<string>> {
+  const columns = new Map<string, Set<string>>();
+  for (const { table, column } of deferred) {
+    const names = columns.get(table.name) ?? new Set<string>();
+    names.add(column.name);
+    columns.set(table.name, names);
+  }
+
+  return columns;
 }
