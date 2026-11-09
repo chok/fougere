@@ -7,17 +7,11 @@ import pc from 'picocolors';
 
 type Ui = ReturnType<typeof createUi>;
 
-/** How long between two reads. Fast enough to read as a stream, cheap enough to ignore. */
 const EVERY_MS = 500;
 
 const ROUTE = { local: pc.green, remote: pc.cyan, system: pc.magenta } as const;
 
-/**
- * `fougere devtools` — the call log of every running app of this project, followed.
- *
- * A cursor per address, because each app numbers its own ring: asking for what this reader
- * has not seen is the whole protocol, and it is per source or nothing.
- */
+/** `fougere devtools`: the call log of every running app of this project, followed. */
 export default class DevtoolsCommand {
   constructor(private app: App, private ui: Ui) {}
 
@@ -34,8 +28,6 @@ export default class DevtoolsCommand {
       for (const source of view.sources) {
         since[source.url] = source.cursor;
 
-        // Said once per address, and only when it grows: a ring that dropped is not a
-        // quiet period, and repeating it every half second would bury the calls.
         if (source.dropped > (told[source.url] ?? 0)) {
           this.ui.warn(`${source.url} missed ${source.dropped - (told[source.url] ?? 0)} call(s): its buffer is too small for this traffic`);
           told[source.url] = source.dropped;
@@ -47,7 +39,6 @@ export default class DevtoolsCommand {
     }
   }
 
-  /** What is being watched, and what refused — stated before the first line scrolls. */
   private announce(view: CallsView): void {
     for (const source of view.sources) {
       const name = source.frond ? `${pc.bold(source.frond)} ${pc.dim(source.url)}` : pc.bold(source.url);
@@ -66,8 +57,6 @@ export default class DevtoolsCommand {
 }
 
 function render(call: CallRecord & { source: string }, many: boolean): string {
-  // Padded BEFORE colouring: an escape sequence counts in a string's length, so padding a
-  // coloured value moves the column by however many bytes the colour took.
   const at = many ? pc.dim(pad(new URL(call.source).port || call.source, 5)) : '';
   const frond = pc.dim(pad(call.frond ?? '—', 9));
   const address = pc.bold(pad(`${call.address}.${call.operation}${call.surface ? `/${call.surface}` : ''}`, 22));

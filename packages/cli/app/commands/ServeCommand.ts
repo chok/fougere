@@ -13,10 +13,8 @@ import type { ui as createUi } from '../../src/ui.js';
 
 type Ui = ReturnType<typeof createUi>;
 
-/** What a reload gives the calls already running before it releases the app they hold. */
 const DRAIN_MS = 5_000;
 
-/** One save fires several events; the boot must not start once per event. */
 const SETTLE_MS = 60;
 
 /** What a host boots, and the directories whose change boots it again — none for what a build wrote. */
@@ -25,13 +23,7 @@ export interface Hosting {
   watched: string[];
 }
 
-/**
- * The host end of the gradient: one frond, alone in this process, reachable
- * over HTTP, and reaching the fronds `fronds:` places elsewhere. The same
- * fronds/** an app runs in-process; only the runtime moves.
- *
- * `serve` starts what `fougere build` wrote, with Node alone; `dev` (`DevCommand`) starts the sources.
- */
+/** One frond, alone in this process, served over HTTP from what `fougere build` wrote. */
 export default class ServeCommand {
   static DEFAULT_PORT = 4100;
   /** Starts what `fougere build` wrote, so the runner installs no loader for the project's TypeScript. */
@@ -71,16 +63,10 @@ export default class ServeCommand {
       return;
     }
 
-    // A handle, not a binding: `serve` holds this closure for the process's life while
-    // `current` moves under it, so nothing on the wire learns the app was replaced.
     let current: Transport = createLocalRunner(hosted);
 
     const port = raw.port != null ? Number(raw.port) : await ServeCommand.portStated(root, frond);
-    // A served frond admits what it can establish. With no root injected it takes the
-    // state it is handed, which is why the loopback default is the other half.
     const { verify, requireIdentity } = await identityFromEnv();
-    // The REST door of the frond this process hosts, beside the call envelope: a frond moved
-    // here takes its door with it, and the process it left no longer answers for it.
     const beside = (request: Request) => webAnswer(hosted, request);
     const answer: ReceiveOptions['answer'] = (door, received) => hosted.answer(door, received);
     const { use } = (await loadConfig(root)).server ?? {};
@@ -92,7 +78,6 @@ export default class ServeCommand {
     if (hosting.watched.length === 0) {
       this.ui.info('Ctrl-C to stop.');
 
-      // The listening server keeps the event loop alive; the command returns and stays up.
       return;
     }
 
@@ -103,8 +88,6 @@ export default class ServeCommand {
       try {
         next = await Registry.reloading(() => hosting.boot(), () => { replaced += 1; });
       } catch (error) {
-        // The previous app keeps serving: a dev loop that dies on a typo is worse than
-        // one that holds the last state which booted.
         this.ui.error(`reload refused — ${(error as Error).message}`);
 
         return;
@@ -113,8 +96,6 @@ export default class ServeCommand {
       hosted = next;
       current = createLocalRunner(next);
       this.ui.step(`reloaded in ${Date.now() - started} ms${replaced ? ` — ${replaced} answer(s) re-registered` : ''}`);
-      // Drain then release, on the OLD app and in that order: a call that started before
-      // the swap finishes on the app it started on.
       await previous.drain(DRAIN_MS).catch((e) => this.ui.info(`drain: ${(e as Error).message}`));
       await previous.dispose();
     };
@@ -130,7 +111,6 @@ export default class ServeCommand {
         });
         watched++;
       } catch {
-        // An absent convention directory IS the convention — the same silence the scan keeps.
       }
     }
 

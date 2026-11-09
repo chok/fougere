@@ -13,13 +13,6 @@ export interface LoadScenario {
   script: string;
 }
 
-/**
- * A load scenario, written from what the project serves.
- *
- * Read from the SCAN rather than a boot: an app that boots runs its migrations and plants its
- * seeds, and a command that describes a project has no business writing to its database.
- */
-/** The file is yours once written: it holds your weights, so a second run may not replace it unasked. */
 async function keep(file: string, script: string, force = false): Promise<void> {
   await writeFile(file, script, { encoding: 'utf8', flag: force ? 'w' : 'wx' }).catch((error: NodeJS.ErrnoException) => {
     if (error.code !== 'EEXIST') throw error;
@@ -34,8 +27,6 @@ export default class LoadHandler {
   async execute(input: { root?: string; facade?: string; out?: string; force?: boolean }): Promise<LoadScenario> {
     const { root, fronds, config } = await this.projectScan.at(input.root);
     const facade = input.facade?.trim() || undefined;
-    // The topology statement travels with it: an op that crosses a process is not held to the
-    // same figure as one that never leaves, and `remotes:` is what says which is which.
     const remotes = remotesOf(config);
     const script = loadScript({ fronds }, { ...(facade ? { facade } : {}), remotes });
 

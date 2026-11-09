@@ -5,7 +5,6 @@ import { resolveConventions, frondPackage } from '@fougere/core';
 import { loadConfig } from '@fougere/core/node';
 
 export default class BuildFrondHandler {
-  // cwd is ambient in a CLI — not a DI service (the container resolves by type).
   private cwd = process.cwd();
 
   /** Build a frond into a standalone deployable package. */
@@ -22,7 +21,6 @@ export default class BuildFrondHandler {
       throw new Error(`No ${conventions.dirs.entities}/ directory in frond '${input.frond}'`);
     }
 
-    // Discover entity files
     const entityFiles = readdirSync(entitiesDir)
       .filter((f) => f.endsWith('.ts') && !f.endsWith('.d.ts'))
       .sort();
@@ -33,13 +31,11 @@ export default class BuildFrondHandler {
 
     const entityNames = entityFiles.map((f) => basename(f, '.ts'));
 
-    // Generate barrel index.ts
     const indexLines = entityNames.map(
       (name) => `export { default as ${name} } from './${conventions.dirs.entities}/${name}.js';`,
     );
     writeFileSync(join(frondDir, 'index.ts'), indexLines.join('\n') + '\n');
 
-    // Generate tsconfig.build.json
     const tsconfig = {
       compilerOptions: {
         target: 'ES2022',
@@ -64,7 +60,6 @@ export default class BuildFrondHandler {
       try { unlinkSync(tsconfigPath); } catch { /* ignore */ }
     }
 
-    // Update package.json
     const pkgPath = join(frondDir, 'package.json');
     const pkg = existsSync(pkgPath)
       ? JSON.parse(readFileSync(pkgPath, 'utf-8'))
@@ -82,10 +77,8 @@ export default class BuildFrondHandler {
       './package.json': './package.json',
     };
 
-    // Only publish dist + package.json
     pkg.files = ['dist', 'package.json'];
 
-    // Ensure peerDependencies on @fougere/schema
     pkg.peerDependencies ??= {};
     pkg.peerDependencies['@fougere/schema'] ??= '*';
 

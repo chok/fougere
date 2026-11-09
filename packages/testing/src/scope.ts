@@ -38,8 +38,6 @@ export function rootOf(path: string): string | undefined {
 export async function scopeOf(path: string): Promise<Scope | undefined> {
   const root = rootOf(path);
   if (!root) return undefined;
-  // The root is known, so its config can say what the fronds directory is called before
-  // the position is read against it.
   const { fronds } = resolveConventions((await loadConfig(root)).conventions);
   const frond = frondOf(path, fronds);
 

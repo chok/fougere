@@ -8,12 +8,7 @@ export interface Version {
   step?: SetDiff & { previous?: string };
 }
 
-/**
- * The versions a frond has cut, oldest first — read by FOLLOWING each step's `previous`.
- *
- * That link is the fact recorded the day the version was cut. Sorting directory names is
- * a guess about the same fact, and a hotfix cut after a later version orders it wrong.
- */
+/** The versions a frond has cut, oldest first, read by following each step's `previous`. */
 export async function chainOf(frondPath: string, versions: string): Promise<Version[]> {
   const directory = join(frondPath, versions);
   const found = await readdir(directory, { withFileTypes: true }).catch(() => []);
@@ -42,8 +37,6 @@ export async function chainOf(frondPath: string, versions: string): Promise<Vers
     chain.push({ name: at, step: steps.get(at) });
   }
 
-  // One check for every way the links fail to be a line: a fork (two versions claiming
-  // the same `previous`), a cycle, or a step naming a version that is not there.
   const adrift = names.filter((name) => !seen.has(name));
   if (adrift.length > 0) {
     throw new Error(`${directory}: ${adrift.join(', ')} do not follow any version of the line that starts at ${roots[0]}.`);

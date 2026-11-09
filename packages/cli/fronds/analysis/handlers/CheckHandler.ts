@@ -21,31 +21,15 @@ export interface CheckResult {
   findings: Diagnostic[];
 }
 
-/** Shared with `fougere graph` — one threshold, so the two never disagree. */
 const DOMAIN_SPLIT_MIN_ENTITIES = 6;
 
-/**
- * What does not hold in this app — derived from its declarations, not from tests.
- *
- * It scans rather than boots — see `ProjectScan`, which states what that costs.
- *
- * It raises no operation-resolution rule of its own: those findings come from the same
- * EffectiveOperation resolver boot consumes. The remaining findings come from their
- * existing owners — scan diagnostics, the import reader and domain clustering. A second
- * opinion here would report what the runtime does not serve, precisely what a checker
- * must avoid.
- *
- * A rule about an ABSENCE is only sound if the analysis attests it looked, which is
- * why the scan's diagnostics had to exist before this command could.
- */
+/** What does not hold in this app — derived from its declarations, not from tests. */
 export default class CheckHandler {
   constructor(private projectScan: ProjectScan) {}
 
   /** Report what does not hold in a Fougere app, without booting it. */
   async execute(input: { root?: string }): Promise<CheckResult> {
     const { fronds, diagnostics, config, root } = await this.projectScan.at(input.root);
-    // This is the same pure resolution the boot consumes. No app lifecycle, database,
-    // migration, seed or adapter mount is needed for a global semantic check.
     const model = resolveEffectiveOperations(fronds, {
       diagnostics,
       remotes: remotesOf(config),
@@ -54,18 +38,9 @@ export default class CheckHandler {
     const findings: Diagnostic[] = [...model.diagnostics];
     const handlers = fronds.reduce((count, frond) => count + frond.handlers.length, 0);
 
-    /**
-     * Entity groups with no `ref()` between them, in one frond. Reported as a FACT, not a
-     * verdict: it means either a missing relation or a frond that has not been named, and
-     * nothing here can tell which. `fougere graph` shows the groups.
-     */
     if (fronds.length === 1) {
-      // `clusterEntities`, not `suggestSplit`: the latter invents a cut on a connected
-      // graph, which is its job and not this question. Here only real components count.
       const nodes = buildGraph(fronds);
       const clusters = clusterEntities(nodes);
-      // Same threshold as `fougere graph`'s own tip: below it, two components are a small
-      // app that has not grown its links yet, not a frond holding two domains.
       if (clusters.length > 1 && nodes.size >= DOMAIN_SPLIT_MIN_ENTITIES) {
         findings.push({
           severity: 'warning',
@@ -77,15 +52,6 @@ export default class CheckHandler {
       }
     }
 
-    /**
-     * An entity addressing an adapter this project does not depend on. Judged HERE and
-     * not at boot: a process only knows the adapters it loaded, so an entity stating a
-     * Postgres column type in an app running on `adapter/memory` is indistinguishable
-     * from a typo. A project's dependencies name every adapter it could ever load.
-     *
-     * Silent when the project depends on none — there would be nothing to compare against,
-     * and reporting every key as unknown is worse than saying nothing.
-     */
     const known = await adaptersOf(root);
     if (known.length > 0) {
       for (const frond of fronds) {
@@ -105,15 +71,6 @@ export default class CheckHandler {
       }
     }
 
-    /**
-     * A `pattern` that backtracks super-linearly. The pattern is fixed at declaration and
-     * the string tested against it is not: whoever calls the facade chooses it, so the cost
-     * of one match is theirs to set. Judged HERE because a regex says the same thing on
-     * every run — checking it per row would pay for a verdict that never changes.
-     *
-     * `safe-regex` reads the star height, which is the common shape and not every one:
-     * `(a|a)*b` backtracks too and passes. Reported as a suspicion, never as a refusal.
-     */
     for (const frond of fronds) {
       for (const entity of frond.entities) {
         for (const [key, field] of Object.entries(entity.entityClass.getFields())) {
@@ -132,10 +89,6 @@ export default class CheckHandler {
       }
     }
 
-    /**
-     * A warning, not a refusal: it resolves today and the app runs. What it costs is
-     * paid once, late — the day the frond it reaches into is deployed on its own.
-     */
     for (const reach of await crossFrondImports(fronds)) {
       findings.push({
         severity: 'warning',
@@ -147,10 +100,6 @@ export default class CheckHandler {
 
     const conventions = resolveConventions(config.conventions);
 
-    /**
-     * What no convention names. Reported before the declarations below, because a frond
-     * with nowhere to put a word is why the word ends up in a handler.
-     */
     for (const unplaced of await outsideConventions(fronds, conventions)) {
       findings.push({
         severity: 'warning',
@@ -161,11 +110,6 @@ export default class CheckHandler {
       });
     }
 
-    /**
-     * The same shape of warning, one file lower: what the handler holds still runs, and
-     * what it costs is the next caller — a test, a second operation, another handler —
-     * that cannot reach it without moving it first.
-     */
     for (const held of await handlerDeclarations(fronds, conventions)) {
       findings.push({
         severity: 'warning',
@@ -184,14 +128,6 @@ export default class CheckHandler {
   }
 }
 
-/**
- * What a `fronds.ts` written by hand leaves out of what the sources serve.
- *
- * The boot serves what the statement lists, and cannot tell an operation left out from a method
- * kept private: TypeScript erases `private` and `protected`, so both are a method on the prototype.
- * The scan read the keywords, so this is the one place the gap can be named — a handler the file
- * never states, an operation a stated handler does not list.
- */
 async function statementFindings(root: string, fronds: readonly FrondDescriptor[]): Promise<Diagnostic[]> {
   const file = statementFileIn(root);
   if (!file) return [];
@@ -229,11 +165,6 @@ async function statementFindings(root: string, fronds: readonly FrondDescriptor[
   return findings;
 }
 
-/**
- * A Worker refuses `state.set` without `nodejs_compat`: the async context a door keeps the written
- * state in is handed over by that flag alone (measured in workerd, 2026-10-19). The boot says so
- * too, but on the first request of a deployed Worker — this says it before the deploy.
- */
 function workerFindings(root: string, state: Record<string, unknown> | undefined): Diagnostic[] {
   if (!state || Object.keys(state).length === 0) return [];
   const file = WRANGLER_FILES.map((name) => join(root, name)).find((path) => statSync(path, { throwIfNoEntry: false }));
@@ -251,16 +182,6 @@ function workerFindings(root: string, state: Record<string, unknown> | undefined
 
 const WRANGLER_FILES = ['wrangler.jsonc', 'wrangler.json', 'wrangler.toml'];
 
-/**
- * A facade module older than the handlers it was read off.
- *
- * An ABSENT module needs no finding: a page importing one fails to resolve, loudly, and a
- * backend project never imports one at all — warning there would fire on every project that
- * does not want a facade, which is most of them.
- *
- * A STALE one is the silent case. The import resolves, the operations are the old ones, and a
- * renamed op compiles against a name nothing serves any more. An mtime is the whole check.
- */
 function facadeFindings(root: string, fronds: readonly { handlers: readonly { filePath: string }[] }[]): Diagnostic[] {
   const facade = join(root, dirname(DEFAULT_OUT), FACADE_OUT);
   const written = statSync(facade, { throwIfNoEntry: false })?.mtimeMs;

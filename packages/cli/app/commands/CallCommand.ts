@@ -5,12 +5,6 @@ import type { ui as createUi } from '../../src/ui.js';
 
 type Ui = ReturnType<typeof createUi>;
 
-/**
- * Parse `--field value` / `--field=value` / `--flag` from the raw argv.
- * `call`'s payload is free-form (any entity's fields), so it can't be declared
- * on the Call entity — citty would boolean-ify undeclared flags. We read the
- * tail ourselves; positionals (the target) are ignored (not `--`-prefixed).
- */
 function parseFlags(tokens: string[]): Record<string, unknown> {
   const out: Record<string, unknown> = {};
   for (let i = 0; i < tokens.length; i++) {
@@ -27,11 +21,7 @@ function parseFlags(tokens: string[]): Record<string, unknown> {
   return out;
 }
 
-/**
- * The client end of the gradient: drive one operation on the project's app and
- * print the result. It follows the topology — if `remotes:` sends the frond
- * elsewhere, the call travels there. Same envelope every consumer uses.
- */
+/** Drives one operation on the project's app and prints the result, wherever `remotes:` places it. */
 export default class CallCommand {
   constructor(private app: App, private ui: Ui) {}
 
@@ -58,7 +48,6 @@ export default class CallCommand {
     }
   }
 
-  /** A flag the op's binding names as a parameter goes where the resolver reads one; the rest is the input. */
   private static invocationOf(app: App, address: string, op: string, flags: Record<string, unknown>) {
     const contract = app.fronds
       .flatMap((frond) => frond.handlers)

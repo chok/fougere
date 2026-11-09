@@ -4,11 +4,7 @@ import { resolveConventions } from '@fougere/core';
 import { frondAliases, setModuleLoader, loadConfig } from '@fougere/core/node';
 import type { Conventions } from '@fougere/core';
 
-/**
- * The loader every command needs — made FROM the project, since a module key (`'@fougere/log'`)
- * is resolved against whoever made the loader: made here, it looked in the CLI's own
- * dependencies and never in the project's.
- */
+/** The loader every command needs, made from the project so a module key resolves there. */
 export async function installLoader(root: string, reread = false): Promise<Conventions> {
   const { createJiti } = await import('jiti');
   const project = pathToFileURL(resolve(root) + sep).href;

@@ -11,7 +11,6 @@ export default class GraphCommand {
   constructor(private app: App, private ui: Ui) {}
 
   async run(raw: Record<string, unknown>) {
-    // Ride the call contract — the same envelope every consumer uses.
     const result = await createAppRunner(this.app)(
       { address: 'graph', op: 'execute' },
       { params: {}, query: {}, input: raw, state: {} },
@@ -41,10 +40,6 @@ export default class GraphCommand {
   }
 }
 
-/**
- * Where each frond runs, and which reaches which. Read from `remotes:` and from what handlers
- * ask for — never from a call, so this says the same thing with nothing running.
- */
 function renderFronds(declared: DeclaredTopology): string {
   const reached = new Map<string, string[]>();
   for (const edge of declared.edges) {

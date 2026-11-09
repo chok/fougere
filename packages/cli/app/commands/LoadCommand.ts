@@ -7,14 +7,7 @@ import { machineWanted, printMachine } from '../../src/machine.js';
 
 type Ui = ReturnType<typeof createUi>;
 
-/**
- * The command the generated header has been naming all along.
- *
- * What it writes is derived — the operations from what the project serves, a body for each from
- * the entity's own fields, the envelope from the one function that states it. What it cannot
- * derive is what the load IS: the weights, the stages and the thresholds are facts about your
- * users, and the file says so where they sit.
- */
+/** Writes the load scenario the project describes; the weights, stages and thresholds are yours. */
 export default class LoadCommand {
   constructor(private app: App, private ui: Ui) {}
 

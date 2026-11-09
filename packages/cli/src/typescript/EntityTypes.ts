@@ -6,7 +6,6 @@ export interface EntityTypesOptions {
   exported?: boolean;
 }
 
-/** So a nullable field lands as a union. */
 function typeOf(field: FieldDescriptor): string {
   const types = Shapes.typesOf(field);
   const nullable = types.includes('null');
@@ -16,7 +15,6 @@ function typeOf(field: FieldDescriptor): string {
   return nullable ? `${inner} | null` : inner;
 }
 
-/** So `date-time` becomes a `Date`, the same thing the boundary decodes to. */
 function baseTypeOf(base: string | undefined, field: FieldDescriptor): string {
   if (field.enum?.length) {
     return field.enum.map((v) => (v === null ? 'null' : JSON.stringify(v))).join(' | ');
@@ -38,7 +36,6 @@ function baseTypeOf(base: string | undefined, field: FieldDescriptor): string {
   }
 }
 
-/** So a nested object keeps its optionality. */
 function objectTypeOf(properties: Record<string, FieldDescriptor>, required: readonly string[]): string {
   const members = Object.entries(properties).map(([name, field]) => {
     const optional = required.includes(name) ? '' : '?';
@@ -49,7 +46,6 @@ function objectTypeOf(properties: Record<string, FieldDescriptor>, required: rea
   return `{ ${members.join('; ')} }`;
 }
 
-/** So the generated class carries its row type. */
 function shapeTypeOf(descriptor: SchemaDescriptor, indent = ''): string {
   const entries = Object.entries(descriptor.properties ?? {});
   if (entries.length === 0) return '{}';
@@ -82,7 +78,6 @@ export class EntityTypes {
   }
 }
 
-/** So a name that cannot declare a class is refused before it reaches a file. */
 function identifierOf(name: string): string {
   if (!/^[A-Za-z_$][A-Za-z0-9_$]*$/.test(name)) {
     throw new Error(`'${name}' is not a TypeScript identifier — it cannot name a generated declaration`);

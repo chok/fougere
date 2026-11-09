@@ -13,14 +13,11 @@ export default class CheckCommand {
   constructor(private app: App, private ui: Ui) {}
 
   async run(raw: Record<string, unknown>) {
-    // Ride the call contract — the same envelope every consumer uses.
     const result = await createAppRunner(this.app)(
       { address: 'check', op: 'execute' },
       { params: {}, query: {}, input: raw, state: {} },
     ) as CheckResult;
 
-    // A non-zero exit is what makes this usable in CI, so it is decided before the two
-    // renderings rather than inside the terminal one.
     const blocking = result.findings.filter((f) => f.severity === 'blocking').length;
     if (blocking > 0) process.exitCode = 1;
 
@@ -42,8 +39,6 @@ export default class CheckCommand {
 
     this.ui.note(result.findings.map(render).join('\n\n'), 'Findings');
 
-    // Warnings do not fail: an unresolvable base class with no operation is ordinary,
-    // and a check that cries wolf stops being read.
     this.ui.info(`${blocking} blocking, ${result.findings.length - blocking} warning(s)`);
   }
 }
@@ -56,7 +51,6 @@ function render(f: Diagnostic): string {
   return `  ${mark} ${pc.bold(`[${f.code}]`)}${what}\n${wrap(f.message, 76, '    ')}\n    ${pc.dim(where)}`;
 }
 
-/** A box grows to its longest line, so a one-line sentence makes an unreadable box. */
 function wrap(text: string, width: number, indent: string): string {
   const lines: string[] = [];
   let line = '';

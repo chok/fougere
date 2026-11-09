@@ -8,13 +8,7 @@ import { machineWanted, printMachine } from '../../src/machine.js';
 
 type Ui = ReturnType<typeof createUi>;
 
-/**
- * Cutting a version — inspect, ask what only a human knows, then record.
- *
- * The question is asked between the two ops and nowhere else: a field gone plus a field
- * appeared is either a rename or a drop-and-add, the two produce opposite DDL, and the
- * intent left with the person who made the change. Nothing is written until it is settled.
- */
+/** Cuts a version: inspects, asks what only a human knows, then records. */
 export default class FreezeCommand {
   constructor(private app: App, private ui: Ui) {}
 
@@ -28,12 +22,8 @@ export default class FreezeCommand {
     const freeze = (input: Record<string, unknown>) =>
       createAppRunner(this.app)({ address: 'freeze', op: 'execute' }, { params: {}, query: {}, input, state: {} }) as Promise<FreezeInspection>;
 
-    // Idempotent while it refuses: this writes when nothing is ambiguous, and reports
-    // otherwise — so the first call is both the inspection and the happy path.
     const seen = await freeze(raw);
 
-    // The question below cannot be put to a machine, so the inspection is the answer:
-    // `ambiguous` says what a human still has to settle, and nothing was written.
     if (machineWanted(raw)) return printMachine(seen);
 
     if (seen.entities.length === 0) {
@@ -54,7 +44,6 @@ export default class FreezeCommand {
     this.report(await freeze({ ...raw, renamed }));
   }
 
-  /** Turn every ambiguity into a declaration, or `undefined` when the answer is a refusal. */
   private async settle(seen: FreezeInspection): Promise<Record<string, Record<string, string>> | undefined> {
     const renamed: Record<string, Record<string, string>> = {};
     const pending = Object.entries(seen.ambiguous);
@@ -63,8 +52,6 @@ export default class FreezeCommand {
     this.ui.warn('A field left and a field of the same shape appeared. Only you know which.');
 
     for (const [entity, pairs] of pending) {
-      // Grouped by what LEFT: one departed field is one question, however many
-      // candidates carry its shape.
       const byRemoved = new Map<string, string[]>();
       for (const { removed, added } of pairs) byRemoved.set(removed, [...(byRemoved.get(removed) ?? []), added]);
 
@@ -76,8 +63,6 @@ export default class FreezeCommand {
             { value: '', label: 'dropped', hint: 'the column goes, and what it held goes with it' },
           ],
         });
-        // An empty answer is a cancel as much as a "dropped" — writing on either would
-        // record a decision nobody made.
         if (!answer) {
           this.ui.warn(`${entity}.${removed} treated as dropped — say so explicitly if that is right.`);
 
@@ -117,7 +102,6 @@ export default class FreezeCommand {
 
 function describeChange(change: Change): string {
   if (change.kind === 'renamed') return `${change.from} → ${change.to}`;
-  // An axis that moved names WHICH: "restated title" says nothing a reader can act on.
   if (change.kind === 'restated') return `${change.field}: ${change.axis} moved`;
 
   return `${change.kind} ${change.field}`;

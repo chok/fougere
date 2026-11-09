@@ -45,12 +45,7 @@ export interface ComposerOptions {
 }
 
 /**
- * `fougere new` in three steps — the project, its fronds, its apps — with the tree the plan
- * writes and the command that writes it with no prompt drawn beside every step.
- *
- * ⏎ moves on and ← goes back. In a list, `r` renames the row under the cursor and `+` adds another
- * piece of the same template. Nothing is written here: the answer is a `Plan`, and whether the
- * directory it names may be replaced.
+ * `fougere new` in three steps, the project, its fronds, its apps; the answer is a `Plan`, and nothing is written here.
  *
  * Documented: [the CLI](https://fougere.dev/reference/cli).
  */
@@ -170,7 +165,6 @@ export class Composer {
     return `↑↓ move · space check · + another · r rename · ← back · ${next} · esc quit`;
   }
 
-  /** The rows of the current step, each with its index among them. */
   private listed(): { row: Row; at: number }[] {
     return this.rows.filter((row) => row.kind === this.step).map((row, at) => ({ row, at }));
   }
@@ -219,7 +213,6 @@ export class Composer {
     this.hold(() => { if (editing && row) row.name = editing; });
   }
 
-  /** The name is kept, and the step left, only once it can be written. */
   private named(name: string): void {
     this.name = name;
     this.overwrite = false;
@@ -255,7 +248,6 @@ export class Composer {
     this.editing = this.current()?.name;
   }
 
-  /** ⏎ that moves the screen on is not the ⏎ that writes: the next one is. */
   private hold(move: () => void): void {
     this.held = true;
     move();

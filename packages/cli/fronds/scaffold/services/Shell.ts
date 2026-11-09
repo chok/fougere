@@ -4,10 +4,7 @@ import { PackageManager } from '../../../src/scaffold/PackageManager.js';
 
 /** Runs a host's own scaffolder — the one step of `fougere new` that reaches the network. */
 export default class Shell {
-  /**
-   * Writes the host's shell at `parent/dir`. `{dir}` in the command stands for `dir`, `{pm}` for the
-   * package manager the project is made with — the host's tool writes its own lockfile hints for it.
-   */
+  /** Writes the host's shell at `parent/dir`; `{dir}` and `{pm}` in the command stand for the directory and the package manager. */
   async create(command: readonly string[], parent: string, dir: string, manager: PackageManager = PackageManager.of()): Promise<void> {
     const args = command.map((part) => (part === '{dir}' ? dir : part.replaceAll('{pm}', manager.name)));
     const [bin, argv] = manager.exec(args);

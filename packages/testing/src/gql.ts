@@ -1,13 +1,11 @@
 import { Shapes, Role, Visibility, type Field, type SchemaView } from '@fougere/schema';
 
-/** One field of a root type, in the shape this file reads it. */
 interface RootField {
   name: string;
   type: { toString(): string };
   args: { name: string }[];
 }
 
-/** The minimum of a GraphQL schema this file reads — no `graphql` import, no second copy. */
 interface Introspectable {
   getQueryType(): { getFields(): Record<string, RootField> } | null | undefined;
   getMutationType?(): { getFields(): Record<string, RootField> } | null | undefined;
@@ -31,9 +29,6 @@ export function queryFieldFor(
   const wanted = op === 'list' ? `${entity.name}List` : entity.name;
 
   for (const field of Object.values(fields)) {
-    // `String(type)` gives the name with its wrappers (`Product!`, `[Product!]!`), which
-    // is why this compares on inclusion rather than equality.
-    // A type is named after its frond first — `CatalogArticleList` — which the entity does not know.
     const named = String(field.type).replace(/[![\]]/g, '');
     if (!named.endsWith(wanted)) continue;
     const takesId = field.args.some((arg) => arg.name === 'id');
@@ -48,8 +43,6 @@ export function listQuery(schema: Introspectable, entity: SchemaView): { query: 
   const field = queryFieldFor(schema, entity, 'list');
   if (!field) return undefined;
 
-  // The list type wraps its rows — `ProductList { items }` — so the reader below has to
-  // be told where to look rather than assume the answer IS the rows.
   return { query: `{ ${field} { items { ${selectionOf(entity)} } } }`, at: [field, 'items'] };
 }
 
@@ -89,21 +82,17 @@ export function mutationFor(
   if (sent.input !== undefined) args.push(`input: ${literalOf(sent.input, enumsOf(entity))}`);
   const call = args.length ? `${field}(${args.join(', ')})` : field;
 
-  // `delete` answers a Boolean, which takes no sub-selection — asking for one is a syntax
-  // error, and the schema is what says which case this is.
   const scalar = String(schema.getMutationType?.()?.getFields()[field]?.type ?? '').replace(/[!]/g, '') === 'Boolean';
 
   return { query: `mutation { ${call}${scalar ? '' : ` { ${selectionOf(entity)} }`} }`, at: [field] };
 }
 
-/** The fields the entity declares as a bounded set — GraphQL turns each into an enum. */
 function enumsOf(entity: SchemaView): Set<string> {
   return new Set(Object.entries(entity.getFields())
     .filter(([, field]) => Shapes.typeOf(field.shape) === 'choice')
     .map(([name]) => name));
 }
 
-/** A JS value as a GraphQL literal. */
 function literalOf(value: unknown, enums: Set<string> = new Set(), key?: string): string {
   if (value === null) return 'null';
   if (key !== undefined && enums.has(key) && typeof value === 'string') return value;

@@ -13,18 +13,13 @@ import type { App } from '@fougere/core';
 type Ui = ReturnType<typeof createUi>;
 
 
-/**
- * A plan, then one write. The flags state it — the only form a script, a CI job or an agent can
- * drive — and the composer builds it when they state nothing; either way nothing touches the disk
- * before the plan holds.
- */
+/** A plan, from the flags or the composer, then one write. */
 export default class NewCommand {
   constructor(private app: App, private ui: Ui) {}
 
   async run(raw: Record<string, unknown>) {
     const writer = new ProjectWriter();
     const cwd = process.cwd();
-    // `--local` links into this monorepo, which only pnpm's `link:` and overrides express.
     const found = raw.local ? new PackageManager('pnpm') : await writtenFor(raw.packageManager as string | undefined, cwd);
     const catalog: Catalog = { fronds: writer.listTemplates('fronds'), apps: writer.listTemplates('apps') };
     const refusals = (plan: Plan, replace: boolean) => refusalsOf(plan, catalog, { cwd, replace });
@@ -76,7 +71,6 @@ export default class NewCommand {
     this.ui.outro('Ready.');
   }
 
-  /** Asked only when nothing said it — and said back when nobody could be asked. */
   private async managerOf(guided: boolean): Promise<PackageManager | undefined> {
     if (!guided) {
       this.ui.info('Written for npm: nothing said which package manager. --package-manager states it.');

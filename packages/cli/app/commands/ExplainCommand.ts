@@ -18,8 +18,6 @@ export default class ExplainCommand {
     const names = raw.names as 'operations' | 'fronds' | undefined;
     const operation = (raw.operation as string | undefined)?.trim();
 
-    // No operation named — the question is what this project serves at all. The same
-    // model answers both, so the facade is the one that was asked, never a guess.
     if (names || !operation) return this.listing(raw, names);
 
     const result = await this.ask('execute', raw) as ExplainResult;
@@ -32,7 +30,6 @@ export default class ExplainCommand {
   private async listing(raw: Record<string, unknown>, names?: 'operations' | 'fronds') {
     const listing = await this.ask('list', raw) as ExplainListing;
 
-    // A completion script has no JSON parser: one name per line, nothing else on stdout.
     if (names) {
       const values = names === 'fronds'
         ? listing.fronds.map((frond) => frond.name)
@@ -89,8 +86,6 @@ export function renderExplain(result: ExplainResult): string {
     `${pc.dim('Surfaces:')}  ${result.exposure.surfaces.join(', ') || '—'}`,
     `${pc.dim('Adapters:')}  ${result.exposure.adapters.join(', ') || '—'}`,
     `${pc.dim('Placement:')} ${result.frond} / ${result.placement}${result.remote ? ` (${result.remote})` : ''}`,
-    // Where the work GOES, under where it answers. The hop count is what a sampling rate, a
-    // histogram's bounds and a load threshold are all a function of — each hard-coded today.
     `${pc.dim('Reach:')}     ${renderReach(result.reach)}`,
   );
 
@@ -99,7 +94,6 @@ export function renderExplain(result: ExplainResult): string {
   return lines.join('\n');
 }
 
-/** What this op reaches, and the part of it that costs a round trip. */
 function renderReach(reach: ExplainResult['reach']): string {
   if (reach.fronds.length === 0) return pc.dim('nothing outside its own frond');
 

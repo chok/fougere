@@ -2,10 +2,7 @@ import { detect } from 'package-manager-detector/detect';
 import { PackageManager } from './PackageManager.js';
 
 /**
- * The package manager a project is written for, from what is known before anyone is asked: what the
- * command stated, who launched it (`npm create`, `pnpx`, `bunx`, `yarn dlx`), then the project the new
- * one is created inside — its lockfile or its `packageManager`. Nothing known answers `undefined`, for
- * the caller to ask or to say it chose npm.
+ * The package manager a project is written for, from the flag, the launcher, then the project around; `undefined` when nothing says.
  *
  * Documented: [the CLI](https://fougere.dev/reference/cli#which-package-manager).
  */

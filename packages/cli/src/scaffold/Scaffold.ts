@@ -5,13 +5,7 @@ import { applyEdits, modify } from 'jsonc-parser';
 import { builders, generateCode, parseModule } from 'magicast';
 import { addNuxtModule, addVitePlugin, getDefaultExportOptions } from 'magicast/helpers';
 
-/**
- * What a host adds to the shell its own tool writes — declared by the host, in `template/scaffold.json`.
- *
- * The shell is the host's: its versions, its tsconfig, its config file are what `create-nuxt` or
- * `create-vite` writes today, not what someone copied here once. Fougere's part is what is left:
- * its dependencies, one line of config, and its pages. A starter with no `create` is copied whole.
- */
+/** What a host adds to the shell its own tool writes, declared in `template/scaffold.json`. */
 export interface Scaffold {
   /** The host's own scaffolder, run with `npx`, a major pinned — `{dir}` stands for the app. */
   create?: string[];
@@ -30,10 +24,7 @@ export type Wire =
   | { kind: 'vitePlugin'; file: string; from: string; imported: string; options?: Record<string, unknown> }
   | { kind: 'wrapExport'; file: string; from: string; imported: string; options?: Record<string, unknown> };
 
-/**
- * Two forms, because a host that generates its tsconfig owns its `paths`: SvelteKit writes them from
- * `kit.alias`, and a `paths` beside them would replace its `$lib`.
- */
+/** Where the facade path is written: `paths` in a tsconfig, or `kit.alias` for a host that owns its `paths`. */
 export type FacadePath =
   | { kind: 'paths'; file: string; compilerOptions?: Record<string, unknown> }
   | { kind: 'kitAlias'; file: string };
@@ -48,10 +39,6 @@ export function applyScaffold(dir: string, scaffold: Scaffold, fronds: { local: 
   if (scaffold.facade?.kind === 'kitAlias') aliasFacade(join(dir, scaffold.facade.file), fronds);
 }
 
-/**
- * An app is a member of the workspace, which states the package manager and the workspace itself:
- * `create-next-app` writes a `packageManager` of its own and a nested `pnpm-workspace.yaml`.
- */
 function asMember(dir: string): void {
   rmSync(join(dir, 'pnpm-workspace.yaml'), { force: true });
   const path = join(dir, 'package.json');
@@ -88,10 +75,6 @@ function wire(dir: string, gesture: Wire): void {
   write(path, source, mod);
 }
 
-/**
- * The alias SvelteKit copies into the tsconfig it generates, stated in `sveltekit()`'s own options.
- * An alias names ONE directory, so a frond `fougere sync` wrote is not reached from a SvelteKit page.
- */
 function aliasFacade(path: string, fronds: { local: string; facade: string }): void {
   const source = readFileSync(path, 'utf8');
   const mod = parseModule(source);
@@ -102,18 +85,11 @@ function aliasFacade(path: string, fronds: { local: string; facade: string }): v
   write(path, source, mod);
 }
 
-/** Written back in the quotes the shell chose. */
 function write(path: string, source: string, mod: ReturnType<typeof parseModule>): void {
   const quote = (source.match(/"/g)?.length ?? 0) > (source.match(/'/g)?.length ?? 0) ? 'double' : 'single';
   writeFileSync(path, generateCode(mod, { format: { quote, objectCurlySpacing: true } }).code.trimEnd() + '\n');
 }
 
-/**
- * Adds the two paths a page imports by name — its facade, and `@fronds/<name>` read the way the
- * fronds' own tsconfig reads it — and what the frond's code needs of the program reading it —
- * `create-vite` sets `erasableSyntaxOnly`, which refuses the constructor a handler is injected through.
- * The shell's comments and its own paths stay as they were.
- */
 function pointAtFacade(path: string, fronds: { local: string; remotes: string; facade: string }, compilerOptions: Record<string, unknown> = {}): void {
   const settings: [string[], unknown][] = [
     [['compilerOptions', 'paths', '@fronds/facade'], [relativeTo(path, fronds.facade)]],
@@ -127,7 +103,6 @@ function pointAtFacade(path: string, fronds: { local: string; remotes: string; f
   writeFileSync(path, text);
 }
 
-/** `dir` as the file at `path` names it — relative, the way a tsconfig and `kit.alias` both read it. */
 function relativeTo(path: string, dir: string): string {
   return relative(dirname(path), dir);
 }

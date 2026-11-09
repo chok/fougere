@@ -9,7 +9,6 @@ import { sampleInput } from './sample.js';
 import type { DoorOptions } from './DoorOptions.js';
 import type { DoorInput } from './DoorInput.js';
 
-/** The rows a facade hands back, with its own envelope taken off. */
 function rowsOf(value: unknown): unknown {
   if (Array.isArray(value)) return [...value];
   const page = value as { items?: unknown } | null;
@@ -17,10 +16,8 @@ function rowsOf(value: unknown): unknown {
   return page && typeof page === 'object' && 'items' in page ? page.items : value;
 }
 
-/** Through the wire and back, so a `Date` and its ISO string are not read as a divergence. */
 const wire = (value: unknown): unknown => JSON.parse(JSON.stringify(value ?? null));
 
-/** What is the SAME row seen twice, and what is merely a second row. */
 function written(value: unknown, sent: Record<string, unknown>): unknown {
   const row = value as Record<string, unknown> | null;
   if (!row || typeof row !== 'object') return wire(row);
@@ -107,14 +104,11 @@ export function checkDoors(app: App, entity: SchemaView, options: DoorOptions = 
         (['local', 'rpc', 'rest', 'graphql'] as const).map((facade, index) => facades[facade]('delete', { id: rows[index].id })),
       );
 
-      // REST answers a deletion with no content at all, which is the protocol saying yes.
       const onTheWire = answers.map((answer) => (answer === undefined || answer === null ? true : wire(answer)));
       expect(new Set(onTheWire).size, `the facades disagree: ${JSON.stringify(onTheWire)}`).toBe(1);
     });
 
     it('on a refusal', async () => {
-      // A refusal is where the facades diverge most, and where each is most tempted to
-      // answer in its own words. What must match is that it WAS refused.
       const bad = { ...inputOf(), __unknown__: 'x' };
       const refusals = await Promise.all(
         (['local', 'rpc', 'rest', 'graphql'] as const).map((facade) => refused(() => facades[facade]('create', { input: bad }))),
@@ -157,7 +151,6 @@ async function refused(call: () => Promise<unknown>): Promise<boolean> {
   try { await call(); return false; } catch { return true; }
 }
 
-/** The four facades, each reduced to `(op, input) => answer` so the tests above read alike. */
 function facadesOf(app: App, entity: SchemaView, name: string, surface?: string): Facades {
   const run = createLocalRunner(app, surface);
   const state: Record<string, unknown> = {};
@@ -181,8 +174,6 @@ function facadesOf(app: App, entity: SchemaView, name: string, surface?: string)
     },
 
     rest: async (op, call) => {
-      // The route the REST facade itself would match, read from its own table — rebuilding
-      // the path here would be a second opinion on where an address lives.
       const row = tableOf(app).find((one) => one.route.address === name && one.route.operationName === op);
       if (!row) throw new Error(`[checkDoors] REST serves no ${name}.${op}`);
       const path = row.segments.map((segment) => (segment.startsWith(':') ? call?.id ?? '' : segment)).join('/');

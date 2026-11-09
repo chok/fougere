@@ -7,13 +7,7 @@ import { ROOT_KEY, packed } from './grant-material.js';
 
 type Ui = ReturnType<typeof createUi>;
 
-/**
- * Vouch for one frond: bind its name to a fresh key, signed by the root.
- *
- * The key is printed and never stored — it belongs to the deployment, not to the
- * repository. Re-running issues a NEW key rather than showing the old one, which is
- * what rotation is: run it again, redeploy that frond, and nobody else's config moves.
- */
+/** Binds one frond's name to a fresh key signed by the root; the key is printed, never stored. */
 export default class GrantCommand {
   constructor(private app: App, private ui: Ui) {}
 

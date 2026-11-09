@@ -9,7 +9,6 @@ type Clack = typeof import('@clack/prompts');
 const load = createRequire(import.meta.url);
 let loaded: Clack | undefined;
 
-/** Loaded at the first prompt or line it draws — `fougere --help` draws none. */
 const clack = (): Clack => (loaded ??= load('@clack/prompts') as Clack);
 
 export interface UiTheme {
@@ -20,7 +19,6 @@ export function ui(options?: UiTheme) {
   const c = { ...defaultTheme, ...options?.colors };
 
   return {
-    // ── Lifecycle ─────────────────────────────────
 
     /** Start a new CLI session with a branded header. */
     intro(title = 'Fougere') {
@@ -38,7 +36,6 @@ export function ui(options?: UiTheme) {
       process.exit(0);
     },
 
-    // ── Prompts ───────────────────────────────────
 
     /** Text input. */
     async text(opts: { message: string; placeholder?: string; defaultValue?: string; validate?: (value: string) => string | undefined }) {
@@ -96,7 +93,6 @@ export function ui(options?: UiTheme) {
       return result as string[];
     },
 
-    // ── Spinner ───────────────────────────────────
 
     /** Start a spinner. Returns stop/update functions. */
     spinner(message?: string) {
@@ -109,7 +105,6 @@ export function ui(options?: UiTheme) {
       };
     },
 
-    // ── Output ────────────────────────────────────
 
     /** Informational message. */
     info(message: string) {
@@ -141,7 +136,6 @@ export function ui(options?: UiTheme) {
       clack().note(message, title);
     },
 
-    // ── Raw colors ────────────────────────────────
 
     colors: c,
     pc,

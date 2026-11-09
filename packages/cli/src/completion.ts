@@ -6,7 +6,6 @@ function toKebab(name: string): string {
   return name.replace(/[A-Z]/g, (c) => '-' + c.toLowerCase()).replace(/^-/, '');
 }
 
-/** What a positional names, said by the field's own name — no table to keep in step. */
 const NAMES: Record<string, 'operations' | 'fronds' | undefined> = {
   operation: 'operations',
   frond: 'fronds',
@@ -32,8 +31,6 @@ function extractCommandMeta(app: App): CommandMeta[] {
       try { facade = app.resolve(handler.name); } catch { continue; }
       if (typeof facade.execute !== 'function') continue;
 
-      // The same function the runner builds citty's args from, so the positional and the
-      // flags are the ones the command actually has.
       const args = Object.entries(entityToArgs(entity.entityClass.getFields())) as
         [string, { type?: string }][];
       const positional = args.find(([, def]) => def.type === 'positional')?.[0];

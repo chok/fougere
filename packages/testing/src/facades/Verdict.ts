@@ -76,8 +76,6 @@ export function checkOutput(app: App, entity: SchemaView, options: CheckOptions 
         { ...Invocation.empty, input: sampleInput(entity, options.given ?? {}, options) },
       ) as Record<string, unknown>;
 
-      // A computed field from a presenter is declared by the presenter, not the entity,
-      // so this reads the entity's own names as a floor rather than a ceiling.
       expect(Object.keys(row).every((field) => field in entity.getFields())).toBe(true);
     });
   });

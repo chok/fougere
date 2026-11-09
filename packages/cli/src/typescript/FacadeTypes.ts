@@ -10,7 +10,6 @@ export interface FacadeTypesOptions {
   rows?: Record<string, string>;
 }
 
-/** So a consumer sees the cardinality in the type, not in a doc line. */
 function returnTypeOf(op: OpDescriptor, rowType: string): string {
   switch (op.cardinality) {
     case 'many': return `${rowType}[]`;

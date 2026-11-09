@@ -6,8 +6,7 @@ import ProjectScan from '../services/ProjectScan.js';
 import { remotesOf } from '@fougere/core/node';
 
 export interface GraphResult {
-  /** How many fronds the scan found — the descriptors themselves hold classes, which no
-   * operation answers: a reader outside this process would receive the husk JSON makes of them. */
+  /** How many fronds the scan found. */
   totalFronds: number;
   /** Where the fronds run and which reaches which — the same picture, one altitude up. */
   declared: DeclaredTopology;

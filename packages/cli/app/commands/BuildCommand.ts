@@ -7,13 +7,7 @@ import { machineWanted, printMachine } from '../../src/machine.js';
 
 type Ui = ReturnType<typeof createUi>;
 
-/**
- * `fougere build` — the scan, written down.
- *
- * It reports what the module HOLDS rather than that it was written: a build that found
- * one frond where the project has three has succeeded at the wrong thing, and the path
- * alone does not say so.
- */
+/** `fougere build`, reporting what the module holds. */
 export default class BuildCommand {
   constructor(private app: App, private ui: Ui) {}
 
@@ -35,7 +29,6 @@ export default class BuildCommand {
     this.ui.step(built.fronds.map((name) => pc.bold(name)).join(', '));
     this.ui.step(`${built.built}/ — ${built.files} file(s) of JavaScript, what \`fougere serve\` starts`);
 
-    // Said here, where someone can still fix the source: the statement states fronds, not findings.
     for (const diagnostic of built.diagnostics) this.ui.warn(diagnostic);
 
     this.ui.step(pc.dim('hand its fronds and its vocabulary to createApp — nothing reads a disk after this'));

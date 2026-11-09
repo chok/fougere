@@ -5,10 +5,7 @@ export type Kind = 'fronds' | 'apps';
 
 export interface Piece { template: string; name: string }
 
-/**
- * What `fougere new` writes, whoever composed it: the flags state it, the composer builds it,
- * and one writer carries it out once nothing is left to ask.
- */
+/** What `fougere new` writes, whether the flags stated it or the composer built it. */
 export interface Plan { name: string; fronds: Piece[]; apps: Piece[] }
 
 export interface Catalog { fronds: string[]; apps: string[] }

@@ -11,14 +11,6 @@ import { applyScaffold, settle, type Scaffold } from '../../../src/scaffold/Scaf
 import Shell from './Shell.js';
 import { version } from '../../../src/version.js';
 
-/**
- * The monorepo's `packages/`, found by its workspace marker rather than counted
- * in `..` from this file. Counting encoded how deep the CLI itself sat, so the
- * day `cli/` moved into a family, `--local` linked four packages instead of
- * twenty-one — silently, because the scan below simply found less.
- *
- * Returns undefined outside the monorepo, which is every installed copy.
- */
 function monorepoPackages(): string | undefined {
   let d = fileURLToPath(new URL('.', import.meta.url));
   while (d !== dirname(d)) {
@@ -29,7 +21,6 @@ function monorepoPackages(): string | undefined {
   return undefined;
 }
 
-/** This package's directory — found by walking up, since the source and its compiled copy sit at different depths. */
 function packageRoot(): string {
   let d = fileURLToPath(new URL('.', import.meta.url));
   while (!existsSync(join(d, 'package.json'))) d = dirname(d);
@@ -37,20 +28,8 @@ function packageRoot(): string {
   return d;
 }
 
-/**
- * Scaffolds from real template files (create-vite pattern: stdlib copy, no
- * token engine). The workspace model composes at every scale:
- *  - a workspace shell (`workspace/`),
- *  - fronds added from `fronds/<template>`  (business hexagons),
- *  - apps added from `apps/<template>`      (consumers: nuxt, cli).
- * The only per-piece edits are the package names.
- */
 const TEMPLATES = join(packageRoot(), 'templates');
 
-/**
- * Not `cpSync`, which runs in Node's native code: yarn 4 leaves a package inside its zip and answers for
- * it through the `fs` functions alone, so `cpSync` read `ENOENT` on every template.
- */
 function copyTree(from: string, to: string, keep: (source: string) => boolean = () => true): void {
   mkdirSync(to, { recursive: true });
   for (const entry of readdirSync(from, { withFileTypes: true })) {
@@ -61,28 +40,10 @@ function copyTree(from: string, to: string, keep: (source: string) => boolean = 
   }
 }
 
-/**
- * Where a HOST keeps its starter, or nothing when it ships none.
- *
- * The package that owns the wiring owns the files: `@fougere/nuxt` knows what a
- * `nuxt.config.ts` must say, and a copy of it here would be that knowledge written twice —
- * which is how `templates/apps/` came to hold one host while six were published.
- *
- * Two ways to reach them, and the first is the monorepo's: a host is on disk there, and in
- * every process that installed one for its own reasons.
- */
 function starterOf(pkg: string): string | undefined {
   return carried(pkg) ?? fetched(pkg);
 }
 
-/**
- * Resolved from the main entry and walked up to the manifest, because a host does not export
- * its own `package.json` and has no reason to.
- *
- * `import.meta.resolve` and not `createRequire().resolve`: a host's `exports` states only the
- * `import` condition, so the CJS resolver answers `ERR_PACKAGE_PATH_NOT_EXPORTED` for every
- * one of them.
- */
 function carried(pkg: string): string | undefined {
   let dir: string;
   try {
@@ -95,18 +56,6 @@ function carried(pkg: string): string | undefined {
   return existsSync(template) ? template : undefined;
 }
 
-/**
- * The starter of a host this process does not carry, read out of its published tarball.
- *
- * A host is no longer a `dependencies` entry: what is wanted of it is a directory of files, and
- * npm answers a dependency by installing the whole tree behind it — `next` brought 300 MB and
- * `nuxt` its own, so that 28 files weighing 112 KB could be copied. A tarball is 27 to 388 KB,
- * and the peers it names are the scaffolded app's to install, never this CLI's.
- *
- * Pinned to `scaffoldVersion()` for the reason `pinVersions` states, and extracted under that
- * version, so a second call reuses what the first unpacked and a released CLI never reads the
- * starter of another one.
- */
 function fetched(pkg: string): string | undefined {
   const dir = join(tmpdir(), 'fougere-starter', `${pkg.replace('/', '-')}@${scaffoldVersion()}`);
   const template = join(dir, 'package', 'template');
@@ -122,17 +71,6 @@ function fetched(pkg: string): string | undefined {
   return existsSync(template) ? template : undefined;
 }
 
-/**
- * The hosts this CLI can scaffold: the `@fougere/*` packages it is developed against.
- *
- * The dependency list IS the registry — nothing to declare, and a host added to the family
- * appears here the day the CLI names it. It names them under `devDependencies`, because what
- * it wants of a host is a directory of files rather than a module to load, and `dependencies`
- * is what had `npm create fougere` install Next.js and Nuxt to copy 28 files.
- *
- * The NAMES are read here and the FILES only where an app is written, so offering the list
- * costs nothing: resolving all six would fetch six tarballs to print six words.
- */
 function hosts(): string[] {
   const manifest = JSON.parse(readFileSync(join(packageRoot(), 'package.json'), 'utf8')) as
     { devDependencies?: Record<string, string> };
@@ -142,11 +80,8 @@ function hosts(): string[] {
     .map((pkg) => pkg.slice('@fougere/'.length));
 }
 
-/** The version that scaffolds is the version the templates were written for. */
 const scaffoldVersion = version;
 
-// npm strips a literal .gitignore from published packages — it ships as
-// _gitignore and the name is restored on copy.
 function restoreGitignore(dir: string): void {
   const gi = join(dir, '_gitignore');
   if (existsSync(gi)) renameSync(gi, join(dir, '.gitignore'));
@@ -162,13 +97,11 @@ function setPackageName(dir: string, name: string): void {
 
 interface Manifest { dependencies?: Record<string, string>; devDependencies?: Record<string, string> }
 
-/** Every file under `dir`, relative to it. */
 function filesUnder(dir: string, prefix = ''): string[] {
   return readdirSync(join(dir, prefix), { withFileTypes: true }).flatMap((entry) =>
     entry.isDirectory() ? filesUnder(dir, join(prefix, entry.name)) : [join(prefix, entry.name)]);
 }
 
-/** Both lists a starter names a package in — `@fougere/vite` is a build tool, so it sits in the second. */
 function rangesOf(pkg: Manifest): Record<string, string>[] {
   return [pkg.dependencies, pkg.devDependencies].filter((ranges) => ranges !== undefined);
 }
@@ -176,14 +109,9 @@ function rangesOf(pkg: Manifest): Record<string, string>[] {
 export default class ProjectWriter {
   constructor(private shell: Shell = new Shell()) {}
 
-  /**
-   * The whole plan, or nothing: it is written beside its destination and moved there once every
-   * piece landed, since fetching a host's starter can fail halfway. `replace` removes what the
-   * destination held, and only then — a failed write leaves the old project as it was.
-   */
+  /** Writes the whole plan or nothing; `replace` removes what the destination held only once every piece landed. */
   async write(plan: Plan, dir: string, options: { local?: boolean; replace?: boolean; manager?: PackageManager; progress?: (step: string) => void } = {}): Promise<void> {
     if (existsSync(dir) && !options.replace) throw new Error(`${basename(dir)}/ already exists.`);
-    // `--local` links into this monorepo, which only pnpm's `link:` and overrides express.
     const manager = options.local ? new PackageManager('pnpm') : options.manager ?? PackageManager.of();
 
     const staged = mkdtempSync(join(dirname(dir), `.${basename(dir)}-`));
@@ -254,11 +182,8 @@ export default class ProjectWriter {
   }
 
   /**
-   * A page that uses a frond, in each app whose host has one for it — `templates/examples/<frond>/<host>/`.
-   *
-   * It lives in the CLI and never in the frond: a frond names no host, and a page is host code.
-   * Written once into the app, it is the user's to change; the frond's name is the one thing it
-   * learns from the plan, since `blog:news` imports `@fronds/news`.
+   * A page using a frond, in each app whose host has one for it.
+   * Ex: `templates/examples/blog/nuxt/`.
    */
   addExamples(wsDir: string, plan: Plan): void {
     for (const frond of plan.fronds) {
@@ -275,13 +200,7 @@ export default class ProjectWriter {
     }
   }
 
-  /**
-   * What can be scaffolded, of a kind.
-   *
-   * A FROND comes from this package: it is Fougere's own vocabulary, entities and handlers,
-   * and no other package owns it. An APP comes from its HOST — the registry is the hosts this
-   * CLI depends on, so `fougere new` offers what is published rather than what was copied here.
-   */
+  /** What can be scaffolded: a frond from this package, an app from its host. */
   listTemplates(kind: 'fronds' | 'apps'): string[] {
     if (kind === 'apps') return hosts().sort();
 
@@ -291,10 +210,7 @@ export default class ProjectWriter {
     return readdirSync(dir, { withFileTypes: true }).filter((e) => e.isDirectory()).map((e) => e.name);
   }
 
-  /**
-   * One script per app, and `dev` for the first: two apps started together fight over a port and
-   * interleave their output, and a terminal app is not a server at all. `build` builds every app.
-   */
+  /** One script per app, and `dev` for the first. */
   runApps(wsDir: string, apps: string[], manager: PackageManager = PackageManager.of()): void {
     const path = join(wsDir, 'package.json');
     const pkg = JSON.parse(readFileSync(path, 'utf8')) as { scripts?: Record<string, string> };
@@ -307,17 +223,7 @@ export default class ProjectWriter {
     writeFileSync(path, JSON.stringify(pkg, null, 2) + '\n');
   }
 
-  /**
-   * Every `@fougere/*` dependency, pinned to the version that scaffolded it.
-   *
-   * The templates say `latest`, which reads as "whatever is current" and is not: pnpm
-   * answers from a metadata cache, and a fresh project installed 0.6 while the registry
-   * said 0.7 — measured. A version is also what makes an install reproducible, which
-   * `latest` never was.
-   *
-   * Read off this CLI's own package, because the scaffold and the packages it names ship
-   * together: the version that wrote the file is the one it was written for.
-   */
+  /** Pins every `@fougere/*` dependency to the version that scaffolded it. */
   pinVersions(wsDir: string, conventions: Conventions = DEFAULT_CONVENTIONS): void {
     const version = scaffoldVersion();
     const manifests = [
@@ -347,20 +253,10 @@ export default class ProjectWriter {
     }
   }
 
-  /**
-   * Dev mode: rewrite every `@fougere/*` dependency in the workspace to a
-   * `link:` into this monorepo, so `pnpm install` resolves offline (the
-   * packages aren't on npm yet). No-op once the packages are published.
-   */
+  /** Points every `@fougere/*` dependency at this monorepo with `link:`. */
   linkLocal(wsDir: string): void {
     const packages = monorepoPackages();
     if (!packages) return;
-    // Read off the monorepo rather than listed here: a hand-kept map knew the seven
-    // packages the default templates use, so the first step beyond the default — a
-    // GraphQL surface, auth — added a dependency it had never heard of, which stayed
-    // on `latest` and broke the install. `@fougere/nuxt` lives in `app/nuxt/` and
-    // `@fougere/transport-http` in `transport/http/`, which is exactly why the name is
-    // read from each package.json instead of guessed from its directory.
     const dirOf = new Map<string, string>();
     const scan = (dir: string, depth = 0): void => {
       for (const e of readdirSync(dir, { withFileTypes: true })) {
@@ -412,8 +308,6 @@ export default class ProjectWriter {
     }
     if (overrides.size === 0) return;
 
-    // A package the app names whose OWN peer was just redirected comes from the same place:
-    // `react-dom` refuses a `react` of another version, so taking one without the other ran none.
     for (const dependency of this.appDependencies(wsDir)) {
       if (dependency.startsWith('@fougere/') || overrides.has(dependency)) continue;
       for (const dir of beside) {
@@ -432,7 +326,6 @@ export default class ProjectWriter {
     writeFileSync(workspace, `${readFileSync(workspace, 'utf8').trimEnd()}\n\noverrides:\n${lines.join('\n')}\n`);
   }
 
-  /** Every package an app of the workspace names, in either list. */
   private appDependencies(wsDir: string): Set<string> {
     const apps = join(wsDir, 'apps');
     if (!existsSync(apps)) return new Set();
@@ -444,11 +337,6 @@ export default class ProjectWriter {
   }
 }
 
-/**
- * A project gains its workspace with its first app: the root and every app then install ONE copy of
- * `@fougere/core`, whose registries each package writes to. Two copies is `adapter-sql` registering
- * `sqlite` in one while the app reads the other.
- */
 function becomeWorkspace(root: string): void {
   const path = join(root, 'package.json');
   const pkg = JSON.parse(readFileSync(path, 'utf8')) as { workspaces?: string[] };

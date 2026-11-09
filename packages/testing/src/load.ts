@@ -2,13 +2,6 @@ import { frameCall } from '@fougere/transport-http';
 import { resolveEffectiveOperations } from '@fougere/core';
 import type { FrondDescriptor } from '@fougere/core/descriptor';
 
-/**
- * What a load script is read from: the fronds, and nothing else.
- *
- * An `App` satisfies it, and so does a scan — which is what lets `fougere load` answer without
- * booting the project it describes. A boot runs migrations and seeds, so a command that wrote a
- * scenario would also write to the target's database.
- */
 interface Serving {
   fronds: readonly FrondDescriptor[];
 }
@@ -42,8 +35,6 @@ export function reachableOps(
   const found: Reachable[] = [];
   for (const frond of app.fronds) {
     for (const handler of frond.handlers) {
-      // A named surface is a restricted facade; the load of an app is what its default
-      // facade answers, so a surface would count the same operation twice.
       if (handler.surface) continue;
       for (const [op, contract] of handler.operations ?? []) {
         const schema = contract.input as SchemaView | undefined;
@@ -64,10 +55,7 @@ export function reachableOps(
 export function loadScript(app: Serving, options: LoadOptions = {}): string {
   const facade = options.facade ?? 'http://127.0.0.1:3000/_fougere/call';
   const ops = reachableOps(app, options.given, options.remotes ?? {});
-  // The shape, from the one function that states it. `body` is replaced per iteration.
   const envelope = frameCall({ address: 'ENTITY', op: 'OP' }, { params: {}, query: {}, input: undefined, state: {} } as never, 0);
-  // What the envelope carries that an iteration does not fill in itself. Keeping
-  // `params` here too put it in the object AND in the spread that overwrites it.
   const perCall = new Set(['method', 'id', 'params']);
   const keys = Object.keys(envelope).filter((key) => !perCall.has(key));
 

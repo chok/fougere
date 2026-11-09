@@ -1,7 +1,4 @@
-/**
- * The guided flow lives in app/commands/NewCommand (it prompts and composes).
- * This handler exists only so the runner registers the `new` subcommand.
- */
+/** Registers the `new` subcommand; `app/commands/NewCommand` does the work. */
 export default class NewHandler {
   /** Create a Fougere workspace. */
   async execute(): Promise<void> {}

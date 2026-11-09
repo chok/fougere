@@ -1,10 +1,7 @@
 import { entity, text, bool, oneOf, optional } from "@fougere/schema";
 import { PackageManager } from "../../../src/scaffold/PackageManager.js";
 
-/**
- * `fougere new [name]` — a project, composed on one screen when the flags state nothing, and
- * written from the flags when `--frond`, `--app` or `--bare` say it all.
- */
+/** `fougere new [name]` — a project, composed on one screen when the flags state nothing, and written from the flags when `--frond`, `--app` or `--bare` say it all. */
 export default class New extends entity({
   name: text({ description: "Project name — its directory and its package" }),
   force: bool({ description: "Replace an existing directory, without asking", default: false }),

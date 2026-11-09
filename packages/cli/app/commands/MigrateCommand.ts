@@ -7,12 +7,7 @@ import { machineWanted, printMachine } from '../../src/machine.js';
 
 type Ui = ReturnType<typeof createUi>;
 
-/**
- * Bringing a database up to what `fougere freeze` recorded — or, with `--latest`, to the entities.
- *
- * Prints by default and moves nothing: what this runs renames and drops columns, so the
- * plan is read before it is agreed to. `--apply` is that agreement.
- */
+/** Prints the migration, and runs it with `--apply`. */
 export default class MigrateCommand {
   constructor(private app: App, private ui: Ui) {}
 

@@ -7,17 +7,7 @@ import { ROOT_KEY, packed } from './grant-material.js';
 
 type Ui = ReturnType<typeof createUi>;
 
-/**
- * Create the authority — a command, not a service.
- *
- * This is the whole of it: it runs at deployment time and exits. Nothing stays alive,
- * nothing is joined at boot, and no frond reaches anything to prove who it is. What a
- * receiver ends up holding is ONE public key, so a frond granted tomorrow is admitted
- * by a receiver deployed today without its config being touched.
- *
- * The private key is written and never printed: it signs grants, and a grant is the
- * only thing that has to travel.
- */
+/** Creates the root key; it is written, never printed. */
 export default class KeysCommand {
   constructor(private app: App, private ui: Ui) {}
 
@@ -47,7 +37,6 @@ async function exists(path: string): Promise<boolean> {
   return access(path).then(() => true, () => false);
 }
 
-/** Keep the root out of a commit — the one mistake that cannot be walked back. */
 async function ignore(entry: string): Promise<void> {
   const path = join(process.cwd(), '.gitignore');
   const current = await readFile(path, 'utf8').catch(() => '');

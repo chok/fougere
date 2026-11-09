@@ -1,9 +1,7 @@
 export type Name = (typeof PackageManager.names)[number];
 
 /**
- * The tool that installs a project and runs its scripts, and what it says for each gesture — the same
- * words in the project `fougere new` writes and in the docs a reader copies from. It reads no disk, so
- * a page in a browser says them too; which one a project is written for is `writtenFor`'s.
+ * What a package manager says for each gesture, in the project and in the docs alike.
  *
  * Documented: [getting started](https://fougere.dev/tutorial/1-crud).
  */

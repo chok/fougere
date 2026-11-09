@@ -1,7 +1,3 @@
-/**
- * CLI runner — scans frond entities for flags, looks for app commands for presentation, dispatches
- * via citty.
- */
 import type { App } from '@fougere/core';
 import { createAppRunner } from '@fougere/core';
 import { lowerFirst } from '@fougere/core/contract';
@@ -23,7 +19,6 @@ function toCamel(kebab: string): string {
   return kebab.replace(/-([a-z])/g, (_, c) => c.toUpperCase());
 }
 
-/** The presentation classes under app/commands/, by command name — found, not imported: a command imports its own when it runs. */
 async function appCommandFiles(root: string): Promise<Map<string, string>> {
   const dir = join(root, 'app', 'commands');
   const files = await readdir(dir, { withFileTypes: true }).catch(() => []);
@@ -33,14 +28,7 @@ async function appCommandFiles(root: string): Promise<Map<string, string>> {
     .map((f) => [toKebab(f.name.replace(/Command\.(ts|js)$/, '').replace(/\.(ts|js)$/, '')), join(dir, f.name)] as const));
 }
 
-/**
- * Every operation of an app, as a terminal command.
- *
- * `root` is where the PRESENTATION classes are looked for — `app/commands/`, one per command
- * that wants to print something of its own. It defaults to this package, which is how
- * `npx fougere` finds its fifteen; a project passes its own and gets the same treatment for
- * the operations it declares, with no class at all where a default rendering will do.
- */
+/** Every operation of an app, as a terminal command; `root` is where the presentation classes are looked for. */
 export async function run(app: App, root = new URL('..', import.meta.url).pathname): Promise<void> {
   const terminal = ui();
 
@@ -68,10 +56,8 @@ export async function run(app: App, root = new URL('..', import.meta.url).pathna
       const fields = entity.entityClass.getFields();
       const args = entityToArgs(fields);
 
-      // Check for an app command (presentation layer)
       const appCommand = appCommands.get(cmdName);
 
-      // App commands handle their own prompting — don't let citty reject missing args
       if (appCommand) {
         for (const def of Object.values(args)) {
           if (typeof def === 'object' && def) def.required = false;
@@ -81,26 +67,14 @@ export async function run(app: App, root = new URL('..', import.meta.url).pathna
       subCommands[cmdName] = defineCommand({
         meta: {
           name: cmdName,
-          // `--help` reads the operation's own doc sentence, which the scan already
-          // carries for every facade (`OperationContract.description`). A table here
-          // would be the same fact written twice, and it drifted: it described `add`
-          // and `doctor`, which do not exist, and had nothing for `call` or `serve`.
           description: handlerEntry.operations.get('execute')?.description,
         },
         args,
         run: async ({ args: parsed }) => {
-          // JSON is a protocol: a branded intro before `{` makes it unparsable. Read from
-          // the invocation's own args, so any command declaring `json` gets a clean stdout
-          // — naming `explain` here is what let `graph --json` print its decorated box.
           const machineOutput = machineWanted(parsed as Record<string, unknown>);
 
-          // `completion` is exempt by nature, not by flag: its output IS a shell script,
-          // there is no invocation of it that wants decoration.
           if (cmdName !== 'completion' && !machineOutput) terminal.intro();
 
-          // citty adds `_` (raw positionals) and `--` (passthrough); strip them
-          // so only the entity's own fields reach the handler — read as their shape says,
-          // since a flag is text.
           const input = Object.fromEntries(
             Object.entries(parsed as Record<string, unknown>)
               .filter(([key]) => key !== '_' && key !== '--')
@@ -114,7 +88,6 @@ export async function run(app: App, root = new URL('..', import.meta.url).pathna
               const cmd = new (AppCommand as new (...a: unknown[]) => { run: (raw: Record<string, unknown>) => Promise<void> })(app, terminal);
               await cmd.run(input);
             } else {
-              // Ride the call contract — the same envelope every consumer uses.
               await createAppRunner(app)(
                 { address: lowerFirst(entity.name), op: 'execute' },
                 { params: {}, query: {}, input: input, state: {} },
@@ -122,8 +95,6 @@ export async function run(app: App, root = new URL('..', import.meta.url).pathna
             }
           } catch (err) {
             const message = err instanceof Error ? err.message : String(err);
-            // A machine reader parses stdout: a refusal printed there is a refusal that
-            // breaks the parse instead of being read. stderr is where it belongs.
             if (machineOutput) process.stderr.write(message + '\n');
             else terminal.error(message);
             process.exit(1);

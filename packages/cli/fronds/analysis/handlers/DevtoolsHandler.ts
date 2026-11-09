@@ -3,12 +3,6 @@ import type { CallPage, CallRecord } from '@fougere/core';
 import ProjectScan from '../services/ProjectScan.js';
 import { remotesOf } from '@fougere/core/node';
 
-/**
- * Where an app answers in development — Nuxt, Next and the site all sit there, so it is a
- * convention and not a setting. A port belongs to the HOST, though, and this project states
- * none: an app served anywhere else is named the way `FOUGERE_LOG_LEVEL` names a level the
- * file did not, and `--url` still wins over both.
- */
 const LOCAL = 'http://127.0.0.1:3000';
 
 function local(): string {
@@ -27,13 +21,7 @@ export interface CallSource {
   refusal?: string;
 }
 
-/**
- * Every app of this project, read at once.
- *
- * A reader pulls: no app registers anywhere, and an app started alone depends on nothing.
- * The price is knowing the addresses, which the project already states — `remotes:` says
- * where a call goes, so it also says where the other half of a call can be watched.
- */
+/** Every app of this project, read at once. */
 export interface CallsView {
   sources: CallSource[];
   /** Every call, oldest first, each carrying the address it was read from. */
@@ -57,9 +45,6 @@ export default class DevtoolsHandler {
 
         return { ...one, cursor: page.cursor, inFlight: page.inFlight, dropped: page.dropped, calls: page.calls };
       } catch (err) {
-        // An address that does not answer is a source with a reason, not a missing source:
-        // an app not started and an app without the package are different facts, and both
-        // are worth seeing beside the ones that answered.
         return { ...one, cursor: since[one.url] ?? 0, inFlight: 0, dropped: 0, calls: [], refusal: said(err) };
       }
     }));
@@ -72,12 +57,6 @@ export default class DevtoolsHandler {
     };
   }
 
-  /**
-   * The addresses this project declares, plus the local one.
-   *
-   * `remotes:` is the operator's statement of where a call goes; reading it here is not a
-   * second source of truth, it is the same one read for the other direction.
-   */
   private async addresses(root?: string): Promise<{ url: string; frond?: string }[]> {
     const { config } = await this.projectScan.at(root);
     const here = local();

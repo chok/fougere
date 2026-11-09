@@ -8,10 +8,6 @@ type Ui = ReturnType<typeof createUi>;
 
 const SHOWN = 8;
 
-/**
- * Who answers, in the form the point gives them: a registry's names have no order, so they are a list;
- * a port's links have one, outside in, and the realization they reach comes last.
- */
 function answered(one: Plugged): string {
   if (one.answers.length === 0) return pc.dim('nothing');
   const ordered = one.by === 'type' || one.point === 'extension';
@@ -20,7 +16,6 @@ function answered(one: Plugged): string {
   return one.answers.length > SHOWN ? `${shown} ${pc.dim(`… ${one.answers.length} in all`)}` : shown;
 }
 
-/** A frond's ports first, then those with a subject — `Repository<Post>`, `Rest<PostHandler>` — and where it is served before both. */
 const rankOf = (one: Plugged): number => (one.point === 'served at' ? 0 : one.point.includes('<') ? 2 : 1);
 
 /** What answers each port, frond by frond, and each registry by name. */

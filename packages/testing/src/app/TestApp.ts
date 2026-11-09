@@ -18,16 +18,10 @@ export interface TestApp extends App {
 
 /** An app to ask questions of, wired the conventional way. */
 export async function testApp(options: TestAppOptions = {}): Promise<TestApp> {
-  // The position is consulted only for what the caller did not state: an explicit `root`
-  // or `fronds` wins, the way a config key wins over a convention everywhere else.
   const scope = (options.root && options.fronds) ? undefined
     : await scopeOfRun(options.testPath ?? currentTestPath());
 
-  // One entry per announcement, in order. `Emissions.announce` calls the carrier for
-  // every fact, so this sees them all — including those nobody in this process listens to.
   const heard: { fact: string; payload: unknown }[] = [];
-  // The project's kind of storage, held in memory: a project naming no source keeps its rows in a Map,
-  // the way it boots, and needs no SQLite driver to be tested.
   const root = options.root ?? scope?.root ?? projectRootOf(process.cwd());
   const named = options.db !== undefined || Object.keys((await loadConfig(root)).sources ?? {}).length > 0;
   const storage = resolveStorage({ main: named ? { type: 'sqlite', path: options.db ?? ':memory:' } : { type: 'memory' } });
@@ -36,10 +30,6 @@ export async function testApp(options: TestAppOptions = {}): Promise<TestApp> {
     onEmit: (fact, payload) => { heard.push({ fact, payload }); },
     root: options.root ?? scope?.root,
     fronds: options.fronds ?? (scope?.frond ? [scope.frond] : undefined),
-    // `boot` merges this over the file, so a project declaring a real database still
-    // gets the in-memory one here.
-    // `boot` merges this over the file: an empty tree states no address, so nothing is
-    // placed elsewhere and a test runs what it declares.
     config: options.topology ? undefined : { fronds: {} },
     ...(options.topology ? {} : { remotes: {} }),
     storage: () => storage,
@@ -50,9 +40,6 @@ export async function testApp(options: TestAppOptions = {}): Promise<TestApp> {
 
   return Object.assign(app, {
     announced(fact: { name: string } | string): unknown[] {
-      // A fact travels under its REGISTRATION key — `postPublished`, not `PostPublished`
-      // — the same lowering every entity gets. Both spellings are accepted here and
-      // lowered before comparing, so a caller may hand in the class or the name.
       const wanted = lowerFirst(typeof fact === 'string' ? fact : fact.name);
 
       return heard.filter((one) => lowerFirst(one.fact) === wanted).map((one) => one.payload);
@@ -70,7 +57,6 @@ export async function testApp(options: TestAppOptions = {}): Promise<TestApp> {
   });
 }
 
-/** Vitest's own answer to "which file is running", or nothing. */
 function currentTestPath(): string | undefined {
   const globals = globalThis as { __vitest_worker__?: { filepath?: string } };
 

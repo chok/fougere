@@ -28,7 +28,6 @@ export async function heldShapes(remote: SyncedRemote): Promise<Map<string, Sche
   return cards;
 }
 
-/** The shapes a card says its frond stores, by entity name. */
 function servedShapes(card: IdentityCard, frond: string): Map<string, unknown> {
   const served = new Map<string, unknown>();
   for (const one of card.fronds) {

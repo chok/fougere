@@ -5,13 +5,7 @@ import { BUILD_DIRECTORY, emitFacade, emitNames } from '@fougere/core/node';
 import ProjectScan from '../services/ProjectScan.js';
 import type Build from '../entities/Build.js';
 
-/**
- * Where the module lands when nobody says otherwise.
- *
- * `.fougere/` because the artefact is REGENERABLE — which is exactly the test `freeze`
- * failed: a recorded version is a past nobody can recompute, so it lives in the tree.
- * This is the same scan the next build performs again, so it is gitignored.
- */
+/** Where the module lands when nobody says otherwise. */
 export const DEFAULT_OUT = '.fougere/fronds.generated.ts';
 /** Types only, beside the module — what lets a client narrow a refusal it might meet. */
 export const FACADE_OUT = 'facade.generated.ts';
@@ -37,41 +31,24 @@ export interface BuildReport {
   diagnostics: string[];
 }
 
-/**
- * Writing the scan down as the statement an author would write — what a runtime without a disk boots.
- *
- * Producing it reads the project; consuming it does not. `createApp` takes `fronds:` and never looks
- * for a filesystem, so this command is what stands between a project and a Worker: it runs where
- * `node:fs` exists, once, at build time.
- */
+/** Writing the scan down as the statement an author would write — what a runtime without a disk boots. */
 export default class BuildHandler {
   constructor(private projectScan: ProjectScan) {}
 
-  /**
-   * Write down what a scan found, so a deployment reads no disk.
-   *
-   * `json` is the presentation's, so it is not part of what this operation receives.
-   */
+  /** Write down what a scan found, so a deployment reads no disk. */
   async execute(input: Omit<Build, 'json'>): Promise<BuildReport> {
     const scan = await this.projectScan.at(input.root ?? undefined);
     const out = resolve(scan.root, input.out || DEFAULT_OUT);
 
-    // The emitter writes every import relative to where the module will SIT, so the
-    // directory has to be settled before the source is produced, not after.
     await mkdir(dirname(out), { recursive: true });
     await writeFile(out, emitStatement(scan, { outFile: out }));
 
-    // The same scan, projected a third way. It holds no value and reaches no bundle: what a
-    // client cannot otherwise know is which refusals one facade can answer, because TypeScript
-    // records nothing about what a function throws.
     const facade = join(dirname(out), FACADE_OUT);
     await writeFile(facade, emitFacade(scan, { outFile: facade }));
 
-    // And a fourth, for the only place a name is still written as a string: a config file.
     const names = join(dirname(out), NAMES_OUT);
     await writeFile(names, emitNames(scan));
 
-    // And the project itself, transpiled, so a server starts it with Node and nothing else.
     const built = await compileProject(scan.root, scan, resolve(scan.root, BUILD_DIRECTORY));
 
     return {
