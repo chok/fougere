@@ -1,7 +1,8 @@
 import SchemaBuilder from '@pothos/core';
 import { describe, expect, it } from 'vitest';
 import { entity, primary, text } from '@fougere/schema';
-import { registerOperations, registerType } from '../src/OperationsConfig.js';
+import { registerOperations } from '../src/OperationsConfig.js';
+import { registerType } from '../src/registerTypes.js';
 
 class Post extends entity({ id: primary(), title: text() }) {}
 

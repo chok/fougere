@@ -1,10 +1,9 @@
 import { Format, upperFirst, type Accepted } from '@fougere/schema';
 import { Protocols, listens, type EffectiveOperation } from '@fougere/core';
-import { rootFieldOf } from './OperationsConfig.js';
+import { rootFieldOf } from './rootFields.js';
 import { executeOn, schemaOf } from './app.js';
 import { graphqlDoor } from './door.js';
 
-/** What `protocols: { graphql: … }` may say — nothing yet, so nothing is admitted. */
 const GRAPHQL = Format.of('protocol/graphql').closed();
 
 declare module '@fougere/core' {
@@ -17,8 +16,6 @@ declare module '@fougere/core' {
   }
 }
 
-// The host answers `/graphql` through what is registered here, never by importing a package by name.
-/** `query posts`, `mutation publish` — nothing for an op a fact calls, which no document reaches. */
 function answersAt(operation: EffectiveOperation): string | undefined {
   if (listens(operation) || !operation.signature) return undefined;
 

@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import SchemaBuilder from '@pothos/core';
 import { entity, primary, text } from '@fougere/schema';
-import { registerOperations, registerType } from '../src/OperationsConfig.js';
+import { registerOperations } from '../src/OperationsConfig.js';
+import { registerType } from '../src/registerTypes.js';
 
 /**
  * `ListOptions` is classified twice, and the first classification wins.

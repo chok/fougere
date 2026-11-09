@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { rootFieldOf } from '../src/OperationsConfig.js';
+import { rootFieldOf } from '../src/rootFields.js';
 
 describe('the root field of a list', () => {
   it.each([

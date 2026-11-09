@@ -18,10 +18,7 @@ export interface TypeConfig {
   presenterFields?: string[];
   /** Per-field type metadata from source parsing. */
   presenterFieldMeta?: { name: string; returnType?: string; list?: boolean; nullable?: boolean }[];
-  /**
-   * The view a computed field emits, when the presenter declared one — the object type to build
-   * for it.
-   */
+  /** The view a computed field emits, when the presenter declared one. */
   presenterViews?: Record<string, Entity | [Entity]>;
   /** Builds (or reuses) the GraphQL object type for a declared view. */
   viewType?: (view: Entity, fieldName: string) => any;

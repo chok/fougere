@@ -21,11 +21,7 @@ export interface GraphQLReceived {
   headers?: Headers;
 }
 
-/**
- * GraphQL's edges over one schema: the document read within the cycle, run by the engine — whose
- * resolvers make one call per root field and per relation, all within this request — and the
- * result written as GraphQL-over-HTTP, a refusal before the engine as a status and an `errors` list.
- */
+/** GraphQL's door over one schema: one call per root field and per relation, all within this request. */
 export function graphqlDoor(schema: GraphQLSchema): Door<GraphQLReceived, GraphQLDocument & { query: string; state: Record<string, unknown> }, ResponseResult> {
   return {
     name: 'graphql',

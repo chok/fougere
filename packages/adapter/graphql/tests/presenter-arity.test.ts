@@ -1,7 +1,7 @@
 import SchemaBuilder from '@pothos/core';
 import { describe, expect, it } from 'vitest';
 import { entity, primary, text } from '@fougere/schema';
-import { registerType } from '../src/OperationsConfig.js';
+import { registerType } from '../src/registerTypes.js';
 import { registerAll } from '../src/auto-register.js';
 import { served } from './served.js';
 

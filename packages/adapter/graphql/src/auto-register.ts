@@ -5,21 +5,17 @@ import type { Fields, SchemaView } from '@fougere/schema';
 import { Shapes } from '@fougere/schema';
 import { type OperationMeta } from './OperationMeta.js';
 import { listens, presentedFields, type ProviderEntry, type EntityEntry as CoreEntityEntry, type HandlerEntry as CoreHandlerEntry } from '@fougere/core';
-import { registerOperations, registerType } from './OperationsConfig.js';
+import { registerOperations } from './OperationsConfig.js';
+import { registerType } from './registerTypes.js';
 
 type HandlerFacade = Record<string, Function>;
 
-/** The relation a foreign key points at — `authorId → author`, `user_id → user`. */
 function relationNameFor(fieldName: string): string | undefined {
   const stripped = fieldName.replace(/(_id|Id|ID)$/, '');
 
   return stripped && stripped !== fieldName ? stripped : undefined;
 }
 
-/**
- * The field a target is keyed by — what a batch read indexes its answer on. The shape
- * answers the absence and this facade defaults it: `id` is what a node id falls back to.
- */
 function primaryNameOf(fields: Fields): string {
   return FieldSet.of(fields).primary ?? 'id';
 }
@@ -29,16 +25,12 @@ interface Batch {
   rows: Promise<Map<string, any>>;
 }
 
-/** The batch of ONE direction — the two sides of a relation must not share a read. */
 const directionKey = (entity: string, field: string) => `${entity}#${field}`;
 
-/** The caller's state, carried into a relation the way the root field carried it. */
 const stateIn = (ctx: unknown): Record<string, unknown> => (ctx as { state?: Record<string, unknown> } | undefined)?.state ?? {};
 
-/** How many keys go into one `list` call. */
 const KEYS_PER_READ = 1000;
 
-/** Read a key set in slices, merging what each answers. */
 async function readInSlices<R>(
   keys: string[],
   read: (slice: string[]) => Promise<Map<string, R>>,
@@ -53,12 +45,10 @@ async function readInSlices<R>(
   return all;
 }
 
-/** A key answers one row: a later slice never contradicts an earlier one. */
 const keepEach = <R>(into: Map<string, R>, from: Map<string, R>) => {
   for (const [key, value] of from) into.set(key, value);
 };
 
-/** A key answers a group: slices of the SAME key concatenate. */
 const concatEach = (into: Map<string, any[]>, from: Map<string, any[]>) => {
   for (const [key, rows] of from) {
     const bucket = into.get(key);
@@ -66,7 +56,6 @@ const concatEach = (into: Map<string, any[]>, from: Map<string, any[]>) => {
   }
 };
 
-/** The keys asked for during one tick, answered by one read. */
 const batches = new WeakMap<object, Map<string, Batch>>();
 const NO_CONTEXT: object = {};
 
@@ -84,8 +73,6 @@ function loadByKey<R>(
   let batch = open.get(entityKey);
   if (!batch) {
     const keys = new Set<string>();
-    // The next microtask: every sibling resolver of the page has run by then, so
-    // their keys travel together. Closed first, so the following tick opens a new one.
     const rows = Promise.resolve().then(() => {
       open!.delete(entityKey);
 
@@ -99,11 +86,9 @@ function loadByKey<R>(
   return batch.rows.then((found) => found.get(id) ?? absent());
 }
 
-// ─── Types ──────────────────────────────────────
 
 type EntityEntry = Pick<CoreEntityEntry, 'name' | 'entityClass'>;
 
-/** The effective table, not the scanned contracts — and `ctor` only for its name, in a claim's message. */
 type HandlerEntry = Pick<CoreHandlerEntry, 'address' | 'surface' | 'exposed'> & {
   operations: Map<string, OperationMeta>;
   ctor?: { name?: string };
@@ -145,28 +130,19 @@ interface AppLike {
   presenterFor(entity: string): unknown | undefined;
 }
 
-// ─── Helpers ────────────────────────────────────
 
-/**
- * The key an entity is filed under — case-folded, because the same entity is spelled differently
- * depending on where its name came from: the scan yields the registration name (`authorUser`),
- * while a card's relation target is fully lowercased by `describe` (`authoruser`).
- */
 function registryKey(entityName: string, frond: string): string {
   return `${frond}:${entityName.toLowerCase()}`;
 }
 
-/** The name a relation points at — a class, or a card's `{ name }` stand-in. */
 function targetName(target: unknown): string {
   return String((target as { name?: string } | undefined)?.name ?? '').toLowerCase();
 }
 
-/** The key a batch of one relation direction is loaded under. */
 function targetKey(target: unknown): string {
   return targetName(target);
 }
 
-// ─── Public API ─────────────────────────────────
 
 export interface RegisterAllOptions {
   /** Keep only the addresses this answers true for. Default: every address served. */
@@ -175,7 +151,6 @@ export interface RegisterAllOptions {
   surface?: string;
 }
 
-/** The GraphQL type of a declared presenter view, built once per view class. */
 const viewTypes = new WeakMap<object, any>();
 function viewTypeOf(
   builder: InstanceType<typeof SchemaBuilder>,
@@ -196,15 +171,6 @@ export function registerAll(
   app: AppLike,
   options?: RegisterAllOptions,
 ): void {
-  // Collect registered types across all fronds for relation wiring, keyed by entity NAME.
-  //
-  // The name is the identity everywhere else in the system —
-  // `storageFor(entity)`, `schemaFor(entity)` all take one, and the table, the GraphQL type
-  // and the DI match are all derived from it. This registry keyed by class OBJECT was the
-  // lone dissent, and it cost a silent failure: a relation target that is not the very
-  // object registered (an entity rebuilt from a card, whose `to()` leaves a `{ name }`
-  // stand-in) missed the lookup, hit `if (!targetEntry) continue`, and the relation
-  // vanished from the schema without a word. `schema-sql` already resolved by name.
   const typeRegistry = new Map<
     string,
     {
@@ -220,21 +186,14 @@ export function registerAll(
     }
   >();
 
-  // ── Pass 1: a type per schema an operation returns, a root field per operation ──
-  //
-  // A type is a projection of a SCHEMA, so it is built from what the operations answer; a root
-  // field is an operation at an ADDRESS, so it is built from the handlers. An entity is never
-  // where a call goes — `checkout.pay` names none, `article.list` answers `Post`.
 
   const entities = app.fronds.flatMap((frond) => frond.entities.map((entity) => ({ entity, frond })));
   const entityOf = (view: SchemaView): EntityEntry | undefined =>
     entities.find(({ entity }) => entity.entityClass === view)?.entity;
-  // A presenter's fields are its chain's: a link in front of `Present<Post>` adds its own.
   const presenters = new Map(app.fronds.flatMap((frond) => (frond.presenters ?? []).map((presenter) =>
     [registryKey(presenter.entityName, frond.name), { ...presenter, fields: presentedFields(frond, presenter) }] as const)));
   const frondOfEntity = (entity: EntityEntry): string => entities.find((one) => one.entity === entity)?.frond.name ?? '';
 
-  /** The GraphQL type of an entity, built the first time an operation returns it — named after its frond. */
   const entityType = (entity: EntityEntry): any => {
     const frond = frondOfEntity(entity);
     const key = registryKey(entity.name, frond);
@@ -255,8 +214,6 @@ export function registerAll(
       presenterViews: presenterMeta?.views as any,
       viewType: (view, fieldName) => viewTypeOf(builder, view, `${name}${upperFirst(fieldName)}`),
     });
-    // The presenter's computed field names travel too: pass 2 must not derive a relation over a
-    // name the author wrote.
     typeRegistry.set(key, {
       name, type, frond,
       presenterFields: new Set(presenterMeta?.fields ?? []),
@@ -266,7 +223,6 @@ export function registerAll(
     return type;
   };
 
-  /** What an operation's declared output becomes: its entity's type, or a type of its own. */
   const typeOf = (view: SchemaView, name: string): any => {
     const entity = entityOf(view);
 
@@ -277,7 +233,6 @@ export function registerAll(
     const surfaceName = options?.surface;
 
     for (const address of new Set(frond.handlers.map((handler) => handler.address))) {
-      // Membership is core's answer, not ours — one rule, read here (see App.facadeFor).
       const facade = app.facadeFor(address, surfaceName) as HandlerFacade | undefined;
       if (!facade) continue;
       if (options?.filter && !options.filter(address, frond.name)) continue;
@@ -291,14 +246,12 @@ export function registerAll(
       if (!effective) {
         throw new Error(`GraphQL cannot project '${address}' without its EffectiveOperation table.`);
       }
-      // An op an announcement calls is no caller's to name, so it is no field.
       const operations = new Map([...effective].filter(([, meta]) => !listens(meta)));
 
       const name = upperFirst(address);
       const typeName = `${upperFirst(frond.name)}${name}`;
       const rows = operations.get('list')?.output ?? operations.get('findById')?.output;
 
-      // A relation reads its target through the address that serves its rows.
       const target = rows && entityOf(rows);
       if (target) {
         entityType(target);
@@ -311,18 +264,14 @@ export function registerAll(
         type: rows ? typeOf(rows, typeName) : undefined,
         facade,
         operations,
-        // Named so a root-field clash can say WHICH two handlers, in which fronds.
         origin: `${frond.name}/${handler?.ctor?.name ?? `${name}Handler`}`,
         viewType: (view, opName) => typeOf(view, `${typeName}${upperFirst(opName)}`),
       });
     }
   }
 
-  // ── Pass 2: auto-wire relations (ref → N:1, many → 1:N) ──
 
   for (const [entityKey, { type, fields, presenterFields, frond: sourceFrond }] of typeRegistry) {
-    // A target is the very class when the registry holds it, else the entity of that name in this
-    // frond, else wherever one is: two fronds may each declare an `Author`.
     const entryOf = (target: unknown) => {
       const declared = entities.find(({ entity }) => entity.entityClass === target);
       if (declared) return typeRegistry.get(registryKey(declared.entity.name, declared.frond.name));
@@ -341,14 +290,7 @@ export function registerAll(
         const targetFacade = targetEntry?.facade;
         if (!targetEntry || !targetFacade) continue;
 
-        // authorId → author, user_id → user. Both spellings, because a foreign key
-        // is named by its author and `/Id$/` alone left `user_id` untouched — the
-        // relation then took the scalar's own name and Pothos refused the duplicate,
-        // taking the WHOLE schema down with it.
         const relationName = relationNameFor(fieldName);
-        // Nothing to strip, or the name is already taken by a field of the entity or by
-        // a presenter's computed field: the author named it, the author wins. Deriving
-        // over it would either crash the build or shadow what they wrote.
         if (!relationName || relationName in fields || presenterFields.has(relationName)) continue;
         const nullable = Shapes.isNullable(field.shape);
 
@@ -360,15 +302,11 @@ export function registerAll(
           resolve: (parent: any, _args: unknown, ctx: unknown) => {
             const fk = parent[fieldName];
             if (fk == null) return null;
-            // A facade that serves no list — a handler narrowed to `findById` — keeps the
-            // row-at-a-time path rather than losing the relation entirely.
             if (typeof targetList !== 'function') {
               return targetFacade.findById({ params: { id: fk }, query: {}, input: undefined, state: stateIn(ctx) });
             }
 
             return loadByKey(ctx, directionKey(targetKey(target), targetKeyName), String(fk), (ids) =>
-              // The facade the `many` dual already uses, with a SET where it names one
-              // value. Nothing new is published: a criterion learned to name several.
               readInSlices(ids, async (slice) => {
                 const result = await targetList.call(targetFacade, {
                   params: {}, query: { where: { [targetKeyName]: slice } }, input: undefined, state: stateIn(ctx),
@@ -389,9 +327,6 @@ export function registerAll(
         const targetFacade = targetEntry?.facade;
         if (!targetEntry || !targetFacade) continue;
 
-        // Trouver la FK inverse sur l'entité cible (la relation « one » qui pointe ici).
-        // Read off the registry, not off the target object: a target rebuilt from a card is
-        // a `{ name }` stand-in with no fields to walk, and the registry already holds them.
         const reverseFk = Object.entries(targetEntry.fields).find(
           ([, f]) => Role.of(f).isReference()
             && entryOf(Role.of(f).target) === typeRegistry.get(entityKey),
@@ -406,12 +341,6 @@ export function registerAll(
             const id = parent.id;
             if (id == null) return [];
 
-            // The same batch as its `one` dual, one query for the whole page — the two
-            // directions differ only in what a key answers: one row there, a group here.
-            //
-            // `where` — un critère se nomme. Passé à la racine de la query, il retombait
-            // dans les options de `list()`, qui ignore ce qu'elle ne connaît pas : la
-            // relation rendait alors TOUTE la table cible, sans un mot.
             return loadByKey(ctx, directionKey(targetKey(target), reverseFkName), String(id), (ids) =>
               readInSlices(ids, async (slice) => {
                 const result = await targetFacade.list({

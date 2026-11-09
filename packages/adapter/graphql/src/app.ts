@@ -14,10 +14,8 @@ export interface AppQuery {
   state?: Record<string, unknown>;
 }
 
-/** The shape this package needs of an app: its fronds, and how to reach a façade. */
 type AppLike = Parameters<typeof registerAll>[1];
 
-/** One executable schema per (app, audience) — building it walks every entity. */
 const schemas = new WeakMap<object, Map<string, GraphQLSchema>>();
 
 /** The app's schema, derived and kept. */

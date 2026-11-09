@@ -1,24 +1,19 @@
-import { pluralOf, upperFirst, Role } from '@fougere/schema';
+import { upperFirst } from '@fougere/schema';
 import type SchemaBuilder from '@pothos/core';
-import { Shapes, Schema, type Shape } from '@fougere/schema';
-import type { Entity, Field, SchemaView } from '@fougere/schema';
-import { Boundary, Card, Lifecycle, Visibility } from '@fougere/schema';
-import type { TypeConfig } from './TypeConfig.js';
-import type { InputConfig } from './InputConfig.js';
+import { Schema } from '@fougere/schema';
+import type { SchemaView } from '@fougere/schema';
+import { Visibility } from '@fougere/schema';
 import type { Signature } from '@fougere/core/descriptor';
 import type { OperationMeta } from './OperationMeta.js';
-import type { ObjectFieldDef } from './ObjectFieldDef.js';
-
-
-/** Presenter instance — each method is a computed field resolver. */
-type PresenterInstance = Record<string, (parent: any) => any>;
+import { registerInput, registerObjectType } from './registerTypes.js';
+import { claimRootField, rootFieldOf } from './rootFields.js';
 
 export interface OperationsConfig {
   /** Entity name (PascalCase) — what a root field is named after: `listAuthor`. */
   name: string;
   /**
-   * What the types it builds are named after — `BlogAuthor`, its frond first, so two fronds' `Author`
-   * are two types and a neighbour never renames one. Defaults to `name`.
+   * What the types it builds are named after, its frond first; defaults to `name`.
+   * Ex: `BlogAuthor`.
    */
   typeName?: string;
   /** GraphQL entity type ref (from registerType). */
@@ -28,8 +23,8 @@ export interface OperationsConfig {
   /** Operations metadata from scanner (signature + resolved schemas). */
   operations: Map<string, OperationMeta>;
   /**
-   * Who is registering — `catalog/ChapterHandler`, for the message when two ops claim
-   * one root field. Absent when a caller builds a type by hand.
+   * Who is registering, named when two ops claim one root field.
+   * Ex: `catalog/ChapterHandler`.
    */
   origin?: string;
   /** The GraphQL type for a schema an operation declares as its return. */
@@ -56,600 +51,7 @@ const PRIMITIVES: Record<string, (t: any, required: boolean) => any> = {
   boolean: (t, r) => t.arg.boolean({ required: r }),
 };
 
-/** Parameter types no GraphQL argument stands for. */
 const SKIP_TYPES = new Set(['InvocationContext']);
-
-// ─── Helpers ───────────────────────────────────────
-
-function fieldToGraphQL(
-  t: any,
-  field: Field,
-  fieldName: string,
-  enumFor?: (values: string[]) => any | undefined,
-  nested?: (shape: Shape, suffix: string) => any,
-): any {
-  // Dispatch on the BASE type via `Shapes.of` — `shape.type` may be the nullable
-  // `[T,'null']` union, a direct comparison would fail silently on it.
-  const { base: shape, nullable } = Shapes.of(field.shape);
-
-  // Before the type switch: a bounded set is its own GraphQL type whatever its base type
-  // carries. `oneOf` fed the form's `select` and the DDL's `CHECK` from the day it was
-  // written; here it fell through to `String`, so a schema explorer showed nothing of the
-  // set and a generated client could not narrow the union.
-  // Only the TYPE changes here. `nullable` is passed exactly where the `String` branch below
-  // passes it and omitted where that branch calls `exposeString` — spelling `nullable: false`
-  // instead would emit `PostStatus!` next to a `title: String` on the same type, so a bounded
-  // set would carry a stricter contract than a plain field for no reason of its own.
-  const values = enumFor && enumValuesOf(shape);
-  if (values) {
-    const ref = enumFor(values);
-    if (ref) {
-      const resolve = (parent: any) => parent[fieldName] ?? null;
-
-      return nullable ? t.field({ type: ref, nullable: true, resolve }) : t.field({ type: ref, resolve });
-    }
-  }
-
-  switch (shape?.type) {
-    case 'integer':
-      return nullable ? t.int({ nullable: true, resolve: (parent: any) => parent[fieldName] ?? null })
-                      : t.exposeInt(fieldName);
-
-    case 'number':
-      return nullable ? t.float({ nullable: true, resolve: (parent: any) => parent[fieldName] ?? null })
-                      : t.exposeFloat(fieldName);
-
-    case 'boolean':
-      return nullable ? t.boolean({ nullable: true, resolve: (parent: any) => parent[fieldName] ?? null })
-                      : t.exposeBoolean(fieldName);
-
-    case 'object':
-      if (nested && declaresProperties(shape)) {
-        return t.field({ type: nested(shape, ''), nullable, resolve: (parent: any) => parent[fieldName] ?? null });
-      }
-
-      // JSON → String sérialisé
-      return t.string({
-        nullable,
-        resolve: (parent: any) => {
-          const val = parent[fieldName];
-
-          return val != null ? JSON.stringify(val) : null;
-        },
-      });
-
-    case 'array': {
-      // A value list (`list(text())`) becomes a GraphQL list of the item scalar; a list
-      // of objects becomes a list of JSON strings — the same rule 'object' follows.
-      const items = Shapes.of(shape.items).base;
-      const resolve = (parent: any) => parent[fieldName] ?? (nullable ? null : []);
-      switch (items?.type) {
-        case 'integer': return t.intList({ nullable, resolve });
-        case 'number': return t.floatList({ nullable, resolve });
-        case 'boolean': return t.booleanList({ nullable, resolve });
-        case 'object':
-          if (nested && declaresProperties(items)) return t.field({ type: [nested(items, 'Item')], nullable, resolve });
-
-          return t.stringList({
-            nullable,
-            resolve: (parent: any) => {
-              const val = parent[fieldName];
-
-              return val != null ? val.map((v: unknown) => JSON.stringify(v)) : (nullable ? null : []);
-            },
-          });
-        default: return t.stringList({ nullable, resolve });
-      }
-    }
-
-    case 'string':
-      // date-time → String GraphQL, encoded on egress via the field's boundary (Date → ISO).
-      // Exposing the raw Date would let Pothos coerce it to a non-ISO `String(date)`.
-      if (shape.format === 'date-time') {
-        return t.string({
-          nullable,
-          resolve: (parent: any) => {
-            const val = parent[fieldName];
-
-            return val != null ? Boundary.of(field).encode(val) : null;
-          },
-        });
-      }
-
-      // string (id, texte, enum, ref) → String GraphQL
-      return nullable ? t.string({ nullable: true, resolve: (parent: any) => parent[fieldName] ?? null })
-                      : t.exposeString(fieldName);
-
-    default:
-      // pas de shape (relation many) → String GraphQL
-      return nullable ? t.string({ nullable: true, resolve: (parent: any) => parent[fieldName] ?? null })
-                      : t.exposeString(fieldName);
-  }
-}
-
-/** A JSON-Schema object shape, turned into a GraphQL input type. */
-function nestedInputType(
-  builder: InstanceType<typeof SchemaBuilder>,
-  shape: Shape,
-  name: string,
-): any {
-  let perBuilder = nestedInputs.get(builder as object);
-  if (!perBuilder) nestedInputs.set(builder as object, (perBuilder = new Map()));
-  const known = perBuilder.get(name);
-  if (known) return known;
-
-  const properties = propertiesOf(shape);
-  const required = new Set<string>('required' in shape ? shape.required ?? [] : []);
-  const type = (builder as any).inputType(name, {
-    fields: (t: any) => {
-      const out: Record<string, any> = {};
-      for (const [key, prop] of Object.entries(properties)) {
-        const isRequired = required.has(key);
-        const base = Shapes.of(prop).base;
-        const inner = (held: Shape, suffix: string) => nestedInputType(builder, held, `${name}${upperFirst(key)}${suffix}`);
-        const items = base?.type === 'array' ? Shapes.of(base.items).base : undefined;
-        if (base && declaresProperties(base)) out[key] = t.field({ type: inner(base, ''), required: isRequired });
-        else if (items && declaresProperties(items)) out[key] = t.field({ type: [inner(items, 'Item')], required: isRequired });
-        else if (base?.type === 'integer') out[key] = t.int({ required: isRequired });
-        else if (base?.type === 'number') out[key] = t.float({ required: isRequired });
-        else if (base?.type === 'boolean') out[key] = t.boolean({ required: isRequired });
-        else out[key] = t.string({ required: isRequired });
-      }
-
-      return out;
-    },
-  });
-  perBuilder.set(name, type);
-
-  return type;
-}
-
-/** The dual of {@link nestedInputType}: what an answer shows of a nested shape. */
-function nestedObjectType(
-  builder: InstanceType<typeof SchemaBuilder>,
-  shape: Shape,
-  name: string,
-): any {
-  let perBuilder = nestedObjects.get(builder as object);
-  if (!perBuilder) nestedObjects.set(builder as object, (perBuilder = new Map()));
-  const known = perBuilder.get(name);
-  if (known) return known;
-
-  const properties = Object.entries(propertiesOf(shape)).filter(([, prop]) => !(prop as { writeOnly?: boolean }).writeOnly);
-  const required = new Set<string>('required' in shape ? shape.required ?? [] : []);
-  const type = (builder as any).objectRef(name);
-  perBuilder.set(name, type);
-  type.implement({
-    fields: (t: any) => {
-      const out: Record<string, any> = {};
-      for (const [key, prop] of properties) {
-        const { base, nullable: stated } = Shapes.of(prop);
-        const nullable = stated || !required.has(key);
-        const resolve = (parent: any) => parent[key] ?? null;
-        const inner = (held: Shape, suffix: string) => nestedObjectType(builder, held, `${name}${upperFirst(key)}${suffix}`);
-        const items = base?.type === 'array' ? Shapes.of(base.items).base : undefined;
-        if (base && declaresProperties(base)) out[key] = t.field({ type: inner(base, ''), nullable, resolve });
-        else if (items && declaresProperties(items)) out[key] = t.field({ type: [inner(items, 'Item')], nullable, resolve });
-        else if (base?.type === 'integer') out[key] = t.int({ nullable, resolve });
-        else if (base?.type === 'number') out[key] = t.float({ nullable, resolve });
-        else if (base?.type === 'boolean') out[key] = t.boolean({ nullable, resolve });
-        else out[key] = t.string({ nullable, resolve });
-      }
-
-      return out;
-    },
-  });
-
-  return type;
-}
-
-/** `json(Address)` states its properties; a bare `json()` admits any shape, and stays a `String`. */
-function propertiesOf(shape: Shape): Record<string, Shape> {
-  return 'properties' in shape ? (shape.properties ?? {}) as Record<string, Shape> : {};
-}
-
-function declaresProperties(shape: Shape): boolean {
-  return shape.type === 'object' && Object.keys(propertiesOf(shape)).length > 0;
-}
-
-/**
- * One input type per name, PER BUILDER — Pothos refuses a duplicate name, and a ref built on one
- * builder is unknown to the next: a global cache handed a stale ref to the second schema
- * ("InputObjectRef has not been implemented").
- */
-const nestedInputs = new WeakMap<object, Map<string, any>>();
-
-/** Same rule as {@link nestedInputs}, for what an answer shows. */
-const nestedObjects = new WeakMap<object, Map<string, any>>();
-
-/** Same rule as {@link nestedInputs}, for the enum types — with the values, see below. */
-const enumTypes = new WeakMap<object, Map<string, { ref: any; values: string[] }>>();
-
-/**
- * A GraphQL enum value is an IDENTIFIER, not a string: `in-progress` or `à valider` cannot be
- * spelled in a query.
- */
-const GRAPHQL_NAME = /^[_A-Za-z][_0-9A-Za-z]*$/;
-
-function enumValuesOf(shape: Shape | undefined): string[] | undefined {
-  const values = shape && 'enum' in shape ? shape.enum : undefined;
-  if (!Array.isArray(values) || values.length === 0) return undefined;
-  if (!values.every((v) => typeof v === 'string' && GRAPHQL_NAME.test(v))) return undefined;
-
-  return values as string[];
-}
-
-/**
- * The enum type for one field's value set — one per NAME per builder, so `Post.status` and
- * `CreatePostInput.status` are the same `PostStatus` and a value read can be written back.
- */
-function enumTypeFor(
-  builder: InstanceType<typeof SchemaBuilder>,
-  name: string,
-  values: string[],
-): any | undefined {
-  let perBuilder = enumTypes.get(builder as object);
-  if (!perBuilder) enumTypes.set(builder as object, (perBuilder = new Map()));
-
-  const known = perBuilder.get(name);
-  if (known) {
-    const same = known.values.length === values.length && known.values.every((v, i) => v === values[i]);
-
-    return same ? known.ref : undefined;
-  }
-
-  const ref = (builder as any).enumType(name, { values });
-  perBuilder.set(name, { ref, values });
-
-  return ref;
-}
-
-/** `Post` + `status` → `PostStatus`. Undefined when the schema has no name to build on. */
-function enumNameFor(owner: string | undefined, fieldName: string): string | undefined {
-  return owner ? `${owner}${upperFirst(fieldName)}` : undefined;
-}
-
-function fieldToInput(
-  t: any,
-  field: Field,
-  patch: boolean,
-  nested?: (shape: Shape, suffix: string) => any,
-  enumFor?: (values: string[]) => any | undefined,
-): any {
-  // Required = the presence axis, projected onto GraphQL's single knob: the
-  // caller must supply it (no `lifecycle.create` rule answers absence), null is
-  // not legal, and the view is not in patch mode (a patch omits freely).
-  const { base: shape, nullable } = Shapes.of(field.shape);
-  const required = !patch && !nullable && Lifecycle.of(field).requiredAtCreate();
-
-  // The dual of the output side, and it must be the SAME type: an input left as `String`
-  // would refuse nothing the enum refuses, and a client could not hand back the value a
-  // query just gave it.
-  const values = enumFor && enumValuesOf(shape);
-  if (values) {
-    const ref = enumFor(values);
-    if (ref) return t.field({ type: ref, required });
-  }
-
-  switch (shape?.type) {
-    case 'integer':
-      return t.int({ required });
-
-    case 'number':
-      return t.float({ required });
-
-    case 'boolean':
-      return t.boolean({ required });
-
-    case 'array': {
-      const items = Shapes.of(shape.items).base;
-      switch (items?.type) {
-        case 'integer': return t.intList({ required });
-        case 'number': return t.floatList({ required });
-        case 'boolean': return t.booleanList({ required });
-        case 'object': {
-          // A nested shape IS a type — serializing it would make the caller encode JSON by hand.
-          const built = nested?.(items, 'Item');
-
-          return built ? t.field({ type: [built], required }) : t.stringList({ required });
-        }
-        default: return t.stringList({ required });
-      }
-    }
-
-    case 'object': {
-      // A nested shape IS a type, one level as much as in a list.
-      const built = declaresProperties(shape) ? nested?.(shape, '') : undefined;
-
-      return built ? t.field({ type: built, required }) : t.string({ required });
-    }
-
-    case 'string':
-    default:
-      return t.string({ required });
-  }
-}
-
-// ─── Scalars ──────────────────────────────────────
-
-type ScalarName = 'string' | 'int' | 'float' | 'boolean';
-
-const SCALARS: Record<ScalarName, (t: any, opts: any) => any> = {
-  string:  (t, o) => o.nullable ? t.string(o)  : t.string(o),
-  int:     (t, o) => o.nullable ? t.int(o)     : t.int(o),
-  float:   (t, o) => o.nullable ? t.float(o)   : t.float(o),
-  boolean: (t, o) => o.nullable ? t.boolean(o) : t.boolean(o),
-};
-
-function isScalar(type: unknown): type is ScalarName {
-  return typeof type === 'string' && type in SCALARS;
-}
-
-// ─── registerObjectType ───────────────────────────
-
-/** Register a GraphQL object type from a declarative field map. */
-export function registerObjectType(
-  builder: InstanceType<typeof SchemaBuilder>,
-  name: string,
-  fieldDefs: Record<string, ObjectFieldDef>,
-): any {
-  return (builder as any).objectRef(name).implement({
-    fields: (t: any) => {
-      const result: Record<string, any> = {};
-      for (const [key, def] of Object.entries(fieldDefs)) {
-        const nullable = def.nullable ?? false;
-
-        // Custom resolve → field resolver (lazy/computed fields)
-        if (def.resolve) {
-          if (Array.isArray(def.type)) {
-            result[key] = t.field({ type: def.type, nullable, resolve: def.resolve });
-          } else if (isScalar(def.type)) {
-            result[key] = SCALARS[def.type](t, { nullable, resolve: def.resolve });
-          } else {
-            result[key] = t.field({ type: def.type, nullable, resolve: def.resolve });
-          }
-          continue;
-        }
-
-        // No custom resolve → expose directly from parent (no resolveField overhead)
-        if (isScalar(def.type)) {
-          const expose = {
-            string:  () => t.exposeString(key, { nullable }),
-            int:     () => t.exposeInt(key, { nullable }),
-            float:   () => t.exposeFloat(key, { nullable }),
-            boolean: () => t.exposeBoolean(key, { nullable }),
-          };
-          result[key] = expose[def.type]();
-        } else if (Array.isArray(def.type)) {
-          result[key] = t.field({ type: def.type, nullable, resolve: (parent: any) => parent[key] });
-        } else {
-          result[key] = t.field({ type: def.type, nullable, resolve: (parent: any) => parent[key] });
-        }
-      }
-
-      return result;
-    },
-  });
-}
-
-// ─── Public API ────────────────────────────────────
-
-/** Enregistre un type GraphQL (lecture) depuis une entité fougere. */
-export function registerType(builder: InstanceType<typeof SchemaBuilder>, config: TypeConfig): any {
-  // A live class or a card — an adapter needs the fields, never the constructor.
-  const schema = config.entity;
-  const fields = schema.getFields();
-  const exclude = new Set(config.exclude ?? []);
-  // Who owns the enum names: the schema a view came from, so `PostCard.status` and
-  // `CreatePostInput.status` land on the one `PostStatus`. A card that travelled carries no
-  // class name — the GraphQL type name is then the best owner available.
-  const enumOwner = Card.fromSchema(schema).descriptor.title ?? config.name;
-
-  return (builder as any).objectRef(config.name).implement({
-    fields: (t: any) => {
-      const result: Record<string, any> = {};
-
-      for (const [fieldName, field] of Object.entries(fields)) {
-        if (exclude.has(fieldName)) continue;
-        // Skip 'many' fields — handled by relations
-        if (Role.of(field).isCollection()) continue;
-        // Skip fields that have a relation override
-        if (config.relations?.[fieldName]) continue;
-        // Write-only (boundary out: 'closed', e.g. password): never emitted
-        if (Boundary.of(field).writeOnly()) continue;
-
-        result[fieldName] = fieldToGraphQL(t, field, fieldName, (values) => {
-          const name = enumNameFor(enumOwner, fieldName);
-
-          return name ? enumTypeFor(builder, name, values) : undefined;
-        }, (shape, suffix) => nestedObjectType(builder, shape, `${config.name}${upperFirst(fieldName)}${suffix}`));
-      }
-
-      // Add relations
-      if (config.relations) {
-        for (const [name, rel] of Object.entries(config.relations)) {
-          if (rel.list) {
-            result[name] = t.field({
-              type: [rel.type],
-              resolve: rel.resolve,
-            });
-          } else {
-            result[name] = t.field({
-              type: rel.type,
-              resolve: rel.resolve,
-            });
-          }
-        }
-      }
-
-      // Add presenter computed fields (resolveField — called only when requested)
-      if (config.presenter) {
-        const allowed = config.presenterFields
-          ? new Set(config.presenterFields)
-          : null;
-        const metaMap = new Map(
-          (config.presenterFieldMeta ?? []).map((m) => [m.name, m]),
-        );
-        // The names the scan found, looked up on the instance — never `Object.entries`.
-        // A presenter is a class instance: its methods live on the prototype, so own
-        // enumerable properties are its INJECTED DEPENDENCIES and nothing else. Enumerating
-        // them added no computed field at all and would have exposed the ORMs if any name
-        // had matched — an Order reached GraphQL with neither user, items nor total, while
-        // REST carried all three from the same presenter.
-        const names = config.presenterFields ?? Object.getOwnPropertyNames(
-          Object.getPrototypeOf(config.presenter),
-        );
-        for (const name of names) {
-          if (name === 'constructor') continue;
-          if (allowed && !allowed.has(name)) continue;
-          if (result[name]) continue; // entity field takes precedence
-          const fn = (config.presenter as Record<string, unknown>)[name];
-          if (typeof fn !== 'function') continue;
-
-          const meta = metaMap.get(name);
-          const nullable = meta?.nullable ?? true;
-          // READ the value, never recompute it. The façade applies the presenter on every
-          // facade (`PresenterExecutor`), so the row arrives carrying its computed fields; calling
-          // the method again ran the work twice — and once the method started receiving the
-          // PAGE rather than one row, the second call was handed a single object and threw
-          // `posts.map is not a function`. What GraphQL owes the field is its declaration.
-          const resolve = (parent: any) => parent?.[name] ?? null;
-
-          // The presenter STATED what this field emits — build its type instead of guessing.
-          const declared = config.presenterViews?.[name];
-          if (declared && config.viewType) {
-            const isList = Array.isArray(declared);
-            const view = (isList ? declared[0] : declared) as Entity;
-            const viewRef = config.viewType(view, name);
-            result[name] = t.field({ type: isList ? [viewRef] : viewRef, nullable, resolve });
-            continue;
-          }
-
-          // Map inferred return type → GraphQL scalar, one per row or a list of them.
-          // `list` is the arity the scan measured after removing the page level of the
-          // method's return type; without it a computed list announced its item type and
-          // a client selecting the field got one value where the row carried several.
-          const many = meta?.list === true;
-          switch (meta?.returnType) {
-            case 'number':
-              result[name] = many ? t.floatList({ nullable, resolve }) : t.float({ nullable, resolve });
-              break;
-            case 'boolean':
-              result[name] = many ? t.booleanList({ nullable, resolve }) : t.boolean({ nullable, resolve });
-              break;
-            case 'string':
-              result[name] = many ? t.stringList({ nullable, resolve }) : t.string({ nullable, resolve });
-              break;
-            default:
-              // The scan could not name a scalar: the method returns an object, a list, or
-              // nothing it can read. Serialize, exactly as an `object`-shaped entity field
-              // does — a String typing without serialization made GraphQL coerce the value
-              // to "[object Object]", and any client selecting subfields got a schema error
-              // on a field that REST served whole.
-              result[name] = t.string({
-                nullable,
-                resolve: async (parent: any) => {
-                  const value = await resolve(parent);
-                  if (value == null) return null;
-
-                  return typeof value === 'string' ? value : JSON.stringify(value);
-                },
-              });
-              break;
-          }
-        }
-      }
-
-      return result;
-    },
-  });
-}
-
-/** The GraphQL input for EXACTLY this view — or none, when the view asks for nothing. */
-export function registerInput(builder: InstanceType<typeof SchemaBuilder>, config: InputConfig): any {
-  const fields = Object.fromEntries(
-    Object.entries(config.schema.getFields())
-      .filter(([, field]) => !Role.of(field).isCollection() && !Boundary.of(field).readOnly()),
-  );
-  if (Object.keys(fields).length === 0) return undefined;
-  // The view's SOURCE, not the input's name: `CreatePostInput` derives from `Post`, and its
-  // `status` must be the same `PostStatus` the query emits.
-  const enumOwner = Card.fromSchema(config.schema).descriptor.title;
-  // Input-field omissibility is a projection of the view's MODE (partial() → patch),
-  // never of forged per-field flags — the fields themselves stay untouched.
-  const patch = config.schema.getOpts().patch ?? false;
-
-  return (builder as any).inputType(config.name, {
-    fields: (t: any) => {
-      const result: Record<string, any> = {};
-
-      for (const [fieldName, field] of Object.entries(fields)) {
-        result[fieldName] = fieldToInput(
-          t, field, patch,
-          (shape, suffix) => nestedInputType(builder, shape, `${config.name}${upperFirst(fieldName)}${suffix}`),
-          (values) => {
-            const name = enumNameFor(enumOwner, fieldName);
-
-            return name ? enumTypeFor(builder, name, values) : undefined;
-          },
-        );
-      }
-
-      return result;
-    },
-  });
-}
-
-// ─── GraphQL field naming ────────────────────────
-
-/** Who holds each root field — a GraphQL root is FLAT, and two ops can want one name. */
-const claimed = new WeakMap<object, Map<string, string>>();
-
-function claimRootField(builder: object, fieldName: string, origin: string): void {
-  let perField = claimed.get(builder);
-  if (!perField) { perField = new Map(); claimed.set(builder, perField); }
-
-  const first = perField.get(fieldName);
-  if (first !== undefined && first !== origin) {
-    const opName = origin.split('.').pop();
-    // `operations:` is keyed by op name PER FROND, so it cannot tell two handlers of the
-    // same frond apart. Saying otherwise would send the author to a fix that cannot work.
-    const remedy = first.split('/')[0] === origin.split('/')[0]
-      ? `Both are in the same frond, where \`operations:\` is keyed by op name and cannot `
-        + `tell them apart — rename one of the methods.`
-      : `Rename one of the methods, or name the field in the frond.config.ts of whichever `
-        + `should yield:\n  operations: { ${opName}: { graphql: '…' } }`;
-    throw new Error(
-      `Two operations have the same GraphQL field \`${fieldName}\`:\n`
-      + `  ${first}\n  ${origin}\n`
-      + `${remedy}`,
-    );
-  }
-  perField.set(fieldName, origin);
-}
-
-/** The root field an operation answers to — what the frond stated, else what its name derives. */
-export function rootFieldOf(opName: string, typeName: string, meta: Pick<OperationMeta, 'protocols'>): string {
-  return meta.protocols?.graphql ?? graphqlFieldName(opName, typeName);
-}
-
-function graphqlFieldName(opName: string, entityName: string): string {
-  const nameLower = entityName.charAt(0).toLowerCase() + entityName.slice(1);
-  const namePlural = pluralOf(nameLower);
-
-  switch (opName) {
-    case 'list': return namePlural;
-    case 'findById': return nameLower;
-    case 'create':
-    case 'update':
-    case 'delete':
-      return `${opName}${entityName}`;
-    default:
-      return opName;
-  }
-}
-
-// ─── Args building from parsed signatures ────────
 
 interface ArgsResult {
   argsDef: (t: any) => Record<string, any>;
@@ -663,9 +65,6 @@ function buildArgsFromSignature(
   opName: string,
   entityName: string,
 ): ArgsResult {
-  // Classify from the façade's binding plan when it exists. A collector is not a
-  // GraphQL argument just because its value has an entity type: it is supplied by the
-  // invocation context, and publishing it would let callers impersonate that value.
   const paramPlan: {
     name: string;
     kind: 'primitive' | 'input' | 'skip' | 'pagination';
@@ -698,7 +97,6 @@ function buildArgsFromSignature(
       }
     }
 
-    // Compatibility for callers constructing OperationMeta by hand, without core's plan.
     if (SKIP_TYPES.has(typeName)) {
       paramPlan.push({ name: param.name, kind: 'skip', typeName, optional: true, nullable: param.type.nullable === true });
       continue;
@@ -714,25 +112,18 @@ function buildArgsFromSignature(
       continue;
     }
 
-    // Object/entity param → input
     paramPlan.push({ name: param.name, kind: 'input', typeName, optional: param.optional ?? false, nullable: param.type.nullable === true });
   }
 
-  // Register input type if needed
   let inputRef: any;
   const inputParam = paramPlan.find((p) => p.kind === 'input');
   if (inputParam && meta.input) {
-    // Only strip non-client fields for create/update — other ops may legitimately use them (e.g. publish(id))
     const isMutation = opName === 'create' || opName === 'update';
     const opInputFields = isMutation ? Visibility.of(meta.input.getFields()).input : meta.input.getFields();
     const inputName = `${upperFirst(opName)}${entityName}Input`;
 
-    // `undefined` when the view asks for nothing, and `argsDef` already guards on it —
-    // the op then takes no input, which is the truth.
     inputRef = registerInput(builder, {
       name: inputName,
-      // A real schema over those fields, not a forged stand-in: an update input is the
-      // same fields seen through the patch mode.
       schema: Schema.of({ fields: opInputFields, opts: { patch: opName === 'update' } }),
     });
   }
@@ -744,9 +135,6 @@ function buildArgsFromSignature(
 
     for (const p of paramPlan) {
       if (p.kind === 'primitive') {
-        // GraphQL's NonNull means both "present" and "not null". A `T | null`
-        // parameter therefore cannot use it: the resolver still preserves an explicit
-        // null, and core remains the authority on the TypeScript invocation.
         args[p.name] = PRIMITIVES[p.typeName](t, !p.optional && !p.nullable);
       }
     }
@@ -773,14 +161,10 @@ function buildArgsFromSignature(
 
     for (const p of paramPlan) {
       if (p.kind === 'primitive') {
-        // graphql-js omits an omitted optional argument and keeps an explicitly supplied
-        // null. Test undefined alone: `!= null` erased the second case and made
-        // `foo?: T | null` indistinguishable from `foo?: T`.
         if (args[p.name] !== undefined) params[p.name] = args[p.name];
       } else if (p.kind === 'input') {
         input = args.input;
       } else if (p.kind === 'pagination') {
-        // Collect pagination args into input (ListOptions)
         const options: Record<string, any> = {};
         for (const key of ['limit', 'offset', 'page', 'after', 'orderBy', 'order']) {
           if (args[key] !== undefined) options[key] = args[key];
@@ -795,7 +179,6 @@ function buildArgsFromSignature(
   return { argsDef, buildInvocation };
 }
 
-// ─── Output type resolution ──────────────────────
 
 const ANSWERED_SCALARS: Record<string, string> = { boolean: 'Boolean', number: 'Float', string: 'String' };
 
@@ -819,17 +202,13 @@ function resolveOutputType(
   if (scalar) return { type: rt.array ? [scalar] : scalar, isList: false, nullable };
   if (rt?.name === 'void') return { type: 'Boolean', isList: false, nullable: true };
 
-  // A paged op → the paginated list wrapper. `Page<T>` is what a prefab answers; `ListResult<T>`
-  // is the array a handler writing its own op still hands back from the storage.
   if (rt?.name === 'Page' || rt?.name === 'ListResult') {
     return { type: 'list-wrapper', isList: true, nullable: false };
   }
 
-  /** The type the operation SAYS it returns. */
   const declared = meta?.output && opName && config.viewType
     ? config.viewType(meta.output, opName)
     : undefined;
-  // A type no schema states has fields nothing can list, and the entity of its handler is not it.
   if (!declared && (rt || !config.type)) {
     return { type: rt?.array ? ['String'] : 'String', isList: false, nullable, serialized: true };
   }
@@ -842,7 +221,6 @@ function resolveOutputType(
   return { type, isList: false, nullable };
 }
 
-/** Same rule as a computed field the scan could not name: an op has a field whatever it answers. */
 function serializedAnswer(result: unknown): unknown {
   if (Array.isArray(result)) return result.map(serializedAnswer);
   if (result === null || result === undefined) return null;
@@ -850,11 +228,9 @@ function serializedAnswer(result: unknown): unknown {
   return typeof result === 'string' ? result : JSON.stringify(result);
 }
 
-// ─── registerOperations ──────────────────────────
 
 /** Register all GraphQL operations for an entity from parsed handler signatures. */
 export function registerOperations(builder: InstanceType<typeof SchemaBuilder>, config: OperationsConfig): void {
-  // Pre-register list wrapper type if list op exists
   let listWrapperType: any;
   const listMeta = config.operations.get('list');
   if (listMeta && config.type && typeof config.facade.list === 'function') {
@@ -888,7 +264,6 @@ export function registerOperations(builder: InstanceType<typeof SchemaBuilder>, 
     claimRootField(builder, fieldName, `${config.origin ?? config.name}.${opName}`);
     const { argsDef, buildInvocation } = buildArgsFromSignature(sig, meta, builder, opName, config.typeName ?? config.name);
 
-    // Output type — what the op declares, else the entity's.
     const output = resolveOutputType(sig, config, meta, opName);
     const isListWrapper = output.type === 'list-wrapper';
     const outputType = isListWrapper ? listWrapperType : output.type;
@@ -904,10 +279,7 @@ export function registerOperations(builder: InstanceType<typeof SchemaBuilder>, 
           const result = await config.facade[opName](invocation);
           if (output.serialized) return serializedAnswer(result);
 
-          // List wrapper: shape the result for the paginated type
           if (isListWrapper) {
-            // A paged op answers `{ items, … }`; an op writing its own signature may still
-            // answer the array the storage handed it.
             const page = result as { items?: unknown[] } | null;
             const items = Array.isArray(result) ? [...result]
               : Array.isArray(page?.items) ? page.items
