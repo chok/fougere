@@ -4,7 +4,7 @@
 engine: the config imports the adapters it uses, and memory, the fallback for an app that
 declares no source, is the only one it brings.
 
-`statementOf(root)` is what every boot starts from: the `fronds.ts` the project wrote, or the one
+`appOptionsOf(root)` is what every boot starts from: the `fronds.ts` the project wrote, or the one
 `@fougere/compiler` writes from the sources — an optional peer, imported only then. Where a build
 already wrote it and the compiler is not installed, that one boots.
 

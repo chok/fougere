@@ -111,7 +111,7 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
   Neither host loads the config: Next's `withFougere` answers synchronously. Stated 2026-11-06, read and
   not run. `demos/conventions` covers the scan, the boot and the CLI.
 - **`conventions:` restates the directory NAMES and the import scope, nothing else** —
-  `Conventions` (`core/src/Conventions.ts`). What a file is recognized BY stays fixed: a
+  `Conventions` (`core/src/config/Conventions.ts`). What a file is recognized BY stays fixed: a
   middleware extends `Middleware`, an extension `up`/`down`/`state`, and an address is the class
   name less `Handler` (`addressOf`, `wire/Facade.ts`). The README says the conventions can be
   overridden, which holds for where code lives and not for how it is read. Stated 2026-10-04.
@@ -160,7 +160,7 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
   measured: nothing in the tree seeds across processes yet.
 - **A seed cycle is not satisfiable by ordering** — `core/src/boot/seed.ts`, `orderSeeds`.
   It returns them as `cycle` beside `ordered` and the boot NAMES them; they are still planted
-  in declaration order and the source answers — the order the statement lists them.
+  in declaration order and the source answers — the order `fronds.ts` lists them.
 - **`demos/next-blog` does not build for production INSIDE this monorepo** — a `@fougere/*` package here is
   a link to `packages/…`, whose real path holds no `node_modules`, so Next bundles it whatever
   `serverExternalPackages` says, and `adapter-sql`, loaded outside the bundle, registers `sqlite` in
@@ -203,7 +203,7 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
   SvelteKit owns the `paths` of the tsconfig it generates, so the fallback onto `remotes/` has
   nowhere to be written. The other hosts read a list. Stated 2026-10-20.
 - **`fougere build` compiles what an import reaches, and nothing else** — `compileProject`
-  (`compiler/src/compile.ts`) follows the static imports of the config and the statement, so a module
+  (`compiler/src/compile.ts`) follows the static imports of the config and `fronds.ts`, so a module
   loaded through a path computed at run time is not in `.fougere/build/`, and `@fronds/<name>/X.ts`
   written with its `.ts` keeps it, which no file there answers. Stated 2026-10-20.
 - **`fronds:` names one address per frond**, so the same frond cannot be deployed twice. The
@@ -215,7 +215,7 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
   `facadeFor` resolves a surface key in the local container only. True of all three doors.
 - **`expose` is a third membership mechanism, and the membership rule is blind to it.** The
   scan sets `e.exposed`/`h.exposed`, never `surfaces`. Three readers, one inside core
-  (`effective-operation.ts`, `exposedAdapters`). `packages/decorators` holds the method-level
+  (`EffectiveOperationModel.ts`, `exposedAdapters`). `packages/decorators` holds the method-level
   `@expose` and is simply not wired yet — that is a state, not a defect.
 - **The cross-source read is raw SQL while `ref()` already declares the join.** A path in
   `orderBy` is REFUSED at the door now rather than swallowed, so the join it would need is
@@ -405,11 +405,11 @@ One line each, kept because a past version of this file asserted the opposite.
 - The façade hands on the value it PARSED (`dispatch/HandlerFacade.ts`, `validated`).
 - The `boundary` axis has ONE door, `Boundary.of` — alias and codecs resolved eagerly.
 - Two remotes serving one entity is REFUSED, naming both (`boot/remote.ts`, `remoteOfFacade`).
-- A split receiver ESTABLISHES its caller (`core/src/identity.ts`): `serve()` refuses to start
+- A split receiver ESTABLISHES its caller (`core/src/identity/CallIdentity.ts`): `serve()` refuses to start
   beyond loopback with no `verify`. Do not reintroduce a link secret.
 - An operation's input contract is read from PROVENANCE, and two candidates REFUSE rather than
   one being picked by parameter order.
-- A collector in another frond is not used and WARNS (`core/src/verify.ts`), since `inviteUser(user: User)` reads
+- A collector in another frond is not used and WARNS (`core/src/operation/verify.ts`), since `inviteUser(user: User)` reads
   its user from the request on purpose; a declared binding silences it, and names only the parameters it changes.
 - `@fronds/<name>` resolves in the scan; `fougere check` reports the relative form as
   `cross-frond-import`.
@@ -417,4 +417,4 @@ One line each, kept because a past version of this file asserted the opposite.
 - The signature parser reads the CHECKER, so `type CurrentUser = User | undefined` binds like
   `user?: User`.
 - `OperationContract.output` has three readers including the façade; it gives the FIELDS and
-  does not close the view. `kind` is resolved by `core/src/effective-operation.ts`.
+  does not close the view. `kind` is resolved by `core/src/operation/EffectiveOperationModel.ts`.

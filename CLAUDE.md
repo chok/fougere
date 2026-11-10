@@ -107,8 +107,16 @@ packages/
                          `Present<T>`, `Collect<T>`): the scan and the card read it, and moving it
                          would tie `descriptor/` to a module. The operation model judges that
                          vocabulary and stays in the kernel
-    src/*.ts             what belongs to no phase: the two published entry points, frond(),
-                         the effective operation model, the checkers
+    src/operation/       the effective operation model — what each op IS once its producers have
+                         spoken, its bindings, its protocols — and the checks run over it (`verify`)
+    src/extension/       what a package registers or augments: sources, protocols, transports, states,
+                         ports, binding sources — each `Fougere*` interface beside its registry
+    src/frond/           what `frond()` takes: a frond written by hand, its handlers, subjects, operations
+    src/config/          `fougere.config.ts`: its shape, `fronds:`, `conventions:`, `server:`
+    src/project/         what a project is read from: `fronds.ts`, the aliases, the module keys
+    src/identity/        who calls: the envelope a process signs, its keys, the verified call
+    src/*.ts             the four entry points, what every family reads (`diagnostic`, `BootRefusal`,
+                         `Ctor`…), and `bindingPlan`, read by `wire/Emit.ts`
   http/                @fougere/http          the words every HTTP door speaks — HttpMethod, ResponseResult,
                                                 HttpCarrier. No router: an app mounts on an engine with `answer`
   observability/       @fougere/observability optional: a span per op, the four signals, OTLP. Core holds none of it
@@ -323,7 +331,7 @@ cap TypeScript itself refuses past — it is an aggregate: no default repository
 forwarded gesture, `storages` the way in, and `ownersOf` refuses two aggregates over one entity. A
 handler extending the repository of an owned entity is refused at boot (`crudOnOwned`).
 TypeScript erases the type arguments, so the scan reads them (`compiler/src/scan/Seat.ts`, climbing
-`PostHandler extends PostRepository extends Repository<Post>`), the statement writes them as VALUES
+`PostHandler extends PostRepository extends Repository<Post>`), `fronds.ts` writes them as VALUES
 (`repository: Post`, never a name), and `frond()` states them by hand; the boot SEATS the class
 (`seated`, `prefab/Repository.ts`) — the same class, carrying `__entity`, `__ops`, `__owns`, and handed
 each entity's rows after its own constructor's dependencies. A class nothing seats is refused at boot
@@ -540,7 +548,7 @@ resolve, loudly; a STALE one is the silent case, which `fougere check` reports a
 `facade-stale`. Pinned by `compiler/tests/facade.test.ts` and `app/react/tests/facade.test.ts`.
 
 **A scan has a THIRD projection, and it is types** — `core/src/projection/FacadeModule.ts`, `emitFacade`,
-beside `emitStatement`. The runtime scan cannot serve as one: its operations
+beside `emitAppOptions`. The runtime scan cannot serve as one: its operations
 travel in a `Map`, and a `Map` literal widens its key to `string`, so the association between an
 op and its refusals is exactly what TypeScript drops there. An interface keeps it. Of the file, only
 each `{ address }` reaches a bundle, and it is rewritten whenever the app starts — `fougere build` writes it
@@ -607,7 +615,7 @@ a host as a tarball and never runs its code. An app is a workspace member, so th
 `Shell` is injected: `cli/tests/fixtures-shell/` holds each tool's measured output, and
 `door:check` runs the real ones for every host of `CHECKED` (`cli/src/composer/Offered.ts`). The
 composer asks among `OFFERED` beside it, Nuxt alone: a host can be checked and reachable by `--app`
-without being one the project proposes. No starter names the workspace: `projectRootOf` (`core/src/FougereConfig.ts`) is
+without being one the project proposes. No starter names the workspace: `projectRootOf` (`core/src/config/FougereConfig.ts`) is
 the nearest directory, up from the app, holding `fronds/` — or a config file, holding none yet —
 and Nuxt, Vite, Next and the oclif starter all read it, so `root` is an EXCEPTION written only when
 the fronds sit elsewhere; every starter used to write `'../..'`, a fact the tree already stated.
@@ -632,21 +640,21 @@ never installed `@fougere/observability` answers `Unknown rpc operation 'topolog
 serves discover.` The report shapes live in core (`TopologyReport`, `FrondPlacement`, `Edge`)
 because they cross a process boundary.
 
-**Every app boots from a statement, and the scan only writes it** — `fronds.ts` beside
+**Every app boots from `fronds.ts`, and the scan only writes it** — a file beside
 `fougere.config.ts`: imports and `frond()` calls, the fronds as default export and the process's
-terms as `vocabulary`. `statementIn` (`@fougere/core/node`) reads one, `writeStatement`
-(`@fougere/compiler`) writes `.fougere/fronds.generated.ts` from the sources, and `statementOf(root)`
+terms as `vocabulary`. `appOptionsIn` (`@fougere/core/node`) reads one, `writeAppOptions`
+(`@fougere/compiler`) writes `.fougere/fronds.generated.ts` from the sources, and `appOptionsOf(root)`
 (`@fougere/defaults`) is the two end to end — the project's file when it wrote one, the scan's
 otherwise. `createApp` takes `fronds:` and nothing else: it took `scan:` too, and each host booted a
 different way, so `demos/nuxt-blog` in-process served no `publish` and ran no middleware while
-`fougere serve` did, with every test green. The statement is the PROJECT's, whole — `only:` filters
+`fougere serve` did, with every test green. The file is the PROJECT's, whole — `only:` filters
 what a process reads, and two processes read one file. A contract the scan could not decide is not
-written (`input-contract-ambiguous` refuses `emitStatement`), and the file each value comes from
+written (`input-contract-ambiguous` refuses `emitAppOptions`), and the file each value comes from
 travels as `files:` so a refusal still names it. A host that BUILDS — `@fougere/vite`, `@fougere/next`,
 Nuxt — writes `.fougere/fronds.generated.ts` beside its facade, and a production install, which leaves
 the compiler out as a dev dependency, boots from it (`demos/react-router-blog`, measured 2026-10-18). The compiler is an optional peer of
 `@fougere/defaults`, `@fougere/app` and `@fougere/nuxt`, imported only where a project wrote no
-statement: an app that writes its own builds and runs with TypeScript never installed
+`fronds.ts`: an app that writes its own builds and runs with TypeScript never installed
 (`demos/no-compiler`). Measured cost of a boot that scans, 2026-10-18: about 20 ms, the write and the
 import. Pinned by `defaults/tests/statement.test.ts`, `compiler/tests/statement.test.ts`.
 
@@ -654,7 +662,7 @@ import. Pinned by `defaults/tests/statement.test.ts`, `compiler/tests/statement.
 `remotes/<name>`, the `paths` of `@fougere/core/tsconfig`. A tool that reads `paths` reads
 them there: TypeScript, Next, Vite 8 (`resolve.tsconfigPaths`, set by `fougere()`), Nuxt's pages
 (`prepare:types` writes the line into the tsconfig Nuxt generates). One that does not is handed a
-table at its start — `frondAliases` (`core/src/FrondAliases.ts`), for jiti, Nitro, `fougereTest()`
+table at its start — `frondAliases` (`core/src/project/FrondAliases.ts`), for jiti, Nitro, `fougereTest()`
 and Next's two bundlers, whose `paths` never map a `.js` request onto the `.ts` beside it — and it
 reads the fronds only at that start anyway. A rename is a `paths` entry of the project's root `tsconfig.json`
 (`frondNamesOf`), since TypeScript is the reader no config reaches; `fougere.frond` in a
@@ -673,17 +681,17 @@ and `door:check` runs every host under npm, pnpm, bun and yarn 4. Pinned by `cli
 and `compiler/tests/scanner.test.ts` (the rename).
 
 **`dev` transpiles, `serve` starts what `build` wrote** — `fougere build` compiles what the config and
-the statement reach into `.fougere/build/` (`compileProject`, `compiler/src/compile.ts`), beside the
+`fronds.ts` reach into `.fougere/build/` (`compileProject`, `compiler/src/compile.ts`), beside the
 alias table and a `modules.js` importing each module key of `fronds:` from the project. `fougere serve`
 boots it (`bootApp(root, { built })`) through `registerFrondAliases` — `module.registerHooks`, or
 `Bun.plugin` where Bun has no hook — and loads neither jiti nor TypeScript: measured by removing both,
-2026-10-20. `fougere dev` is what `serve --watch` was, watching the convention directories, since a
-statement's fronds carry no `source.path` and `--watch` had watched nothing since boots moved to
-statements. The same graph starts in 56 ms built against 77 through jiti with a warm cache and 138
+2026-10-20. `fougere dev` is what `serve --watch` was, watching the convention directories, since the
+fronds of a `fronds.ts` carry no `source.path` and `--watch` had watched nothing since boots moved to
+it. The same graph starts in 56 ms built against 77 through jiti with a warm cache and 138
 cold. Under Bun, `type: 'sqlite'` is realized by `bun:sqlite` (`openOnBun`, `adapter/sql`), because
 `better-sqlite3`'s binding crashes it. Pinned by `compiler/tests/compile.test.ts`.
 
-**The names the scan reads** — `core/src/Conventions.ts`, read by `@fougere/compiler`. Everything else a frond states, it
+**The names the scan reads** — `core/src/config/Conventions.ts`, read by `@fougere/compiler`. Everything else a frond states, it
 states by its SHAPE; the eight convention directories and the import scope are the one place
 a NAME is the declaration, and the only ones a project may restate (`conventions:` in
 `fougere.config.ts`). Two of them extend the FRAMEWORK rather than declare a domain. A
@@ -710,7 +718,7 @@ sits outside it — `remotes/`, which only the far side can write again and whic
 Pinned by `tests/conventions.test.ts`.
 
 **`fronds:` says what an app is MADE OF, and `extends:` says one thing only** —
-`FrondEntries` (`core/src/FrondEntries.ts`), judged by `boot/nesting.ts`. It is the INHERITOR
+`FrondEntries` (`core/src/config/FrondEntries.ts`), judged by `boot/nesting.ts`. It is the INHERITOR
 that names what it inherits from, and by a scalar: a name then lives in one place, so moving a
 frond is one edit and removing it leaves nothing dangling, where a parent listing its own put
 every name twice. It is also the form `tsconfig`, Maven and Kubernetes all chose for
@@ -930,7 +938,7 @@ type built on the first, the card dropping one — three winners and no refusal.
 `core/tests/tables.test.ts`, `adapter/sql/tests/shared-table.test.ts`, `adapter/memory/tests/shared-rows.test.ts`.
 
 **Sources** — a place rows live, and the five gestures it owns: `storageFactory` (required),
-`pending?`, `migrate?`, `transacted?`, `close?` (`core/src/source.ts`). `pending` is `migrate`'s
+`pending?`, `migrate?`, `transacted?`, `close?` (`core/src/extension/Source.ts`). `pending` is `migrate`'s
 dual — read by every boot, where `migrate` is run by `fougere migrate --apply` alone. What a source is MADE OF is not
 there: `adapter/sql` states `dialect`, `db` and `sink` on its own `SqlSource`. The migration
 is the source's own gesture; the router partitions and hands each source its `SourceView`.
@@ -938,7 +946,7 @@ No `transacted` means a frame compensates instead of transacting, and the boot s
 frame. Pinned by `defaults/tests/sources.test.ts`.
 
 **`sources:` is the one key, and an entry is its TYPE's** — `FougereSources`
-(`core/src/FougereSources.ts`), an empty interface each adapter augments beside its
+(`core/src/extension/FougereSources.ts`), an empty interface each adapter augments beside its
 `Sources.register` (`adapter/sql/src/SqlSourceTypes.ts`, `adapter/file`, `adapter/memory`), from
 a `Format` declared ONCE: the editor reads it as a type (`Accepted<typeof …>`) and
 `Sources.open` judges the entry by it, so `pathh` is refused in both. `db:` is gone — an entry lists
@@ -969,14 +977,14 @@ nearest file (`loadNearestConfig`). Pinned by `core/tests/values.test.ts`,
 `defaults/tests/values.test.ts` and `adapter/env/tests/`.
 
 **`protocols:` serves, an import makes available** — `FougereProtocols` and the `Protocols`
-registry (`core/src/Protocol.ts`), augmented by `adapter-rest` and `adapter-graphql` at import.
+registry (`core/src/extension/Protocol.ts`), augmented by `adapter-rest` and `adapter-graphql` at import.
 `protocols: { graphql: {} }` with no import refuses the boot naming it (`boot/protocols.ts`); an
 import alone serves nothing, since a helper imported anywhere would otherwise open `/graphql`.
 The host reads the registry (`app/shared/src/graphql.ts`) and never imports a package by name.
 It replaced `adapters: { rest: true }`, whose open index admitted `grapql: true` in silence and
 whose word already meant the storage engines on an entity.
 
-**`remote:` names its transport by its scheme** — `Transports` (`core/src/Transports.ts`), a
+**`remote:` names its transport by its scheme** — `Transports` (`core/src/extension/Transports.ts`), a
 registry answering `http`, `https` and `binding` once `@fougere/transport-http` is imported (`binding://CATALOG`
 is a Cloudflare service binding, read off `cloudflare:workers` at the first call, the way `d1` reads its
 database). The boot opens each address ONCE, before the router (`transportsOf`, `transportAtOf` in
@@ -996,7 +1004,7 @@ rather than refusing them. Pinned by `core/tests/enforced.test.ts`.
 **A `ref()` is held by a key, read by the guard, or named at boot** — `module/relation/relations.ts`,
 `relationChecksOf`. `relation` is the second member of `Constraint`, and the PAIR decides, never the
 engine: SQL keeps a foreign key over rows it can see, so a key holds only when `sources:` puts both
-in the SAME source and that source keeps relations (`hasForeignKey`, `core/src/SourceView.ts`, read
+in the SAME source and that source keeps relations (`hasForeignKey`, `core/src/module/relation/sourceViewOf.ts`, read
 by the migration's view too). Where a frond answers has no part in it. Anything else becomes a
 `RelationCheck` that `RelationGuard` (`module/relation/`) reads before a write, under the `StorageGuard`
 that parsed it — one read per relation and per page —
@@ -1212,7 +1220,7 @@ one absence from another (`BindingSourceType.missing`, `CollectorResolver.missin
 collector refuses with `Required` too. The handler used to check it: `if (!user) throw UNAUTHORIZED`
 in every op, a `requireUser` helper in the site. Because the check left the handler, the scan reads
 what `missing()` refuses — walked through its helpers like an op — onto `CollectorEntry.refuses`
-(stated by a `frond()` as `{ ctor, refuses }`, written into the emitted statement), and the operation
+(stated by a `frond()` as `{ ctor, refuses }`, written into the emitted `fronds.ts`), and the operation
 model folds it into the `errors` of every op requiring that collector (`refusalsWithCollected`), so the
 card and OpenAPI still promise the `401`. An input that arrived `undefined` used to reach the handler
 — `searchByTitle` answered 500, found by the smoke. Pinned by `core/tests/required-parameter.test.ts`
@@ -1243,7 +1251,7 @@ import it. Fougere ships no router: an engine is one, and its middleware stands 
 Measured 2026-10-27 on an app behind six mounts: srvx's `Request` costs 5–7 % against Fastify reading
 natively, where a call costs ~22 µs off the engine on a `GET`. The peer envelope stays read off the
 Node stream (`transport/http/src/serve/RunningReceiver.ts`): through a `Request` the same call answered
-29 % less. `server: { use }` (`core/src/ServerConfig.ts`) stands srvx middlewares around what `fougere
+29 % less. `server: { use }` (`core/src/config/ServerConfig.ts`) stands srvx middlewares around what `fougere
 serve` answers beside it, outside in, and around nothing else: it is the one host where Fougere is the
 server, and every other host has middlewares of its own. Who is signed in is not a door but the auth frond's op, `session.get`. Pinned by
 `app/shared/tests/serve.test.ts`, `app/shared/tests/express.test.ts` and
@@ -1285,8 +1293,8 @@ nothing else. A base DECLARES (`Repository`'s `__ops`, once seated), the scan DE
 `frond.config.ts` STATES and wins over both. Config also creates an op neither producer
 found — the answer for a method inherited from an installed base class. `description` is the
 method's own doc sentence, read from the AST (`compiler/src/scan/classes.ts`, `docSentenceOf`).
-A `fronds.ts` written by hand states a method's contract as a `StatementOperation`
-(`core/src/StatementOperation.ts`) — `{ params: { id: [Post, 'id'] }, output: Post }`, read by `frond()`
+A `fronds.ts` written by hand states a method's contract as a `DeclaredOperation`
+(`core/src/frond/DeclaredOperation.ts`) — `{ params: { id: [Post, 'id'] }, output: Post }`, read by `frond()`
 into the signature the boot binds from. Nothing is guessed: what the file does not list is not served,
 because the boot cannot tell a method left out from one TypeScript kept `private`. `fougere check` reads
 the sources and names it (`operation-unstated`, `handler-unstated`). Pinned by
@@ -1319,7 +1327,7 @@ handed anything. What it is NOT for is dropping a field: a fact is a PROJECTION
 (`Post.pick('id', 'title')` — five of them in the tree), so what should not travel is
 simply not declared. A link earns its place on what remains and must be TRANSFORMED — a
 hash `pick` cannot produce, a lookup needing a dependency the announcer should not hold. An op taking `Pipe<T>` ANSWERS the fact every subscriber then reads, so its
-output is DERIVED from the fact rather than projected (`effective-operation.ts`) and it is
+output is DERIVED from the fact rather than projected (`EffectiveOperationModel.ts`) and it is
 handed the whole of it (`ArgumentResolver`, the `fact` branch). Several may finish one fact, and they run in
 the ORDER their fact's owner declared — `pipes: { postPublished: ['RedactHandler',
 'StampHandler'] }` in `frond.config.ts`, where the second reads what the first answered.
