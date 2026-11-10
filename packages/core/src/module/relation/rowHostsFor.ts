@@ -40,7 +40,6 @@ export interface Hosted {
   storageOf: (entity: string) => Storage | undefined;
 }
 
-/** The process that serves an entity, asked the questions a release travels on. */
 function peerBehind(entity: string, router: Routing): Peer {
   const ask = async (op: string, params: Record<string, unknown>): Promise<unknown> =>
     (await router.route(entity)).transport(
@@ -61,17 +60,10 @@ function peerBehind(entity: string, router: Routing): Peer {
 export function rowHostsFor(
   { fronds, container, options, transportAt, remoteRouter, entityByName, frondOf, storageOf }: Hosted,
 ): { hosting: RowHosts; journalOf: () => Journal | undefined } {
-  // What carries a release writes none: an instrumentation frond's own rows are kept while a
-  // release happens, and journalling them would begin one inside the one being written down.
   const carriesRelease = new Set(
     fronds.filter((one) => one.fromExtension).flatMap((one) => one.entities.map((entity) => entity.name)),
   );
 
-  /**
-   * The journal a package registered, found where its own frond put it — a provider lands in its
-   * frond's scope, and the app container sees none of them. Resolved per call and never at boot:
-   * the package that registers it rises in the ascent, long after this answer is built.
-   */
   const journalOf = (): Journal | undefined => {
     for (const frond of fronds) {
       if (!frond.fromExtension) continue;
@@ -109,9 +101,6 @@ export function rowHostsFor(
     entities: () => entityByName,
     relations: () => (relations ??= relationGraph(entityByName)),
     journal: (entity) => (carriesRelease.has(entity) ? undefined : journalOf()),
-    // Built from `remotes:` itself and not from the router: the router indexes by ENTITY, read
-    // off a card, while the question here is asked of a PROCESS about rows it may be alone in
-    // knowing about. Nothing is cached — a peer that was down at boot answers the next call.
     peers: () => (transportAt
       ? Object.values(options.remotes ?? {}).map((url) => peerOver(transportAt(url)))
       : []),

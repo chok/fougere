@@ -1,11 +1,7 @@
 import { Graph } from '@fougere/graph';
 import { lowerFirst, Role, type SchemaView } from '@fougere/schema';
 
-/**
- * Every entity, and an edge per `ref()` from the entity that names a row to the entity it names,
- * labelled by the field. A target none of them is still a node: the relation is real, the rows are
- * elsewhere.
- */
+/** Every entity, with an edge per `ref()` from the entity naming a row to the one it names. */
 export function relationGraph(entities: Iterable<readonly [string, SchemaView]>): Graph {
   const relations = new Graph();
   const declared = [...entities];

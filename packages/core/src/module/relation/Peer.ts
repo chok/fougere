@@ -4,13 +4,7 @@ export interface Peer {
   missing(entity: string, keys: readonly unknown[]): Promise<readonly unknown[]>;
   /** Who names these rows over there, and what becomes of them — its own `dependentsOf`. */
   dependents(entity: string): Promise<unknown>;
-  /**
-   * Release a row over there: its rows go first, then the row, on its side of the wire.
-   *
-   * `visited` travels so a release cannot bounce: two processes that declare each other would
-   * otherwise ask each other about the same row forever. It is carried rather than held,
-   * because the two sides share no memory.
-   */
+  /** Release a row over there: its rows go first, then the row, on its side of the wire. */
   release(entity: string, key: unknown, visited: readonly string[]): Promise<void>;
   /** Refuse, as a release would over there, marking what it asked — answered with the marks it set. */
   refuses(entity: string, key: unknown, visited: readonly string[]): Promise<readonly string[]>;

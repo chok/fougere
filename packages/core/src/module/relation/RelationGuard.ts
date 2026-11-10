@@ -19,10 +19,7 @@ export interface Writer {
 /** A unit of work holding these marks, handed the entity's rows bound to it. */
 export type Holding = <R>(marks: readonly string[], write: (rows: Writer) => Promise<R>) => Promise<R>;
 
-/**
- * What a `ref()` asks of a storage: its targets read before a write lands, and what names a row
- * released before the row goes. Stands UNDER `StorageGuard`, so it reads the value the guard parsed.
- */
+/** What a `ref()` asks of a storage: its targets read before a write lands, and what names a row released before the row goes. */
 export class RelationGuard {
   constructor(
     private readonly entity: string,
@@ -43,10 +40,6 @@ export class RelationGuard {
     return guarded;
   }
 
-  /**
-   * What names this row goes first, and this row last: an interruption then leaves fewer
-   * children rather than an orphan. A key holds the rest, at the rows, in one statement.
-   */
   private guardDelete(guarded: Writer, writer: Writer): void {
     const remove = writer.delete;
     if (typeof remove !== 'function' || !this.releasing) return;
@@ -63,7 +56,6 @@ export class RelationGuard {
     };
   }
 
-  /** Every gesture that puts a row down, its targets read first — a whole page in one read per relation. */
   private guardWrites(guarded: Writer, writer: Writer): void {
     const checking = this;
 
@@ -124,7 +116,6 @@ export class RelationGuard {
     }
   }
 
-  /** Read the targets, then write — inside a unit of work holding their marks, where the source holds marks. */
   private async landing<R>(
     rows: readonly Record<string, unknown>[],
     operation: string,
@@ -151,18 +142,6 @@ export class RelationGuard {
     return [...new Set(marks)];
   }
 
-  /**
-   * The rows a `ref()` points at, read before the write lands.
-   *
-   * Only the references the boot could not leave to a foreign key reach here — a target in
-   * the same source is already refused by the key, at the rows, which this cannot be: the
-   * target may be deleted between the read and the write. It catches what a key catches in
-   * practice, which is a key that was never right: a row copied from another environment,
-   * an author deleted months ago, an id from a test.
-   *
-   * A patch that does not carry the field says nothing about it, so it is skipped rather
-   * than read as `null`.
-   */
   private async targetsOf(rows: readonly Record<string, unknown>[], operation: string): Promise<void> {
     if (this.relations.length === 0) return;
 

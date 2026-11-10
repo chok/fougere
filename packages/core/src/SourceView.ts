@@ -15,7 +15,6 @@ export function sourceViewOf(
   fronds: readonly { readonly name?: string; readonly entities: readonly Pick<EntityEntry, 'name' | 'entityClass'>[] }[],
   holds?: (name: string) => boolean,
 ): SourceView {
-  // The table each name is — the union of what the fronds declaring it say, not the last one read.
   const all = tablesOf(fronds).tables;
   if (!holds) return { entities: all };
   const held = new Map([...all].filter(([name]) => holds(name)));
@@ -36,7 +35,7 @@ function namesElsewhere(held: ReadonlyMap<string, SchemaView>, holds: (name: str
 }
 
 /**
- * True when one source holds both rows and keeps the relation between them as a foreign key — read off `sources:` alone, never off where a frond answers.
+ * Whether one source holds both rows and keeps the relation between them as a foreign key.
  *
  * Documented: [entities](https://fougere.dev/docs/concepts/entity).
  */

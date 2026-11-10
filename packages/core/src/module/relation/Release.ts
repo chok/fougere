@@ -185,7 +185,6 @@ async function walk(
   }
 }
 
-/** True once, and remembers — a key already on the path is what ends a cycle. */
 function taken(seen: Set<string>, entity: string, key: unknown): boolean {
   const mark = markOf(entity, key);
   if (seen.has(mark)) return true;
@@ -200,7 +199,6 @@ function keyOf(world: Releasing, entity: string): string {
   return (schema && FieldSet.of(schema.getFields()).primary) ?? 'id';
 }
 
-/** What names these rows and states `restrict` stops the whole release, before anything moves. */
 async function refuseRestricted(
   entity: string,
   dependent: Dependent,
@@ -222,12 +220,6 @@ function restricted(dependent: Dependent, count: number): FougereError {
   });
 }
 
-/**
- * One dependent level: cleared here, or asked of whoever holds it.
- *
- * Nothing here holds those rows — every declared remote is asked about THIS level, and the one
- * that holds them walks its own tree from there.
- */
 async function releaseLevel(
   entity: string,
   dependent: Dependent,

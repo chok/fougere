@@ -3,11 +3,7 @@ import type { RowHosts } from './RowHosts.js';
 import type { RelationCheck } from './RelationCheck.js';
 import { arbitratedHereOnly, unarbitratedRelations, unfinishable } from './relations.js';
 
-/**
- * What no single frond can see about a `ref()`, so it is said once every frond is installed.
- *
- * A target belongs to another frond, and a journal arrives with an extension, which rises last.
- */
+/** What no single frond can see about a `ref()`, so it is said once every frond is installed. */
 export function warnAboutRelations(relations: RelationCheck[], rowHosts: RowHosts, log: Logger): void {
   const unfinished = unfinishable(rowHosts);
   if (unfinished.length > 0) {

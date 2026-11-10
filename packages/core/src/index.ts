@@ -41,8 +41,6 @@ export { release, type Releasing } from './module/relation/Release.js';
 export { releasing } from './module/relation/relations.js';
 export { type Dependent } from './module/relation/Dependent.js';
 export { JOURNAL, type Journal } from './wire/Journal.js';
-// The class and not only its type: an observer RECEIVES these, so a package that folds
-// them — or a test of one — has to be able to make one through the facade.
 export { DispatchEvent } from './dispatch/DispatchEvent.js';
 export { DoorEvent, type DoorStage } from './dispatch/DoorEvent.js';
 export { State } from './wire/State.js';
@@ -72,24 +70,14 @@ export { assertIdentityCard, RPC_ADDRESS, ENVELOPE_BYTES, maxBodyBytes, maxFrame
 export { OPERATION_KINDS, CARDINALITIES, PLACEMENTS, type OperationKind, type Cardinality, type Placement } from './contract.js';
 export { createLocalRunner, createAppRunner } from './boot/runner.js';
 
-// A frond an app STATES, for a boot that will not scan. No disk, no `typescript` — which
-// is why it sits here and not in `/node`, beside the scanner that reads a project.
 export { frond } from './FrondDeclaration.js';
 export type { Declared } from './Declared.js';
 export type { DeclaredSubject } from './DeclaredSubject.js';
 export type { FrondDeclaration } from './FrondDeclaration.js';
-// What this app would answer to `rpc.discover`. Served by the boot, and reached until now
-// only by tests through a deep path — a consumer comparing its own card to a producer's
-// had to dispatch a call to ask a question about itself.
 export { identityCardOf } from './boot/card.js';
-// Its dual: what the app declares about its NEIGHBOURS. Read by `rpc.topology`, by
-// `@fougere/calls` and by `fougere graph`, which each held their own half of it.
 export { declaredTopologyOf } from './module/topology/declared.js';
-// Both halves of what a call can refuse, put together where they are READ — the framework's
-// follows from `kind` and `input`, so only the frond's travels.
 export { refusalsOf, type Refusable } from './wire/refusals.js';
 export type { Binding } from './Binding.js';
-// The facades as TYPES — empty here, filled by the `.d.ts` the scan writes beside the app.
 export type { Addresses } from './wire/Addresses.js';
 export type { Answer } from './wire/Answer.js';
 export type { AnyHandler } from './wire/AnyHandler.js';
@@ -123,9 +111,7 @@ export { Logger, envLevel, formatted, logLevel, setLogLevel } from './builtin/Lo
 export { argumentText, type LogRecord } from './builtin/LogRecord.js';
 export type { LogSink } from './builtin/LogSink.js';
 export type { Rendered } from './builtin/Rendered.js';
-// The fact a boot announces. Its destinations are `@fougere/log`'s; the line is core's.
 export { default as LogLine, CARRIES_LINE, LOG_LINE } from './builtin/LogLine.js';
-// What a re-read config changes in a running process — and what it cannot.
 export { applyConfig } from './boot/apply.js';
 export type { ListOptions } from './storage/ListOptions.js';
 export type { ListResult } from './storage/ListResult.js';
@@ -134,7 +120,6 @@ export type { Together } from './storage/Together.js';
 export { isChange } from './storage/Change.js';
 export { Turns } from './storage/Turns.js';
 export type { Change } from './storage/Change.js';
-// A VALUE as well as a type: it is what a wrapper extends, which is the whole of declaring one.
 export { Storage, togetherKeyOf } from './storage/Storage.js';
 export type { Constraint } from './Constraint.js';
 export type { Source } from './Source.js';
@@ -170,10 +155,6 @@ export type { SeedEntry } from './descriptor/SeedEntry.js';
 export { AUTH, type AuthRuntime } from './boot/AuthRuntime.js';
 export { Fronds } from './descriptor/Fronds.js';
 export { verify, type Misplaced } from './verify.js';
-// Same question as verify(), answered from the source text instead of the model.
-// Who is calling, established rather than accepted — the proof beside `state`'s claim.
-// `generateKeyPair` and `issueGrant` are NOT here: they make keys at a deployment and
-// need `node:crypto` for a gesture WebCrypto has no equal of. They sit on `/node`.
 export { signEnvelope, verifyEnvelope, identityFromEnv, type CallIdentity } from './CallIdentity.js';
 export type { FrondIdentity } from './FrondIdentity.js';
 export type { SignedCall } from './wire/SignedCall.js';

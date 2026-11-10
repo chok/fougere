@@ -29,7 +29,6 @@ async function forgetting(factory: StorageFactory, marks: readonly string[]): Pr
   for (const mark of marks) await keptIn(factory).delete(mark);
 }
 
-/** Every mark has its row before it is locked, and two writers placing one at once leave one row. */
 async function placing(factory: StorageFactory, marks: readonly string[]): Promise<void> {
   const kept = keptIn(factory);
   const found = await kept.findByKeys([...marks]);
@@ -42,7 +41,6 @@ async function placing(factory: StorageFactory, marks: readonly string[]): Promi
   }
 }
 
-/** A row forgotten between being placed and being locked, which placing it again answers. */
 class MarkForgotten extends Error {}
 
 /**
@@ -102,7 +100,6 @@ async function lock(
   }
 }
 
-/** Who holds each mark in this process: many writers at once, or one release alone. */
 class MarkLocks {
   private readers = new Map<string, number>();
   private writers = new Set<string>();

@@ -6,10 +6,7 @@ import { refuse, release as releaseRow } from './Release.js';
 import { ErrorCode } from '../../wire/ErrorCode.js';
 import { FougereError } from '../../wire/FougereError.js';
 
-/**
- * The questions a release travels on, served in every process: `holds` is the write's
- * question asked across, `refuses` and `release` the delete's, `dependents` what names an entity here.
- */
+/** The questions a release travels on, served in every process: `holds`, `refuses`, `release`, `dependents`. */
 export function serveRelationReadings(
   serveRpc: (operation: string, answer: RpcAnswer) => void,
   rowHosts: RowHosts,
