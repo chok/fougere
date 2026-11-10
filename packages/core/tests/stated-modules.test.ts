@@ -6,9 +6,9 @@
  * extension: the same reading `extensions/` already does off a module's form.
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { configModules } from '../src/ConfigModules.js';
+import { configModules } from '../src/project/ConfigModules.js';
 import { setModuleLoader } from '../src/loader.js';
-import { frond } from '../src/FrondDeclaration.js';
+import { frond } from '../src/frond/FrondDeclaration.js';
 
 const modules: Record<string, Record<string, unknown>> = {
   '@acme/audit': { audit: (path: unknown) => ({ name: 'audit', path, handlers: [] }) },

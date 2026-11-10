@@ -1,9 +1,9 @@
-import type { Extension } from './boot/Extension.js';
-import type { FrondDescriptor } from './descriptor/FrondDescriptor.js';
-import { isExtension } from './descriptor/ExtensionEntry.js';
-import { statesModule, type FrondEntries } from './FrondEntries.js';
-import { keyedFrondEntries } from './KeyedFrondEntry.js';
-import { getModuleLoader, type ModuleLoader } from './loader.js';
+import type { Extension } from '../boot/Extension.js';
+import type { FrondDescriptor } from '../descriptor/FrondDescriptor.js';
+import { isExtension } from '../descriptor/ExtensionEntry.js';
+import { statesModule, type FrondEntries } from '../config/FrondEntries.js';
+import { keyedFrondEntries } from '../config/KeyedFrondEntry.js';
+import { getModuleLoader, type ModuleLoader } from '../loader.js';
 
 function exportedBy(specifier: string): string {
   const last = specifier.split('/').at(-1) ?? specifier;

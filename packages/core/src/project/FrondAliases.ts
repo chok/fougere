@@ -4,7 +4,7 @@ import module from 'node:module';
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { createPathsMatcher, getTsconfig } from 'get-tsconfig';
-import { DEFAULT_CONVENTIONS, frondPackage, type Conventions } from './Conventions.js';
+import { DEFAULT_CONVENTIONS, frondPackage, type Conventions } from '../config/Conventions.js';
 
 /** Where `fougere sync` writes a frond another process serves — versioned, since only that process can write it again. */
 export const REMOTES = 'remotes';
