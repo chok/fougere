@@ -1,6 +1,6 @@
 import { tablesOf } from '../descriptor/tables.js';
 import { createContainer, type Container } from '@fougere/container';
-import { resolveConventions } from '../Conventions.js';
+import { resolveConventions } from '../config/Conventions.js';
 import { unregistered } from './unregistered.js';
 import { answerAt, type DoorAround } from '../entry/door.js';
 import { keeperFronds, keepingOf } from '../module/state/keeping.js';
@@ -30,7 +30,7 @@ import { type RemoteRouter } from './remote.js';
 import { Emissions } from '../module/fact/Emissions.js';
 import type { OperationContract } from '../wire/OperationContract.js';
 import type { OperationsMap } from '../wire/OperationsMap.js';
-import { type EffectiveOperationsMap } from '../EffectiveOperationsMap.js';
+import { type EffectiveOperationsMap } from '../operation/EffectiveOperationsMap.js';
 import { addressOf } from '../wire/Facade.js';
 import { AppLifecycle, checking, closeAll } from './AppLifecycle.js';
 import { seeding } from './seed.js';

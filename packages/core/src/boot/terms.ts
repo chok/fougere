@@ -1,7 +1,7 @@
 import { NamedTerm } from '@fougere/schema';
 import type { Diagnostic } from '../diagnostic.js';
 import type { FrondDescriptor } from '../descriptor/FrondDescriptor.js';
-import { directoryOf, resolveConventions, type Conventions } from '../Conventions.js';
+import { directoryOf, resolveConventions, type Conventions } from '../config/Conventions.js';
 
 /** The terms an entity names that nothing in this process answers. */
 export function termRefusals(fronds: readonly FrondDescriptor[], conventions: Conventions = resolveConventions()): Diagnostic[] {

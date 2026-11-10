@@ -1,5 +1,5 @@
-import type { Conventions } from './Conventions.js';
-import type { Diagnostic } from './diagnostic.js';
+import type { Conventions } from '../config/Conventions.js';
+import type { Diagnostic } from '../diagnostic.js';
 
 export interface EffectiveOperationOptions {
   diagnostics?: readonly Diagnostic[];

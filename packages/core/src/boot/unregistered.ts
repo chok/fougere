@@ -1,5 +1,5 @@
 import type { Container } from '@fougere/container';
-import { directoryOf, resolveConventions, type Conventions } from '../Conventions.js';
+import { directoryOf, resolveConventions, type Conventions } from '../config/Conventions.js';
 import type { Diagnostic } from '../diagnostic.js';
 import type { FrondDescriptor } from '../descriptor/FrondDescriptor.js';
 import { HOST_PORTS } from './ports.js';

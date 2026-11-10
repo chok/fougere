@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { statesModule, type FrondEntries } from '../src/FrondEntries.js';
-import { keyedFrondEntries } from '../src/KeyedFrondEntry.js';
-import { remotesOf } from '../src/FougereConfig.js';
+import { statesModule, type FrondEntries } from '../src/config/FrondEntries.js';
+import { keyedFrondEntries } from '../src/config/KeyedFrondEntry.js';
+import { remotesOf } from '../src/config/FougereConfig.js';
 
 describe('statesModule', () => {
   it('tells a module specifier from a frond name', () => {

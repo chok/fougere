@@ -1,5 +1,5 @@
 import { statesModule, type FrondAttributes, type FrondEntry, type FrondEntries } from './FrondEntries.js';
-import { isFrondDescriptor, type FrondDescriptor } from './descriptor/FrondDescriptor.js';
+import { isFrondDescriptor, type FrondDescriptor } from '../descriptor/FrondDescriptor.js';
 
 /** One entry of the config, read whole. */
 export interface KeyedFrondEntry {

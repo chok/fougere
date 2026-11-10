@@ -1,16 +1,16 @@
 import type { Term } from '@fougere/registry';
 import type { ValueSources } from '../module/value/ValueSources.js';
 import type { Container } from '@fougere/container';
-import type { ProtocolConfig } from '../Protocol.js';
+import type { ProtocolConfig } from '../extension/Protocol.js';
 import type { FrondDescriptor } from '../descriptor/FrondDescriptor.js';
-import type { FrondEntries } from '../FrondEntries.js';
+import type { FrondEntries } from '../config/FrondEntries.js';
 import type { StorageFactory } from '../storage/StorageFactory.js';
-import type { Constraint } from '../Constraint.js';
+import type { Constraint } from '../extension/Constraint.js';
 import type { Transport } from '../wire/Transport.js';
 import type { Extension } from './Extension.js';
-import type { ConventionsInput } from '../ConventionsInput.js';
+import type { ConventionsInput } from '../config/ConventionsInput.js';
 import type { App } from './App.js';
-import type { StateEntry } from '../FougereStates.js';
+import type { StateEntry } from '../extension/FougereStates.js';
 
 /** Options for createApp(). */
 export interface CreateAppOptions {

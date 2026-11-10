@@ -1,16 +1,16 @@
 import { lowerFirst, upperFirst, type SchemaView } from '@fougere/schema';
-import { directoryOf, type Conventions } from './Conventions.js';
-import type { BindingPlan } from './wire/binding.js';
-import type { CollectorEntry } from './descriptor/CollectorEntry.js';
-import type { FrondDescriptor } from './descriptor/FrondDescriptor.js';
-import type { HandlerEntry } from './descriptor/HandlerEntry.js';
-import { OperationOverrides } from './descriptor/OperationOverrides.js';
-import type { Diagnostic } from './diagnostic.js';
-import type { OperationContract } from './wire/OperationContract.js';
-import type { TypeRef } from './wire/TypeRef.js';
+import { directoryOf, type Conventions } from '../config/Conventions.js';
+import type { BindingPlan } from '../wire/binding.js';
+import type { CollectorEntry } from '../descriptor/CollectorEntry.js';
+import type { FrondDescriptor } from '../descriptor/FrondDescriptor.js';
+import type { HandlerEntry } from '../descriptor/HandlerEntry.js';
+import { OperationOverrides } from '../descriptor/OperationOverrides.js';
+import type { Diagnostic } from '../diagnostic.js';
+import type { OperationContract } from '../wire/OperationContract.js';
+import type { TypeRef } from '../wire/TypeRef.js';
 import type { EffectiveParameter } from './EffectiveParameter.js';
 import type { Binding } from './Binding.js';
-import { opsOf } from './prefab/opsOf.js';
+import { opsOf } from '../prefab/opsOf.js';
 
 /** A contract whose parameters are all bound. */
 export type BoundContract = OperationContract & { binding: BindingPlan };

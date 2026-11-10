@@ -1,4 +1,4 @@
-import type { FougereConfig } from '../FougereConfig.js';
+import type { FougereConfig } from '../config/FougereConfig.js';
 import { envLevel, logLevel, setLogLevel } from '../builtin/Logger.js';
 import { maxBodyBytes, setMaxBodyBytes } from '../wire/BodyLimit.js';
 import { dequal } from 'dequal';

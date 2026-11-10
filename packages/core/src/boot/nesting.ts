@@ -1,10 +1,10 @@
 import type { Diagnostic } from '../diagnostic.js';
-import { frondPackage, resolveConventions, type Conventions } from '../Conventions.js';
+import { frondPackage, resolveConventions, type Conventions } from '../config/Conventions.js';
 import { isFrondDescriptor } from '../descriptor/FrondDescriptor.js';
 import type { FrondDescriptor } from '../descriptor/FrondDescriptor.js';
 import { Fronds } from '../descriptor/Fronds.js';
-import { statesModule, type FrondEntries } from '../FrondEntries.js';
-import { keyedFrondEntries } from '../KeyedFrondEntry.js';
+import { statesModule, type FrondEntries } from '../config/FrondEntries.js';
+import { keyedFrondEntries } from '../config/KeyedFrondEntry.js';
 
 function refuseServingParent(
   parent: FrondDescriptor,

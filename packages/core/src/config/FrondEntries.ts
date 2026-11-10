@@ -1,5 +1,5 @@
-import type { NameOf } from './NameOf.js';
-import type { FrondDescriptor } from './descriptor/FrondDescriptor.js';
+import type { NameOf } from '../NameOf.js';
+import type { FrondDescriptor } from '../descriptor/FrondDescriptor.js';
 
 /**
  * What the config says about the fronds this app is made of.

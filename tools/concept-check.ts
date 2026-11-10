@@ -53,7 +53,7 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 import ts from '@typescript/typescript6';
-import { DEFAULT_CONVENTIONS } from '../packages/core/src/Conventions.ts';
+import { DEFAULT_CONVENTIONS } from '../packages/core/src/config/Conventions.ts';
 
 const ROOT = path.resolve(import.meta.dirname, '..');
 const SKIP = new Set(['node_modules', 'dist', 'tests', 'test', '__tests__', 'template', 'templates', '.fougere']);
