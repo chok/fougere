@@ -5,7 +5,6 @@ import type { LogRecord } from '@fougere/core';
 import type { CapturedLog } from './CapturedLog.js';
 import type { LogsOptions } from './LogsOptions.js';
 
-/** OTLP severity numbers — the scale is 1–24, these are the canonical rungs. */
 const SEVERITY: Record<string, { number: number; text: string }> = {
   debug: { number: 5, text: 'DEBUG' },
   info: { number: 9, text: 'INFO' },
@@ -27,8 +26,6 @@ export function logs(options: LogsOptions): LogExporter {
   const floor = options.minimum ? SEVERITY[options.minimum].number : 0;
   let buffer: CapturedLog[] = [];
 
-  // Nothing leaves when nothing was written — unlike the span exporter, which publishes
-  // its metrics on every beat regardless.
   async function flush(): Promise<void> {
     if (buffer.length === 0) return;
     const batch = buffer;
@@ -39,8 +36,6 @@ export function logs(options: LogsOptions): LogExporter {
   const beat = Beat.every(options.flushMs, flush);
 
   return {
-    // The span is read HERE, while the line is being written — not at flush time, when
-    // the call it belongs to is long over and the context is somebody else's.
     sink: (record) => {
       if (SEVERITY[record.level].number < floor) return;
       const span = currentSpan();
@@ -51,7 +46,6 @@ export function logs(options: LogsOptions): LogExporter {
   };
 }
 
-/** One batch, as OTLP/JSON spells logs. */
 function payload(service: string, records: CapturedLog[]) {
   const attr = (key: string, value: string) => ({ key, value: { stringValue: value } });
 
@@ -72,8 +66,6 @@ function payload(service: string, records: CapturedLog[]) {
                 severityText: severity.text,
                 body: { stringValue: bodyOf(record) },
                 attributes: [attr('logger.name', record.name)],
-                // Absent when the line was written outside any call — a boot line, a
-                // shutdown line. Absent is the honest answer, not a zeroed id.
                 ...(record.traceId ? { traceId: record.traceId } : {}),
                 ...(record.spanId ? { spanId: record.spanId } : {}),
               };
@@ -85,10 +77,6 @@ function payload(service: string, records: CapturedLog[]) {
   };
 }
 
-/**
- * The message with its arguments folded in. A log call takes extras the way `console`
- * does, and a collector stores one body — so they are joined rather than dropped.
- */
 function bodyOf(record: CapturedLog): string {
   if (record.args.length === 0) return record.message;
 

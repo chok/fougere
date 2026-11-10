@@ -15,41 +15,16 @@ export interface ObservabilityOptions {
   flushMs?: number;
   /** A collector that cannot be reached is the app's business, not its failure. */
   onError?: (error: unknown) => void;
-  /**
-   * One more taker for this app's spans, beside the metrics and the exporter — a gauge, a
-   * console line, anything reading what an operation cost. It is declared here rather than
-   * registered afterwards so it is released with the app, like everything else the
-   * extension took.
-   */
+  /** One more taker for this app's spans, released with the app. */
   onSpan?: SpanSink;
-  /**
-   * A span of its own for every statement, beside the count every operation already carries.
-   * Off by default — see `TracingOptions.spanPerStatement`.
-   */
+  /** A span of its own for every statement, beside the count every operation already carries. */
   spanPerStatement?: boolean;
-  /**
-   * What share of the operations that stay in this process are traced, `0` to `1`. Default `1`.
-   *
-   * A rate is a budget, which no reading of the code answers. What the code does answer is
-   * which spans a budget may not touch — see `TracingOptions.sample`.
-   */
+  /** What share of the operations that stay in this process are traced, `0` to `1`. */
   sample?: number;
-  /**
-   * Bucket bounds in SECONDS for the duration histograms. Default: the OpenTelemetry
-   * recommendation for request durations, which assumes a healthy op lives under 100 ms.
-   *
-   * One list for the whole process, deliberately — see `metrics.ts`.
-   */
+  /** Bucket bounds in seconds for the duration histograms. */
   bounds?: readonly number[];
 }
 
-/**
- * How far each operation's work goes, read off the model ONCE at boot.
- *
- * `EffectiveOperation.reach` is resolved when the app is built, so the middleware does not
- * recompute it per call — it looks one name up. An address the model does not hold answers zero,
- * which is what `rpc` and a brought frond's own ops are.
- */
 function hopsIn(app: App): (address: string, operation: string) => number {
   const hops = new Map<string, number>();
   for (const frond of app.fronds) {
@@ -66,20 +41,15 @@ function hopsIn(app: App): (address: string, operation: string) => number {
 /** Observe this process — one member of the ascent. */
 export function observability(options: ObservabilityOptions = {}): Extension {
   const service = options.service ?? 'fougere';
-  /** Per APP, not per extension. */
   const undoing = new WeakMap<App, (() => void | Promise<void>)[]>();
 
-  /** One box the handler resolves, whose content the ascent decides. */
   const exporting: { take: LogSink } = { take: () => {} };
 
-  /** Who takes this app's spans. Per APP for the reason `undoing` is. */
   const takers = new WeakMap<App, SpanSink[]>();
 
   return {
     name: 'observability',
 
-    // What it needs a SIGNATURE for: every line this process logs. Stated rather than
-    // scanned, because a published package is read by no scanner.
     fronds: [frond('observability', {
       handlers: [{
         ctor: ExportHandler,
@@ -94,8 +64,6 @@ export function observability(options: ObservabilityOptions = {}): Extension {
     })],
 
     async up(app: App) {
-      // Held across the ascent: the exporter exists only when `otlp` is declared, and the
-      // handler resolves this either way.
       app.container.registerValue('LogExport', exporting);
       const undo: (() => void | Promise<void>)[] = [];
       undoing.set(app, undo);
@@ -109,10 +77,6 @@ export function observability(options: ObservabilityOptions = {}): Extension {
       app.use(tracer.middleware);
       undo.push(await statementsUnder(tracer));
 
-      // Said once, here, because the alternative is finding it in a trace viewer three
-      // weeks later: without an ambient context a call that crossed NO wire cannot name
-      // its parent, so it starts its own trace. What still works is stated too — a
-      // warning that only names the loss reads as "tracing is broken", and it is not.
       if (!traceContext.ambient) {
         app.container.resolve<Logger>('Logger').child(service).warn(
           'This runtime has no async context, so calls inside this process start their own trace instead of joining '
@@ -140,10 +104,6 @@ export function observability(options: ObservabilityOptions = {}): Extension {
         ...(options.flushMs === undefined ? {} : { flushMs: options.flushMs }),
         ...(options.onError ? { onError: options.onError } : {}),
       });
-      // The timer is not the only way out: an isolate is frozen when it answers, so a
-      // host with no time between requests calls `flushTelemetry()` inside `ctx.waitUntil`.
-      // What `ExportHandler` asks for — replaced rather than added to, so a reload does not
-      // hand the old exporter a new app's lines.
       exporting.take = written.sink;
       spans.push(telemetry.sink);
       undo.push(
@@ -153,12 +113,9 @@ export function observability(options: ObservabilityOptions = {}): Extension {
       );
     },
     async down(app: App) {
-      // Reverse, and the exporters' `stop()` is in here: it flushes what is buffered, so a
-      // released app publishes what it measured instead of dropping its last window.
       const undo = undoing.get(app);
       if (!undo) return;
       undoing.delete(app);
-      // Nothing to unsubscribe from: the list was this app's, and it goes with it.
       takers.delete(app);
       for (const step of undo.reverse()) await step();
     },

@@ -16,7 +16,6 @@ export class LogRing extends Ring<LogLine> {
   }
 }
 
-/** An argument as one line. A live object would change under the reader; a string cannot. */
 function render(value: unknown): string {
   if (typeof value === 'string') return value;
   if (value instanceof Error) return `${value.name}: ${value.message}`;

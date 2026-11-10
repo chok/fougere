@@ -1,12 +1,6 @@
 import { CARRIES_LINE, type AppMiddleware, type Logger } from '@fougere/core';
 
-/**
- * Two lines a call — that it began, and what it cost — written under the frond that answers. A
- * call from another process names the one that signed it.
- *
- * An op that CARRIES a line writes none: it is dispatched, so logging it announces a line inside
- * the announcement of one — `Emission cycle: logLine → logLine`.
- */
+/** Two lines a call, that it began and what it cost, under the frond that answers. */
 export function callLines(logger: Logger): AppMiddleware {
   return async (context, next) => {
     if (CARRIES_LINE.has(context.address)) return next();

@@ -4,12 +4,7 @@ import RunRepository from './RunRepository.js';
 
 export { JOURNAL };
 
-/**
- * The journal core asks for, answered by a row.
- *
- * Registered under core's own key, which is how an optional package answers a reading core
- * declares — the same shape a source takes when it says what it keeps at the rows.
- */
+/** The journal core asks for, answered by a row. */
 export default class RunJournal implements Journal {
   constructor(private runs: RunRepository, private later: LaterRepository) {}
 

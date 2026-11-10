@@ -1,6 +1,5 @@
 import { RPC_ADDRESS, type CallPage, type CallRecord, type DispatchEvent } from '@fougere/core';
 
-/** The message and the code of a refusal, without the stack that carries a body. */
 function refusalOf(error: unknown): CallRecord['refusal'] {
   if (error === null || error === undefined) return { message: 'unknown refusal' };
   const thrown = error as { code?: unknown; message?: unknown };
@@ -26,8 +25,6 @@ export class CallRing {
 
   /** KNOWN LIMIT — a call this process ORIGINATES carries no trace here. */
   record(event: DispatchEvent): void {
-    // A reader reaches this ring through `rpc`, so recording that would make the panel
-    // watch itself — one reader, one line, forever.
     if (event.call.address.address === RPC_ADDRESS) return;
 
     if (event.stage === 'received') return this.opened(event);
@@ -46,8 +43,6 @@ export class CallRing {
       if (event.routeKind) record.route = event.routeKind;
       this.open.delete(event.call);
       for (const told of this.watching) {
-        // A watcher's own failure is not the dispatch's problem — the same rule
-        // `DispatchLifecycle` applies to an observer.
         try { told(record); } catch { /* observational */ }
       }
     }

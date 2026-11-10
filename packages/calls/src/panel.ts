@@ -22,7 +22,6 @@ export interface PanelOptions {
   announce?: (url: string) => void;
 }
 
-/** How often the page is told how many calls are in flight. */
 const BEAT_MS = 1000;
 
 /** Serves the panel and returns how to close it. */
@@ -54,8 +53,6 @@ export function servePanel(ring: CallRing, options: PanelOptions = {}): Promise<
         'cache-control': 'no-cache',
         connection: 'keep-alive',
       });
-      // The page is handed the ring as it stands, so a reader that opens late is not
-      // looking at an empty screen that suggests a quiet app.
       const backlog = ring.since(0);
       response.write(`event: hello\ndata: ${JSON.stringify({ calls: backlog.calls, fronds: options.fronds ?? [] })}\n\n`);
       readers.add(response);
@@ -64,8 +61,6 @@ export function servePanel(ring: CallRing, options: PanelOptions = {}): Promise<
       return;
     }
 
-    // One facade per ring, each taking a cursor: a reader asks for what is above its own,
-    // which is the whole protocol — no subscription to hold, nothing to replay.
     for (const [name, read] of [['logs', options.logs], ['errors', options.errors], ['queries', options.queries]] as const) {
       if (path !== `/${name}.json`) continue;
       const since = Number(new URL(request.url ?? '/', 'http://panel').searchParams.get('since') ?? 0);
@@ -102,8 +97,6 @@ export function servePanel(ring: CallRing, options: PanelOptions = {}): Promise<
 
   return new Promise((ready, refuse) => {
     server.on('error', refuse);
-    // Loopback only. This facade has no validator — `serve()` refuses to start beyond loopback
-    // without `verify`, and this one would not know how to refuse at all.
     server.listen(options.port ?? 0, '127.0.0.1', () => {
       const port = (server.address() as { port: number }).port;
       options.announce?.(`http://127.0.0.1:${port}`);

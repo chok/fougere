@@ -1,11 +1,7 @@
 import { Collect, type FrondDeclaration, type InvocationContext } from '@fougere/core';
 import { entity, json, nullable, type Entity, type Schema } from '@fougere/schema';
 
-/**
- * Who is signed in on a call, answered as an operation of the auth frond — `session.get` — so a page
- * asks for its user the way it asks for anything else, and the user's own boundary decides what of
- * it travels. Nobody signed in is an answer, `{ user: null }`, and never a row that is missing.
- */
+/** Who is signed in on a call, as the auth frond's `session.get`; nobody is `{ user: null }`. */
 export function sessionOperation(user: Entity): Required<Pick<FrondDeclaration, 'collectors' | 'handlers'>> {
   class Session extends entity({ user: nullable(json(user as typeof Schema)) }) {}
 

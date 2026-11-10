@@ -5,10 +5,7 @@ export class Beat {
     private readonly run: () => Promise<void>,
   ) {}
 
-  /**
-   * `unref` so a buffered record never keeps a process alive: exporting is something the
-   * process does on its way, never a reason for it to stay.
-   */
+  /** Runs `run` every `ms`, unref'd so it never keeps a process alive. */
   static every(ms: number | undefined, run: () => Promise<void>): Beat {
     const every = ms ?? 1_000;
     const timer = every > 0 ? setInterval(() => void run(), every) : undefined;

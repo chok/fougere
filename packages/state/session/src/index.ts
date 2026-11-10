@@ -6,7 +6,6 @@ import StateSession from './StateSession.js';
 
 export { default as StateSession } from './StateSession.js';
 
-/** What `state: { cart: { session: {} } }` may say — nothing yet: every name shares one row. */
 const SESSION = Format.of('state/session').closed();
 
 export type SessionOptions = Accepted<typeof SESSION>;
@@ -17,10 +16,8 @@ declare module '@fougere/core' {
   }
 }
 
-/** The cookie the reference travels in. */
 const REFERENCE = 'session';
 
-/** A request's row, read once and found again when the request writes. */
 const held = new WeakMap<object, StateSession | undefined>();
 
 const cookie = () => States.resolve('cookie');
@@ -32,7 +29,6 @@ function rowsIn(storageFor: StorageFor) {
   return rows;
 }
 
-/** 256 random bits: what nobody guesses needs no signature. */
 function referenceOf(): string {
   const bytes = globalThis.crypto.getRandomValues(new Uint8Array(32));
 

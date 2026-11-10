@@ -1,7 +1,6 @@
 import { ambient } from '@fougere/core';
 import type { SpanContext } from './traceparent.js';
 
-/** The step running now — this package's slot in core's context, beside the operation and the request. */
 const span = ambient.slot<SpanContext>('span');
 
 export const traceContext = {

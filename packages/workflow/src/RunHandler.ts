@@ -5,12 +5,7 @@ import RunRepository from './RunRepository.js';
 export default class RunHandler {
   constructor(private runs: RunRepository, private releasing: Releasing) {}
 
-  /**
-   * Redo every release whose driver stopped saying it was alive.
-   *
-   * An operation, so the CLI, an HTTP route and a cron all reach it the same way — a durable
-   * engine ships one host adapter per platform to get this far.
-   */
+  /** Redo every release whose driver stopped saying it was alive. */
   async sweep(): Promise<{ resumed: string[]; failed: string[] }> {
     const resumed: string[] = [];
     const failed: string[] = [];

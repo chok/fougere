@@ -34,16 +34,11 @@ export class ErrorRing extends Ring<ErrorGroup> {
     const seen = this.byKey.get(key);
     const at = Date.now();
 
-    // Grouped, because a refusal seen forty times is one line with a count — not forty
-    // lines that push everything else out of a bounded ring.
     if (seen) {
       seen.count += 1;
       seen.lastAt = at;
       seen.message = one.message;
       if (one.fields.length > 0) seen.fields = one.fields;
-      // Re-numbered so a reader that already saw this group is handed the higher count.
-      // Without it a refusal seen forty times reports one, forever: the group is mutated
-      // in place, and a cursor asks only for what is above it.
       seen.seq = ++this.seq;
 
       return;

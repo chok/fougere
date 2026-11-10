@@ -18,11 +18,7 @@ export interface CallsOptions {
   panel?: boolean | number | PanelOptions;
 }
 
-/** What this process serves, read from the app itself. */
 function servedModel(app: App): unknown {
-  // What the config SAYS. What the runtime saw is in the ring, under `route` — and the two
-  // disagree exactly when something is misconfigured, which is the whole point of showing
-  // them side by side. `rpc.topology` calls a frond remote because it ANSWERED.
   const declared = declaredTopologyOf(app);
   const stated = new Map(declared.fronds.map((one) => [one.frond, one]));
 
@@ -68,7 +64,6 @@ function nameOf(schema: unknown): string | null {
   return typeof named.getName === 'function' ? named.getName() : named.name ?? null;
 }
 
-/** `address -> frond`, resolved once at boot: a call's address does not carry its frond. */
 function frondIndex(app: App): (address: string) => string | undefined {
   const byAddress = new Map<string, string>();
   for (const frond of app.fronds) {
@@ -78,7 +73,6 @@ function frondIndex(app: App): (address: string) => string | undefined {
   return (address) => byAddress.get(address);
 }
 
-/** Subscribe to SQL when there is SQL. */
 async function queriesFrom(queries: QueryRing): Promise<() => void> {
   try {
     const { onQuery } = await import('@fougere/adapter-sql');
@@ -98,14 +92,11 @@ function cursorOf(invocation: InvocationContext): number {
 
 /** What this process dispatched, kept in a bounded ring and served as an rpc operation. */
 export function calls(options: CallsOptions = {}): Extension {
-  /** Per APP, not per extension. */
   const stopping = new WeakMap<App, () => void | Promise<void>>();
 
   return {
     name: 'calls',
 
-    // What it needs a SIGNATURE for: every line this process logs. Stated rather than
-    // scanned, because a published package is read by no scanner.
     fronds: [frond('calls', {
       handlers: [{
         ctor: KeepHandler,
@@ -125,24 +116,16 @@ export function calls(options: CallsOptions = {}): Extension {
       const errors = new ErrorRing();
       const queries = new QueryRing();
 
-      // The rings the frond's handler asks for. Registered here and resolved at its first
-      // call, which is after this ascent — so a signature replaces the `onLog` sink.
       app.container.registerValue('LogRing', logs);
       app.container.registerValue('ErrorRing', errors);
 
       const undo = [
         app.observe((event) => {
-          // The ring holds calls; a request at a door is the calls' context, not one of them.
           if (!(event instanceof DispatchEvent)) return;
-          // Not its own: keeping a line is a DISPATCH, so the ring would fill with the
-          // writes that fill it — the same shape as a logger that logs its own carrying.
           if (CARRIES_LINE.has(event.call.address.address)) return;
           ring.record(event);
           if (event.stage === 'failed') errors.fromDispatch(event);
         }),
-        // `@fougere/adapter-sql` is optional — an app on another storage, or none, simply
-        // never resolves it, and the Queries tab says there is none rather than staying
-        // blank. Dynamic on purpose: this package declares no dependency on it.
         await queriesFrom(queries),
       ];
       const stop = () => { for (const one of undo) one(); };
@@ -161,7 +144,6 @@ export function calls(options: CallsOptions = {}): Extension {
         ...asked,
         ...(port !== undefined ? { port } : {}),
         title: asked.title ?? app.fronds[0]?.name ?? 'fougere',
-        // What this app SERVES: a frond an extension brought is instrumentation.
         fronds: app.fronds.filter((frond) => !frond.fromExtension).map((frond) => frond.name),
         model: servedModel(app),
         logs: (cursor) => logs.since(cursor),

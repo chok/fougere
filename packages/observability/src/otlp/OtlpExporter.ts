@@ -13,12 +13,10 @@ export interface OtlpExporter {
   stop(): Promise<void>;
 }
 
-/** OTLP status codes: 0 unset, 1 ok, 2 error. */
 const OK = 1;
 
 const ERROR = 2;
 
-/** OTLP span kinds, of the six only these three are ours. */
 const INTERNAL = 1;
 
 const SERVER = 2;
@@ -37,8 +35,6 @@ export function otlp(options: OtlpOptions): OtlpExporter {
   async function flush(): Promise<void> {
     const batch = buffer;
     buffer = [];
-    // Metrics go on every beat even when no span finished: a gauge that stops being
-    // published reads as "gone", not as "idle".
     await Promise.all([
       batch.length > 0 ? traces.post(payload(options.service, batch)) : Promise.resolve(),
       options.metrics ? metrics.post(metricsPayload(options.service, options.metrics.snapshot())) : Promise.resolve(),
@@ -54,7 +50,6 @@ export function otlp(options: OtlpOptions): OtlpExporter {
   };
 }
 
-/** One batch, as OTLP/JSON spells it — trace and span ids stay hex, times are nanos. */
 function payload(service: string, spans: FinishedSpan[]) {
   return {
     resourceSpans: [
@@ -68,9 +63,6 @@ function payload(service: string, spans: FinishedSpan[]) {
               spanId: span.spanId,
               ...(span.parentId ? { parentSpanId: span.parentId } : {}),
               name: `${span.address}.${span.operation}`,
-              // A statement left this process for an engine, and a hop for another process: a
-              // viewer draws an edge between a CLIENT and the SERVER under it. `selfMs` is NOT
-              // sent — a collector derives it from the tree it already holds.
               kind: kindOf(span),
               attributes: attributesOf(span),
               startTimeUnixNano: nanos(span.startedAt),
@@ -90,10 +82,6 @@ function kindOf(span: FinishedSpan): number {
   return span.crossing === 'received' ? SERVER : INTERNAL;
 }
 
-/**
- * What a reader groups and filters by, under OpenTelemetry's RPC names where it has them —
- * a span that carried none left every collector with a name and a duration.
- */
 function attributesOf(span: FinishedSpan) {
   const values: [string, string | number | undefined][] = [
     ['rpc.system', 'fougere'],
@@ -110,7 +98,6 @@ function attributesOf(span: FinishedSpan) {
     .map(([key, value]) => ({ key, value: typeof value === 'number' ? { intValue: String(value) } : { stringValue: value } }));
 }
 
-/** Epoch milliseconds → the int64 nanoseconds OTLP wants, as a string. */
 function nanos(ms: number): string {
   return `${Math.round(ms * 1e6)}`;
 }

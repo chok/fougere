@@ -25,13 +25,7 @@ export interface BetterAuthOptions {
   verification?: SchemaView;
 }
 
-/**
- * The auth provider, as a frond: its rows — the user too, when the app names none — and the
- * extension that rises where it is served, declaring what a signed-in call carries and
- * registering the runtime under `AUTH`. Placed like any frond: a process whose `only:` leaves it
- * out starts no engine and migrates no session table. The session travels without its
- * `token`: a process trusts the one that called it, never the cookie of whoever is behind it.
- */
+/** The auth provider as a frond: its rows, and the extension that rises where it is served; the session travels without its `token`. */
 export function betterAuth(opts: BetterAuthOptions): FrondDescriptor {
   const user = opts.user ?? AuthUser;
   const { AuthSession, AuthAccount } = authEntities(user);

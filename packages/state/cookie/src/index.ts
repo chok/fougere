@@ -3,7 +3,6 @@ import { States } from '@fougere/core';
 import type { HttpCarrier } from '@fougere/http';
 import { Format, type Accepted } from '@fougere/schema';
 
-/** What `state: { cart: { cookie: { … } } }` may say — what a `Set-Cookie` line says, by the same names. */
 const COOKIE = Format.of('state/cookie')
   .key('maxAge', Format.count)
   .key('path', Format.text)
@@ -21,7 +20,6 @@ declare module '@fougere/core' {
   }
 }
 
-/** The values a `Cookie` header carries, by name. */
 function cookiesOf(header: string | null): Map<string, string> {
   return new Map((header ?? '').split(';').flatMap((pair) => {
     const at = pair.indexOf('=');
@@ -30,10 +28,6 @@ function cookiesOf(header: string | null): Map<string, string> {
   }));
 }
 
-/**
- * One `Set-Cookie` line. A script on the page may not read it and a request from another site does
- * not carry it, unless the entry says otherwise; with no `maxAge` it lasts as long as the browser.
- */
 function lineOf(name: string, token: string | undefined, options: CookieOptions): string {
   const { path = '/', sameSite = 'lax', httpOnly = true, secure, domain, maxAge } = options;
 

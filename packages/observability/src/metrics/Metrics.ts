@@ -3,19 +3,6 @@ import { declaredTopologyOf, type App, type Edge, type FrondPlacement, type Topo
 import { activeCalls, type FinishedSpan, type SpanSink } from '../index.js';
 import type { MetricsSnapshot } from './MetricsSnapshot.js';
 
-/**
- * Bucket bounds in SECONDS, and the operator's to choose — this is the default, not the rule.
- *
- * The OpenTelemetry recommendation for request durations: dense under 100 ms because that is
- * where a healthy op lives, and open above 10 s. A system whose ops all cross two processes has
- * its floor elsewhere and wastes half these buckets.
- *
- * Deliberately NOT derived per operation, though `reach` could: an explicit-bucket histogram only
- * aggregates across series that share its bounds, so a panel asking for the p95 of the whole
- * service — which sums over every op — would stop meaning anything, silently. One list per
- * process is what keeps that reading honest. The number that IS per-op is the load threshold,
- * where nothing aggregates.
- */
 const BOUNDS = [0.005, 0.01, 0.025, 0.05, 0.075, 0.1, 0.25, 0.5, 0.75, 1, 2.5, 5, 7.5, 10];
 
 
@@ -26,23 +13,15 @@ export interface Metrics {
   snapshot(): MetricsSnapshot;
 }
 
-/**
- * `app` is optional and only feeds the topology: what fronds this process found, and which of them
- * run elsewhere.
- */
+/** `app` feeds the topology: which fronds this process found, and which run elsewhere. */
 export function metrics(app?: App, bounds: readonly number[] = BOUNDS): Metrics {
   const since = Date.now();
   const series = new Map<string, Bucketed>();
-  /** Every frond this process has actually CALLED — the other half of the topology. */
   const seen = new Set<string>();
-  /** The call graph, as this process witnessed it. */
   const edges = new Map<string, Edge>();
 
   return {
     sink: (span: FinishedSpan) => {
-      // The one reader that has to choose: a statement is a step, not a call this process
-      // answered. Counted here it would publish `select.post` as an operation nothing
-      // serves, and every topology and saturation figure would count it too.
       if (span.kind !== 'operation') return;
 
       const key = `${span.address}\0${span.operation}\0${span.error ?? ''}`;
@@ -91,19 +70,7 @@ export function metrics(app?: App, bounds: readonly number[] = BOUNDS): Metrics 
   };
 }
 
-/**
- * The system's shape, from the two things this process can honestly say: what it SCANNED runs
- * here, and what it CALLED without having scanned it runs somewhere else.
- */
 function topologyOf(app: App | undefined, seen: Set<string>): FrondPlacement[] {
-  // What the app SERVES: a frond an extension brought is instrumentation, and reporting it
-  // would describe this package to itself.
-  //
-  // A frond named in `remotes:` is scanned when its code sits in the same project, and stays
-  // in `app.fronds` — the boot says `declared remote — not hosted locally` and keeps it. This
-  // half reports what RUNS here, so it is not one of them: it used to answer `local` for a
-  // frond every call reached over HTTP. Not a config-derived node either — it is named below
-  // only once it has answered, like any other remote.
   const local = new Map((app?.fronds ?? [])
     .filter((frond) => !frond.fromExtension && !app?.remotes[frond.name])
     .map((frond) => [frond.name, frond] as const));
@@ -115,8 +82,6 @@ function topologyOf(app: App | undefined, seen: Set<string>): FrondPlacement[] {
     facades: frond.handlers.length,
   }));
 
-  // A frond we called but never scanned is hosted elsewhere. Its shape is not ours to
-  // report — it is published by the process that owns it, under its own service name.
   const elsewhere: FrondPlacement[] = [...seen]
     .filter((name) => !local.has(name))
     .map((name) => ({ frond: name, placement: 'remote' as const, entities: 0, facades: 0 }));
@@ -124,19 +89,13 @@ function topologyOf(app: App | undefined, seen: Set<string>): FrondPlacement[] {
   return [...here, ...elsewhere];
 }
 
-/** The first bound this duration does not exceed, or the overflow bucket. */
 function bucketOf(seconds: number, bounds: readonly number[]): number {
   for (let i = 0; i < bounds.length; i++) if (seconds <= bounds[i]!) return i;
 
   return bounds.length;
 }
 
-/**
- * Serve the topology on `rpc.topology` — read from inside the process it describes.
- *
- * The declared half is read at every call rather than once here: `reloadFougere()` builds the app
- * again, and a config read at boot would keep answering for the app that was released.
- */
+/** Serves the topology on `rpc.topology`. */
 export function serveTopology(app: App, measured: Metrics): void {
   app.serveRpc('topology', (): TopologyReport => {
     const { since, active, topology, edges } = measured.snapshot();
@@ -150,7 +109,6 @@ export function metricsPayload(service: string, snapshot: MetricsSnapshot) {
   const since = `${snapshot.since * 1e6}`;
   const now = `${Date.now() * 1e6}`;
   const attr = (key: string, value: string) => ({ key, value: { stringValue: value } });
-  /** What an operation's three series are all sliced by — said once, so they stay comparable. */
   const dimensions = (row: Bucketed) => [
     ...(row.frond ? [attr('fougere.frond', row.frond)] : []),
     attr('fougere.address', row.address),
@@ -173,8 +131,6 @@ export function metricsPayload(service: string, snapshot: MetricsSnapshot) {
                 description: 'How long an operation took, by op and by verdict.',
                 unit: 's',
                 histogram: {
-                  // 2 = cumulative: counted from `since` and never reset, which is the
-                  // only temporality Prometheus reads without a collector in between.
                   aggregationTemporality: 2,
                   dataPoints: snapshot.series.map((row) => ({
                     attributes: dimensions(row),

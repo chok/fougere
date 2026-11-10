@@ -1,16 +1,9 @@
 import { Call, Repository, RouteAddress } from '@fougere/core';
 import Later from './Later.js';
 
-/** How long a taker holds a due call before anyone may take it over. */
 const TAKE_MS = 30_000;
 
-/**
- * The calls waiting for their hour, and the take that says one process is making them.
- *
- * The take is bounded like `RunRepository`'s lease and for the same reason, but it guards the
- * opposite case: a release may be redone, a call may not, so what is bounded here is how long
- * a taker is believed rather than how long a driver is assumed alive.
- */
+/** The calls waiting for their hour, and the take that says one process is making them. */
 export default class LaterRepository extends Repository<Later> {
   constructor(private now: () => number = Date.now) {
     super();
@@ -27,12 +20,7 @@ export default class LaterRepository extends Repository<Later> {
     });
   }
 
-  /**
-   * The calls whose hour has passed and whom nobody is making right now.
-   *
-   * Read whole and filtered here, which bounds what this package holds: a source that answers
-   * `where` on two numbers would answer it at the rows, and that is the next thing to ask for.
-   */
+  /** The calls whose hour has passed and whom nobody is making right now. */
   async due(): Promise<Later[]> {
     const rows = await this.list();
     const now = this.now();

@@ -4,10 +4,6 @@ export function authEntities(User: Entity): {
   AuthSession: SchemaView;
   AuthAccount: SchemaView;
 } {
-  /**
-   * Session entity — better-auth shape.
-   * `token` carries the opaque session secret (cookie value).
-   */
   class Session extends entity({
     id: primary(),
     userId: ref(User),
@@ -19,10 +15,6 @@ export function authEntities(User: Entity): {
     updatedAt: created(),
   }) {}
 
-  /**
-   * Account entity — better-auth shape (single PK, accountId/providerId pair,
-   * separate token columns instead of a JSON blob).
-   */
   class Account extends entity({
     id: primary(),
     accountId: text(),

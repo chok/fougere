@@ -2,13 +2,9 @@ import { createAdapterFactory } from 'better-auth/adapters';
 import type { CleanedWhere, CustomAdapter } from 'better-auth/adapters';
 import type { Storage } from '@fougere/core';
 
-/**
- * Map of better-auth model names ('user', 'session', 'account', ...)
- * to Fougere Storage instances. Built once at boot by create() in index.ts.
- */
+/** Each better-auth model name, to the Fougère storage of its rows. */
 export type StorageMap = Map<string, Storage>;
 
-/** Where[] supported subset. */
 function whereToCriteria(where: readonly CleanedWhere[]): Record<string, unknown> {
   const criteria: Record<string, unknown> = {};
   for (const clause of where) {
@@ -49,8 +45,6 @@ export function fougereAdapter(storageMap: StorageMap) {
       usePlural: false,
       supportsArrays: false,
       supportsJSON: false,
-      // The storage converts both ways now (`schema-sql/src/values.ts`), so better-auth
-      // can hand over the Dates and booleans its own types declare.
       supportsDates: true,
       supportsBooleans: true,
     },
@@ -158,14 +152,6 @@ export function fougereAdapter(storageMap: StorageMap) {
   });
 }
 
-/**
- * Augmented Storage shape — the core interface doesn't expose findBy/findAllBy
- * but SqlStorage (the only impl today) does. Cast locally to use them.
- */
-/**
- * Storage.findAllBy doesn't expose pagination/sort, so we apply them in JS
- * after fetching the eq-filtered rows. Fine for auth volumes (orgs/sessions/accounts).
- */
 function applyClientSidePagination(
   rows: Record<string, unknown>[],
   sortBy?: { field: string; direction: 'asc' | 'desc' },
