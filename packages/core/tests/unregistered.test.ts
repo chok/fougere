@@ -6,7 +6,7 @@ import { describe, it, expect } from 'vitest';
 import { createContainer } from '@fougere/container';
 import { createApp, frond } from '../src/index.js';
 import { op } from './contract.js';
-import type { Declared } from '../src/Declared.js';
+import type { Declared } from '../src/frond/Declared.js';
 
 class Mailer {}
 class Notifier {
