@@ -1,10 +1,7 @@
 /** Shell completion generator — outputs a script for bash/zsh. */
 import type { App } from '@fougere/core';
 import { entityToArgs } from './bridge.js';
-
-function toKebab(name: string): string {
-  return name.replace(/[A-Z]/g, (c) => '-' + c.toLowerCase()).replace(/^-/, '');
-}
+import { cliCommandsOf } from './commands.js';
 
 const NAMES: Record<string, 'operations' | 'fronds' | undefined> = {
   operation: 'operations',
@@ -20,27 +17,16 @@ interface CommandMeta {
 function extractCommandMeta(app: App): CommandMeta[] {
   const commands: CommandMeta[] = [];
 
-  for (const frond of app.fronds) {
-    const handlerMap = new Map(frond.handlers.map((h) => [h.address, h]));
+  for (const { name, entity } of cliCommandsOf(app)) {
+    const args = Object.entries(entityToArgs(entity.entityClass.getFields())) as
+      [string, { type?: string }][];
+    const positional = args.find(([, def]) => def.type === 'positional')?.[0];
 
-    for (const entity of frond.entities) {
-      const handler = handlerMap.get(entity.name);
-      if (!handler) continue;
-
-      let facade: Record<string, Function>;
-      try { facade = app.resolve(handler.name); } catch { continue; }
-      if (typeof facade.execute !== 'function') continue;
-
-      const args = Object.entries(entityToArgs(entity.entityClass.getFields())) as
-        [string, { type?: string }][];
-      const positional = args.find(([, def]) => def.type === 'positional')?.[0];
-
-      commands.push({
-        name: toKebab(entity.name),
-        flags: args.filter(([, def]) => def.type !== 'positional').map(([key]) => `--${key}`),
-        ...(positional && NAMES[positional] ? { names: NAMES[positional]! } : {}),
-      });
-    }
+    commands.push({
+      name,
+      flags: args.filter(([, def]) => def.type !== 'positional').map(([key]) => `--${key}`),
+      ...(positional && NAMES[positional] ? { names: NAMES[positional]! } : {}),
+    });
   }
 
   return commands;
