@@ -45,7 +45,8 @@ export default class MigrateCommand {
       return;
     }
     if (planned === 0) {
-      this.ui.success('Up to date — the database holds what the entities declare.');
+      this.ui.success('Up to date');
+      for (const { source, tables } of result.checked) this.ui.step(`source ${pc.bold(source)}: ${tables.join(', ')}`);
 
       return;
     }

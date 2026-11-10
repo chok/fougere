@@ -18,6 +18,8 @@ export interface MigrationPlan {
   warnings: string[];
   /** The statements actually run — empty unless `apply` was asked for. */
   ran: string[];
+  /** The tables read on each SQL source. */
+  checked: { source: string; tables: string[] }[];
 }
 
 /** Bringing the database up to what `fougere freeze` recorded — the one place a schema is written. */
@@ -33,7 +35,7 @@ export default class MigrateHandler {
     const chain = versionsOf(steps);
 
     const unfrozen = input.latest ? [] : await unfrozenIn(scan.fronds, versions);
-    if (unfrozen.length > 0) return { chain, changes: [], added: [], warnings: [], ran: [], refusals: unfrozen };
+    if (unfrozen.length > 0) return { chain, changes: [], added: [], warnings: [], ran: [], checked: [], refusals: unfrozen };
 
     const config = await loadConfig(scan.root);
     const { bootApp, resolveStorage } = await import('@fougere/defaults');
@@ -43,7 +45,7 @@ export default class MigrateHandler {
       await storage.close?.();
 
       return {
-        chain, changes: [], added: [], warnings: [], ran: [],
+        chain, changes: [], added: [], warnings: [], ran: [], checked: [],
         refusals: [{ entity: '*', field: '*', reason: 'no SQL source in fougere.config.ts — nothing to migrate' }],
       };
     }
@@ -61,6 +63,7 @@ export default class MigrateHandler {
       const refusals: Plan['refusals'] = [];
       const warnings: string[] = [];
       const plans: { plan: Plan; db: Parameters<typeof actualState>[0] }[] = [];
+      const checked: MigrationPlan['checked'] = [];
       for (const source of engines) {
         const db = storage.dbOf!(source) as Parameters<typeof actualState>[0];
 
@@ -72,6 +75,7 @@ export default class MigrateHandler {
 
         const planned = new Set(plan.changes.map((change) => `${change.table}.${change.kind === 'renameColumn' ? change.from : change.column}`));
         const mine = tables.filter((table) => actual.has(table.name));
+        checked.push({ source, tables: mine.map((table) => table.name) });
         for (const { table, columns, added } of undeclaredColumns(mine, actual)) {
           const left = columns.filter((column) => !planned.has(`${table}.${column}`));
           if (left.length === 0) continue;
@@ -85,14 +89,14 @@ export default class MigrateHandler {
       const moved = new Set(changes.flatMap((change) => change.kind === 'renameColumn' ? [`${change.table}.${change.to} — no column`] : []));
       const added = (await storage.pending?.(app) ?? []).filter((line) => !moved.has(line));
 
-      if (!input.apply || refusals.length > 0) return { chain, changes, added, refusals, warnings, ran: [] };
+      if (!input.apply || refusals.length > 0) return { chain, changes, added, refusals, warnings, ran: [], checked };
 
       const ran: string[] = [];
       for (const { plan, db } of plans) ran.push(...(await applyStep(plan, db)));
       const drift = await storage.migrate?.(app);
       if (drift) warnings.push(drift);
 
-      return { chain, changes, added, refusals, warnings, ran: [...ran, ...added] };
+      return { chain, changes, added, refusals, warnings, ran: [...ran, ...added], checked };
     } finally {
       await app.dispose();
       await storage.close?.();
