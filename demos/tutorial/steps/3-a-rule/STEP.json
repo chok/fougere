@@ -2,7 +2,7 @@
   "name": "A rule",
   "title": "Publishing is *not an update*",
   "concept": "handler",
-  "lede": "A post is published once. The rule is a method, and status becomes readOnly so that nothing else can write it — not even update.",
+  "lede": "A post is published only once. We write that rule as a method and make status readOnly, so nothing else can change it, not even update.",
   "fig": "A state changes through an operation, never through a field write.",
   "grows": [
     {

@@ -1,6 +1,6 @@
 /**
  * Every claim a tutorial step makes, checked against the step itself: the line each letter points
- * at exists, the request of "try it" answers what the page prints, the "what if" refuses as said,
+ * at exists, the request of "try it" answers what the page prints, the aside refuses as said,
  * and the "0 line changed" of steps 4 and 6 is an equality of files, not a sentence.
  */
 import { describe, it, expect, vi, afterEach } from 'vitest';
@@ -82,7 +82,7 @@ describe.each(names)('step %s', (name) => {
 
 describe('what the steps say beside "try it"', () => {
   it('step 1 lets a PATCH publish, which step 3 closes', async () => {
-    for (const [name, status] of [['1-crud', 200], ['3-a-rule', 422]] as const) {
+    for (const [name, status] of [['1-an-entity', 200], ['3-a-rule', 422]] as const) {
       const app = await testApp({ root: join(STEPS, name) });
       const created = JSON.parse((await send(app, 'POST', '/api/blog/posts', { title: 'Hi' })).text);
       const patched = await send(app, 'PATCH', `/api/blog/posts/${created.id}`, { status: 'published' });
@@ -95,7 +95,7 @@ describe('what the steps say beside "try it"', () => {
 
   it('step 4 refuses a second Mailer, naming both', async () => {
     // Among the steps, so the copy resolves the same packages and the same tsconfig.
-    const copy = mkdtempSync(join(STEPS, '.what-if-'));
+    const copy = mkdtempSync(join(STEPS, '.aside-'));
     cpSync(join(STEPS, '4-a-port'), copy, { recursive: true });
     writeFileSync(join(copy, 'fronds/blog/services/FakeMailer.ts'),
       "import Mailer from './Mailer.js';\n\nexport default class FakeMailer extends Mailer {\n  async send(): Promise<void> {}\n}\n");
@@ -130,12 +130,12 @@ describe('what the steps say beside "try it"', () => {
   });
 
   it('steps 2, 7 and 8 change no line under fronds/', () => {
-    for (const [name, before] of [['2-a-source', '1-crud'], ['7-an-app', '6-a-fact'], ['8-split', '7-an-app']]) {
+    for (const [name, before] of [['2-a-source', '1-an-entity'], ['7-an-app', '6-a-fact'], ['8-split', '7-an-app']]) {
       expect(filesUnder(join(STEPS, name), 'fronds'), name).toEqual(filesUnder(join(STEPS, before), 'fronds'));
     }
   });
 
-  it('step 0 is what npm create fougere --bare writes', () => {
+  it('step 0 is what npm create fougere --blank writes', () => {
     const starter = join(import.meta.dirname, '..', '..', '..', 'packages', 'cli', 'templates', 'workspace');
     const written = (root: string, file: string) => readFileSync(join(root, file), 'utf8');
 
@@ -145,7 +145,7 @@ describe('what the steps say beside "try it"', () => {
   });
 
   it('step 2 refuses the boot until the table exists, as "try it" prints', async () => {
-    const copy = mkdtempSync(join(STEPS, '.what-if-'));
+    const copy = mkdtempSync(join(STEPS, '.aside-'));
     cpSync(join(STEPS, '2-a-source'), copy, { recursive: true });
 
     try {

@@ -19,7 +19,7 @@ interface Step {
   grows: Grows[];
   try?: { command: string; output: string };
   install?: string;
-  whatIf?: string;
+  aside?: string;
   links: { title: string; path: string }[];
 }
 
@@ -163,7 +163,7 @@ function pageOf(index: number, slug: string, step: Step, files: Map<string, stri
     grows: keys.map(({ key, side, label, detail }) => ({ key, side, label, detail })),
     ...(step.try ? { tryIt: { command: step.try.command, said: saidIn(step.try.command), output: step.try.output } } : {}),
     ...(install ? { install: saidIn(install) } : {}),
-    ...(step.whatIf ? { whatIf: step.whatIf } : {}),
+    ...(step.aside ? { aside: step.aside } : {}),
     ...(zero ? { zero } : {}),
     links: step.links,
     slug,

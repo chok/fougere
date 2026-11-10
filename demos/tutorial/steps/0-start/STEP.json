@@ -1,20 +1,24 @@
 {
   "name": "Start",
-  "title": "Start by *creating a project*",
+  "title": "Start by *creating a blank project*",
   "concept": "configuration",
-  "lede": "For this tutorial, start from an empty project: --bare writes the config and an empty fronds/, and nothing else. A real project usually starts with a frond and an app — npm create fougere asks.",
-  "fig": "A config, a package.json, an empty fronds/. The next step writes the first domain in it.",
+  "lede": "For this tutorial, we start with a blank project, only a backend with no pages yet.",
+  "fig": "A blank project with only one specific config file and a folder for your domains.",
   "grows": [],
-  "whatIf": "you want pages from the start? Add --app nuxt to the command: the same project comes with a Nuxt app. Every step below is the same, and An app, further on, shows how a page calls what you write.",
+  "aside": "Add --app next, nuxt, react or svelte to the command and the same project comes with pages. Every step below stays the same.",
   "links": [
     {
       "title": "Start a project",
       "path": "/docs/adopt/new-project"
     },
     {
+      "title": "Create with an app",
+      "path": "/docs/adopt/hosts"
+    },
+    {
       "title": "Configuration",
       "path": "/docs/concepts/configuration"
     }
   ],
-  "install": "npm create fougere my-blog --bare && cd my-blog && npm install"
+  "install": "npm create fougere my-blog --blank && cd my-blog && npm install"
 }

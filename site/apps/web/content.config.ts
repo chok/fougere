@@ -62,7 +62,7 @@ export default defineContentConfig({
         grows: z.array(z.object({ key: z.string(), side: z.string(), label: z.string(), detail: z.string() })),
         tryIt: z.object({ command: z.string(), said: z.record(z.string(), z.string()), output: z.string() }).optional(),
         install: z.record(z.string(), z.string()).optional(),
-        whatIf: z.string().optional(),
+        aside: z.string().optional(),
         zero: z.string().optional(),
         links: z.array(z.object({ title: z.string(), path: z.string() })),
       }),

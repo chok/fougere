@@ -2,7 +2,7 @@
   "name": "An app",
   "title": "A page, *and nothing declared twice*",
   "concept": "facade",
-  "lede": "Add a Nuxt app in apps/nuxt with the @fougere/nuxt module, and write a page. It names the blog's address and calls it; the fronds run inside Nuxt.",
+  "lede": "We add a Nuxt app in apps/nuxt with the @fougere/nuxt module and write a page. The page calls the blog by its name, and the fronds run inside Nuxt.",
   "fig": "The page names post and an operation. Its rows, its form and its refusals are read from what you already wrote.",
   "grows": [
     {
@@ -46,7 +46,7 @@
     "command": "cd apps/nuxt && npm run dev   # then open localhost:3000/posts",
     "output": "a form with one field, title — and the posts, each with Publish"
   },
-  "whatIf": "you publish twice from two tabs? The second click shows Already published, the CONFLICT the handler throws.",
+  "aside": "Publish twice from two tabs: the second click shows Already published, the CONFLICT the handler throws.",
   "links": [
     {
       "title": "Pages",

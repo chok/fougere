@@ -13,7 +13,7 @@ interface Step {
   grows: { key: string; side: string; label: string; detail: string }[];
   tryIt?: { command: string; said: Record<string, string>; output: string };
   install?: Record<string, string>;
-  whatIf?: string; zero?: string;
+  aside?: string; zero?: string;
   links: { title: string; path: string }[];
 }
 
@@ -228,7 +228,7 @@ onBeforeUnmount(() => removeEventListener('keydown', onKey));
         <p v-if="step.grows.length" class="hand hint">point at a lettered line, or tap it, to see what grows from it</p>
         <div v-if="step.zero" class="stamp"><b>0</b> line changed under {{ step.zero }}</div>
 
-        <p class="fig"><span>Fig. {{ step.step }}.</span> {{ step.fig }}</p>
+        <p class="fig">{{ step.fig }}</p>
 
         <div v-if="step.tryIt" class="slip">
           <span class="tag">Try it</span>
@@ -244,10 +244,10 @@ onBeforeUnmount(() => removeEventListener('keydown', onKey));
           <pre class="tabbed"><span class="prompt">$</span> {{ said }}
 <span class="output">{{ step.tryIt.output }}</span></pre>
         </div>
-        <p v-if="step.whatIf" class="hand what-if">what if — {{ step.whatIf }}</p>
+        <p v-if="step.aside" class="aside">{{ step.aside }}</p>
 
         <div v-if="step.links.length" class="deeper">
-          <span>Go deeper</span>
+          <span>In the docs</span>
           <NuxtLink v-for="link in step.links" :key="link.path" :to="link.path">{{ link.title }}</NuxtLink>
         </div>
 
@@ -335,7 +335,6 @@ button.file:hover { background: rgb(120 88 40 / 0.08); }
 .stamp b { font-family: var(--font-serif); font-size: 26px; font-weight: 400; line-height: 1; }
 
 .fig { margin: 10px 0 0; font-family: var(--font-serif); font-style: italic; font-size: var(--text-body); color: var(--ui-text-muted); }
-.fig span { font-style: normal; font-variant: small-caps; letter-spacing: 0.04em; margin-right: 4px; }
 
 .slip { position: relative; margin-top: 44px; }
 .hand { font-family: var(--hand); }
@@ -353,7 +352,7 @@ button.file:hover { background: rgb(120 88 40 / 0.08); }
 .managers button { cursor: pointer; padding: 2px 8px; border-radius: 999px; font-family: var(--font-mono); font-size: var(--text-tiny); color: #7f927f; }
 .managers button[aria-selected="true"] { background: var(--code-added); color: var(--code-soft); }
 .slip .output { color: #7f927f; }
-.what-if { margin: 16px 0 0; font-size: var(--text-body); line-height: 1.45; color: var(--ui-text-muted); transform: rotate(-1deg); }
+.aside { margin: 16px 0 0; padding-left: 12px; border-left: 2px solid var(--ui-border); font-size: var(--text-note); line-height: 1.5; color: var(--ui-text-muted); }
 
 .pills { display: flex; justify-content: space-between; gap: 10px; margin-top: 30px; }
 .pill { display: inline-flex; align-items: center; min-height: 40px; padding: 0 16px; border: 1px solid var(--ui-text); border-radius: 999px; font-family: var(--font-mono); font-size: var(--text-tiny); letter-spacing: 0.04em; color: var(--ui-text); text-decoration: none; }
@@ -374,6 +373,6 @@ button.file:hover { background: rgb(120 88 40 / 0.08); }
 .hint { margin: 8px 0 0; font-size: var(--text-body); color: var(--ui-text-muted); }
 .line[tabindex] { cursor: pointer; outline: none; }
 .deeper { display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: baseline; margin-top: 24px; padding-top: 12px; border-top: 1px dashed var(--ui-border); font-size: var(--text-note); }
-.deeper span { font-family: var(--font-mono); font-size: var(--text-tiny); letter-spacing: 0.1em; text-transform: uppercase; color: var(--ui-text-dimmed); }
+.deeper span { color: var(--ui-text-dimmed); }
 .deeper a { color: var(--ui-primary); }
 </style>

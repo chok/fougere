@@ -3,7 +3,7 @@ export type Name = (typeof PackageManager.names)[number];
 /**
  * What a package manager says for each gesture, in the project and in the docs alike.
  *
- * Documented: [getting started](https://fougere.dev/tutorial/1-crud).
+ * Documented: [getting started](https://fougere.dev/tutorial/1-an-entity).
  */
 export class PackageManager {
   static readonly names = ['npm', 'pnpm', 'bun', 'yarn'] as const;

@@ -2,7 +2,7 @@
   "name": "Split",
   "title": "Mail *in its own process*",
   "concept": "configuration",
-  "lede": "Mail is slow and you want it apart. Move it. Only where it runs changes.",
+  "lede": "Mail is slow, so we run it in its own process. Only where it runs changes, not the code.",
   "fig": "Your code says what a thing is. One line of config says where it runs.",
   "grows": [
     {

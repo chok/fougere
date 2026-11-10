@@ -66,7 +66,7 @@ interface Clip {
 const chapters = computed(() => [
   { key: 'code', code: codeSnippet, doc: '/tutorial/3-a-rule' },
   { key: 'schema', code: schemaSnippet, doc: '/docs/concepts/entity' },
-  { key: 'derivation', code: derivationSnippet, doc: '/tutorial/1-crud', legend: true, clip: { src: '/home/derivation.mp4', wide: '/home/derivation-wide.mp4', label: t('home.derivationVideo'), caption: t('home.derivationCaption') } },
+  { key: 'derivation', code: derivationSnippet, doc: '/tutorial/1-an-entity', legend: true, clip: { src: '/home/derivation.mp4', wide: '/home/derivation-wide.mp4', label: t('home.derivationVideo'), caption: t('home.derivationCaption') } },
   { key: 'choices', code: choicesSnippet, doc: '/tutorial/8-split', clip: { src: '/home/gradient.mp4', wide: '/home/gradient-wide.mp4', label: t('home.choicesVideo'), caption: t('home.choicesCaption') } },
   { key: 'rule', doc: '/docs' },
 ].map((chapter) => ({

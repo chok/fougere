@@ -2,7 +2,7 @@
   "name": "A source",
   "title": "One line, *and the rows stay*",
   "concept": "configuration",
-  "lede": "Rows in memory are gone at every restart. One entry in sources: puts them in SQLite. The boot then refuses until the table exists, and fougere migrate creates it.",
+  "lede": "Rows in memory are lost at every restart, so we add SQLite with one line in sources. The app then refuses to start until the table exists, and fougere migrate creates it.",
   "fig": "The handler asks for its rows as before. Where they live is a line of config.",
   "grows": [
     {
@@ -37,7 +37,7 @@
     "command": "npx fougere migrate --latest --apply",
     "output": "◇  create posts\n◆  1 change(s) applied."
   },
-  "whatIf": "Postgres instead? { type: 'pg', url: process.env.DATABASE_URL } — nothing else in the project changes.",
+  "aside": "On Postgres it is { type: 'pg', url: process.env.DATABASE_URL }, and nothing else in the project changes.",
   "links": [
     {
       "title": "SQLite or Postgres",

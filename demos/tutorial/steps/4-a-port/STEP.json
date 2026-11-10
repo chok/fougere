@@ -2,7 +2,7 @@
   "name": "A port",
   "title": "Mail the author, *without naming a provider*",
   "concept": "port",
-  "lede": "The handler asks for a capability. A class extending it is the whole registration.",
+  "lede": "We mail the author without naming a provider. The handler asks for a mailer, and a class that extends it is enough to provide one.",
   "fig": "The handler names the capability; the config, if ever needed, names who answers.",
   "grows": [
     {
@@ -43,7 +43,7 @@
     "status": 200,
     "log": "mail: Published: Hi"
   },
-  "whatIf": "add FakeMailer extends Mailer → the app refuses to start, names both classes, and writes the line that settles it: ports: { Mailer: '…' }",
+  "aside": "Add FakeMailer extends Mailer and the app refuses to start, naming both classes and the line that settles it: ports: { Mailer: '…' }.",
   "links": [
     {
       "title": "Port",

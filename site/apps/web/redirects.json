@@ -1,6 +1,7 @@
 {
   "pages": {
-    "/docs/getting-started": "/tutorial/1-crud",
+    "/docs/getting-started": "/tutorial/1-an-entity",
+    "/tutorial/1-crud": "/tutorial/1-an-entity",
     "/docs/existing-app": "/docs/adopt/existing-app",
     "/docs/bring-your-schema": "/docs/adopt/bring-your-schema",
     "/docs/cli": "/reference/cli",

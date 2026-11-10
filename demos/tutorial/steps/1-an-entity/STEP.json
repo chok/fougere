@@ -2,7 +2,7 @@
   "name": "An entity",
   "title": "One entity, *and a whole CRUD*",
   "concept": "entity",
-  "lede": "Write a post and the handler that serves its rows, and name the API the app answers on. Start it with npx fougere dev blog: it answers on :4100, rows in memory.",
+  "lede": "We write a Post entity and the handler that serves its rows, then start the app with npx fougere dev blog. It answers on port 4100 and keeps the rows in memory.",
   "fig": "Two classes and one line of config. Everything around them is read from these.",
   "grows": [
     {
@@ -91,7 +91,7 @@
     "status": 422,
     "contains": "String is too short"
   },
-  "whatIf": "PATCH /api/blog/posts/:id with { status: 'published' } passes here, and publishes without any rule. A rule, two steps on, closes it.",
+  "aside": "PATCH /api/blog/posts/:id with { status: 'published' } passes here: nothing guards it yet. A rule, two steps on, closes it.",
   "links": [
     {
       "title": "Entity",

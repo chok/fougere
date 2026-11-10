@@ -54,7 +54,7 @@ With no arguments, it walks you through creating a new app in an interactive ter
 > [!NOTE]
 > It runs `fougere new` from the [CLI](https://fougere.dev/reference/cli).
 
-→ [Getting started](https://fougere.dev/tutorial/1-crud)
+→ [Getting started](https://fougere.dev/tutorial/1-an-entity)
 
 ## Philosophy
 
