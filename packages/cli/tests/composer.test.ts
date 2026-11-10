@@ -16,7 +16,7 @@ function reread(command: string): Plan | undefined {
   const [, , , name, ...rest] = command.split(' ');
   const flags: Record<string, string | boolean> = {};
   for (let at = 0; at < rest.length; at++) {
-    if (rest[at] === '--bare') flags.bare = true;
+    if (rest[at] === '--blank') flags.blank = true;
     else flags[rest[at].slice(2)] = rest[++at];
   }
 
@@ -32,8 +32,8 @@ describe('a plan', () => {
     ];
 
     for (const plan of plans) expect(reread(commandOf(plan))).toEqual(plan);
-    expect(commandOf(plans[2])).toBe('npm create fougere shop --bare');
-    expect(commandOf(plans[2], new PackageManager('bun').create())).toBe('bun create fougere shop --bare');
+    expect(commandOf(plans[2])).toBe('npm create fougere shop --blank');
+    expect(commandOf(plans[2], new PackageManager('bun').create())).toBe('bun create fougere shop --blank');
   });
 
   it('leaves the asking to the composer when the flags compose nothing', () => {

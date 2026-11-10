@@ -25,13 +25,13 @@ export default class NewCommand {
     const refusals = (plan: Plan, replace: boolean) => refusalsOf(plan, catalog, { cwd, replace });
     const exists = (name: string) => existsSync(join(cwd, name));
     const terminal = Boolean(process.stdin.isTTY);
-    const stated = planOf({ name: raw.name as string | undefined, frond: raw.frond as string, app: raw.app as string, bare: Boolean(raw.bare) });
+    const stated = planOf({ name: raw.name as string | undefined, frond: raw.frond as string, app: raw.app as string, blank: Boolean(raw.blank) });
 
     let plan = stated;
     let replace = Boolean(raw.force);
     if (!plan) {
       if (!terminal) {
-        throw new Error('No terminal to ask in. State the project: fougere new shop --frond blog --app nuxt, or --bare for the empty shell.');
+        throw new Error('No terminal to ask in. State the project: fougere new shop --frond blog --app nuxt, or --blank for the empty shell.');
       }
       const offered = { ...catalog, apps: catalog.apps.filter((app) => OFFERED.includes(app)) };
       const composed = await new Composer({ name: (raw.name as string | undefined) ?? '', catalog: offered, exists, refusals, entry: found?.create() }).ask();

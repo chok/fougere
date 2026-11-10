@@ -10,7 +10,7 @@ export interface Plan { name: string; fronds: Piece[]; apps: Piece[] }
 
 export interface Catalog { fronds: string[]; apps: string[] }
 
-export interface Stated { name?: string; frond?: string; app?: string; bare?: boolean }
+export interface Stated { name?: string; frond?: string; app?: string; blank?: boolean }
 
 const FLAG: Record<Kind, string> = { fronds: '--frond', apps: '--app' };
 
@@ -20,7 +20,7 @@ const PIECE = /^[a-z][a-z0-9-]*$/;
 
 /** The flags, read as a plan — or `undefined` when they state no composition and the composer should ask. */
 export function planOf(stated: Stated): Plan | undefined {
-  if (!stated.bare && !stated.frond && !stated.app) return undefined;
+  if (!stated.blank && !stated.frond && !stated.app) return undefined;
 
   return {
     name: stated.name ?? '',
@@ -46,7 +46,7 @@ export function commandOf(plan: Plan, entry = 'npm create fougere'): string {
     .filter((kind) => plan[kind].length)
     .map((kind) => `${FLAG[kind]} ${spec(plan[kind])}`);
 
-  return [entry, plan.name || '<name>', ...(flags.length ? flags : ['--bare'])].join(' ');
+  return [entry, plan.name || '<name>', ...(flags.length ? flags : ['--blank'])].join(' ');
 }
 
 /** The directories the plan writes, drawn as a tree. */
