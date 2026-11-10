@@ -1,5 +1,17 @@
 # @fougere/state-session
 
+## 0.30.0-alpha.2
+
+### Patch Changes
+
+- Updated dependencies [8044dcd]
+- Updated dependencies [d179658]
+- Updated dependencies [28e9ba0]
+- Updated dependencies [1835e30]
+  - @fougere/core@0.30.0-alpha.2
+  - @fougere/state-cookie@0.30.0-alpha.2
+  - @fougere/schema@0.30.0-alpha.2
+
 ## 0.30.0-alpha.1
 
 ### Patch Changes

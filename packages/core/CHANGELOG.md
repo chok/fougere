@@ -1,5 +1,21 @@
 # @fougere/core
 
+## 0.30.0-alpha.2
+
+### Minor Changes
+
+- 8044dcd: A `ref()` across two sources is arbitrated: a write and the delete of its target wait on a row of `fougere_targets`, which `fougere migrate` creates, and one is refused. A release asks every refusal of its tree before a row moves, and a foreign key is read off `sources:` alone, so two processes sharing a database leave the reference to it. `Journal` gains `leave`, `rpc.holds` refuses for an entity this process does not hold, and D1 no longer declares transactions it refuses.
+- 28e9ba0: `argumentText` writes an argument of a log line as text, and both the call panel and the OTLP log exporter read it — they wrote the same rule twice.
+- 1835e30: The scheme of `remote:` names the transport that carries the call: `@fougere/transport-http` registers `http`, `https` and `binding` (a Cloudflare service binding, `binding://CATALOG`), and `Transports.register('tcp', …)` adds another. A scheme nothing registered refuses the boot, naming the entry. `remoteTransport()` is gone from `@fougere/defaults`; `remoteTransport:` remains the host's way to replace the transport whole.
+
+### Patch Changes
+
+- d179658: The boot no longer warns that a source with no transactions holds its relation lock in this process.
+  - @fougere/container@0.30.0-alpha.2
+  - @fougere/graph@0.30.0-alpha.2
+  - @fougere/registry@0.30.0-alpha.2
+  - @fougere/schema@0.30.0-alpha.2
+
 ## 0.30.0-alpha.1
 
 ### Patch Changes

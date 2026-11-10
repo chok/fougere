@@ -1,5 +1,23 @@
 # @fougere/runtime
 
+## 0.30.0-alpha.2
+
+### Minor Changes
+
+- 8044dcd: A `ref()` across two sources is arbitrated: a write and the delete of its target wait on a row of `fougere_targets`, which `fougere migrate` creates, and one is refused. A release asks every refusal of its tree before a row moves, and a foreign key is read off `sources:` alone, so two processes sharing a database leave the reference to it. `Journal` gains `leave`, `rpc.holds` refuses for an entity this process does not hold, and D1 no longer declares transactions it refuses.
+- 1835e30: The scheme of `remote:` names the transport that carries the call: `@fougere/transport-http` registers `http`, `https` and `binding` (a Cloudflare service binding, `binding://CATALOG`), and `Transports.register('tcp', …)` adds another. A scheme nothing registered refuses the boot, naming the entry. `remoteTransport()` is gone from `@fougere/defaults`; `remoteTransport:` remains the host's way to replace the transport whole.
+
+### Patch Changes
+
+- Updated dependencies [8044dcd]
+- Updated dependencies [d179658]
+- Updated dependencies [28e9ba0]
+- Updated dependencies [1835e30]
+  - @fougere/core@0.30.0-alpha.2
+  - @fougere/transport-http@0.30.0-alpha.2
+  - @fougere/adapter-memory@0.30.0-alpha.2
+  - @fougere/container@0.30.0-alpha.2
+
 ## 0.30.0-alpha.1
 
 ### Patch Changes

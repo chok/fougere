@@ -1,5 +1,21 @@
 # @fougere/schema-graphql
 
+## 0.30.0-alpha.2
+
+### Minor Changes
+
+- 7c8e2c3: The root field of a `list` takes the plural a table and a REST route already use: `Person` answers `people` where it answered `persons`, and `Day` answers `days` where it answered `daies`. A client querying those names changes with it, or the frond names the field in `operations:`.
+
+### Patch Changes
+
+- Updated dependencies [8044dcd]
+- Updated dependencies [d179658]
+- Updated dependencies [28e9ba0]
+- Updated dependencies [1835e30]
+  - @fougere/core@0.30.0-alpha.2
+  - @fougere/http@0.30.0-alpha.2
+  - @fougere/schema@0.30.0-alpha.2
+
 ## 0.30.0-alpha.1
 
 ### Patch Changes

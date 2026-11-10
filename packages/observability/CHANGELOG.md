@@ -1,5 +1,11 @@
 # @fougere/observability
 
+## 0.30.0-alpha.2
+
+### Patch Changes
+
+- 28e9ba0: `argumentText` writes an argument of a log line as text, and both the call panel and the OTLP log exporter read it — they wrote the same rule twice.
+
 ## 0.30.0-alpha.1
 
 ## 0.30.0-alpha.0

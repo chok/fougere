@@ -1,5 +1,7 @@
 # @fougere/graph
 
+## 0.30.0-alpha.2
+
 ## 0.30.0-alpha.1
 
 ## 0.30.0-alpha.0

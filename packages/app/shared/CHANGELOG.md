@@ -1,5 +1,22 @@
 # @fougere/app
 
+## 0.30.0-alpha.2
+
+### Patch Changes
+
+- 1835e30: The scheme of `remote:` names the transport that carries the call: `@fougere/transport-http` registers `http`, `https` and `binding` (a Cloudflare service binding, `binding://CATALOG`), and `Transports.register('tcp', …)` adds another. A scheme nothing registered refuses the boot, naming the entry. `remoteTransport()` is gone from `@fougere/defaults`; `remoteTransport:` remains the host's way to replace the transport whole.
+- Updated dependencies [8044dcd]
+- Updated dependencies [d179658]
+- Updated dependencies [28e9ba0]
+- Updated dependencies [1835e30]
+  - @fougere/core@0.30.0-alpha.2
+  - @fougere/defaults@0.30.0-alpha.2
+  - @fougere/transport-http@0.30.0-alpha.2
+  - @fougere/adapter-memory@0.30.0-alpha.2
+  - @fougere/adapter-rest@0.30.0-alpha.2
+  - @fougere/container@0.30.0-alpha.2
+  - @fougere/schema@0.30.0-alpha.2
+
 ## 0.30.0-alpha.1
 
 ### Patch Changes

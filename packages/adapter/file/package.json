@@ -1,6 +1,6 @@
 {
   "name": "@fougere/adapter-file",
-  "version": "0.30.0-alpha.1",
+  "version": "0.30.0-alpha.2",
   "description": "Rows as files — one JSON or YAML file per row, in a directory per entity.",
   "keywords": [
     "fougere",

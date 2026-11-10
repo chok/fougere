@@ -1,5 +1,29 @@
 # @fougere/cli
 
+## 0.30.0-alpha.2
+
+### Minor Changes
+
+- c55db28: `--bare` is now `--blank`: a project with no frond and no app.
+
+### Patch Changes
+
+- 64cc681: `fougere migrate` names the tables it read on each source when there is nothing to do.
+- Updated dependencies [8044dcd]
+- Updated dependencies [d179658]
+- Updated dependencies [28e9ba0]
+- Updated dependencies [1835e30]
+  - @fougere/core@0.30.0-alpha.2
+  - @fougere/defaults@0.30.0-alpha.2
+  - @fougere/transport-http@0.30.0-alpha.2
+  - @fougere/app@0.30.0-alpha.2
+  - @fougere/testing@0.30.0-alpha.2
+  - @fougere/adapter-rest@0.30.0-alpha.2
+  - @fougere/compiler@0.30.0-alpha.2
+  - @fougere/container@0.30.0-alpha.2
+  - @fougere/registry@0.30.0-alpha.2
+  - @fougere/schema@0.30.0-alpha.2
+
 ## 0.30.0-alpha.1
 
 ### Patch Changes
