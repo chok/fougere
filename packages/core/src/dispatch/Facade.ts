@@ -1,5 +1,5 @@
 import { type AppMiddleware } from '../wire/AppMiddleware.js';
-import type { EffectiveOperationsMap } from '../EffectiveOperationsMap.js';
+import type { EffectiveOperationsMap } from '../operation/EffectiveOperationsMap.js';
 import type { HandlerEntry } from '../descriptor/HandlerEntry.js';
 import type { StateShape } from '../wire/StateShape.js';
 import type { OwnLogger } from '../builtin/OwnLoggers.js';

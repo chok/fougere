@@ -10,7 +10,7 @@ import {
   type HandlerEntry,
   type OperationContract,
 } from '../src/index.js';
-import { EFFECTIVE_OPERATION_SEMANTICS } from '../src/EffectiveOperationSemantics.js';
+import { EFFECTIVE_OPERATION_SEMANTICS } from '../src/operation/EffectiveOperationSemantics.js';
 import { identityCardOf } from '../src/boot/card.js';
 import fixture from './fixtures-collector-input/fronds.js';
 import overrideFixture from './fixtures-operation-override/fronds.js';

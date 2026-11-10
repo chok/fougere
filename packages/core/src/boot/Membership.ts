@@ -4,7 +4,7 @@ import type { Fronds } from '../descriptor/Fronds.js';
 import type { RemoteRouter } from './remote.js';
 import type { Dispatcher } from '../dispatch/Dispatcher.js';
 import type { RouteRegistry } from '../dispatch/RouteRegistry.js';
-import type { EffectiveOperationsMap } from '../EffectiveOperationsMap.js';
+import type { EffectiveOperationsMap } from '../operation/EffectiveOperationsMap.js';
 import type { Logger } from '../builtin/Logger.js';
 import { addressOf, facadeKeyOf, isFacadeKey } from '../wire/Facade.js';
 import { presenterKeyOf } from '../prefab/presenter.js';
@@ -12,7 +12,7 @@ import { callOperations } from '../entry/facade.js';
 import { decoded } from '../dispatch/decoded.js';
 
 /** The one wording for "nobody hosts this here", with both ways out. */
-export const notLoaded = (entity: string) =>
+const notLoaded = (entity: string) =>
   `The frond that serves ${entity} is not in this process.\n` +
   `  - Keep it in this process (only:), or\n` +
   `  - give it an address: fronds: { <frond>: { remote: 'http://...' } }`;

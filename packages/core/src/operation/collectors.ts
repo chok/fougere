@@ -1,10 +1,10 @@
-import type { CollectorEntry } from '../../descriptor/CollectorEntry.js';
-import type { FrondDescriptor } from '../../descriptor/FrondDescriptor.js';
-import type { EffectiveOperation } from '../../EffectiveOperation.js';
-import type { EffectiveParameter } from '../../EffectiveParameter.js';
-import type { BindingPlan } from '../../wire/binding.js';
-import type { ErrorCode } from '../../wire/ErrorCode.js';
-import { collectorKeyOf } from '../../prefab/collector.js';
+import type { CollectorEntry } from '../descriptor/CollectorEntry.js';
+import type { FrondDescriptor } from '../descriptor/FrondDescriptor.js';
+import type { EffectiveOperation } from './EffectiveOperation.js';
+import type { EffectiveParameter } from './EffectiveParameter.js';
+import type { BindingPlan } from '../wire/binding.js';
+import type { ErrorCode } from '../wire/ErrorCode.js';
+import { collectorKeyOf } from '../prefab/collector.js';
 
 /** What a member of a `Collect<User>` chain refuses: from its `missing()`, and from its `collect()`. */
 export type Refusing = Pick<CollectorEntry, 'refuses' | 'collecting'>;

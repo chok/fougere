@@ -1,12 +1,12 @@
-import type { FrondDescriptor } from './descriptor/FrondDescriptor.js';
-import type { Diagnostic } from './diagnostic.js';
+import type { FrondDescriptor } from '../descriptor/FrondDescriptor.js';
+import type { Diagnostic } from '../diagnostic.js';
 import { lowerFirst } from '@fougere/schema';
-import { repositoryKeyOf } from './prefab/Repository.js';
-import { storageKeyOf } from './storage/Storage.js';
-import { presenterKeyOf } from './prefab/presenter.js';
-import { collectorKeyOf } from './prefab/collector.js';
-import { OperationOverrides } from './descriptor/OperationOverrides.js';
-import { collectorsInScope } from './module/collector/operation.js';
+import { repositoryKeyOf } from '../prefab/Repository.js';
+import { storageKeyOf } from '../storage/Storage.js';
+import { presenterKeyOf } from '../prefab/presenter.js';
+import { collectorKeyOf } from '../prefab/collector.js';
+import { OperationOverrides } from '../descriptor/OperationOverrides.js';
+import { collectorsInScope } from './collectors.js';
 
 /** A subject declared in one frond and reached from another — the rules below find no other kind. */
 export type Misplaced = Diagnostic & {

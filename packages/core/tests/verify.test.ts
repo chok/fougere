@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import split from './fixtures-collector-split/fronds.js';
-import { verify, assertSplittable } from '../src/verify.js';
+import { verify, assertSplittable } from '../src/operation/verify.js';
 import type { FrondDescriptor } from '../src/descriptor/FrondDescriptor.js';
 
 // No fixture tree, no mount, no disk. `verify` is a pure function of the graph
