@@ -1,5 +1,5 @@
 import { resolve } from 'node:path';
-import type { NameOf } from './NameOf.js';
+import type { NameOf } from '../NameOf.js';
 import { existsSync } from 'node:fs';
 import type { OperationOverride } from './OperationOverride.js';
 import type { FougereFrondProtocols } from './FougereFrondProtocols.js';

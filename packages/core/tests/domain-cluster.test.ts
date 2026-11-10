@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { entity, primary, ref, text, type Entity } from '@fougere/schema';
-import { buildGraph, clusterEntities, suggestSplit } from '../src/DomainCluster.js';
+import { buildGraph, clusterEntities, suggestSplit } from '../src/module/relation/DomainCluster.js';
 import type { EntityEntry } from '../src/descriptor/EntityEntry.js';
 import type { FrondDescriptor } from '../src/descriptor/FrondDescriptor.js';
 

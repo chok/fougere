@@ -1,4 +1,4 @@
-import type { FrondConfig } from '../FrondConfig.js';
+import type { FrondConfig } from './FrondConfig.js';
 import type { EntityEntry } from './EntityEntry.js';
 import type { FrondDescriptor } from './FrondDescriptor.js';
 import type { HandlerEntry } from './HandlerEntry.js';

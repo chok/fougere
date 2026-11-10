@@ -1,7 +1,7 @@
 import type { SchemaView } from '@fougere/schema';
-import type { Ctor } from './Ctor.js';
-import type { BindingPlan } from './wire/binding.js';
-import type { OperationKind } from './wire/OperationKind.js';
+import type { Ctor } from '../Ctor.js';
+import type { BindingPlan } from '../wire/binding.js';
+import type { OperationKind } from '../wire/OperationKind.js';
 import type { FougereOperationProtocols } from './FougereOperationProtocols.js';
 
 /** Per-operation override. */

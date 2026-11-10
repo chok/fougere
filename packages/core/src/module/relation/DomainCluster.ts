@@ -1,8 +1,8 @@
 import { Graph } from '@fougere/graph';
-import type { FrondDescriptor } from './descriptor/FrondDescriptor.js';
-import { Fronds } from './descriptor/Fronds.js';
+import type { FrondDescriptor } from '../../descriptor/FrondDescriptor.js';
+import { Fronds } from '../../descriptor/Fronds.js';
 import type { EntityNode } from './EntityNode.js';
-import { relationGraph } from './module/relation/relationGraph.js';
+import { relationGraph } from './relationGraph.js';
 
 export interface DomainCluster {
   name: string;

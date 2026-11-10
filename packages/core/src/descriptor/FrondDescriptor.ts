@@ -1,6 +1,6 @@
 import type { OperationContract } from '../wire/OperationContract.js';
-import type { OperationOverride } from '../OperationOverride.js';
-import type { FrondConfig } from '../FrondConfig.js';
+import type { OperationOverride } from './OperationOverride.js';
+import type { FrondConfig } from './FrondConfig.js';
 import type { ProviderEntry } from './ProviderEntry.js';
 import type { EntityEntry } from './EntityEntry.js';
 import type { HandlerEntry } from './HandlerEntry.js';
@@ -9,7 +9,7 @@ import type { CollectorEntry } from './CollectorEntry.js';
 import type { SeedEntry } from './SeedEntry.js';
 import type { FrondSource } from './FrondSource.js';
 import type { ExtensionEntry } from './ExtensionEntry.js';
-import type { FougereFrondProtocols } from '../FougereFrondProtocols.js';
+import type { FougereFrondProtocols } from './FougereFrondProtocols.js';
 
 /** The key a provider answers under: the name the source wrote, or its class name. */
 export const nameOf = (provider: ProviderEntry): string => provider.name ?? provider.ctor.name;
