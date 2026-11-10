@@ -1,7 +1,7 @@
 import { Registry } from '@fougere/registry';
 import { SchemaError } from '@fougere/schema';
-import type { CallIdentity } from './CallIdentity.js';
-import type { Transport } from './wire/Transport.js';
+import type { CallIdentity } from '../identity/CallIdentity.js';
+import type { Transport } from '../wire/Transport.js';
 
 /**
  * What carries a call to an address whose scheme names it.

@@ -20,7 +20,7 @@ import type { GuardReport } from '../dispatch/GuardReport.js';
 import { wrapping } from './ports.js';
 import { repositoryKeyOf, seatOf } from '../prefab/Repository.js';
 import { storageKeyOf, type Storage } from '../storage/Storage.js';
-import { declares } from '../Source.js';
+import { declares } from '../extension/Source.js';
 import { relationChecksOf, refuseUnwritableNull, releasing } from '../module/relation/relations.js';
 import { RelationGuard, type Holding } from '../module/relation/RelationGuard.js';
 import { ErrorCode } from '../wire/ErrorCode.js';

@@ -4,7 +4,7 @@
  * before the input is assumed.
  */
 import { describe, it, expect } from 'vitest';
-import { BindingSources } from '../src/BindingSources.js';
+import { BindingSources } from '../src/extension/BindingSources.js';
 import { computeBindingPlan } from '../src/bindingPlan.js';
 import { ArgumentResolver } from '../src/dispatch/ArgumentResolver.js';
 import { Invocation } from '../src/wire/Invocation.js';

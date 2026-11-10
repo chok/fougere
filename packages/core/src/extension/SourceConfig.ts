@@ -1,5 +1,5 @@
 import type { FougereSources } from './FougereSources.js';
-import type { NameOf } from './NameOf.js';
+import type { NameOf } from '../NameOf.js';
 
 /** One entry of `sources:` — what its type admits, and the entities it holds. */
 export type SourceConfig = FougereSources[keyof FougereSources] & {

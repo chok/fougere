@@ -1,6 +1,6 @@
 import { Registry } from '@fougere/registry';
 import { JsonSchemaValidator, Role, SchemaError, dotted, type Format, type JsonSchema, type SchemaView } from '@fougere/schema';
-import type { StorageFactory } from './storage/StorageFactory.js';
+import type { StorageFactory } from '../storage/StorageFactory.js';
 import type { Constraint } from './Constraint.js';
 import type { SourceView } from './SourceView.js';
 

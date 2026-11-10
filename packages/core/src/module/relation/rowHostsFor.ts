@@ -6,7 +6,7 @@ import type { Storage } from '../../storage/Storage.js';
 import { Invocation } from '../../wire/Invocation.js';
 import { RPC_ADDRESS } from '../../wire/RpcAnswer.js';
 import type { Transport } from '../../wire/Transport.js';
-import type { Constraint } from '../../Constraint.js';
+import type { Constraint } from '../../extension/Constraint.js';
 import type { StorageFactory } from '../../storage/StorageFactory.js';
 import { marksInProcess, marksInTransactions, type Marks } from './Marks.js';
 import type { RowHosts } from './RowHosts.js';

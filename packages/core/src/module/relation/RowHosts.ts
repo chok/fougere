@@ -1,6 +1,6 @@
 import type { Graph } from '@fougere/graph';
 import type { SchemaView } from '@fougere/schema';
-import type { Constraint } from '../../Constraint.js';
+import type { Constraint } from '../../extension/Constraint.js';
 import type { Marks } from './Marks.js';
 import type { Peer } from './Peer.js';
 import type { Journal } from '../../wire/Journal.js';

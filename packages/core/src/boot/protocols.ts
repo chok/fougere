@@ -1,5 +1,5 @@
 import { JsonSchemaValidator, SchemaError, dotted, type JsonSchema } from '@fougere/schema';
-import { Protocols, type ProtocolConfig } from '../Protocol.js';
+import { Protocols, type ProtocolConfig } from '../extension/Protocol.js';
 import type { FrondDescriptor } from '../descriptor/FrondDescriptor.js';
 
 /** Each protocol named in `protocols:`, judged by its format and by its adapter. */

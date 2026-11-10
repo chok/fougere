@@ -1,5 +1,5 @@
 import type { Container } from '@fougere/container';
-import { Protocols } from '../Protocol.js';
+import { Protocols } from '../extension/Protocol.js';
 import type { Diagnostic } from '../diagnostic.js';
 import { nameOf, type FrondDescriptor } from '../descriptor/FrondDescriptor.js';
 import type { DoorAround } from '../entry/door.js';

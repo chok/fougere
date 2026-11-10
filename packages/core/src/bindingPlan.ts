@@ -1,6 +1,6 @@
 import type { BindingPlan, BindingSource } from './wire/binding.js';
 import type { Param } from './wire/Param.js';
-import { BindingSources } from './BindingSources.js';
+import { BindingSources } from './extension/BindingSources.js';
 
 const PRIMITIVES = new Set(['string', 'number', 'boolean']);
 

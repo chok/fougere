@@ -5,7 +5,7 @@ import { ErrorCode } from '../wire/ErrorCode.js';
 import { FougereError } from '../wire/FougereError.js';
 import type { Container } from '@fougere/container';
 import type { EntityLookup } from './EntityLookup.js';
-import { BindingSources } from '../BindingSources.js';
+import { BindingSources } from '../extension/BindingSources.js';
 import { validateInput } from './validateInput.js';
 import { ListQuery } from './ListQuery.js';
 

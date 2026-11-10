@@ -4,12 +4,12 @@ import type { Fronds } from '../descriptor/Fronds.js';
 import type { SchemaView } from '@fougere/schema';
 import type { AppMiddleware } from '../wire/AppMiddleware.js';
 import type { RpcAnswer } from '../wire/RpcAnswer.js';
-import type { EffectiveOperationsMap } from '../EffectiveOperationsMap.js';
+import type { EffectiveOperationsMap } from '../operation/EffectiveOperationsMap.js';
 import type { Answering } from '../entry/door.js';
 import type { DispatchObserver } from '../dispatch/DispatchObserver.js';
 import type { DispatchPort } from '../dispatch/DispatchPort.js';
 import type { Storage } from '../storage/Storage.js';
-import type { ProtocolConfig } from '../Protocol.js';
+import type { ProtocolConfig } from '../extension/Protocol.js';
 
 /** The App object returned by createApp(). */
 export interface App extends DispatchPort {

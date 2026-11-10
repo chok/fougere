@@ -1,6 +1,6 @@
 import { FieldSet, type SchemaView } from '@fougere/schema';
 import { dequal } from 'dequal';
-import { declares } from '../../Source.js';
+import { declares } from '../../extension/Source.js';
 import type { Logger } from '../../builtin/Logger.js';
 import { isChange, type Change } from '../../storage/Change.js';
 

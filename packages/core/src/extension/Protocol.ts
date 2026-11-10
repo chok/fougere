@@ -1,8 +1,8 @@
 import { Registry } from '@fougere/registry';
 import type { Format } from '@fougere/schema';
 import type { FougereProtocols } from './FougereProtocols.js';
-import type { FrondDescriptor } from './descriptor/FrondDescriptor.js';
-import type { EffectiveOperation } from './EffectiveOperation.js';
+import type { FrondDescriptor } from '../descriptor/FrondDescriptor.js';
+import type { EffectiveOperation } from '../operation/EffectiveOperation.js';
 
 /** The protocols this app serves — a key per protocol, its options as the adapter states them. */
 export type ProtocolConfig = { [K in keyof FougereProtocols]?: FougereProtocols[K] };
