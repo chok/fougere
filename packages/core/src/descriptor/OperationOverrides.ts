@@ -1,10 +1,6 @@
-import { subjectKeyOf } from './bases.js';
 import { RouteAddress } from '../wire/RouteAddress.js';
-import { Protocols } from '../Protocol.js';
-import type { FougereOperationProtocols } from '../FougereOperationProtocols.js';
 import type { Diagnostic } from '../diagnostic.js';
 import type { FrondDescriptor } from './FrondDescriptor.js';
-import type { DeclaredAnswer } from './DeclaredAnswer.js';
 
 export type OperationOverrideEntry = NonNullable<FrondDescriptor['operationsOverrides']>[string];
 
@@ -28,32 +24,6 @@ export class OperationOverrides {
 
   get(address: string, operation: string): OperationOverrideEntry | undefined {
     return this.frond.operationsOverrides?.[new RouteAddress({ address, operation }).toString()];
-  }
-
-  /** What the op says to each protocol this process serves, with the answers its door links declare. */
-  protocols(address: string, operation: string): FougereOperationProtocols {
-    const entry = { ...this.get(address, operation) } as Record<string, Record<string, unknown> | undefined>;
-    for (const { door, answers } of this.declaredAt(address, operation)) {
-      const said = entry[door]?.responses as DeclaredAnswer[] | undefined;
-      entry[door] = { ...entry[door], responses: [...(said ?? []), ...answers] };
-    }
-
-    return Object.fromEntries(Object.entries(entry).filter(([key]) => Protocols.find(key))) as FougereOperationProtocols;
-  }
-
-  private declaredAt(address: string, operation: string): { door: string; answers: DeclaredAnswer[] }[] {
-    const handlers = this.frond.handlers.filter((one) => one.address === address).map((one) => one.name);
-
-    return Protocols.entries.flatMap(([door, type]) => {
-      if (!type.port) return [];
-      const keys = new Set(handlers.map((handler) => subjectKeyOf(type.port!, handler)));
-
-      return this.frond.providers.flatMap((provider) => {
-        const answers = provider.answers?.[operation];
-
-        return answers && provider.implements?.some((key) => keys.has(key)) ? [{ door, answers }] : [];
-      });
-    });
   }
 
   /** A key that names no op of this frond: a bare name, or an address the frond does not serve. */

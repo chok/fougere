@@ -1,14 +1,8 @@
 import { lowerFirst, Role, type SchemaView } from '@fougere/schema';
-import type { EntityEntry } from './descriptor/EntityEntry.js';
-import { tablesOf } from './descriptor/tables.js';
-import FougereTarget, { FOUGERE_TARGET } from './module/relation/FougereTarget.js';
-
-/** The app as ONE source sees it: the entities it holds, by the name the scan wrote down. */
-export interface SourceView {
-  entities: ReadonlyMap<string, SchemaView>;
-  /** The names another source holds — a reference to one gets a column and no key. Absent: all here. */
-  inOtherSources?: readonly string[];
-}
+import type { EntityEntry } from '../../descriptor/EntityEntry.js';
+import { tablesOf } from '../../descriptor/tables.js';
+import type { SourceView } from '../../extension/SourceView.js';
+import FougereTarget, { FOUGERE_TARGET } from './FougereTarget.js';
 
 /** What a source holds of these fronds — every entity, or the ones `holds` keeps and the rest named. */
 export function sourceViewOf(

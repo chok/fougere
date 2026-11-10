@@ -6,7 +6,7 @@ import type { RowHosts } from './RowHosts.js';
 import type { Diagnostic } from '../../diagnostic.js';
 import type { Releasing } from './Release.js';
 import type { EntityEntry } from '../../descriptor/EntityEntry.js';
-import { hasForeignKey } from '../../SourceView.js';
+import { hasForeignKey } from './sourceViewOf.js';
 import { markOf } from './FougereTarget.js';
 import type { Marks } from './Marks.js';
 import type { Rows } from './Release.js';

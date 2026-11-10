@@ -32,6 +32,9 @@ const STATED = new Map([
     'Type-only both ways: an axis reads the field it qualifies, and a field names the axes ' +
     'it carries. Mutual by definition — neither can be named without the other. What an axis ' +
     'WRITES on a field is not in it: `FougereFieldAxes` sits at the root, outside the layering.'],
+  ['packages/core extension↔operation',
+    'Type-only from the extension: a protocol says where an operation answers ' +
+    '(`ProtocolType.answersAt`), and the operation model asks each protocol.'],
 ]);
 
 /** A directory under `module/` is a family of its own: two modules reading each other is the cycle that matters. */
