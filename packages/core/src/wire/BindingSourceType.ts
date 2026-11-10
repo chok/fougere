@@ -4,7 +4,7 @@ import type { BindingSource } from './binding.js';
 import type { InvocationContext } from './InvocationContext.js';
 import type { Param } from './Param.js';
 
-export type BindingSourceOf<K extends BindingSource['kind']> = Extract<BindingSource, { kind: K }>;
+type BindingSourceOf<K extends BindingSource['kind']> = Extract<BindingSource, { kind: K }>;
 
 /** What a call hands the source that fills one parameter. */
 export interface BindingCall {
