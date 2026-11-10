@@ -23,7 +23,6 @@ const authors = (held: string[]): RelationCheck & { missing: ReturnType<typeof v
   target: 'author',
   inAnotherSource: false,
   marked: false,
-  arbitratedHereOnly: false,
   missing: vi.fn(async (keys: readonly unknown[]) => keys.filter((key) => !held.includes(String(key)))),
 });
 

@@ -73,7 +73,7 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
   — each holds its one connection across its call to the other, which needs that connection to answer.
   Reasoned from `marksInTransactions`, not measured. Stated 2026-11-09.
 - **A source with no transaction arbitrates in one process** — `marksInProcess`, for memory, files and
-  D1. A second process writing the same rows is not seen; the boot names each such `ref()`.
+  D1. A second process writing the same rows is not seen.
 - **A write inside `Together`, and an `update` handed a function, take no mark** — they read their
   targets and a delete at the same time still passes. A frame's transaction is already open, and such
   an update decides its keys inside its own.

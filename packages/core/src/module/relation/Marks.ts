@@ -5,8 +5,6 @@ import FougereTarget, { FOUGERE_TARGET } from './FougereTarget.js';
 
 /** How a source keeps the marks a write and a release of its target wait for each other on. */
 export interface Marks {
-  /** True when only this process is arbitrated — a second one writing the same rows is not seen. */
-  readonly inThisProcessOnly: boolean;
   /** Run `fn` holding these marks, handed the ones already `gone`: a release marking one waits until `fn` ends. */
   holding<R>(marks: readonly string[], fn: (factory: StorageFactory, gone: readonly string[]) => Promise<R>): Promise<R>;
   /** Mark these `gone` and run `fn`: a write holding one waits, and if `fn` throws the marks are as before. */
@@ -73,7 +71,6 @@ export function marksInTransactions(
   };
 
   return {
-    inThisProcessOnly: false,
     holding: (marks, fn) => locking(marks, (state) => state ?? LIVE, fn),
     marking: (marks, fn) => locking(marks, () => GONE, (bound) => fn(bound)),
     forget: (marks) => forgetting(factory, marks),
@@ -146,7 +143,6 @@ export function marksInProcess(factory: StorageFactory): Marks {
   const locks = new MarkLocks();
 
   return {
-    inThisProcessOnly: true,
     holding: async (marks, fn) => {
       await locks.share(marks);
       try {

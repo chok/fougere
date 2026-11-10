@@ -47,7 +47,6 @@ export function relationChecksOf(entity: SchemaView, name: string, rowHosts: Row
       target,
       inAnotherSource: rowHosts.sourceOf(name) !== rowHosts.sourceOf(target),
       marked: marksKeptBetween(name, target, rowHosts) !== undefined,
-      arbitratedHereOnly: marksKeptBetween(name, target, rowHosts)?.inThisProcessOnly ?? false,
       missing: async (keys) => {
         const storage = rowHosts.storageOf(target);
         if (!storage) return rowHosts.peerOf(target)?.missing(target, keys) ?? [];
@@ -159,11 +158,6 @@ function marksKeptBetween(namer: string, target: string, rowHosts: RowHosts): Ma
 /** The checks whose source keeps no mark: read before the write, and a delete at the same time is not refused. */
 export function unarbitratedRelations(checks: readonly RelationCheck[]): string[] {
   return checks.filter((check) => check.inAnotherSource && !check.marked).map((check) => `${check.field} → ${check.target}`);
-}
-
-/** The checks whose source arbitrates in this process alone: a second process writing the same rows is not seen. */
-export function arbitratedHereOnly(checks: readonly RelationCheck[]): string[] {
-  return checks.filter((check) => check.arbitratedHereOnly).map((check) => `${check.field} → ${check.target}`);
 }
 
 function sourcesKeepingMarks(rowHosts: RowHosts): string[] {
