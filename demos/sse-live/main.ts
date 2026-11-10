@@ -6,7 +6,7 @@
  * and it pushes a name rather than a row.
  */
 import { createApp, createLocalRunner } from '@fougere/core';
-import { statementOf } from '@fougere/defaults';
+import { appOptionsOf } from '@fougere/defaults';
 import { frondAliases, setModuleLoader } from '@fougere/core/node';
 import type { App, InvocationContext } from '@fougere/core';
 import { createContainer } from '@fougere/container';
@@ -49,7 +49,7 @@ async function main() {
   const live = await serveLive();
 
   const app = await createApp({
-    ...(await statementOf(import.meta.dirname)),
+    ...(await appOptionsOf(import.meta.dirname)),
     createContainer,
     storageFactory: createMemoryStorage,
     extensions: [{ name: 'session', state: { user: json(User) } }],

@@ -7,7 +7,7 @@ import { frondAliases, loadNearestConfig, remotesOf, setModuleLoader, configModu
 
 import type { App, AuthRuntime, CreateAppOptions, FougereConfig, Transport } from '@fougere/core';
 import { authOf } from './auth.js';
-import { layerOf, statementOf, type ResolvedStorage, type Statement } from '@fougere/defaults';
+import { layerOf, appOptionsOf, type ResolvedStorage } from '@fougere/defaults';
 
 
 export interface FougereServerConfig {
@@ -138,9 +138,9 @@ async function boot(): Promise<App> {
 
   const stated = await configModules(fileConfig.fronds);
   const remotes = remotesOf(fileConfig);
-  const declared: Partial<Statement> = _config.fronds
+  const declared: Partial<Pick<CreateAppOptions, 'fronds' | 'vocabulary'>> = _config.fronds
     ? { fronds: _config.fronds, vocabulary: _config.vocabulary }
-    : await statementOf(root, { conventions: fileConfig.conventions });
+    : await appOptionsOf(root, { conventions: fileConfig.conventions });
 
   const app = await createApp({
     ...(declared.fronds || stated.fronds.length > 0 ? { fronds: [...(declared.fronds ?? []), ...stated.fronds] } : {}),

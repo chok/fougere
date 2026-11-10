@@ -9,7 +9,7 @@
  */
 import { createServer, type Socket } from 'node:net';
 import { createApp, createLocalRunner } from '@fougere/core';
-import { statementOf } from '@fougere/defaults';
+import { appOptionsOf } from '@fougere/defaults';
 import { frondAliases, setModuleLoader } from '@fougere/core/node';
 import { createContainer } from '@fougere/container';
 
@@ -39,7 +39,7 @@ async function main() {
   setModuleLoader((path) => jiti.import(path) as Promise<Record<string, unknown>>);
 
   const app = await createApp({
-    ...(await statementOf(import.meta.dirname, { only: ['fleet', 'hub'] })),
+    ...(await appOptionsOf(import.meta.dirname, { only: ['fleet', 'hub'] })),
     createContainer,
     onEmit: (fact, payload) => {
       let reached = 0;

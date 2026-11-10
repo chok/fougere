@@ -6,7 +6,7 @@
  * no headers at all and still carries it, which is the whole point — the trace rides the
  * invocation, and every transport carries the invocation.
  */
-import { writtenStatement } from '@fougere/compiler';
+import { scannedAppOptions } from '@fougere/compiler';
 import { describe, it, expect, beforeAll, afterAll, afterEach } from 'vitest';
 import { createServer, connect, type Server } from 'node:net';
 import { join } from 'node:path';
@@ -81,7 +81,7 @@ function halves(): [FinishedSpan, FinishedSpan] {
 }
 
 beforeAll(async () => {
-  host = await createApp({ ...(await writtenStatement(fixturesDir)), createContainer, storageFactory: createStorageFactory() });
+  host = await createApp({ ...(await scannedAppOptions(fixturesDir)), createContainer, storageFactory: createStorageFactory() });
   host.use(tracing(takers).middleware);
   const runner = createLocalRunner(host);
 

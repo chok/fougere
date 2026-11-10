@@ -1,28 +1,29 @@
 import { lowerFirst, type SchemaView } from '@fougere/schema';
-import { resolveConventions } from './Conventions.js';
-import { statementDrift, operationsWithoutMethod } from './boot/statement-drift.js';
-import { reachedBy, servedBy } from './module/topology/declared.js';
-import type { BindingPlan } from './wire/binding.js';
-import { computeBindingPlan } from './bindingPlan.js';
-import { targetOf } from './prefab/prefab.js';
+import { resolveConventions } from '../config/Conventions.js';
+import { bindingDrift, operationsWithoutMethod } from './bindingDrift.js';
+import { reachedBy, servedBy } from '../module/topology/declared.js';
+import type { BindingPlan } from '../wire/binding.js';
+import { computeBindingPlan } from '../bindingPlan.js';
+import { targetOf } from '../prefab/prefab.js';
 import { EFFECTIVE_OPERATION_SEMANTICS } from './EffectiveOperationSemantics.js';
-import type { CollectorEntry } from './descriptor/CollectorEntry.js';
-import { chainsOf, collectorsInScope, collectorsOf, groupedCollectors, refusalsWithCollected, type Refusing } from './module/collector/operation.js';
-import { type FrondDescriptor } from './descriptor/FrondDescriptor.js';
-import type { HandlerEntry } from './descriptor/HandlerEntry.js';
-import { OperationOverrides, type OperationOverrideEntry } from './descriptor/OperationOverrides.js';
-import { servedSurfaces } from './descriptor/surface.js';
-import type { Diagnostic } from './diagnostic.js';
+import type { CollectorEntry } from '../descriptor/CollectorEntry.js';
+import { chainsOf, collectorsInScope, collectorsOf, groupedCollectors, refusalsWithCollected, type Refusing } from './collectors.js';
+import { type FrondDescriptor } from '../descriptor/FrondDescriptor.js';
+import type { HandlerEntry } from '../descriptor/HandlerEntry.js';
+import { OperationOverrides, type OperationOverrideEntry } from '../descriptor/OperationOverrides.js';
+import { protocolsOf } from './protocols.js';
+import { servedSurfaces } from '../descriptor/surface.js';
+import type { Diagnostic } from '../diagnostic.js';
 import { verify } from './verify.js';
-import { inferOperationKind, type OperationContract } from './wire/OperationContract.js';
-import { type OperationKind } from './wire/OperationKind.js';
-import { type OperationsMap } from './wire/OperationsMap.js';
+import { inferOperationKind, type OperationContract } from '../wire/OperationContract.js';
+import { type OperationKind } from '../wire/OperationKind.js';
+import { type OperationsMap } from '../wire/OperationsMap.js';
 import type { EffectiveParameter } from './EffectiveParameter.js';
 import type { EffectiveOperation } from './EffectiveOperation.js';
 import type { EffectiveOperationsMap } from './EffectiveOperationsMap.js';
 import type { EffectiveOperationOptions } from './EffectiveOperationOptions.js';
-import type { Placement } from './wire/Placement.js';
-import { opsOf } from './prefab/opsOf.js';
+import type { Placement } from '../wire/Placement.js';
+import { opsOf } from '../prefab/opsOf.js';
 import { normalizeBinding, validateProvenance, type BoundContract } from './bindingRefusals.js';
 
 function reachOf(
@@ -90,7 +91,7 @@ export function resolveEffectiveOperations(
       const effective = new Map<string, EffectiveOperation>();
       byHandler.set(handler, effective);
       const contracts = resolveContracts(handler, overrides.at(handler.address), collectorNames);
-      diagnostics.push(...statementDrift(frond, handler));
+      diagnostics.push(...bindingDrift(frond, handler));
       diagnostics.push(...operationsWithoutMethod(frond, handler, contracts.keys()));
 
       const resolving: Resolving = { fronds, frond, handler, schemas, served, collectorsByType, chainsByType, options, diagnostics };
@@ -153,7 +154,7 @@ function resolveOperation(resolving: Resolving, name: string, rawContract: Opera
     name,
     kind,
     kindSource: OperationOverrides.of(frond).get(handler.address, name)?.kind ? 'explicit' : 'convention',
-    protocols: OperationOverrides.of(frond).protocols(handler.address, name),
+    protocols: protocolsOf(frond, handler.address, name),
     handler: { className: handler.ctor.name, address: handler.address, filePath: handler.filePath },
     implementation,
     binding: contract.binding,

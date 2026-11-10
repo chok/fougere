@@ -8,13 +8,13 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 import { createJiti } from 'jiti';
 import { resolveEffectiveOperations, type FrondDescriptor } from '@fougere/core';
-import { scanProject, emitStatement } from '../src/index.js';
+import { scanProject, emitAppOptions } from '../src/index.js';
 import { frondAliases } from '@fougere/core/node';
 
 async function stated(fixture: string): Promise<{ scanned: FrondDescriptor; written: FrondDescriptor; statement: string }> {
   const root = join(import.meta.dirname, fixture);
   const scan = await scanProject(root);
-  const statement = emitStatement(scan);
+  const statement = emitAppOptions(scan);
   mkdirSync(join(root, '.fougere'), { recursive: true });
   const file = join(root, '.fougere', 'fronds.generated.ts');
   writeFileSync(file, statement);
@@ -28,7 +28,7 @@ describe('a statement written from the scan', () => {
   /** A refusal names the file, and a build runs on one machine and answers on another. */
   it('names its files from the root of the project, never from the disk that scanned it', async () => {
     const root = join(import.meta.dirname, 'fixtures-config-contract');
-    const statement = emitStatement(await scanProject(root));
+    const statement = emitAppOptions(await scanProject(root));
 
     expect(statement).toMatch(/files: \[\[_\d+, "fronds\//);
     expect(statement).not.toContain(root);
@@ -56,7 +56,7 @@ describe('a statement written from the scan', () => {
 
   it('exports the terms of vocabulary/ for the whole process, beside the fronds', async () => {
     const scan = await scanProject(join(import.meta.dirname, 'fixtures-conventions'));
-    const statement = emitStatement(scan);
+    const statement = emitAppOptions(scan);
 
     expect(scan.vocabulary?.map((entry) => entry.term.name)).toEqual(['ulid']);
     expect(statement).toContain("import { ulid as _0_ulid } from '@fronds/shop/vocabulary/ulid.js';");

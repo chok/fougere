@@ -3,7 +3,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { join } from 'node:path';
-import { writtenStatement } from '@fougere/compiler';
+import { scannedAppOptions } from '@fougere/compiler';
 import { createContainer } from '@fougere/container';
 import { createApp, createLocalRunner, Transports } from '@fougere/core';
 import { Invocation } from '@fougere/core/contract';
@@ -32,14 +32,14 @@ describe('the schemes this package answers', () => {
 
   it('carries a call to an http:// address with nothing but the `remotes:` line', async () => {
     await using catalog = await createApp({
-      ...(await writtenStatement(join(import.meta.dirname, 'fixtures'))),
+      ...(await scannedAppOptions(join(import.meta.dirname, 'fixtures'))),
       createContainer,
       storageFactory: createStorageFactory(),
     });
     const receiver = await serve(createLocalRunner(catalog), { port: 0 });
     try {
       await using consumer = await createApp({
-        ...(await writtenStatement('/tmp/fougere-transports-consumer')),
+        ...(await scannedAppOptions('/tmp/fougere-transports-consumer')),
         createContainer,
         remotes: { catalog: `http://127.0.0.1:${receiver.port}` },
       });

@@ -20,7 +20,7 @@ const storageFactory = storageOver(() => {
     all: async () => [...map.values()],
   };
 });
-import { scanProject, writtenStatement } from '../src/index.js';
+import { scanProject, scannedAppOptions } from '../src/index.js';
 
 const root = join(import.meta.dirname, 'fixtures-handler-repository');
 
@@ -33,7 +33,7 @@ describe('a handler that extends Repository<Post>', () => {
   }, 30_000);
 
   it('answers through the rows the boot seats it on, booted from the written statement', async () => {
-    await using app = await createApp({ ...(await writtenStatement(root)), createContainer, storageFactory });
+    await using app = await createApp({ ...(await scannedAppOptions(root)), createContainer, storageFactory });
     const run = createLocalRunner(app);
 
     const draft = await run({ address: 'post', op: 'create' }, { ...Invocation.empty, input: { title: 'A post' } }) as { id: string };

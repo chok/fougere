@@ -1,11 +1,11 @@
-import { statementOf } from '@fougere/defaults';
+import { appOptionsOf } from '@fougere/defaults';
 import { createApp } from '@fougere/core';
 import { createContainer } from '@fougere/container';
 import { join } from 'node:path';
 import type { Container } from '@fougere/container';
 
 const app = await createApp({
-  ...(await statementOf(join(import.meta.dirname, '..'))),
+  ...(await appOptionsOf(join(import.meta.dirname, '..'))),
   createContainer,
 });
 

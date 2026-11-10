@@ -13,7 +13,7 @@ function namesDisagreeing(plan: BindingPlan, signature: Signature): string[] {
 }
 
 /** What a frond's stated contracts no longer match. */
-export function statementDrift(frond: FrondDescriptor, handler: HandlerEntry): Diagnostic[] {
+export function bindingDrift(frond: FrondDescriptor, handler: HandlerEntry): Diagnostic[] {
   const found: Diagnostic[] = [];
 
   for (const [name, override] of OperationOverrides.of(frond).at(handler.address)) {

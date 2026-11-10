@@ -9,7 +9,7 @@
  */
 import { connect, type Socket } from 'node:net';
 import { createApp, createLocalRunner } from '@fougere/core';
-import { layerOf, resolveStorage, statementOf } from '@fougere/defaults';
+import { layerOf, resolveStorage, appOptionsOf } from '@fougere/defaults';
 import '@fougere/adapter-env';
 import { frondAliases, setModuleLoader } from '@fougere/core/node';
 import type { App } from '@fougere/core';
@@ -30,7 +30,7 @@ async function main() {
   let live: Socket | undefined;
 
   const app: App = await createApp({
-    ...(await statementOf(import.meta.dirname, { only: ['fleet', 'node'] })),
+    ...(await appOptionsOf(import.meta.dirname, { only: ['fleet', 'node'] })),
     createContainer,
     // Which device this is, read from NODE_ID as the `Node` value the handler asks for.
     ...layerOf(resolveStorage({ env: { type: 'env', values: ['Node'] } })),

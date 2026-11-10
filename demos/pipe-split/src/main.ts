@@ -20,7 +20,7 @@
  *   SPLIT=1 pnpm dev                      # then reach them by address
  */
 import { createApp, createLocalRunner, Invocation } from '@fougere/core';
-import { statementOf } from '@fougere/defaults';
+import { appOptionsOf } from '@fougere/defaults';
 import { frondAliases, setModuleLoader } from '@fougere/core/node';
 import { createContainer } from '@fougere/container';
 import '@fougere/transport-http';
@@ -38,7 +38,7 @@ const remotes = process.env.SPLIT
   : undefined;
 
 const app = await createApp({
-  ...(await statementOf(root)),
+  ...(await appOptionsOf(root)),
   createContainer,
   ...(remotes ? { remotes } : {}),
 });

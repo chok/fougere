@@ -5,7 +5,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { join } from 'node:path';
-import { emitStatement, scanProject } from '../src/index.js';
+import { emitAppOptions, scanProject } from '../src/index.js';
 
 const root = join(import.meta.dirname, 'fixtures-door-answers');
 
@@ -23,7 +23,7 @@ describe('a door link\'s declared answers', () => {
   });
 
   it('are written into the statement, the field a hand-written fronds.ts states', async () => {
-    const written = emitStatement(await scanProject(root));
+    const written = emitAppOptions(await scanProject(root));
 
     expect(written).toContain('answers: {"findById":[{"status":301,"headers":["location"]},{"status":308,"headers":["location"]}],"delete":[{"status":423,"headers":[]}]}');
   });

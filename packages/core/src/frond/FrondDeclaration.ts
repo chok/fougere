@@ -1,28 +1,28 @@
 import { lowerFirst, type Entity, type SchemaView } from '@fougere/schema';
-import { addressOf } from './wire/Facade.js';
-import type { CollectorEntry } from './descriptor/CollectorEntry.js';
-import type { EntityEntry } from './descriptor/EntityEntry.js';
-import type { FrondDescriptor } from './descriptor/FrondDescriptor.js';
-import type { HandlerEntry } from './descriptor/HandlerEntry.js';
-import type { PresenterEntry } from './descriptor/PresenterEntry.js';
-import type { ProviderEntry } from './descriptor/ProviderEntry.js';
-import type { SeedEntry } from './descriptor/SeedEntry.js';
-import type { ExtensionEntry } from './descriptor/ExtensionEntry.js';
-import { DEFAULT_CONVENTIONS } from './Conventions.js';
-import { getPresenterFields } from './prefab/presenter.js';
-import type { OperationContract } from './wire/OperationContract.js';
-import type { ErrorCode } from './wire/ErrorCode.js';
+import { addressOf } from '../wire/Facade.js';
+import type { CollectorEntry } from '../descriptor/CollectorEntry.js';
+import type { EntityEntry } from '../descriptor/EntityEntry.js';
+import type { FrondDescriptor } from '../descriptor/FrondDescriptor.js';
+import type { HandlerEntry } from '../descriptor/HandlerEntry.js';
+import type { PresenterEntry } from '../descriptor/PresenterEntry.js';
+import type { ProviderEntry } from '../descriptor/ProviderEntry.js';
+import type { SeedEntry } from '../descriptor/SeedEntry.js';
+import type { ExtensionEntry } from '../descriptor/ExtensionEntry.js';
+import { DEFAULT_CONVENTIONS } from '../config/Conventions.js';
+import { getPresenterFields } from '../prefab/presenter.js';
+import type { OperationContract } from '../wire/OperationContract.js';
+import type { ErrorCode } from '../wire/ErrorCode.js';
 import type { DeclaredSubject } from './DeclaredSubject.js';
 import type { DeclaredHandler } from './DeclaredHandler.js';
 import type { Declared, Seating } from './Declared.js';
-import { seated, seatsOf } from './prefab/Repository.js';
-import { opsOf } from './prefab/opsOf.js';
-import { builtOn, targetOf } from './prefab/prefab.js';
-import { contractOf, isStatementOperation } from './StatementOperation.js';
-import type { Ctor } from './Ctor.js';
-import type { FrondConfig } from './FrondConfig.js';
-import type { PresenterFieldMeta } from './descriptor/PresenterFieldMeta.js';
-import { FrondConfigReading } from './descriptor/FrondConfigReading.js';
+import { seated, seatsOf } from '../prefab/Repository.js';
+import { opsOf } from '../prefab/opsOf.js';
+import { builtOn, targetOf } from '../prefab/prefab.js';
+import { contractOf, isDeclaredOperation } from './DeclaredOperation.js';
+import type { Ctor } from '../Ctor.js';
+import type { FrondConfig } from '../descriptor/FrondConfig.js';
+import type { PresenterFieldMeta } from '../descriptor/PresenterFieldMeta.js';
+import { FrondConfigReading } from '../descriptor/FrondConfigReading.js';
 
 
 const ctorOf = (d: Declared | DeclaredHandler): Ctor => {
@@ -58,7 +58,7 @@ function declaredOperations(h: Ctor | DeclaredHandler): Map<string, OperationCon
   const own = opsOf(ctorOf(h));
   const merged = new Map<string, OperationContract>(Object.entries(own));
   for (const [op, contract] of declared instanceof Map ? declared : Object.entries(declared ?? {})) {
-    merged.set(op, isStatementOperation(contract) ? contractOf(op, contract) : contract as OperationContract);
+    merged.set(op, isDeclaredOperation(contract) ? contractOf(op, contract) : contract as OperationContract);
   }
 
   return merged;

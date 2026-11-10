@@ -1,6 +1,6 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname, join, relative, resolve } from 'node:path';
-import { compileProject, emitStatement } from '@fougere/compiler';
+import { compileProject, emitAppOptions } from '@fougere/compiler';
 import { BUILD_DIRECTORY, emitFacade, emitNames } from '@fougere/core/node';
 import ProjectScan from '../services/ProjectScan.js';
 import type Build from '../entities/Build.js';
@@ -41,7 +41,7 @@ export default class BuildHandler {
     const out = resolve(scan.root, input.out || DEFAULT_OUT);
 
     await mkdir(dirname(out), { recursive: true });
-    await writeFile(out, emitStatement(scan, { outFile: out }));
+    await writeFile(out, emitAppOptions(scan, { outFile: out }));
 
     const facade = join(dirname(out), FACADE_OUT);
     await writeFile(facade, emitFacade(scan, { outFile: facade }));

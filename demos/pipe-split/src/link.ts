@@ -5,7 +5,7 @@
  * A link does not know it is second: the order is applied where the fact is announced.
  */
 import { createApp, createLocalRunner } from '@fougere/core';
-import { statementOf } from '@fougere/defaults';
+import { appOptionsOf } from '@fougere/defaults';
 import { frondAliases, setModuleLoader } from '@fougere/core/node';
 import { createContainer } from '@fougere/container';
 import { serve } from '@fougere/transport-http';
@@ -21,7 +21,7 @@ const [name, port] = process.argv.slice(2);
 // Its own frond and nothing else. The ORDER is read where the fact is ANNOUNCED, so a
 // link needs neither it nor the entity — and hosting `blog` here would make two processes
 // claim to serve it.
-const app = await createApp({ ...(await statementOf(root, { only: [name!] })), createContainer });
+const app = await createApp({ ...(await appOptionsOf(root, { only: [name!] })), createContainer });
 const receiver = await serve(createLocalRunner(app), { port: Number(port) });
 
 console.log(`\n  ${name} on :${port} — one link, alone in its process\n`);

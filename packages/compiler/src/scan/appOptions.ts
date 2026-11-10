@@ -199,7 +199,7 @@ function frondOf(frond: FrondDescriptor, imports: Imports): string {
 const UNDECIDED = new Set(['input-contract-ambiguous', 'output-contract-ambiguous', 'fact-contract-ambiguous']);
 
 /** The scan as the `fronds.ts` an author would write: one `frond()` call per frond. */
-export function emitStatement(scan: ScanResult, options: { outFile?: string } = {}): string {
+export function emitAppOptions(scan: ScanResult, options: { outFile?: string } = {}): string {
   const undecided = refusalOf(scan.diagnostics.filter((one) => UNDECIDED.has(one.code)), 'operation contract(s) the scan could not decide');
   if (undecided) throw undecided;
   const imports = new Imports(scan.root, options.outFile);

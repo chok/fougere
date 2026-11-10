@@ -2,7 +2,7 @@
  * The package as one member of an app's ascent — and the defect that made the pair worth
  * declaring: `onSpan` already RETURNED its withdrawal, and nothing ever called it.
  */
-import { writtenStatement } from '@fougere/compiler';
+import { scannedAppOptions } from '@fougere/compiler';
 import { describe, it, expect } from 'vitest';
 import { join } from 'node:path';
 import { createApp, createLocalRunner } from '@fougere/core';
@@ -15,7 +15,7 @@ const fixturesDir = join(import.meta.dirname, 'fixtures');
 const EMPTY: InvocationContext = { params: {}, query: {}, input: undefined, state: {} };
 type Facade = Record<string, (...args: unknown[]) => Promise<unknown>>;
 
-const statement = await writtenStatement(fixturesDir);
+const statement = await scannedAppOptions(fixturesDir);
 const boot = (extensions: Parameters<typeof createApp>[0]['extensions']) => createApp({
   ...statement, createContainer, storageFactory: createStorageFactory(), extensions,
 });

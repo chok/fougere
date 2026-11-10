@@ -6,7 +6,7 @@
  * either way, that only the isolation differs, and that the difference is announced
  * rather than discovered.
  */
-import { writtenStatement } from '@fougere/compiler';
+import { scannedAppOptions } from '@fougere/compiler';
 import { describe, it, expect, vi, afterEach, beforeAll } from 'vitest';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
@@ -21,8 +21,8 @@ const root = join(import.meta.dirname, 'fixtures-together');
 
 // Scanned once: the seventeen boots below read the same directory, and a cold scan on CI
 // costs more than the 5 s a single test is given.
-let statement: Awaited<ReturnType<typeof writtenStatement>>;
-beforeAll(async () => { statement = await writtenStatement(root); }, 60_000);
+let statement: Awaited<ReturnType<typeof scannedAppOptions>>;
+beforeAll(async () => { statement = await scannedAppOptions(root); }, 60_000);
 
 afterEach(() => { vi.restoreAllMocks(); });
 
@@ -230,7 +230,7 @@ describe('what a frame refuses at boot', () => {
     const storage = storageFrom({ main: { source: createSqliteSource({ path: join(dir, 'app.db') }) } });
     try {
       await createApp({
-        ...(await writtenStatement(join(import.meta.dirname, fixture))),
+        ...(await scannedAppOptions(join(import.meta.dirname, fixture))),
         createContainer,
         storageFactory: storage.storageFactory,
         sourceOf: storage.sourceOf,

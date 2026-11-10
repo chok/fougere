@@ -14,7 +14,7 @@ import type { Nuxt } from '@nuxt/schema';
 import { Fronds, orderSeeds, serves, type ScanResult } from '@fougere/core';
 import { prefixOf } from '@fougere/app';
 import { frondPackage, resolveConventions, keyedFrondEntries, statesModule, type Conventions } from '@fougere/core';
-import { emitFacade, emitNames, frondAliases, frondNamesOf, NAMES, REMOTES, statementFileIn, statementIn, setModuleLoader, loadNearestConfig, configFileNear, projectRootOf, remotesOf } from '@fougere/core/node';
+import { emitFacade, emitNames, frondAliases, frondNamesOf, NAMES, REMOTES, appOptionsFileIn, appOptionsIn, setModuleLoader, loadNearestConfig, configFileNear, projectRootOf, remotesOf } from '@fougere/core/node';
 import { declaresStorage } from '@fougere/defaults';
 import type { SeedEntry, FougereConfig } from '@fougere/core';
 import { createJiti } from 'jiti';
@@ -103,7 +103,7 @@ const module = defineNuxtModule<FougereModuleOptions>({
     installLoader(aliases);
 
     const frondsFilter = process.env.FOUGERE_FRONDS?.split(',').map((s) => s.trim()).filter(Boolean);
-    const frondsFile = statementFileIn(scanRoot);
+    const frondsFile = appOptionsFileIn(scanRoot);
     const { scan, statement } = frondsFile
       ? { scan: await statedIn(scanRoot, frondsFile, frondsFilter), statement: undefined }
       : await scanned(scanRoot, frondsFilter, conventions);
@@ -227,7 +227,7 @@ function carried(config: FougereConfig): Partial<FougereConfig> {
 
 
 async function statedIn(root: string, frondsFile: string, only: string[] | undefined): Promise<ScanResult> {
-  return { root, fronds: Fronds.list((await statementIn(frondsFile, only)).fronds), diagnostics: [] };
+  return { root, fronds: Fronds.list((await appOptionsIn(frondsFile, only)).fronds), diagnostics: [] };
 }
 
 async function scanned(root: string, only: string[] | undefined, conventions: Conventions): Promise<{ scan: ScanResult; statement: string }> {
@@ -237,7 +237,7 @@ async function scanned(root: string, only: string[] | undefined, conventions: Co
   });
   const scan = await compiler.scanProject(root, only, conventions);
 
-  return { scan, statement: compiler.emitStatement(scan) };
+  return { scan, statement: compiler.emitAppOptions(scan) };
 }
 
 function syncedEntityNames(root: string, conventions: Conventions): string[] {

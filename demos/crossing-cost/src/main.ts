@@ -9,9 +9,9 @@
  *
  * Then uncomment a line in `fougere.config.ts` and run it again. No handler changes.
  */
-import { statementOf, type Statement } from '@fougere/defaults';
+import { appOptionsOf } from '@fougere/defaults';
 import { log } from '@fougere/log';
-import { createApp, createLocalRunner, declaredTopologyOf, resolveEffectiveOperations, type Storage } from '@fougere/core';
+import { createApp, createLocalRunner, declaredTopologyOf, resolveEffectiveOperations, type CreateAppOptions, type Storage } from '@fougere/core';
 import { loadConfig, remotesOf } from '@fougere/core/node';
 import { createContainer } from '@fougere/container';
 import { serve } from '@fougere/transport-http';
@@ -21,7 +21,7 @@ import { join, relative } from 'node:path';
 
 const root = join(import.meta.dirname, '..');
 const config = await loadConfig(root);
-const statement = await statementOf(root);
+const statement = await appOptionsOf(root);
 
 const SHELF = [
   { id: 'p1', title: 'Fern', cents: 1200 },
@@ -39,7 +39,7 @@ const remotes = remotesOf(config);
 /** `ledger` is placed and served by nobody, on purpose — every other placed frond answers. */
 const LEDGER = 'ledger';
 
-const boot = (stated: Statement, elsewhere: Record<string, string>) => createApp({
+const boot = (stated: Required<Pick<CreateAppOptions, 'fronds' | 'vocabulary'>>, elsewhere: Record<string, string>) => createApp({
   ...stated,
   createContainer,
   storageFactory: shelf,
@@ -54,7 +54,7 @@ const answering = await Promise.all(Object.entries(remotes)
     // Carried alone, the way `fougere serve <frond>` carries one: two hosts holding `cart` both
     // would answer for it, and a caller could not choose.
     const host = await boot(
-      await statementOf(root, { only: [frond] }),
+      await appOptionsOf(root, { only: [frond] }),
       Object.fromEntries(Object.entries(remotes).filter(([other]) => other !== frond)),
     );
     const receiver = await serve(createLocalRunner(host), { port: Number(new URL(url).port) });

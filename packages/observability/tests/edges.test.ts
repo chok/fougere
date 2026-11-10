@@ -7,7 +7,7 @@
  * healthy system. Until now nothing pinned either — the only edge assertions in this package
  * were `toEqual([])`, from a fixture that had one frond and could not produce one.
  */
-import { writtenStatement } from '@fougere/compiler';
+import { scannedAppOptions } from '@fougere/compiler';
 import { describe, it, expect } from 'vitest';
 import { join } from 'node:path';
 import { createApp, createLocalRunner } from '@fougere/core';
@@ -22,7 +22,7 @@ const empty: InvocationContext = { params: {}, query: {}, input: undefined, stat
 /** An app over the two-frond fixture, with its spans already taken. */
 async function watched(remotes?: Record<string, string>): Promise<{ app: App; measured: Metrics }> {
   const app = await createApp({
-    ...(await writtenStatement(fixturesDir)),
+    ...(await scannedAppOptions(fixturesDir)),
     createContainer,
     ...(remotes ? { remotes, remoteTransport: () => (async () => 3) } : {}),
   });

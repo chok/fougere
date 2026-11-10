@@ -3,8 +3,8 @@ import { loadTS } from './scan/TypeProgram.js';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
 import { resolveConventions, statesModule, type ScanResult } from '@fougere/core';
-import { ALIASES, configFileIn, frondAliases, loadConfig, MODULES, statementFileIn } from '@fougere/core/node';
-import { emitStatement } from './scan/statement.js';
+import { ALIASES, configFileIn, frondAliases, loadConfig, MODULES, appOptionsFileIn } from '@fougere/core/node';
+import { emitAppOptions } from './scan/appOptions.js';
 
 export interface Compiled {
   out: string;
@@ -17,9 +17,9 @@ export async function compileProject(root: string, scan: ScanResult, out: string
   const typescript = await loadTS();
   const config = await loadConfig(root);
   const aliases = await frondAliases(root, resolveConventions(config.conventions));
-  const statement = statementFileIn(root) ?? join(root, 'fronds.ts');
+  const statement = appOptionsFileIn(root) ?? join(root, 'fronds.ts');
   const sources = new Map<string, string>();
-  if (!existsSync(statement)) sources.set(statement, emitStatement(scan, { outFile: statement }));
+  if (!existsSync(statement)) sources.set(statement, emitAppOptions(scan, { outFile: statement }));
 
   const keys = Object.keys(config.fronds ?? {}).filter(statesModule);
   const local = keys.filter((key) => key.startsWith('.')).map((key) => resolve(root, key));

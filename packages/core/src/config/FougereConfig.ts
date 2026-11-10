@@ -1,15 +1,15 @@
 import { dirname, join, resolve } from 'node:path';
 import { existsSync } from 'node:fs';
-import type { LogLevel } from './builtin/LogLevel.js';
+import type { LogLevel } from '../builtin/LogLevel.js';
 import type { ConventionsInput } from './ConventionsInput.js';
-import type { SourceConfig } from './SourceConfig.js';
-import type { PortChoice } from './PortChoice.js';
-import { getModuleLoader } from './loader.js';
-import type { ProtocolConfig } from './Protocol.js';
+import type { SourceConfig } from '../extension/SourceConfig.js';
+import type { PortChoice } from '../extension/PortChoice.js';
+import { getModuleLoader } from '../loader.js';
+import type { ProtocolConfig } from '../extension/Protocol.js';
 import { statesModule, type FrondEntries } from './FrondEntries.js';
 import { keyedFrondEntries } from './KeyedFrondEntry.js';
 import { DEFAULT_CONVENTIONS } from './Conventions.js';
-import type { StateEntry } from './FougereStates.js';
+import type { StateEntry } from '../extension/FougereStates.js';
 import type { ServerConfig } from './ServerConfig.js';
 
 export interface FougereConfig {
@@ -52,7 +52,7 @@ const STATEMENT_FILES = ['fronds.ts', 'fronds.mts', 'fronds.js', 'fronds.mjs'];
 export const BUILD_DIRECTORY = join('.fougere', 'build');
 
 /** The fronds a directory states by hand — `frond()` calls beside the config, booted with no scan. */
-export function statementFileIn(dir: string): string | undefined {
+export function appOptionsFileIn(dir: string): string | undefined {
   return STATEMENT_FILES.map((file) => resolve(dir, file)).find((path) => existsSync(path));
 }
 

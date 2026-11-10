@@ -11,7 +11,7 @@
  */
 import { createServer, type Socket } from 'node:net';
 import { createApp, createLocalRunner } from '@fougere/core';
-import { statementOf } from '@fougere/defaults';
+import { appOptionsOf } from '@fougere/defaults';
 import { frondAliases, setModuleLoader } from '@fougere/core/node';
 import type { InvocationContext } from '@fougere/core';
 import { createContainer } from '@fougere/container';
@@ -55,7 +55,7 @@ async function main() {
   });
 
   const app = await createApp({
-    ...(await statementOf(import.meta.dirname)),
+    ...(await appOptionsOf(import.meta.dirname)),
     createContainer,
     onEmit: (fact, payload) => {
       let reached = 0;

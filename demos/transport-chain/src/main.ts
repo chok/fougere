@@ -8,7 +8,7 @@
  * `CartHandler` is never touched. What changes is the chain built below — the same shape
  * `ports: { Payment: ['Auditing', 'Stripe'] }` already has, read from the outside in.
  */
-import { statementOf } from '@fougere/defaults';
+import { appOptionsOf } from '@fougere/defaults';
 import { log } from '@fougere/log';
 import { createApp, createLocalRunner, type Storage, type Transport } from '@fougere/core';
 import { loadConfig, remotesOf } from '@fougere/core/node';
@@ -22,7 +22,7 @@ import { refusing } from './transport/refusing.js';
 
 const root = join(import.meta.dirname, '..');
 const config = await loadConfig(root);
-const statement = await statementOf(root);
+const statement = await appOptionsOf(root);
 
 const SHELF = [
   { id: 'p1', title: 'Fern', cents: 1200 },

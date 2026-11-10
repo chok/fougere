@@ -10,7 +10,7 @@
  * So both worlds are covered here: inside the workspace the scan discovers the
  * ops, outside it discovers nothing — and the façade must validate either way.
  */
-import { writtenStatement } from '../src/index.js';
+import { scannedAppOptions } from '../src/index.js';
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import { join } from 'node:path';
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync, symlinkSync } from 'node:fs';
@@ -47,7 +47,7 @@ function spyStorage() {
 async function boot(root: string) {
   const storage = spyStorage();
   const storageFactory: StorageFactory = vi.fn(() => storage) as unknown as StorageFactory;
-  const app = await createApp({ ...(await writtenStatement(root)), createContainer, storageFactory });
+  const app = await createApp({ ...(await scannedAppOptions(root)), createContainer, storageFactory });
 
   return { app, storage, run: createLocalRunner(app) };
 }

@@ -8,7 +8,7 @@
  * nothing is wrong with either half on its own.
  */
 import { describe, it, expect } from 'vitest';
-import { statementDrift, operationsWithoutMethod } from '../src/boot/statement-drift.js';
+import { bindingDrift, operationsWithoutMethod } from '../src/operation/bindingDrift.js';
 import type { FrondDescriptor } from '../src/descriptor/FrondDescriptor.js';
 import type { HandlerEntry } from '../src/descriptor/HandlerEntry.js';
 
@@ -35,11 +35,11 @@ const frondStating = (bound: string[]): FrondDescriptor => ({
 
 describe('a stated binding, against the signature it is about', () => {
   it('says nothing while the two agree', () => {
-    expect(statementDrift(frondStating(['id']), handlerWith(['id']))).toEqual([]);
+    expect(bindingDrift(frondStating(['id']), handlerWith(['id']))).toEqual([]);
   });
 
   it('names the parameter the method no longer declares', () => {
-    const [found, ...rest] = statementDrift(frondStating(['id']), handlerWith(['postId']));
+    const [found, ...rest] = bindingDrift(frondStating(['id']), handlerWith(['postId']));
 
     expect(rest, 'one finding per operation, not per parameter').toHaveLength(0);
     expect(found).toMatchObject({
@@ -53,7 +53,7 @@ describe('a stated binding, against the signature it is about', () => {
   });
 
   it('warns rather than refuses — the statement is still the author\'s word', () => {
-    const [found] = statementDrift(frondStating(['id']), handlerWith(['postId']));
+    const [found] = bindingDrift(frondStating(['id']), handlerWith(['postId']));
 
     // A boot that ran yesterday must not stop running because a parameter moved. What it
     // must not do is stay quiet.
@@ -65,7 +65,7 @@ describe('a stated binding, against the signature it is about', () => {
     // and stating its contract is exactly what config exists for. Not drift.
     const unread = { ...handlerWith(['id']), operations: new Map() } as unknown as HandlerEntry;
 
-    expect(statementDrift(frondStating(['id']), unread)).toEqual([]);
+    expect(bindingDrift(frondStating(['id']), unread)).toEqual([]);
   });
 
   it('leaves alone a statement that binds nothing', () => {
@@ -74,7 +74,7 @@ describe('a stated binding, against the signature it is about', () => {
       operationsOverrides: { 'post.publish': { description: 'just a sentence' } },
     } as unknown as FrondDescriptor;
 
-    expect(statementDrift(noBinding, handlerWith(['id']))).toEqual([]);
+    expect(bindingDrift(noBinding, handlerWith(['id']))).toEqual([]);
   });
 });
 

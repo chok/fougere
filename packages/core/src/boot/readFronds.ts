@@ -1,4 +1,4 @@
-import { resolveConventions } from '../Conventions.js';
+import { resolveConventions } from '../config/Conventions.js';
 import { servedProtocols } from './protocols.js';
 import type { HandlerEntry } from '../descriptor/HandlerEntry.js';
 import type { PresenterEntry } from '../descriptor/PresenterEntry.js';
@@ -10,7 +10,7 @@ import type { FrondDescriptor } from '../descriptor/FrondDescriptor.js';
 import { refusalOf, type Diagnostic } from '../diagnostic.js';
 import type { CreateAppOptions } from './CreateAppOptions.js';
 import { Logger } from '../builtin/Logger.js';
-import { resolveEffectiveOperations, type EffectiveOperationModel } from '../EffectiveOperationModel.js';
+import { resolveEffectiveOperations, type EffectiveOperationModel } from '../operation/EffectiveOperationModel.js';
 import { facadeKeyOf } from '../wire/Facade.js';
 import { presenterKeyOf } from '../prefab/presenter.js';
 
@@ -62,7 +62,7 @@ export async function readFronds(
     throw new Error(
       'createApp needs `fronds:`, the list of fronds this app runs. Pass one:\n'
       + '    createApp({ fronds: [blog] })\n'
-      + '    createApp({ ...(await statementOf(root)) })',
+      + '    createApp({ ...(await appOptionsOf(root)) })',
     );
   }
 

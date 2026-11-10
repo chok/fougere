@@ -1,6 +1,6 @@
 import { Logger, applyConfig, createApp, type App, type CreateAppOptions, type Extension, type FougereConfig, type FrondDescriptor, type Transport } from '@fougere/core';
 import { layerOf, type ResolvedStorage } from './storage/ResolvedStorage.js';
-import { getModuleLoader, loadConfig, MODULES, remotesOf, configModules, statementFileIn, statementIn, type ModuleLoader, type Statement } from '@fougere/core/node';
+import { getModuleLoader, loadConfig, MODULES, remotesOf, configModules, appOptionsFileIn, appOptionsIn, type ModuleLoader } from '@fougere/core/node';
 import { join, resolve, sep } from 'node:path';
 import { existsSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
@@ -56,7 +56,7 @@ export async function boot(options: BootOptions): Promise<App> {
 
   const stated = await configModules(config.fronds, fromProject(root, options.built));
   const only = options.only ?? options.fronds;
-  const statement = await statementOf(code, { conventions: config.conventions });
+  const statement = await appOptionsOf(code, { conventions: config.conventions });
   const hosted = [...statement.fronds, ...stated.fronds].filter((frond) => !only || only.includes(frond.name));
 
   log.debug('creating app');
@@ -103,12 +103,12 @@ function fromProject(root: string, built?: string): ModuleLoader {
     : imports().then((load) => load(id)));
 }
 
-/** The statement a project boots from: the `fronds.ts` it wrote, or the one the scan writes. */
-export async function statementOf(
+/** The fronds and the vocabulary a project boots from: the `fronds.ts` it wrote, or the one the scan writes. */
+export async function appOptionsOf(
   root: string,
   scope: { only?: readonly string[]; conventions?: FougereConfig['conventions'] } = {},
-): Promise<Statement> {
-  return statementIn(statementFileIn(root) ?? await written(root, scope.conventions), scope.only);
+): Promise<Required<Pick<CreateAppOptions, 'fronds' | 'vocabulary'>>> {
+  return appOptionsIn(appOptionsFileIn(root) ?? await written(root, scope.conventions), scope.only);
 }
 
 async function written(root: string, conventions: FougereConfig['conventions']): Promise<string> {
@@ -124,7 +124,7 @@ async function written(root: string, conventions: FougereConfig['conventions']):
     if (existsSync(built)) return built;
     throw new Error(`${root} has no fronds.ts and @fougere/compiler is not installed. Run \`fougere build\`, or install @fougere/compiler.`);
   }
-  const { file, diagnostics } = await compiler.writeStatement(root, conventions);
+  const { file, diagnostics } = await compiler.writeAppOptions(root, conventions);
   for (const d of diagnostics.filter((one) => one.severity === 'blocking')) log.error(`[${d.code}] ${d.message}`, d.cause);
   for (const d of diagnostics) if (d.severity === 'warning') log.warn(`[${d.code}] ${d.message}`);
 

@@ -1,22 +1,22 @@
 import { FieldSet, type SchemaView } from '@fougere/schema';
-import type { ErrorCode } from './wire/ErrorCode.js';
-import type { OperationContract } from './wire/OperationContract.js';
-import type { Param } from './wire/Param.js';
-import type { TypeRef } from './wire/TypeRef.js';
+import type { ErrorCode } from '../wire/ErrorCode.js';
+import type { OperationContract } from '../wire/OperationContract.js';
+import type { Param } from '../wire/Param.js';
+import type { TypeRef } from '../wire/TypeRef.js';
 
 /** What a parameter is — a schema, a field of an entity (`[Post, 'id']`), a primitive, or `State`, the caller's kept state. */
-export type StatementType = SchemaView | readonly [SchemaView, string] | 'string' | 'number' | 'boolean' | 'State';
+export type DeclaredType = SchemaView | readonly [SchemaView, string] | 'string' | 'number' | 'boolean' | 'State';
 
 /** A parameter, required unless it says otherwise. */
-export type StatementParam = StatementType | { type: StatementType; optional: true };
+export type DeclaredParam = DeclaredType | { type: DeclaredType; optional: true };
 
 /**
  * An operation written by hand: what TypeScript erases of its method.
  * Ex: `publish: { params: { id: [Post, 'id'] }, output: Post }`.
  */
-export interface StatementOperation {
+export interface DeclaredOperation {
   /** Every parameter, in the order the method takes them. */
-  params: Record<string, StatementParam>;
+  params: Record<string, DeclaredParam>;
   /** What the request body is judged against. */
   input?: SchemaView;
   /** What the operation answers — `[Post]` for several. */
@@ -26,10 +26,10 @@ export interface StatementOperation {
   description?: string;
 }
 
-export const isStatementOperation = (value: unknown): value is StatementOperation =>
+export const isDeclaredOperation = (value: unknown): value is DeclaredOperation =>
   typeof value === 'object' && value !== null && 'params' in value;
 
-function typeRefOf(type: StatementType): TypeRef {
+function typeRefOf(type: DeclaredType): TypeRef {
   if (typeof type === 'string') return { raw: type, name: type };
   if (!Array.isArray(type)) return { raw: (type as SchemaView).name, name: (type as SchemaView).name };
 
@@ -47,13 +47,13 @@ function typeRefOf(type: StatementType): TypeRef {
 }
 
 /** The contract the scan would have read off the method, from what the author stated. */
-export function contractOf(name: string, operation: StatementOperation): OperationContract {
+export function contractOf(name: string, operation: DeclaredOperation): OperationContract {
   const params: Param[] = Object.entries(operation.params).map(([param, declared]) => {
     const optional = typeof declared === 'object' && declared !== null && !Array.isArray(declared) && 'optional' in declared;
 
     return {
       name: param,
-      type: typeRefOf(optional ? (declared as { type: StatementType }).type : declared as StatementType),
+      type: typeRefOf(optional ? (declared as { type: DeclaredType }).type : declared as DeclaredType),
       ...(optional ? { optional: true } : {}),
     };
   });
