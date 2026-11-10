@@ -1,9 +1,9 @@
 import { crypto } from '#crypto';
-import type { PublicJwk } from './crypto/PublicJwk.js';
-import type { Signer } from './crypto/Signer.js';
-import type { Verifier } from './crypto/Verifier.js';
-import { b64url, unb64url, bytesOf, textOf, unb64 } from './crypto/encoding.js';
-import type { SignedCall } from './wire/SignedCall.js';
+import type { PublicJwk } from '../crypto/PublicJwk.js';
+import type { Signer } from '../crypto/Signer.js';
+import type { Verifier } from '../crypto/Verifier.js';
+import { b64url, unb64url, bytesOf, textOf, unb64 } from '../crypto/encoding.js';
+import type { SignedCall } from '../wire/SignedCall.js';
 import type { FrondIdentity } from './FrondIdentity.js';
 import type { VerifiedCall } from './VerifiedCall.js';
 

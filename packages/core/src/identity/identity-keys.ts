@@ -1,6 +1,6 @@
 /** Making keys and issuing grants — the half of identity that runs at a DEPLOYMENT. */
 import { createPrivateKey, createPublicKey, generateKeyPairSync, sign } from 'node:crypto';
-import { b64url } from './crypto/encoding.js';
+import { b64url } from '../crypto/encoding.js';
 
 /** A fresh Ed25519 pair, PEM both ways. The root's and a frond's are the same kind. */
 export function generateKeyPair(): { privateKey: string; publicKey: string } {
