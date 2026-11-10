@@ -12,3 +12,14 @@ export interface LogRecord {
   /** Epoch milliseconds. */
   at: number;
 }
+
+/** An argument of a log line, as text. */
+export function argumentText(value: unknown): string {
+  if (typeof value === 'string') return value;
+  if (value instanceof Error) return `${value.name}: ${value.message}`;
+  try {
+    return JSON.stringify(value) ?? String(value);
+  } catch {
+    return String(value);
+  }
+}

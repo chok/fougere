@@ -1,5 +1,5 @@
 import { Ring } from './Ring.js';
-import { type LogRecord } from '@fougere/core';
+import { argumentText, type LogRecord } from '@fougere/core';
 import type { LogLine } from './LogLine.js';
 
 /** What this process logged. */
@@ -10,18 +10,8 @@ export class LogRing extends Ring<LogLine> {
       level: line.level,
       name: line.name,
       message: line.message,
-      args: line.args.map(render),
+      args: line.args.map(argumentText),
       at: line.at,
     }));
-  }
-}
-
-function render(value: unknown): string {
-  if (typeof value === 'string') return value;
-  if (value instanceof Error) return `${value.name}: ${value.message}`;
-  try {
-    return JSON.stringify(value) ?? String(value);
-  } catch {
-    return String(value);
   }
 }

@@ -1,7 +1,7 @@
 import { Beat } from '../Beat.js';
 import { Endpoint } from '../Endpoint.js';
 import { currentSpan } from '../index.js';
-import type { LogRecord } from '@fougere/core';
+import { argumentText, type LogRecord } from '@fougere/core';
 import type { CapturedLog } from './CapturedLog.js';
 import type { LogsOptions } from './LogsOptions.js';
 
@@ -80,15 +80,5 @@ function payload(service: string, records: CapturedLog[]) {
 function bodyOf(record: CapturedLog): string {
   if (record.args.length === 0) return record.message;
 
-  return [record.message, ...record.args.map(readable)].join(' ');
-}
-
-function readable(value: unknown): string {
-  if (typeof value === 'string') return value;
-  if (value instanceof Error) return `${value.name}: ${value.message}`;
-  try {
-    return JSON.stringify(value) ?? String(value);
-  } catch {
-    return String(value);
-  }
+  return [record.message, ...record.args.map(argumentText)].join(' ');
 }

@@ -120,7 +120,7 @@ export { toHttpError } from './wire/http-error.js';
 export { toPublicError } from './contract.js';
 export { LineBuffer } from './builtin/LineBuffer.js';
 export { Logger, envLevel, formatted, logLevel, setLogLevel } from './builtin/Logger.js';
-export type { LogRecord } from './builtin/LogRecord.js';
+export { argumentText, type LogRecord } from './builtin/LogRecord.js';
 export type { LogSink } from './builtin/LogSink.js';
 export type { Rendered } from './builtin/Rendered.js';
 // The fact a boot announces. Its destinations are `@fougere/log`'s; the line is core's.
