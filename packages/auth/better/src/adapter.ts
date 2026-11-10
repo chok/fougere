@@ -113,10 +113,7 @@ export function fougereAdapter(storageMap: StorageMap) {
 
       update: async <T>({ model, where, update }: { model: string; where: CleanedWhere[]; update: T }): Promise<T | null> => {
         const storage = storageOf(storageMap, model);
-        const criteria = whereToCriteria(where);
-        const target = 'id' in criteria
-          ? await storage.findById(criteria.id as string)
-          : await storage.findBy(criteria);
+        const target = await designated(storage, where);
         if (!target) return null;
 
         return (await storage.update(target.id as string, update as Partial<Record<string, unknown>>)) as T;
@@ -133,10 +130,7 @@ export function fougereAdapter(storageMap: StorageMap) {
 
       delete: async ({ model, where }: { model: string; where: CleanedWhere[] }) => {
         const storage = storageOf(storageMap, model);
-        const criteria = whereToCriteria(where);
-        const target = 'id' in criteria
-          ? await storage.findById(criteria.id as string)
-          : await storage.findBy(criteria);
+        const target = await designated(storage, where);
         if (target) await storage.delete(target.id as string);
       },
 
@@ -175,4 +169,10 @@ function applyClientSidePagination(
   if (limit !== undefined) result = result.slice(0, limit);
 
   return result;
+}
+
+async function designated(storage: Storage, where: CleanedWhere[]): Promise<Record<string, unknown> | undefined> {
+  const criteria = whereToCriteria(where);
+
+  return 'id' in criteria ? storage.findById(criteria.id as string) : storage.findBy(criteria);
 }
