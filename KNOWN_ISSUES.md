@@ -268,6 +268,11 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
 - **`fougere migrate` run twice at once races itself** — the boot no longer migrates, so replicas
   do not race it; two release steps started together still would (`ADD COLUMN` has no guard,
   `delta`, `diff/Change.ts`). One migration per deployment is the operator's line.
+- **Under npm, bun or yarn, the starter's `tsc` is TypeScript 6** — `@fougere/compiler` depends on
+  `@typescript/typescript6`, whose `@typescript/old` is `typescript@6` and is hoisted beside the project's own
+  TypeScript 7, so the two `tsc` binaries race for `node_modules/.bin`. A fresh install runs 6, a later
+  `npm install -D typescript` runs 7. pnpm links direct dependencies only. Measured 2026-11-11 on
+  `0.30.0-alpha.4`; it goes when the scan leaves TypeScript 6, with TypeScript 7.1's stable API.
 - **`fougere new` depends on the network and on each host tool's pinned major** — the shell is
   `npx`'d at scaffold time. A tool that changes what it writes inside its major (a config file
   renamed, a flag dropped) breaks `fougere new` for everyone until `scaffold.json` follows; `door:check`
