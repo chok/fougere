@@ -1,6 +1,6 @@
 {
   "name": "@fougere/decorators",
-  "version": "0.30.0-alpha.4",
+  "version": "0.30.0-alpha.5",
   "description": "Configuration sugar (@config) — declarative, never hidden runtime.",
   "keywords": [
     "fougere",

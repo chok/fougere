@@ -1,5 +1,14 @@
 # fougere-demo-schema-ecommerce
 
+## 0.0.3-alpha.13
+
+### Patch Changes
+
+- @fougere/adapter-graphql@0.30.0-alpha.5
+- @fougere/adapter-sql@0.30.0-alpha.5
+- @fougere/core@0.30.0-alpha.5
+- @fougere/schema@0.30.0-alpha.5
+
 ## 0.0.3-alpha.12
 
 ### Patch Changes

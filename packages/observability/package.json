@@ -1,6 +1,6 @@
 {
   "name": "@fougere/observability",
-  "version": "0.30.0-alpha.4",
+  "version": "0.30.0-alpha.5",
   "description": "Optional observability for Fougere: one span per operation, W3C Trace Context across any transport.",
   "keywords": [
     "fougere",

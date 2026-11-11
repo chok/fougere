@@ -1,5 +1,18 @@
 # fougere-demo-on-delete
 
+## 0.0.3-alpha.13
+
+### Patch Changes
+
+- @fougere/adapter-sql@0.30.0-alpha.5
+- @fougere/compiler@0.30.0-alpha.5
+- @fougere/container@0.30.0-alpha.5
+- @fougere/core@0.30.0-alpha.5
+- @fougere/defaults@0.30.0-alpha.5
+- @fougere/log@0.30.0-alpha.5
+- @fougere/schema@0.30.0-alpha.5
+- @fougere/workflow@0.30.0-alpha.5
+
 ## 0.0.3-alpha.12
 
 ### Patch Changes

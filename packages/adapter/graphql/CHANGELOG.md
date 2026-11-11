@@ -1,5 +1,13 @@
 # @fougere/schema-graphql
 
+## 0.30.0-alpha.5
+
+### Patch Changes
+
+- @fougere/core@0.30.0-alpha.5
+- @fougere/http@0.30.0-alpha.5
+- @fougere/schema@0.30.0-alpha.5
+
 ## 0.30.0-alpha.4
 
 ### Patch Changes

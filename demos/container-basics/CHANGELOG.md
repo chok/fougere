@@ -1,5 +1,11 @@
 # fougere-demo-container-basics
 
+## 0.0.3-alpha.8
+
+### Patch Changes
+
+- @fougere/container@0.30.0-alpha.5
+
 ## 0.0.3-alpha.7
 
 ### Patch Changes

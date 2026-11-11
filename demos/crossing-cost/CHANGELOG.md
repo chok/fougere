@@ -1,5 +1,18 @@
 # fougere-demo-crossing-cost
 
+## 0.0.1-alpha.10
+
+### Patch Changes
+
+- @fougere/compiler@0.30.0-alpha.5
+- @fougere/container@0.30.0-alpha.5
+- @fougere/core@0.30.0-alpha.5
+- @fougere/defaults@0.30.0-alpha.5
+- @fougere/log@0.30.0-alpha.5
+- @fougere/observability@0.30.0-alpha.5
+- @fougere/schema@0.30.0-alpha.5
+- @fougere/transport-http@0.30.0-alpha.5
+
 ## 0.0.1-alpha.9
 
 ### Patch Changes

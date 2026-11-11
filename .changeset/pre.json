@@ -162,6 +162,7 @@
     "load-keeps-your-weights",
     "memory-fallback-in-one-line",
     "migrate-names-what-it-read",
+    "migrate-without-sql",
     "no-warning-for-a-lock-in-process",
     "nobody-signed-in-is-an-answer",
     "nuxt-and-forms",

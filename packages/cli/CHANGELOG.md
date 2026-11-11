@@ -1,5 +1,21 @@
 # @fougere/cli
 
+## 0.30.0-alpha.5
+
+### Patch Changes
+
+- 1902739: `fougere migrate` on a project with no SQL source says there is nothing to migrate, and exits 0.
+  - @fougere/adapter-rest@0.30.0-alpha.5
+  - @fougere/app@0.30.0-alpha.5
+  - @fougere/compiler@0.30.0-alpha.5
+  - @fougere/container@0.30.0-alpha.5
+  - @fougere/core@0.30.0-alpha.5
+  - @fougere/defaults@0.30.0-alpha.5
+  - @fougere/registry@0.30.0-alpha.5
+  - @fougere/schema@0.30.0-alpha.5
+  - @fougere/testing@0.30.0-alpha.5
+  - @fougere/transport-http@0.30.0-alpha.5
+
 ## 0.30.0-alpha.4
 
 ### Patch Changes

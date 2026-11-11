@@ -1,5 +1,12 @@
 # @fougere/svelte
 
+## 0.30.0-alpha.5
+
+### Patch Changes
+
+- @fougere/app@0.30.0-alpha.5
+- @fougere/core@0.30.0-alpha.5
+
 ## 0.30.0-alpha.4
 
 ### Patch Changes

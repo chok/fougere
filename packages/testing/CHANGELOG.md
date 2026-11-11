@@ -1,5 +1,17 @@
 # @fougere/testing
 
+## 0.30.0-alpha.5
+
+### Patch Changes
+
+- @fougere/app@0.30.0-alpha.5
+- @fougere/compiler@0.30.0-alpha.5
+- @fougere/container@0.30.0-alpha.5
+- @fougere/core@0.30.0-alpha.5
+- @fougere/defaults@0.30.0-alpha.5
+- @fougere/schema@0.30.0-alpha.5
+- @fougere/transport-http@0.30.0-alpha.5
+
 ## 0.30.0-alpha.4
 
 ### Patch Changes

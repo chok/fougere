@@ -1,5 +1,7 @@
 # @fougere/log
 
+## 0.30.0-alpha.5
+
 ## 0.30.0-alpha.4
 
 ## 0.30.0-alpha.3
