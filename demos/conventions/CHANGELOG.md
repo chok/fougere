@@ -1,5 +1,15 @@
 # fougere-demo-conventions
 
+## 0.0.1-alpha.2
+
+### Patch Changes
+
+- @fougere/adapter-memory@0.30.0-alpha.4
+- @fougere/compiler@0.30.0-alpha.4
+- @fougere/core@0.30.0-alpha.4
+- @fougere/defaults@0.30.0-alpha.4
+- @fougere/schema@0.30.0-alpha.4
+
 ## 0.0.1-alpha.1
 
 ### Patch Changes

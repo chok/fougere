@@ -1,5 +1,12 @@
 # @fougere/next
 
+## 0.30.0-alpha.4
+
+### Patch Changes
+
+- @fougere/app@0.30.0-alpha.4
+- @fougere/core@0.30.0-alpha.4
+
 ## 0.30.0-alpha.3
 
 ### Patch Changes

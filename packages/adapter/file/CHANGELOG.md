@@ -1,5 +1,12 @@
 # @fougere/adapter-file
 
+## 0.30.0-alpha.4
+
+### Patch Changes
+
+- @fougere/core@0.30.0-alpha.4
+- @fougere/schema@0.30.0-alpha.4
+
 ## 0.30.0-alpha.3
 
 ### Patch Changes

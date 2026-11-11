@@ -1,6 +1,6 @@
 {
   "name": "fougere-demo-mirror-catalog",
-  "version": "0.0.3-alpha.11",
+  "version": "0.0.3-alpha.12",
   "private": true,
   "type": "module",
   "scripts": {

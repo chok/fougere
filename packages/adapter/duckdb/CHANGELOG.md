@@ -1,5 +1,13 @@
 # @fougere/adapter-duckdb
 
+## 0.30.0-alpha.4
+
+### Patch Changes
+
+- @fougere/adapter-sql@0.30.0-alpha.4
+- @fougere/core@0.30.0-alpha.4
+- @fougere/schema@0.30.0-alpha.4
+
 ## 0.30.0-alpha.3
 
 ### Patch Changes

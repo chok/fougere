@@ -1,5 +1,11 @@
 # @fougere/transport-http
 
+## 0.30.0-alpha.4
+
+### Patch Changes
+
+- @fougere/core@0.30.0-alpha.4
+
 ## 0.30.0-alpha.3
 
 ### Patch Changes

@@ -1,5 +1,21 @@
 # @fougere/cli
 
+## 0.30.0-alpha.4
+
+### Patch Changes
+
+- e5ae7c7: The workspace starter installs TypeScript 7.
+  - @fougere/adapter-rest@0.30.0-alpha.4
+  - @fougere/app@0.30.0-alpha.4
+  - @fougere/compiler@0.30.0-alpha.4
+  - @fougere/container@0.30.0-alpha.4
+  - @fougere/core@0.30.0-alpha.4
+  - @fougere/defaults@0.30.0-alpha.4
+  - @fougere/registry@0.30.0-alpha.4
+  - @fougere/schema@0.30.0-alpha.4
+  - @fougere/testing@0.30.0-alpha.4
+  - @fougere/transport-http@0.30.0-alpha.4
+
 ## 0.30.0-alpha.3
 
 ### Patch Changes

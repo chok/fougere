@@ -1,5 +1,17 @@
 # @fougere/app
 
+## 0.30.0-alpha.4
+
+### Patch Changes
+
+- @fougere/adapter-memory@0.30.0-alpha.4
+- @fougere/adapter-rest@0.30.0-alpha.4
+- @fougere/container@0.30.0-alpha.4
+- @fougere/core@0.30.0-alpha.4
+- @fougere/defaults@0.30.0-alpha.4
+- @fougere/schema@0.30.0-alpha.4
+- @fougere/transport-http@0.30.0-alpha.4
+
 ## 0.30.0-alpha.3
 
 ### Patch Changes
