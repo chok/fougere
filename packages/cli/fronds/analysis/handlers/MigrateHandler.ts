@@ -44,10 +44,7 @@ export default class MigrateHandler {
     if (engines.length === 0) {
       await storage.close?.();
 
-      return {
-        chain, changes: [], added: [], warnings: [], ran: [], checked: [],
-        refusals: [{ entity: '*', field: '*', reason: 'no SQL source in fougere.config.ts — nothing to migrate' }],
-      };
+      return { chain, changes: [], added: [], warnings: [], ran: [], checked: [], refusals: [] };
     }
 
     const { actualState, desiredTables, planStep, collapseChain, applyStep, undeclaredColumns } = await import('@fougere/adapter-sql');

@@ -44,6 +44,11 @@ export default class MigrateCommand {
 
       return;
     }
+    if (planned === 0 && result.checked.length === 0) {
+      this.ui.info('No SQL source in fougere.config.ts, nothing to migrate.');
+
+      return;
+    }
     if (planned === 0) {
       this.ui.success('Up to date');
       for (const { source, tables } of result.checked) this.ui.step(`source ${pc.bold(source)}: ${tables.join(', ')}`);
