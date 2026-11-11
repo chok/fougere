@@ -1,5 +1,18 @@
 # @fougere/app
 
+## 0.30.0-alpha.3
+
+### Patch Changes
+
+- Updated dependencies [e9a8641]
+  - @fougere/core@0.30.0-alpha.3
+  - @fougere/defaults@0.30.0-alpha.3
+  - @fougere/adapter-memory@0.30.0-alpha.3
+  - @fougere/adapter-rest@0.30.0-alpha.3
+  - @fougere/transport-http@0.30.0-alpha.3
+  - @fougere/container@0.30.0-alpha.3
+  - @fougere/schema@0.30.0-alpha.3
+
 ## 0.30.0-alpha.2
 
 ### Patch Changes

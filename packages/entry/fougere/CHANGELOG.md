@@ -1,5 +1,15 @@
 # fougere
 
+## 0.30.0-alpha.3
+
+### Minor Changes
+
+- e9a8641: A global `fougere` runs the project's own CLI when there is one, and a message naming a command says how to run it without a global install (`WITHOUT_GLOBAL_INSTALL`).
+
+### Patch Changes
+
+- @fougere/cli@0.30.0-alpha.3
+
 ## 0.30.0-alpha.2
 
 ### Patch Changes

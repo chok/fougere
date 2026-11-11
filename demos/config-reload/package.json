@@ -1,6 +1,6 @@
 {
   "name": "fougere-demo-config-reload",
-  "version": "0.0.3-alpha.10",
+  "version": "0.0.3-alpha.11",
   "private": true,
   "type": "module",
   "scripts": {

@@ -1,5 +1,17 @@
 # fougere-demo-transport-chain
 
+## 0.0.1-alpha.8
+
+### Patch Changes
+
+- Updated dependencies [e9a8641]
+  - @fougere/core@0.30.0-alpha.3
+  - @fougere/defaults@0.30.0-alpha.3
+  - @fougere/compiler@0.30.0-alpha.3
+  - @fougere/log@0.30.0-alpha.3
+  - @fougere/container@0.30.0-alpha.3
+  - @fougere/schema@0.30.0-alpha.3
+
 ## 0.0.1-alpha.7
 
 ### Patch Changes

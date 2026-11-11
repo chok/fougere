@@ -1,5 +1,11 @@
 # @fougere/schema
 
+## 0.30.0-alpha.3
+
+### Patch Changes
+
+- @fougere/registry@0.30.0-alpha.3
+
 ## 0.30.0-alpha.2
 
 ### Patch Changes

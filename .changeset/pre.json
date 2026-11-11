@@ -150,6 +150,7 @@
     "every-source-writes-its-type",
     "extending-a-repository-answers-it",
     "fougere-build-writes-the-statement",
+    "fougere-hands-over",
     "fougere-ports",
     "fronds-resolve-by-their-paths",
     "graphql-plural-is-the-one-of-the-schema",

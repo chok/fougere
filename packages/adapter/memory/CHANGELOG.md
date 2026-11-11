@@ -1,5 +1,13 @@
 # @fougere/adapter-memory
 
+## 0.30.0-alpha.3
+
+### Patch Changes
+
+- Updated dependencies [e9a8641]
+  - @fougere/core@0.30.0-alpha.3
+  - @fougere/schema@0.30.0-alpha.3
+
 ## 0.30.0-alpha.2
 
 ### Patch Changes
