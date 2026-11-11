@@ -1,4 +1,4 @@
-import { Logger, applyConfig, createApp, type App, type CreateAppOptions, type Extension, type FougereConfig, type FrondDescriptor, type Transport } from '@fougere/core';
+import { Logger, WITHOUT_GLOBAL_INSTALL, applyConfig, createApp, type App, type CreateAppOptions, type Extension, type FougereConfig, type FrondDescriptor, type Transport } from '@fougere/core';
 import { layerOf, type ResolvedStorage } from './storage/ResolvedStorage.js';
 import { getModuleLoader, loadConfig, MODULES, remotesOf, configModules, appOptionsFileIn, appOptionsIn, type ModuleLoader } from '@fougere/core/node';
 import { join, resolve, sep } from 'node:path';
@@ -122,7 +122,7 @@ async function written(root: string, conventions: FougereConfig['conventions']):
   });
   if (!compiler) {
     if (existsSync(built)) return built;
-    throw new Error(`${root} has no fronds.ts and @fougere/compiler is not installed. Run \`fougere build\`, or install @fougere/compiler.`);
+    throw new Error(`${root} has no fronds.ts and @fougere/compiler is not installed. Run \`fougere build\`, or install @fougere/compiler. ${WITHOUT_GLOBAL_INSTALL}`);
   }
   const { file, diagnostics } = await compiler.writeAppOptions(root, conventions);
   for (const d of diagnostics.filter((one) => one.severity === 'blocking')) log.error(`[${d.code}] ${d.message}`, d.cause);

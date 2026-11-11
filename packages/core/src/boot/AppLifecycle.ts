@@ -2,6 +2,7 @@ import type { App } from './App.js';
 import type { Extension } from './Extension.js';
 import { StateShape } from '../wire/StateShape.js';
 import { BootRefusal } from '../BootRefusal.js';
+import { WITHOUT_GLOBAL_INSTALL } from '../command.js';
 
 /** Runs application extensions up in order and down in reverse order. */
 export class AppLifecycle {
@@ -72,7 +73,8 @@ export function checking(pending?: (app: App) => Promise<readonly string[]>): Ex
         `Fougere boot refused: the database is missing ${behind.length} change(s) from the entities:\n`
         + behind.map((line) => `  ${line}`).join('\n')
         + '\n  On your machine: fougere migrate --latest --apply'
-        + '\n  On a shared database: fougere freeze, then fougere migrate --apply',
+        + '\n  On a shared database: fougere freeze, then fougere migrate --apply'
+        + `\n  ${WITHOUT_GLOBAL_INSTALL}`,
       );
     },
   };

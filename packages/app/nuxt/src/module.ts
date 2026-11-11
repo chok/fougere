@@ -11,7 +11,7 @@ import {
   useLogger,
 } from '@nuxt/kit';
 import type { Nuxt } from '@nuxt/schema';
-import { Fronds, orderSeeds, serves, type ScanResult } from '@fougere/core';
+import { Fronds, WITHOUT_GLOBAL_INSTALL, orderSeeds, serves, type ScanResult } from '@fougere/core';
 import { prefixOf } from '@fougere/app';
 import { frondPackage, resolveConventions, keyedFrondEntries, statesModule, type Conventions } from '@fougere/core';
 import { emitFacade, emitNames, frondAliases, frondNamesOf, NAMES, REMOTES, appOptionsFileIn, appOptionsIn, setModuleLoader, loadNearestConfig, configFileNear, projectRootOf, remotesOf } from '@fougere/core/node';
@@ -139,7 +139,7 @@ const module = defineNuxtModule<FougereModuleOptions>({
     if (Object.keys(remotesOf(config)).length > 0 && entityNames.length === 0) {
       useLogger('fougere').warn(
         'fougere: a frond runs elsewhere, and its entity names are unknown here, so the production build may rename them '
-        + 'and calls to it would fail. Run `fougere sync` to bring its entities into remotes/.',
+        + `and calls to it would fail. Run \`fougere sync\` to bring its entities into remotes/. ${WITHOUT_GLOBAL_INSTALL}`,
       );
     }
     if (entityNames.length > 0) {
@@ -233,7 +233,7 @@ async function statedIn(root: string, frondsFile: string, only: string[] | undef
 async function scanned(root: string, only: string[] | undefined, conventions: Conventions): Promise<{ scan: ScanResult; statement: string }> {
   const compiler = await import('@fougere/compiler').catch((error: NodeJS.ErrnoException) => {
     if (error.code !== 'ERR_MODULE_NOT_FOUND') throw error;
-    throw new Error(`${root} has no fronds.ts and @fougere/compiler is not installed. Run \`fougere build\`, or install @fougere/compiler.`);
+    throw new Error(`${root} has no fronds.ts and @fougere/compiler is not installed. Run \`fougere build\`, or install @fougere/compiler. ${WITHOUT_GLOBAL_INSTALL}`);
   });
   const scan = await compiler.scanProject(root, only, conventions);
 

@@ -12,6 +12,7 @@ import type { Fronds } from '../../descriptor/Fronds.js';
 import type { OperationsMap } from '../../wire/OperationsMap.js';
 import type { RemoteListeners } from './RemoteListeners.js';
 import { LOG_LINE } from '../../builtin/LogLine.js';
+import { WITHOUT_GLOBAL_INSTALL } from '../../command.js';
 
 const chain = ambient.slot<readonly string[]>('chain');
 
@@ -330,7 +331,7 @@ export class Emissions {
     if (!refusals?.length) return undefined;
 
     return `refused the shape — ${refusals.map((d) => `${dotted(d.path)}: ${d.message}`).join(', ')}.`
-      + ` If '${fact}' gained a field, this copy is older than the sender's: re-run \`fougere sync\`.`;
+      + ` If '${fact}' gained a field, this copy is older than the sender's: re-run \`fougere sync\`. ${WITHOUT_GLOBAL_INSTALL}`;
   }
 }
 

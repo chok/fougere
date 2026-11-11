@@ -15,6 +15,7 @@ export { keyedFrondEntries, type KeyedFrondEntry } from './config/KeyedFrondEntr
 export { nested } from './boot/nesting.js';
 export type { AnswerFor } from './extension/AnswerFor.js';
 export type { FougereNames } from './FougereNames.js';
+export { WITHOUT_GLOBAL_INSTALL } from './command.js';
 export type { FougerePorts } from './extension/FougerePorts.js';
 export type { NameOf } from './NameOf.js';
 export type { PortChoice } from './extension/PortChoice.js';
