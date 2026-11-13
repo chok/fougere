@@ -40,7 +40,7 @@ const store = path.join(work, 'tarballs');
  */
 const shims = path.join(work, 'bin');
 mkdirSync(shims, { recursive: true });
-writeFileSync(path.join(shims, 'yarn'), '#!/bin/sh\nexec corepack yarn@4.5.0 "$@"\n');
+writeFileSync(path.join(shims, 'yarn'), '#!/bin/sh\nexec corepack yarn@4.18.1 "$@"\n');
 chmodSync(path.join(shims, 'yarn'), 0o755);
 const env = { ...process.env, PATH: `${shims}${path.delimiter}${process.env.PATH}`, YARN_ENABLE_IMMUTABLE_INSTALLS: 'false' };
 
