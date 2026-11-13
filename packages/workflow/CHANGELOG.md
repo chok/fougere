@@ -1,5 +1,14 @@
 # @fougere/workflow
 
+## 0.30.0-alpha.6
+
+### Patch Changes
+
+- Updated dependencies
+  - @fougere/core@0.30.0-alpha.6
+  - @fougere/container@0.30.0-alpha.6
+  - @fougere/schema@0.30.0-alpha.6
+
 ## 0.30.0-alpha.5
 
 ## 0.30.0-alpha.4

@@ -1,5 +1,16 @@
 # @fougere/runtime
 
+## 0.30.0-alpha.6
+
+### Patch Changes
+
+- Updated dependencies
+  - @fougere/core@0.30.0-alpha.6
+  - @fougere/adapter-memory@0.30.0-alpha.6
+  - @fougere/compiler@0.30.0-alpha.6
+  - @fougere/transport-http@0.30.0-alpha.6
+  - @fougere/container@0.30.0-alpha.6
+
 ## 0.30.0-alpha.5
 
 ### Patch Changes

@@ -1,5 +1,13 @@
 # @fougere/react
 
+## 0.30.0-alpha.6
+
+### Patch Changes
+
+- Updated dependencies
+  - @fougere/core@0.30.0-alpha.6
+  - @fougere/app@0.30.0-alpha.6
+
 ## 0.30.0-alpha.5
 
 ### Patch Changes

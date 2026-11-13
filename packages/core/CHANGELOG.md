@@ -1,5 +1,15 @@
 # @fougere/core
 
+## 0.30.0-alpha.6
+
+### Patch Changes
+
+- `@fougere/core` and `@fougere/schema` are exact peers of every package that extends them: a version mismatch refuses at install rather than loading a second core.
+  - @fougere/container@0.30.0-alpha.6
+  - @fougere/graph@0.30.0-alpha.6
+  - @fougere/registry@0.30.0-alpha.6
+  - @fougere/schema@0.30.0-alpha.6
+
 ## 0.30.0-alpha.5
 
 ### Patch Changes

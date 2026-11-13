@@ -1,5 +1,14 @@
 # @fougere/calls
 
+## 0.30.0-alpha.6
+
+### Patch Changes
+
+- Updated dependencies
+  - @fougere/core@0.30.0-alpha.6
+  - @fougere/adapter-sql@0.30.0-alpha.6
+  - @fougere/schema@0.30.0-alpha.6
+
 ## 0.30.0-alpha.5
 
 ## 0.30.0-alpha.4

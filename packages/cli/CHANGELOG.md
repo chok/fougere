@@ -1,5 +1,24 @@
 # @fougere/cli
 
+## 0.30.0-alpha.6
+
+### Patch Changes
+
+- A new project adds a package at its exact version: `save-exact` written in each package manager's own file.
+- The `npm create fougere` line names no tag and puts `--` before its flags, which npm otherwise keeps for itself.
+- Updated dependencies
+  - @fougere/core@0.30.0-alpha.6
+  - @fougere/adapter-rest@0.30.0-alpha.6
+  - @fougere/adapter-sql@0.30.0-alpha.6
+  - @fougere/app@0.30.0-alpha.6
+  - @fougere/compiler@0.30.0-alpha.6
+  - @fougere/defaults@0.30.0-alpha.6
+  - @fougere/testing@0.30.0-alpha.6
+  - @fougere/transport-http@0.30.0-alpha.6
+  - @fougere/container@0.30.0-alpha.6
+  - @fougere/registry@0.30.0-alpha.6
+  - @fougere/schema@0.30.0-alpha.6
+
 ## 0.30.0-alpha.5
 
 ### Patch Changes

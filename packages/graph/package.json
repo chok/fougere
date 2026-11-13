@@ -1,6 +1,6 @@
 {
   "name": "@fougere/graph",
-  "version": "0.30.0-alpha.5",
+  "version": "0.30.0-alpha.6",
   "description": "Fougere's graph: a labelled directed multigraph, and the four questions asked of it — order, cycles, components, reach. Zero dependencies.",
   "keywords": [
     "fougere",

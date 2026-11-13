@@ -1,5 +1,19 @@
 # @fougere/demo-sveltekit-blog
 
+## 0.0.3-alpha.14
+
+### Patch Changes
+
+- Updated dependencies
+  - @fougere/core@0.30.0-alpha.6
+  - @fougere/adapter-rest@0.30.0-alpha.6
+  - @fougere/adapter-sql@0.30.0-alpha.6
+  - @fougere/app@0.30.0-alpha.6
+  - @fougere/svelte@0.30.0-alpha.6
+  - @fougere/vite@0.30.0-alpha.6
+  - @fougere/log@0.30.0-alpha.6
+  - @fougere/schema@0.30.0-alpha.6
+
 ## 0.0.3-alpha.13
 
 ### Patch Changes

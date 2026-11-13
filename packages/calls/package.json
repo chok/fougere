@@ -1,6 +1,6 @@
 {
   "name": "@fougere/calls",
-  "version": "0.30.0-alpha.5",
+  "version": "0.30.0-alpha.6",
   "description": "Optional call log for Fougere: a bounded ring of every dispatch, served as an rpc operation. Read it with `fougere devtools`.",
   "keywords": [
     "fougere",
