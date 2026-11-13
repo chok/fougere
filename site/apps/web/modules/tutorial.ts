@@ -9,21 +9,20 @@ import { saidBy } from './managers';
  *
  * A step is a whole project and a `STEP.json` saying what it grew. What the page shows of it is
  * computed here against the step before: which files are new, changed or moved, which lines were
- * added, the line each letter points at, and the "0 line changed" stamp. Nothing on the page is a
+ * added, and the "0 line changed" stamp. Nothing on the page is a
  * copy of the code, and `demos/tutorial/tests` checks every claim the JSON makes.
  */
 
-interface Grows { side: string; label: string; detail: string; from: { file: string; line: string } }
+type Fig = string | { term: string; text: string }[];
+
 interface Step {
-  name: string; title: string; concept: string; lede: string; fig: string;
-  grows: Grows[];
+  name: string; title: string; concept: string; lede: string; fig: Fig;
   try?: { command: string; output: string };
   install?: string;
+  start?: string;
   aside?: string;
   links: { title: string; path: string }[];
 }
-
-const LETTERS = 'abcdefghij';
 
 /** What a reader opens: the project's own files, not the tooling around them. */
 const shown = (path: string) =>
@@ -123,24 +122,14 @@ function pageOf(index: number, slug: string, step: Step, files: Map<string, stri
     return previous.get(path) === files.get(path) ? '' : 'changed';
   };
 
-  // Lettered in the order the page lists them — incoming, outgoing, refused — so a, b, c read down.
-  const SIDES = ['in', 'out', 'refuses'];
-  const keys = [...step.grows]
-    .sort((one, other) => SIDES.indexOf(one.side) - SIDES.indexOf(other.side))
-    .map((grows, k) => ({ ...grows, key: LETTERS[k]! }));
   // Every file a reader may open, the ones this step touched among them.
   const readable = [...files.keys()];
   const install = step.install ?? (index === 0 ? undefined : installOf(files, previous));
   const code = readable.sort(byReading).map((path) => {
     const lines = linesOf(files.get(path)!);
     const added = index === 0 || !previous.has(path) ? new Set<number>() : addedLines(linesOf(previous.get(path)!), lines);
-    const pointed = new Map<number, string[]>();
-    for (const grows of keys.filter((one) => one.from.file === path)) {
-      const at = lines.findIndex((line) => line.includes(grows.from.line));
-      pointed.set(at, [...(pointed.get(at) ?? []), grows.key]);
-    }
 
-    return { path, state: stateOf(path), lines: lines.map((text, at) => ({ text, added: added.has(at), keys: pointed.get(at) ?? [] })) };
+    return { path, state: stateOf(path), lines: lines.map((text, at) => ({ text, added: added.has(at) })) };
   });
 
   const changedUnder = (prefix: RegExp) => index > 0 && [...files.keys(), ...gone].some((path) =>
@@ -160,9 +149,9 @@ function pageOf(index: number, slug: string, step: Step, files: Map<string, stri
     heading: step.title,
     files: [...[...files.keys()].sort(byReading).map((path) => ({ path, state: stateOf(path) })), ...empty.map((path) => ({ path, state: '' }))],
     code,
-    grows: keys.map(({ key, side, label, detail }) => ({ key, side, label, detail })),
     ...(step.try ? { tryIt: { command: step.try.command, said: saidIn(step.try.command), output: step.try.output } } : {}),
     ...(install ? { install: saidIn(install) } : {}),
+    ...(step.start ? { start: saidIn(step.start) } : {}),
     ...(step.aside ? { aside: step.aside } : {}),
     ...(zero ? { zero } : {}),
     links: step.links,

@@ -4,35 +4,6 @@
   "concept": "port",
   "lede": "We log every mail without touching the handler or the mailer. A class that implements the mailer and asks for it stands in front of it.",
   "fig": "Around a capability, not inside it.",
-  "grows": [
-    {
-      "side": "out",
-      "label": "AuditMailer → ConsoleMailer",
-      "detail": "a chain, found by its form",
-      "from": {
-        "file": "fronds/blog/services/AuditMailer.ts",
-        "line": "private inner: Mailer"
-      }
-    },
-    {
-      "side": "out",
-      "label": "a line per mail",
-      "detail": "under the operation that sent it",
-      "from": {
-        "file": "fronds/blog/services/AuditMailer.ts",
-        "line": "this.log.info"
-      }
-    },
-    {
-      "side": "refuses",
-      "label": "two links, no order",
-      "detail": "refused, naming ports: { Mailer: [ … ] }",
-      "from": {
-        "file": "fronds/blog/services/AuditMailer.ts",
-        "line": "implements Partial<Mailer>"
-      }
-    }
-  ],
   "try": {
     "command": "curl -X POST localhost:4100/api/blog/posts/$ID/publish",
     "output": "INF [app:blog:AuditMailer] (blog:PostHandler.publish) sending Published: Hi\nmail: Published: Hi",

@@ -4,53 +4,6 @@
   "concept": "handler",
   "lede": "A post is published only once. We write that rule as a method and make status readOnly, so nothing else can change it, not even update.",
   "fig": "A state changes through an operation, never through a field write.",
-  "grows": [
-    {
-      "side": "in",
-      "label": "POST /api/blog/posts/:id/publish",
-      "detail": "the path read off id: Post['id']",
-      "from": {
-        "file": "fronds/blog/handlers/PostHandler.ts",
-        "line": "async publish("
-      }
-    },
-    {
-      "side": "in",
-      "label": "useCommand(post, 'publish')",
-      "detail": "typed down to its refusals",
-      "from": {
-        "file": "fronds/blog/handlers/PostHandler.ts",
-        "line": "async publish("
-      }
-    },
-    {
-      "side": "out",
-      "label": "status written",
-      "detail": "by the operation, the only one that may",
-      "from": {
-        "file": "fronds/blog/handlers/PostHandler.ts",
-        "line": "return this.update"
-      }
-    },
-    {
-      "side": "refuses",
-      "label": "status: Read-only",
-      "detail": "a PATCH carrying status — readOnly takes it out of every input",
-      "from": {
-        "file": "fronds/blog/entities/Post.ts",
-        "line": "status: readOnly("
-      }
-    },
-    {
-      "side": "refuses",
-      "label": "409 CONFLICT",
-      "detail": "on the card, and in OpenAPI",
-      "from": {
-        "file": "fronds/blog/handlers/PostHandler.ts",
-        "line": "ErrorCode.CONFLICT"
-      }
-    }
-  ],
   "try": {
     "command": "curl -X POST localhost:4100/api/blog/posts/$ID/publish   # twice",
     "output": "409  CONFLICT  Already published",

@@ -4,44 +4,6 @@
   "concept": "configuration",
   "lede": "Mail is slow, so we run it in its own process. Only where it runs changes, not the code.",
   "fig": "Your code says what a thing is. One line of config says where it runs.",
-  "grows": [
-    {
-      "side": "out",
-      "label": "mail answers on :4100",
-      "detail": "npx fougere dev mail — the port is read from fronds:",
-      "from": {
-        "file": "fougere.config.ts",
-        "line": "mail: { remote:"
-      }
-    },
-    {
-      "side": "out",
-      "label": "the fact crosses",
-      "detail": "as a JSON-RPC call, from the Nuxt process to mail's",
-      "from": {
-        "file": "fougere.config.ts",
-        "line": "mail: { remote:"
-      }
-    },
-    {
-      "side": "out",
-      "label": "AuditMailer runs there",
-      "detail": "the link went with its frond",
-      "from": {
-        "file": "fougere.config.ts",
-        "line": "mail: { remote:"
-      }
-    },
-    {
-      "side": "in",
-      "label": "the page is the same",
-      "detail": "posts.vue and the blog did not change — only where mail runs",
-      "from": {
-        "file": "fougere.config.ts",
-        "line": "mail: { remote:"
-      }
-    }
-  ],
   "try": {
     "command": "npx fougere dev mail   # then publish from localhost:3000/posts",
     "output": "INF [app:mail:AuditMailer] (mail:MailHandler.onPublished) sending Published: Hi"

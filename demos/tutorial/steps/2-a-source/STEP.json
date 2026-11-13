@@ -1,38 +1,9 @@
 {
   "name": "A source",
-  "title": "One line, *and the rows stay*",
+  "title": "One line, *and the data stays*",
   "concept": "configuration",
   "lede": "Rows in memory are lost at every restart, so we add SQLite with one line in sources. The app then refuses to start until the table exists, and fougere migrate creates it.",
-  "fig": "The handler asks for its rows as before. Where they live is a line of config.",
-  "grows": [
-    {
-      "side": "out",
-      "label": "posts in .data/blog.db",
-      "detail": "SQLite, kept between restarts",
-      "from": {
-        "file": "fougere.config.ts",
-        "line": "sources: { main: { type: 'sqlite'"
-      }
-    },
-    {
-      "side": "in",
-      "label": "the posts table",
-      "detail": "created by fougere migrate, read from Post",
-      "from": {
-        "file": "fougere.config.ts",
-        "line": "sources: { main: { type: 'sqlite'"
-      }
-    },
-    {
-      "side": "refuses",
-      "label": "the boot, until you migrate",
-      "detail": "the database is missing 1 change(s): posts — no table, and the command that adds it",
-      "from": {
-        "file": "fougere.config.ts",
-        "line": "sources: { main: { type: 'sqlite'"
-      }
-    }
-  ],
+  "fig": "The handler asks for its data as before. Where it lives is a line of config.",
   "try": {
     "command": "npx fougere migrate --latest --apply",
     "output": "◇  create posts\n◆  1 change(s) applied."

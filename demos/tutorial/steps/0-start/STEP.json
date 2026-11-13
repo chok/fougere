@@ -4,7 +4,6 @@
   "concept": "configuration",
   "lede": "For this tutorial, we start with a blank project. The same command with no arguments asks you, step by step, how to build a full app.",
   "fig": "A blank project with only one specific config file and a folder for your domains.",
-  "grows": [],
   "links": [
     {
       "title": "Start a project",

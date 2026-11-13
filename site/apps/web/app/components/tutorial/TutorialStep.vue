@@ -3,16 +3,16 @@ import { PackageManager } from '@fougere/cli/package-manager';
 
 /**
  * One step of the tutorial as a small editor: the project on the left, one file open in the middle —
- * the ones this step touched as tabs — and what grew from the line pointed at on the right.
+ * the ones this step touched as tabs.
  */
-interface Line { text: string; added: boolean; keys: string[] }
+interface Line { text: string; added: boolean }
 interface Step {
-  step: number; name: string; heading: string; lede: string; fig: string;
+  step: number; name: string; heading: string; lede: string; fig: string | { term: string; text: string }[];
   files: { path: string; state: string }[];
   code: { path: string; state: string; lines: Line[] }[];
-  grows: { key: string; side: string; label: string; detail: string }[];
   tryIt?: { command: string; said: Record<string, string>; output: string };
   install?: Record<string, string>;
+  start?: Record<string, string>;
   aside?: string; zero?: string;
   links: { title: string; path: string }[];
 }
@@ -36,6 +36,7 @@ const choose = (index: number) => {
 const manager = computed(() => managers[Number(tab.value)] ?? 'npm');
 const said = computed(() => props.step.tryIt?.said[manager.value] ?? props.step.tryIt?.command);
 const install = computed(() => props.step.install?.[manager.value]);
+const start = computed(() => props.step.start?.[manager.value]);
 /** What the reader copies: a command in their package manager's words, or the file open in the editor. */
 const copied = ref<string | null>(null);
 async function copy(what: string, text: string) {
@@ -46,43 +47,6 @@ async function copy(what: string, text: string) {
 const openedText = () => props.step.code.find((file) => file.path === opened.value)?.lines.map((line) => line.text).join('\n') ?? '';
 const variesByManager = computed(() => new Set(Object.values(props.step.tryIt?.said ?? {})).size > 1);
 
-const lit = ref<{ keys: string[]; line: string } | null>(null);
-const isLit = (keys: string[], id: string) =>
-  lit.value !== null && (lit.value.line === id || keys.some((key) => lit.value!.keys.includes(key)));
-
-/** What grew from a lettered line, opened under it: pointed at for a glance, clicked or tapped to stay. */
-const pane = ref<HTMLElement | null>(null);
-const pinned = ref<string | null>(null);
-const bubble = ref<{ grows: Step['grows']; top: number } | null>(null);
-function show(line: HTMLElement, keys: string[], id: string) {
-  lit.value = { keys, line: id };
-  const top = line.getBoundingClientRect().bottom - pane.value!.getBoundingClientRect().top + 6;
-  bubble.value = { grows: props.step.grows.filter((one) => keys.includes(one.key)), top };
-}
-function point(event: Event, keys: string[], id: string) {
-  if (keys.length && !pinned.value) show(event.currentTarget as HTMLElement, keys, id);
-}
-function leave() {
-  if (pinned.value) return;
-  lit.value = null;
-  bubble.value = null;
-}
-function close() {
-  pinned.value = null;
-  leave();
-}
-function pin(event: Event, keys: string[], id: string) {
-  if (!keys.length) return;
-  if (pinned.value === id) return close();
-  pinned.value = id;
-  show(event.currentTarget as HTMLElement, keys, id);
-}
-function closeOutside(event: MouseEvent) {
-  if (pinned.value && !(event.target as HTMLElement).closest('.line, .bubble')) close();
-}
-onMounted(() => addEventListener('click', closeOutside));
-onBeforeUnmount(() => removeEventListener('click', closeOutside));
-
 /** The file open in the editor: the first this step touched, until the reader opens another. */
 // A manifest opens on demand, never first: what it gained is the install line above.
 const touched = computed(() => props.step.code.filter((file) => file.state && !file.path.endsWith('package.json')));
@@ -91,9 +55,7 @@ watch(() => props.step.step, () => { opened.value = touched.value[0]?.path; });
 const open = (path: string) => {
   if (!props.step.code.some((file) => file.path === path)) return;
   opened.value = path;
-  close();
 };
-watch(() => props.step.step, close);
 
 const heading = computed(() =>
   props.step.heading.replace(/[&<>]/g, (c) => `&#${c.charCodeAt(0)};`).replace(/\*([^*]+)\*/g, '<em>$1</em>'));
@@ -125,8 +87,6 @@ const tree = computed(() => {
   return rows;
 });
 
-const SIDES = [['in', 'Incoming'], ['out', 'Outgoing'], ['refuses', 'Refuses']] as const;
-const titleOf = Object.fromEntries(SIDES) as Record<string, string>;
 const KEYWORDS = /\b(export|default|class|extends|implements|abstract|async|await|const|return|throw|if|private|constructor|import|from|type|new)\b/g;
 const highlight = (text: string) =>
   text.replace(/[&<>]/g, (c) => `&#${c.charCodeAt(0)};`).replace(KEYWORDS, '<span class="kw">$1</span>');
@@ -137,7 +97,6 @@ const next = computed(() => props.steps[index.value + 1]);
 
 function onKey(event: KeyboardEvent) {
   if (event.target instanceof HTMLElement && /input|textarea/i.test(event.target.tagName)) return;
-  if (event.key === 'Escape') close();
   if (event.key === 'ArrowLeft' && previous.value) navigateTo(previous.value.path);
   if (event.key === 'ArrowRight' && next.value) navigateTo(next.value.path);
 }
@@ -155,7 +114,7 @@ onBeforeUnmount(() => removeEventListener('keydown', onKey));
       </li>
     </ol>
 
-    <div class="leaves" :class="{ lit: lit !== null }">
+    <div class="leaves">
       <div class="center">
         <h1 v-html="heading" />
         <p class="lede">{{ step.lede }}</p>
@@ -191,7 +150,7 @@ onBeforeUnmount(() => removeEventListener('keydown', onKey));
             </component>
             <div class="legend"><span class="new"><i />new</span><span class="changed"><i />changed</span><span class="moved"><i />moved</span></div>
           </nav>
-          <div v-if="step.code.length" ref="pane" class="pane">
+          <div v-if="step.code.length" class="pane">
             <div v-for="(file, f) in step.code" v-show="file.path === opened" :key="file.path" class="card">
               <div class="path">
                 <span>{{ file.path }}</span>
@@ -199,36 +158,33 @@ onBeforeUnmount(() => removeEventListener('keydown', onKey));
                   <UIcon :name="copied === file.path ? 'i-lucide-check' : 'i-lucide-copy'" />
                 </button>
               </div>
-              <div
-                v-for="(line, l) in file.lines"
-                :key="l"
-                class="line"
-                :class="{ added: line.added, on: isLit(line.keys, `${f}:${l}`) }"
-                :tabindex="line.keys.length ? 0 : undefined"
-                @mouseenter="point($event, line.keys, `${f}:${l}`)"
-                @mouseleave="leave"
-                @focus="point($event, line.keys, `${f}:${l}`)"
-                @blur="leave"
-                @click="pin($event, line.keys, `${f}:${l}`)"
-                @keydown.enter="pin($event, line.keys, `${f}:${l}`)"
-              >
+              <div v-for="(line, l) in file.lines" :key="l" class="line" :class="{ added: line.added }">
                 <span class="no">{{ line.added ? '+' : l + 1 }}</span>
                 <code v-html="highlight(line.text) || ' '" />
-                <sup v-if="line.keys.length">{{ line.keys.join(' ') }}</sup>
-              </div>
-            </div>
-            <div v-if="bubble" class="bubble" :class="{ pinned }" :style="{ top: `${bubble.top}px` }" role="tooltip">
-              <div v-for="one in bubble.grows" :key="one.key" class="grown" :class="one.side">
-                <b>{{ one.key }}</b>
-                <span><em>{{ titleOf[one.side] }}</em>{{ one.label }}<small>{{ one.detail }}</small></span>
               </div>
             </div>
           </div>
         </div>
-        <p v-if="step.grows.length" class="hand hint">point at a lettered line, or tap it, to see what grows from it</p>
         <div v-if="step.zero" class="stamp"><b>0</b> line changed under {{ step.zero }}</div>
 
-        <p class="fig">{{ step.fig }}</p>
+        <ul v-if="Array.isArray(step.fig)" class="terms">
+          <li v-for="one in step.fig" :key="one.term"><b>{{ one.term }}</b> {{ one.text }}</li>
+        </ul>
+        <p v-else class="fig">{{ step.fig }}</p>
+
+        <div v-if="start" class="slip">
+          <span class="tag">Start it</span>
+          <div class="tools">
+            <div class="managers" role="tablist" aria-label="Package manager">
+              <button v-for="(name, index) in managers" :key="name" type="button" role="tab"
+                :aria-selected="manager === name" @click="choose(index)">{{ name }}</button>
+            </div>
+            <button type="button" class="copy" :aria-label="copied === 'start' ? 'Copied' : 'Copy'" @click="copy('start', start!)">
+              <UIcon :name="copied === 'start' ? 'i-lucide-check' : 'i-lucide-copy'" />
+            </button>
+          </div>
+          <pre class="tabbed"><span class="prompt">$</span> {{ start }}</pre>
+        </div>
 
         <div v-if="step.tryIt" class="slip">
           <span class="tag">Try it</span>
@@ -325,15 +281,14 @@ button.file:hover { background: rgb(120 88 40 / 0.08); }
 .line .no { width: 14px; flex: none; text-align: right; color: var(--code-number); user-select: none; }
 .line code { font: inherit; }
 .line code :deep(.kw) { color: var(--code-keyword); }
-.line sup { margin-left: auto; padding-left: 10px; font-family: var(--hand); font-size: var(--text-note); line-height: inherit; vertical-align: baseline; top: 0; letter-spacing: 0.1em; color: #c9b27a; }
 .line.added { background: var(--code-added); }
 .line.added .no { color: var(--code-added-ink); }
-.line.on { background: var(--code-focus); }
-.leaves.lit .line:not(.on) { opacity: 0.55; }
 
 .stamp { display: inline-flex; align-items: center; gap: 10px; margin-top: 12px; padding: 8px 12px; border: 1.5px solid var(--ui-primary); border-radius: var(--radius-small); color: var(--ui-primary); background: var(--ui-bg-elevated); font-family: var(--font-mono); font-size: var(--text-tiny); letter-spacing: 0.04em; transform: rotate(-1.5deg); }
 .stamp b { font-family: var(--font-serif); font-size: 26px; font-weight: 400; line-height: 1; }
 
+.terms { margin: 14px 0 0; padding-left: 18px; display: grid; gap: 6px; font-size: var(--text-body); line-height: 1.5; color: var(--ui-text-muted); }
+.terms b { color: var(--ui-text); font-weight: 600; }
 .fig { margin: 10px 0 0; font-family: var(--font-serif); font-style: italic; font-size: var(--text-body); color: var(--ui-text-muted); }
 
 .slip { position: relative; margin-top: 44px; }
@@ -358,20 +313,6 @@ button.file:hover { background: rgb(120 88 40 / 0.08); }
 .pill { display: inline-flex; align-items: center; min-height: 40px; padding: 0 16px; border: 1px solid var(--ui-text); border-radius: 999px; font-family: var(--font-mono); font-size: var(--text-tiny); letter-spacing: 0.04em; color: var(--ui-text); text-decoration: none; }
 .pill.ink { background: var(--ui-text); color: var(--ui-bg); }
 
-.bubble { position: absolute; z-index: 5; right: 12px; width: min(300px, calc(100% - 24px)); display: grid; gap: 8px; padding: 10px 12px; background: var(--ui-bg-elevated); border: 1px solid var(--ui-border); border-radius: var(--radius-card); box-shadow: 0 14px 30px -14px rgb(0 0 0 / 0.55); pointer-events: none; }
-.bubble.pinned { pointer-events: auto; }
-.bubble::before { content: ''; position: absolute; top: -7px; right: 18px; width: 12px; height: 12px; background: var(--ui-bg-elevated); border-left: 1px solid var(--ui-border); border-top: 1px solid var(--ui-border); transform: rotate(45deg); }
-.grown { display: flex; gap: 8px; align-items: baseline; }
-.grown b { flex: none; font-family: var(--hand); font-size: var(--text-body); font-weight: 400; color: var(--ui-text-dimmed); }
-.grown.in b { color: var(--terracotta); }
-.grown.out b { color: var(--slate); }
-.grown span { display: grid; gap: 1px; font-family: var(--font-mono); font-size: var(--text-tiny); color: var(--ui-text); }
-.grown small { font-family: var(--font-sans); font-size: var(--text-tiny); line-height: 1.4; color: var(--ui-text-dimmed); }
-.grown em { display: block; font-style: normal; font-size: var(--text-tiny); letter-spacing: 0.1em; text-transform: uppercase; color: var(--ui-text-muted); }
-.grown.in em { color: var(--terracotta); }
-.grown.out em { color: var(--slate); }
-.hint { margin: 8px 0 0; font-size: var(--text-body); color: var(--ui-text-muted); }
-.line[tabindex] { cursor: pointer; outline: none; }
 .deeper { display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: baseline; margin-top: 24px; padding-top: 12px; border-top: 1px dashed var(--ui-border); font-size: var(--text-note); }
 .deeper span { color: var(--ui-text-dimmed); }
 .deeper a { color: var(--ui-primary); }

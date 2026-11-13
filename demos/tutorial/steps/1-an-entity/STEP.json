@@ -1,83 +1,23 @@
 {
   "name": "An entity",
-  "title": "One entity, *and a whole CRUD*",
+  "title": "Create your first entity *and a simple CRUD*",
   "concept": "entity",
-  "lede": "We write a Post entity and the handler that serves its rows, then start the app with npx fougere dev blog. It answers on port 4100 and keeps the rows in memory.",
-  "fig": "Two classes and one line of config. Everything around them is read from these.",
-  "grows": [
+  "lede": "We write a Post entity and the associated handler to expose operations to the rest of the world.",
+  "fig": [
     {
-      "side": "in",
-      "label": "list · findById · create · update · delete",
-      "detail": "five operations — a page calls them: useQuery(post, 'list')",
-      "from": {
-        "file": "fronds/blog/handlers/PostHandler.ts",
-        "line": "extends Repository<Post>"
-      }
+      "term": "An entity (Post.ts)",
+      "text": "is the center where we can read and derive a lot of things (validations, forms, APIs, etc.)."
     },
     {
-      "side": "in",
-      "label": "5 REST routes under /api/blog/posts",
-      "detail": "one per operation — because protocols: names rest. npx fougere explain lists them",
-      "from": {
-        "file": "fougere.config.ts",
-        "line": "protocols: { rest: {} }"
-      }
+      "term": "A repository (Repository<Post>)",
+      "text": "is a facility to access storage around your entity. At this point, data are stored in memory by default."
     },
     {
-      "side": "in",
-      "label": "type Post",
-      "detail": "in the page's client, typed down to its refusals",
-      "from": {
-        "file": "fronds/blog/entities/Post.ts",
-        "line": "class Post extends entity"
-      }
-    },
-    {
-      "side": "in",
-      "label": "validation",
-      "detail": "title required, 160 at most — the same rule on the server and in the browser",
-      "from": {
-        "file": "fronds/blog/entities/Post.ts",
-        "line": "title: text"
-      }
-    },
-    {
-      "side": "in",
-      "label": "useFormFor(Post)",
-      "detail": "a form's fields and state, nothing to declare again",
-      "from": {
-        "file": "fronds/blog/entities/Post.ts",
-        "line": "class Post extends entity"
-      }
-    },
-    {
-      "side": "out",
-      "label": "posts kept in memory",
-      "detail": "the default with no sources: — the boot warns, and the next step moves them to SQLite",
-      "from": {
-        "file": "fronds/blog/entities/Post.ts",
-        "line": "class Post extends entity"
-      }
-    },
-    {
-      "side": "refuses",
-      "label": "VALIDATION_FAILED",
-      "detail": "what an empty title gets back, field by field",
-      "from": {
-        "file": "fronds/blog/entities/Post.ts",
-        "line": "title: text"
-      }
-    },
-    {
-      "side": "in",
-      "label": "every call written down",
-      "detail": "two lines per call in the terminal — @fougere/log, written by the starter",
-      "from": {
-        "file": "fougere.config.ts",
-        "line": "'@fougere/log': {}"
-      }
+      "term": "A handler (PostHandler.ts)",
+      "text": "is the base of operations exposed to the world. All public methods of a class in this folder are publicly exposed to the world and can ask for data. A handler can extend everything (including a repository)."
     }
   ],
+  "start": "npx fougere dev blog",
   "try": {
     "command": "curl -X POST localhost:4100/api/blog/posts -d '{\"title\":\"\"}'",
     "output": "422  VALIDATION_FAILED  title: String is too short (0 < 1).",

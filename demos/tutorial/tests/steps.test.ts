@@ -1,6 +1,6 @@
 /**
- * Every claim a tutorial step makes, checked against the step itself: the line each letter points
- * at exists, the request of "try it" answers what the page prints, the aside refuses as said,
+ * Every claim a tutorial step makes, checked against the step itself: the request of "try it"
+ * answers what the page prints, the aside refuses as said,
  * and the "0 line changed" of steps 4 and 6 is an equality of files, not a sentence.
  */
 import { describe, it, expect, vi, afterEach } from 'vitest';
@@ -16,7 +16,6 @@ const STEPS = join(import.meta.dirname, '..', 'steps');
 const names = readdirSync(STEPS).filter((name) => !name.startsWith('.')).sort();
 
 interface Step {
-  grows: { label: string; from: { file: string; line: string } }[];
   try?: { request?: { method: string; path: string; body?: unknown; twice?: boolean }; status?: number; contains?: string; log?: string };
 }
 
@@ -51,14 +50,6 @@ afterEach(() => vi.restoreAllMocks());
 
 describe.each(names)('step %s', (name) => {
   const step = stepOf(name);
-
-  it('points each letter at a line the step holds', () => {
-    for (const { label, from } of step.grows) {
-      expect(from.file, `${label} points at a manifest, which the page never shows`).not.toMatch(/package\.json$/);
-      const source = readFileSync(join(STEPS, name, from.file), 'utf8');
-      expect(source, `${label} → ${from.file}`).toContain(from.line);
-    }
-  });
 
   it.runIf(step.try?.request !== undefined)('answers "try it" as the page prints it', async () => {
     const logged: string[] = [];
