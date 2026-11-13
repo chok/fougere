@@ -31,7 +31,9 @@
     "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
-    "@fougere/cli": "workspace:*"
+    "@fougere/cli": "workspace:*",
+    "@fougere/core": "workspace:*",
+    "@fougere/schema": "workspace:*"
   },
   "publishConfig": {
     "access": "public"

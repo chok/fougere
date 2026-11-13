@@ -2338,12 +2338,24 @@ importers:
       '@fougere/cli':
         specifier: workspace:*
         version: link:../../cli
+      '@fougere/core':
+        specifier: workspace:*
+        version: link:../../core
+      '@fougere/schema':
+        specifier: workspace:*
+        version: link:../../schema
 
   packages/entry/fougere:
     dependencies:
       '@fougere/cli':
         specifier: workspace:*
         version: link:../../cli
+      '@fougere/core':
+        specifier: workspace:*
+        version: link:../../core
+      '@fougere/schema':
+        specifier: workspace:*
+        version: link:../../schema
 
   packages/graph:
     devDependencies:
