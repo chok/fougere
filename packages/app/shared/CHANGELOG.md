@@ -1,5 +1,19 @@
 # @fougere/app
 
+## 0.30.0-alpha.7
+
+### Patch Changes
+
+- @fougere/adapter-graphql@0.30.0-alpha.7
+- @fougere/adapter-memory@0.30.0-alpha.7
+- @fougere/adapter-rest@0.30.0-alpha.7
+- @fougere/compiler@0.30.0-alpha.7
+- @fougere/container@0.30.0-alpha.7
+- @fougere/core@0.30.0-alpha.7
+- @fougere/defaults@0.30.0-alpha.7
+- @fougere/schema@0.30.0-alpha.7
+- @fougere/transport-http@0.30.0-alpha.7
+
 ## 0.30.0-alpha.6
 
 ### Patch Changes

@@ -1,6 +1,6 @@
 {
   "name": "fougere-demo-observability",
-  "version": "0.0.3-alpha.14",
+  "version": "0.0.3-alpha.15",
   "private": true,
   "type": "module",
   "scripts": {

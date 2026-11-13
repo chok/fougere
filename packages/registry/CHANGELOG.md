@@ -1,5 +1,7 @@
 # @fougere/registry
 
+## 0.30.0-alpha.7
+
 ## 0.30.0-alpha.6
 
 ## 0.30.0-alpha.5

@@ -1,6 +1,6 @@
 {
   "name": "@fougere/registry",
-  "version": "0.30.0-alpha.6",
+  "version": "0.30.0-alpha.7",
   "description": "Fougere's registry: one answer per name, refused when a second one arrives, and a reload that says it replaces. Zero dependencies.",
   "keywords": [
     "fougere",

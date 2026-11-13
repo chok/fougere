@@ -1,5 +1,13 @@
 # @fougere/state-session
 
+## 0.30.0-alpha.7
+
+### Patch Changes
+
+- @fougere/core@0.30.0-alpha.7
+- @fougere/schema@0.30.0-alpha.7
+- @fougere/state-cookie@0.30.0-alpha.7
+
 ## 0.30.0-alpha.6
 
 ### Patch Changes

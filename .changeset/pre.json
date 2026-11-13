@@ -126,6 +126,7 @@
     "an-engine-is-already-a-router",
     "an-entity-is-entity",
     "an-entry-is-an-object",
+    "an-entry-provides-core",
     "an-error-names-itself",
     "an-extension-states-up-and-down",
     "an-external-import-is-kept",

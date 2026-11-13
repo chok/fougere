@@ -1,5 +1,20 @@
 # fougere-demo-cloudflare-d1
 
+## 0.0.3-alpha.15
+
+### Patch Changes
+
+- @fougere/adapter-rest@0.30.0-alpha.7
+- @fougere/adapter-sql@0.30.0-alpha.7
+- @fougere/app@0.30.0-alpha.7
+- @fougere/compiler@0.30.0-alpha.7
+- @fougere/container@0.30.0-alpha.7
+- @fougere/core@0.30.0-alpha.7
+- @fougere/defaults@0.30.0-alpha.7
+- @fougere/observability@0.30.0-alpha.7
+- @fougere/schema@0.30.0-alpha.7
+- @fougere/transport-http@0.30.0-alpha.7
+
 ## 0.0.3-alpha.14
 
 ### Patch Changes

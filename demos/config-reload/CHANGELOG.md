@@ -1,5 +1,15 @@
 # fougere-demo-config-reload
 
+## 0.0.3-alpha.15
+
+### Patch Changes
+
+- @fougere/compiler@0.30.0-alpha.7
+- @fougere/container@0.30.0-alpha.7
+- @fougere/core@0.30.0-alpha.7
+- @fougere/defaults@0.30.0-alpha.7
+- @fougere/log@0.30.0-alpha.7
+
 ## 0.0.3-alpha.14
 
 ### Patch Changes

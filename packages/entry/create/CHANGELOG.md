@@ -1,5 +1,14 @@
 # create-fougere
 
+## 0.30.0-alpha.7
+
+### Patch Changes
+
+- 5805873: `yarn create fougere` starts again: the entry packages provide `@fougere/core` and `@fougere/schema`, which yarn does not install as peers.
+  - @fougere/cli@0.30.0-alpha.7
+  - @fougere/core@0.30.0-alpha.7
+  - @fougere/schema@0.30.0-alpha.7
+
 ## 0.30.0-alpha.6
 
 ### Patch Changes
