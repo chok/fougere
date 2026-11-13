@@ -19,5 +19,5 @@
       "path": "/docs/concepts/configuration"
     }
   ],
-  "install": "npm create fougere@latest my-blog -- --blank && cd my-blog && npm install"
+  "install": "npm create fougere my-blog -- --blank && cd my-blog && npm install"
 }

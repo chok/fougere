@@ -41,15 +41,14 @@ export class PackageManager {
     return [bin, [...args, ...command]];
   }
 
-  /** The line that runs a package's starter with these arguments — npm names the latest one and hands the flags on after `--`. */
+  /** The line that runs a package's starter with these arguments — npm hands the flags on after `--`. */
   create(args: readonly string[] = [], entry = 'fougere'): string {
     if (this.name !== 'npm') return [`${this.name} create ${entry}`, ...args].join(' ');
     const flagAt = args.findIndex((arg) => arg.startsWith('-'));
-    const named = entry.includes('@', 1) ? entry : `${entry}@latest`;
     const positional = flagAt < 0 ? args : args.slice(0, flagAt);
     const flags = flagAt < 0 ? [] : ['--', ...args.slice(flagAt)];
 
-    return [`npm create ${named}`, ...positional, ...flags].join(' ');
+    return [`npm create ${entry}`, ...positional, ...flags].join(' ');
   }
 
   install(): string {

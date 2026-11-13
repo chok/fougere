@@ -11,7 +11,7 @@ import { PackageManager } from '../src/scaffold/PackageManager.js';
 
 const catalog = { fronds: ['notes', 'blog'], apps: ['next', 'nuxt'] };
 
-/** `npm create fougere@latest shop -- --frond blog --app nuxt`, read back as the flags citty would hand over. */
+/** `npm create fougere shop -- --frond blog --app nuxt`, read back as the flags citty would hand over. */
 function reread(command: string): Plan | undefined {
   const [, , , name, , ...rest] = command.split(' ');
   const flags: Record<string, string | boolean> = {};
@@ -32,7 +32,7 @@ describe('a plan', () => {
     ];
 
     for (const plan of plans) expect(reread(commandOf(plan))).toEqual(plan);
-    expect(commandOf(plans[2])).toBe('npm create fougere@latest shop -- --blank');
+    expect(commandOf(plans[2])).toBe('npm create fougere shop -- --blank');
     expect(commandOf(plans[2], new PackageManager('bun'))).toBe('bun create fougere shop --blank');
   });
 
@@ -222,7 +222,7 @@ describe('the composer', () => {
 
     expect(frame).toContain('✓ Project  ›  ● Fronds  ›  ○ Apps');
     expect(frame).toMatch(/◼ blog\s+├─ fougere\.config\.ts/);
-    expect(frame).toContain('Same, with no prompt: npm create fougere@latest shop -- --frond blog');
+    expect(frame).toContain('Same, with no prompt: npm create fougere shop -- --frond blog');
     expect(plain(composer.frame(40))).toMatch(/◼ blog\n/);
     press('\x03');
   });
