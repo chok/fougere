@@ -1,5 +1,6 @@
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
+import { PackageManager } from '../scaffold/PackageManager.js';
 
 export type Kind = 'fronds' | 'apps';
 
@@ -39,14 +40,14 @@ function piecesOf(spec: string): Piece[] {
 }
 
 /** The dual of `planOf`: the line that writes this plan again, with no prompt. */
-export function commandOf(plan: Plan, entry = 'npm create fougere'): string {
+export function commandOf(plan: Plan, manager = new PackageManager('npm')): string {
   const spec = (pieces: Piece[]) =>
     pieces.map(({ template, name }) => (name === template ? template : `${template}:${name}`)).join(',');
   const flags = (['fronds', 'apps'] as const)
     .filter((kind) => plan[kind].length)
-    .map((kind) => `${FLAG[kind]} ${spec(plan[kind])}`);
+    .flatMap((kind) => [FLAG[kind], spec(plan[kind])]);
 
-  return [entry, plan.name || '<name>', ...(flags.length ? flags : ['--blank'])].join(' ');
+  return manager.create([plan.name || '<name>', ...(flags.length ? flags : ['--blank'])]);
 }
 
 /** The directories the plan writes, drawn as a tree. */

@@ -3,7 +3,7 @@
 > Scaffold a Fougere workspace
 
 ```bash
-npm create fougere shop --frond blog --app nuxt
+npm create fougere@latest shop -- --frond blog --app nuxt
 ```
 
 `pnpm create`, `bun create` and `yarn create` work the same: the project is written for the

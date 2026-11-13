@@ -3,6 +3,7 @@ import { stripVTControlCharacters } from 'node:util';
 import { Prompt, isCancel } from '@clack/core';
 import pc from 'picocolors';
 import { type Catalog, type Kind, type Plan, commandOf, treeOf } from './Plan.js';
+import type { PackageManager } from '../scaffold/PackageManager.js';
 
 interface Row { kind: Kind; template: string; name: string; on: boolean }
 
@@ -38,8 +39,8 @@ export interface ComposerOptions {
   catalog: Catalog;
   exists: (name: string) => boolean;
   refusals: (plan: Plan, overwrite: boolean) => string[];
-  /** What the plan is written again with — `npm create fougere`, or the package manager that started this. */
-  entry?: string;
+  /** The package manager the plan is written again for — the one that started this. */
+  manager?: PackageManager;
   input?: Readable;
   output?: Writable;
 }
@@ -122,7 +123,7 @@ export class Composer {
       ...(this.step === 'project' ? [] : [`${bar}  ${pc.dim(MEANING[this.step])}`, bar]),
       ...body.map((line) => `${bar}  ${line}`),
       bar,
-      `${bar}  ${pc.dim('Same, with no prompt:')} ${commandOf(plan, this.options.entry)}`,
+      `${bar}  ${pc.dim('Same, with no prompt:')} ${commandOf(plan, this.options.manager)}`,
       ...(refusal ? [`${bar}  ${pc.yellow(refusal)}`] : []),
       `${pc.gray('└')}  ${pc.dim(this.hint())}`,
     ].join('\n');

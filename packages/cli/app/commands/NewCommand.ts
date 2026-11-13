@@ -34,7 +34,7 @@ export default class NewCommand {
         throw new Error('No terminal to ask in. State the project: fougere new shop --frond blog --app nuxt, or --blank for the empty shell.');
       }
       const offered = { ...catalog, apps: catalog.apps.filter((app) => OFFERED.includes(app)) };
-      const composed = await new Composer({ name: (raw.name as string | undefined) ?? '', catalog: offered, exists, refusals, entry: found?.create() }).ask();
+      const composed = await new Composer({ name: (raw.name as string | undefined) ?? '', catalog: offered, exists, refusals, manager: found }).ask();
       if (!composed) return;
 
       plan = composed.plan;
@@ -67,7 +67,7 @@ export default class NewCommand {
     const started = plan.apps.length > 1 ? plan.apps.map(({ name }) => manager.script(`dev:${name}`)) : plan.apps.map(() => manager.script('dev'));
     const next = [`cd ${plan.name}`, ...(installed ? [] : [manager.install()]), ...started];
     this.ui.note(next.join('\n'), 'Next');
-    if (guided) this.ui.info(`The same project, with no prompt:\n${commandOf(plan, manager.create())}`);
+    if (guided) this.ui.info(`The same project, with no prompt:\n${commandOf(plan, manager)}`);
     this.ui.outro('Ready.');
   }
 

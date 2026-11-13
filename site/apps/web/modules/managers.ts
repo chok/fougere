@@ -45,7 +45,7 @@ export function saidBy(line: string, manager: PackageManager): [string, string] 
     [/^npm test(.*)$/, (rest) => manager.script('test') + rest],
     [/^npx -y (.+)$/, (command) => manager.x(command)],
     [/^npx (.+)$/, (command) => manager.bin(command)],
-    [/^npm create (.+)$/, (entry) => manager.create(entry)],
+    [/^npm create (\S+?)(?:@latest)?((?: \S+)*)$/, (entry, args) => manager.create(args.split(' ').filter((arg) => arg && arg !== '--'), entry)],
   ];
   for (const [form, say] of forms) {
     const parts = command.match(form);
