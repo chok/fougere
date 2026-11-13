@@ -71,15 +71,18 @@
     "@fougere/container": "workspace:*",
     "@fougere/graph": "workspace:*",
     "@fougere/registry": "workspace:*",
-    "@fougere/schema": "workspace:*",
     "dequal": "^2.0.3",
     "get-tsconfig": "^4.14.3"
   },
   "devDependencies": {
+    "@fougere/schema": "workspace:*",
     "@types/node": "^22.0.0",
     "@typescript/typescript6": "^6.0.2"
   },
   "publishConfig": {
     "access": "public"
+  },
+  "peerDependencies": {
+    "@fougere/schema": "workspace:*"
   }
 }

@@ -49,16 +49,19 @@
     "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
-    "@fougere/core": "workspace:*",
     "srvx": "^1.0.5"
   },
   "devDependencies": {
-    "@fougere/schema": "workspace:*",
-    "jiti": "^2.6.1",
+    "@fougere/compiler": "workspace:*",
     "@fougere/container": "workspace:*",
-    "@fougere/compiler": "workspace:*"
+    "@fougere/core": "workspace:*",
+    "@fougere/schema": "workspace:*",
+    "jiti": "^2.6.1"
   },
   "publishConfig": {
     "access": "public"
+  },
+  "peerDependencies": {
+    "@fougere/core": "workspace:*"
   }
 }

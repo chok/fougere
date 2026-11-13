@@ -51,10 +51,8 @@
     "@fougere/app": "workspace:*",
     "@fougere/compiler": "workspace:*",
     "@fougere/container": "workspace:*",
-    "@fougere/core": "workspace:*",
     "@fougere/defaults": "workspace:*",
     "@fougere/registry": "workspace:*",
-    "@fougere/schema": "workspace:*",
     "@fougere/testing": "workspace:*",
     "@fougere/transport-http": "workspace:*",
     "citty": "^0.2.1",
@@ -78,7 +76,9 @@
     "access": "public"
   },
   "peerDependencies": {
-    "@fougere/adapter-sql": "workspace:^"
+    "@fougere/adapter-sql": "workspace:*",
+    "@fougere/core": "workspace:*",
+    "@fougere/schema": "workspace:*"
   },
   "peerDependenciesMeta": {
     "@fougere/adapter-sql": {

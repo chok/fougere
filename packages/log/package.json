@@ -36,18 +36,18 @@
     "prepublishOnly": "pnpm run build"
   },
   "peerDependencies": {
-    "@fougere/core": "workspace:^",
-    "@fougere/schema": "workspace:^"
+    "@fougere/core": "workspace:*",
+    "@fougere/schema": "workspace:*"
   },
   "devDependencies": {
-    "@fougere/defaults": "workspace:*",
     "@fougere/compiler": "workspace:*",
     "@fougere/container": "workspace:*",
     "@fougere/core": "workspace:*",
+    "@fougere/defaults": "workspace:*",
     "@fougere/schema": "workspace:*",
-    "vitest": "^4.1.0",
+    "@fougere/testing": "workspace:*",
     "jiti": "^2.6.1",
-    "@fougere/testing": "workspace:*"
+    "vitest": "^4.1.0"
   },
   "publishConfig": {
     "access": "public"

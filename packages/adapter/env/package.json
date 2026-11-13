@@ -39,15 +39,18 @@
     "typecheck": "tsc --noEmit -p tsconfig.test.json",
     "prepublishOnly": "pnpm run build"
   },
-  "dependencies": {
-    "@fougere/core": "workspace:*",
-    "@fougere/schema": "workspace:*"
-  },
+  "dependencies": {},
   "publishConfig": {
     "access": "public"
   },
   "devDependencies": {
     "@fougere/container": "workspace:*",
-    "@fougere/defaults": "workspace:*"
+    "@fougere/core": "workspace:*",
+    "@fougere/defaults": "workspace:*",
+    "@fougere/schema": "workspace:*"
+  },
+  "peerDependencies": {
+    "@fougere/core": "workspace:*",
+    "@fougere/schema": "workspace:*"
   }
 }

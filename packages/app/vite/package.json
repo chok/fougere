@@ -37,7 +37,6 @@
   },
   "dependencies": {
     "@fougere/app": "workspace:*",
-    "@fougere/core": "workspace:*",
     "srvx": "^1.0.5",
     "terser": "^5.44.0"
   },
@@ -48,11 +47,13 @@
   },
   "devDependencies": {
     "@fougere/compiler": "workspace:*",
+    "@fougere/core": "workspace:*",
     "vite": "^8.0.0",
     "vitest": "^4.1.0"
   },
   "peerDependencies": {
-    "@fougere/compiler": "workspace:^",
+    "@fougere/compiler": "workspace:*",
+    "@fougere/core": "workspace:*",
     "vite": "^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0"
   },
   "publishConfig": {

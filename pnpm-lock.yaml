@@ -1758,16 +1758,16 @@ importers:
       '@fougere/adapter-sql':
         specifier: workspace:*
         version: link:../sql
+    devDependencies:
+      '@duckdb/node-api':
+        specifier: ^1.5.5-r.4
+        version: 1.5.5-r.4
       '@fougere/core':
         specifier: workspace:*
         version: link:../../core
       '@fougere/schema':
         specifier: workspace:*
         version: link:../../schema
-    devDependencies:
-      '@duckdb/node-api':
-        specifier: ^1.5.5-r.4
-        version: 1.5.5-r.4
       '@types/better-sqlite3':
         specifier: ^7.6.13
         version: 7.6.13
@@ -1776,45 +1776,45 @@ importers:
         version: 13.0.3
 
   packages/adapter/env:
-    dependencies:
-      '@fougere/core':
-        specifier: workspace:*
-        version: link:../../core
-      '@fougere/schema':
-        specifier: workspace:*
-        version: link:../../schema
     devDependencies:
       '@fougere/container':
         specifier: workspace:*
         version: link:../../container
+      '@fougere/core':
+        specifier: workspace:*
+        version: link:../../core
       '@fougere/defaults':
         specifier: workspace:*
         version: link:../../defaults
+      '@fougere/schema':
+        specifier: workspace:*
+        version: link:../../schema
 
   packages/adapter/file:
     dependencies:
-      '@fougere/core':
-        specifier: workspace:*
-        version: link:../../core
-      '@fougere/schema':
-        specifier: workspace:*
-        version: link:../../schema
       yaml:
         specifier: ^2.9.0
         version: 2.9.0
-
-  packages/adapter/graphql:
-    dependencies:
+    devDependencies:
       '@fougere/core':
         specifier: workspace:*
         version: link:../../core
-      '@fougere/http':
-        specifier: workspace:*
-        version: link:../../http
       '@fougere/schema':
         specifier: workspace:*
         version: link:../../schema
+
+  packages/adapter/graphql:
+    dependencies:
+      '@fougere/http':
+        specifier: workspace:*
+        version: link:../../http
     devDependencies:
+      '@fougere/core':
+        specifier: workspace:*
+        version: link:../../core
+      '@fougere/schema':
+        specifier: workspace:*
+        version: link:../../schema
       '@pothos/core':
         specifier: ^4.12.0
         version: 4.12.0(graphql@16.13.1)
@@ -1823,7 +1823,7 @@ importers:
         version: 16.13.1
 
   packages/adapter/memory:
-    dependencies:
+    devDependencies:
       '@fougere/core':
         specifier: workspace:*
         version: link:../../core
@@ -1833,24 +1833,19 @@ importers:
 
   packages/adapter/rest:
     dependencies:
-      '@fougere/core':
-        specifier: workspace:*
-        version: link:../../core
       '@fougere/http':
         specifier: workspace:*
         version: link:../../http
+    devDependencies:
+      '@fougere/core':
+        specifier: workspace:*
+        version: link:../../core
       '@fougere/schema':
         specifier: workspace:*
         version: link:../../schema
 
   packages/adapter/sql:
     dependencies:
-      '@fougere/core':
-        specifier: workspace:*
-        version: link:../../core
-      '@fougere/schema':
-        specifier: workspace:*
-        version: link:../../schema
       dequal:
         specifier: ^2.0.3
         version: 2.0.3
@@ -1861,6 +1856,12 @@ importers:
         specifier: ^0.4.0
         version: 0.4.0(kysely@0.29.8)
     devDependencies:
+      '@fougere/core':
+        specifier: workspace:*
+        version: link:../../core
+      '@fougere/schema':
+        specifier: workspace:*
+        version: link:../../schema
       '@types/better-sqlite3':
         specifier: ^7.6.13
         version: 7.6.13
@@ -1879,13 +1880,13 @@ importers:
       '@fougere/app':
         specifier: workspace:*
         version: link:../shared
+    devDependencies:
       '@fougere/core':
         specifier: workspace:*
         version: link:../../core
       '@fougere/schema':
         specifier: workspace:*
         version: link:../../schema
-    devDependencies:
       '@mui/material':
         specifier: ^9.3.1
         version: 9.3.1(@emotion/react@11.14.0(@types/react@19.2.18)(react@19.2.8)(supports-color@10.2.2))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.2.18)(react@19.2.8)(supports-color@10.2.2))(@types/react@19.2.18)(react@19.2.8)(supports-color@10.2.2))(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
@@ -1910,9 +1911,6 @@ importers:
       '@fougere/app':
         specifier: workspace:*
         version: link:../shared
-      '@fougere/core':
-        specifier: workspace:*
-        version: link:../../core
       terser-webpack-plugin:
         specifier: ^5.3.14
         version: 5.6.1(@swc/core@1.15.21)(cssnano@8.0.2(postcss@8.5.28))(csso@5.0.5)(esbuild@0.28.1)(lightningcss@1.33.0)(postcss@8.5.28)(webpack@5.109.2(@swc/core@1.15.21)(cssnano@8.0.2(postcss@8.5.28))(csso@5.0.5)(esbuild@0.28.1)(lightningcss@1.33.0)(postcss@8.5.28))
@@ -1920,6 +1918,9 @@ importers:
       '@fougere/compiler':
         specifier: workspace:*
         version: link:../../compiler
+      '@fougere/core':
+        specifier: workspace:*
+        version: link:../../core
       next:
         specifier: ^15.5.26
         version: 15.5.26(@babel/core@7.29.7(supports-color@10.2.2))(@opentelemetry/api@1.9.1)(@playwright/test@1.62.1)(@types/node@24.13.3)(babel-plugin-macros@3.1.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
@@ -1932,9 +1933,6 @@ importers:
       '@fougere/app':
         specifier: workspace:*
         version: link:../shared
-      '@fougere/core':
-        specifier: workspace:*
-        version: link:../../core
       '@fougere/defaults':
         specifier: workspace:*
         version: link:../../defaults
@@ -1948,6 +1946,9 @@ importers:
       '@fougere/compiler':
         specifier: workspace:*
         version: link:../../compiler
+      '@fougere/core':
+        specifier: workspace:*
+        version: link:../../core
       '@nuxt/schema':
         specifier: ^4.6.0
         version: 4.6.0
@@ -1968,14 +1969,13 @@ importers:
         version: 3.5.40(typescript@7.0.2)
 
   packages/app/oclif:
-    dependencies:
+    devDependencies:
       '@fougere/core':
         specifier: workspace:*
         version: link:../../core
       '@fougere/schema':
         specifier: workspace:*
         version: link:../../schema
-    devDependencies:
       '@oclif/core':
         specifier: ^5.0.0
         version: 5.0.0
@@ -1988,10 +1988,10 @@ importers:
       '@fougere/app':
         specifier: workspace:*
         version: link:../shared
+    devDependencies:
       '@fougere/core':
         specifier: workspace:*
         version: link:../../core
-    devDependencies:
       '@fougere/schema':
         specifier: workspace:*
         version: link:../../schema
@@ -2025,15 +2025,9 @@ importers:
       '@fougere/container':
         specifier: workspace:*
         version: link:../../container
-      '@fougere/core':
-        specifier: workspace:*
-        version: link:../../core
       '@fougere/defaults':
         specifier: workspace:*
         version: link:../../defaults
-      '@fougere/schema':
-        specifier: workspace:*
-        version: link:../../schema
       '@fougere/transport-http':
         specifier: workspace:*
         version: link:../../transport/http
@@ -2053,6 +2047,12 @@ importers:
       '@fougere/compiler':
         specifier: workspace:*
         version: link:../../compiler
+      '@fougere/core':
+        specifier: workspace:*
+        version: link:../../core
+      '@fougere/schema':
+        specifier: workspace:*
+        version: link:../../schema
       vitest:
         specifier: ^4.1.0
         version: 4.1.2(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(jsdom@27.4.0(@noble/hashes@2.0.1)(supports-color@10.2.2))(vite@8.3.3(@types/node@24.13.3)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.46.1)(tsx@4.21.0)(yaml@2.9.0))
@@ -2062,10 +2062,10 @@ importers:
       '@fougere/app':
         specifier: workspace:*
         version: link:../shared
+    devDependencies:
       '@fougere/core':
         specifier: workspace:*
         version: link:../../core
-    devDependencies:
       '@fougere/schema':
         specifier: workspace:*
         version: link:../../schema
@@ -2081,9 +2081,6 @@ importers:
       '@fougere/app':
         specifier: workspace:*
         version: link:../shared
-      '@fougere/core':
-        specifier: workspace:*
-        version: link:../../core
       srvx:
         specifier: ^1.0.5
         version: 1.0.5
@@ -2094,6 +2091,9 @@ importers:
       '@fougere/compiler':
         specifier: workspace:*
         version: link:../../compiler
+      '@fougere/core':
+        specifier: workspace:*
+        version: link:../../core
       vite:
         specifier: ^8.0.0
         version: 8.2.0(@types/node@24.13.3)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.46.1)(tsx@4.21.0)(yaml@2.9.0)
@@ -2103,12 +2103,6 @@ importers:
 
   packages/auth/better:
     dependencies:
-      '@fougere/core':
-        specifier: workspace:*
-        version: link:../../core
-      '@fougere/schema':
-        specifier: workspace:*
-        version: link:../../schema
       '@paralleldrive/cuid2':
         specifier: ^3.3.0
         version: 3.3.0
@@ -2125,6 +2119,12 @@ importers:
       '@fougere/container':
         specifier: workspace:*
         version: link:../../container
+      '@fougere/core':
+        specifier: workspace:*
+        version: link:../../core
+      '@fougere/schema':
+        specifier: workspace:*
+        version: link:../../schema
       vitest:
         specifier: ^4.1.0
         version: 4.1.2(@opentelemetry/api@1.9.1)(@types/node@24.13.3)(jsdom@27.4.0(@noble/hashes@2.0.1)(supports-color@10.2.2))(vite@8.3.3(@types/node@24.13.3)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.46.1)(tsx@4.21.0)(yaml@2.9.0))
@@ -2165,7 +2165,7 @@ importers:
         specifier: workspace:*
         version: link:../adapter/rest
       '@fougere/adapter-sql':
-        specifier: workspace:^
+        specifier: workspace:*
         version: link:../adapter/sql
       '@fougere/app':
         specifier: workspace:*
@@ -2277,9 +2277,6 @@ importers:
       '@fougere/registry':
         specifier: workspace:*
         version: link:../registry
-      '@fougere/schema':
-        specifier: workspace:*
-        version: link:../schema
       dequal:
         specifier: ^2.0.3
         version: 2.0.3
@@ -2287,6 +2284,9 @@ importers:
         specifier: ^4.14.3
         version: 4.14.3
     devDependencies:
+      '@fougere/schema':
+        specifier: workspace:*
+        version: link:../schema
       '@types/node':
         specifier: ^22.0.0
         version: 22.19.15
@@ -2304,9 +2304,6 @@ importers:
       '@fougere/container':
         specifier: workspace:*
         version: link:../container
-      '@fougere/core':
-        specifier: workspace:*
-        version: link:../core
       '@fougere/transport-http':
         specifier: workspace:*
         version: link:../transport/http
@@ -2320,6 +2317,9 @@ importers:
       '@fougere/compiler':
         specifier: workspace:*
         version: link:../compiler
+      '@fougere/core':
+        specifier: workspace:*
+        version: link:../core
       '@fougere/schema':
         specifier: workspace:*
         version: link:../schema
@@ -2453,27 +2453,29 @@ importers:
 
   packages/state/cookie:
     dependencies:
-      '@fougere/core':
-        specifier: workspace:*
-        version: link:../../core
       '@fougere/http':
         specifier: workspace:*
         version: link:../../http
+    devDependencies:
+      '@fougere/core':
+        specifier: workspace:*
+        version: link:../../core
       '@fougere/schema':
         specifier: workspace:*
         version: link:../../schema
 
   packages/state/session:
     dependencies:
+      '@fougere/state-cookie':
+        specifier: workspace:*
+        version: link:../cookie
+    devDependencies:
       '@fougere/core':
         specifier: workspace:*
         version: link:../../core
       '@fougere/schema':
         specifier: workspace:*
         version: link:../../schema
-      '@fougere/state-cookie':
-        specifier: workspace:*
-        version: link:../cookie
 
   packages/testing:
     dependencies:
@@ -2486,15 +2488,9 @@ importers:
       '@fougere/container':
         specifier: workspace:*
         version: link:../container
-      '@fougere/core':
-        specifier: workspace:*
-        version: link:../core
       '@fougere/defaults':
         specifier: workspace:*
         version: link:../defaults
-      '@fougere/schema':
-        specifier: workspace:*
-        version: link:../schema
       '@fougere/transport-http':
         specifier: workspace:*
         version: link:../transport/http
@@ -2511,9 +2507,15 @@ importers:
       '@fougere/adapter-sql':
         specifier: workspace:*
         version: link:../adapter/sql
+      '@fougere/core':
+        specifier: workspace:*
+        version: link:../core
       '@fougere/observability':
         specifier: workspace:*
         version: link:../observability
+      '@fougere/schema':
+        specifier: workspace:*
+        version: link:../schema
       '@fougere/state-cookie':
         specifier: workspace:*
         version: link:../state/cookie
@@ -2529,9 +2531,6 @@ importers:
 
   packages/transport/http:
     dependencies:
-      '@fougere/core':
-        specifier: workspace:*
-        version: link:../../core
       srvx:
         specifier: ^1.0.5
         version: 1.0.5
@@ -2542,6 +2541,9 @@ importers:
       '@fougere/container':
         specifier: workspace:*
         version: link:../../container
+      '@fougere/core':
+        specifier: workspace:*
+        version: link:../../core
       '@fougere/schema':
         specifier: workspace:*
         version: link:../../schema

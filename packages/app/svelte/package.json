@@ -37,15 +37,16 @@
     "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
-    "@fougere/app": "workspace:*",
-    "@fougere/core": "workspace:*"
+    "@fougere/app": "workspace:*"
   },
   "devDependencies": {
+    "@fougere/core": "workspace:*",
+    "@fougere/schema": "workspace:*",
     "svelte": "^5.53.4",
-    "vitest": "^4.1.0",
-    "@fougere/schema": "workspace:*"
+    "vitest": "^4.1.0"
   },
   "peerDependencies": {
+    "@fougere/core": "workspace:*",
     "svelte": "^5.0.0"
   },
   "publishConfig": {

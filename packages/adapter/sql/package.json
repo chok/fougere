@@ -45,19 +45,22 @@
     "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
-    "@fougere/core": "workspace:*",
-    "@fougere/schema": "workspace:*",
     "dequal": "^2.0.3",
     "kysely": "^0.29.8",
     "kysely-d1": "^0.4.0"
   },
   "devDependencies": {
     "@fougere/core": "workspace:*",
-    "better-sqlite3": "^13.0.3",
+    "@fougere/schema": "workspace:*",
     "@types/better-sqlite3": "^7.6.13",
-    "@types/node": "^22.0.0"
+    "@types/node": "^22.0.0",
+    "better-sqlite3": "^13.0.3"
   },
   "publishConfig": {
     "access": "public"
+  },
+  "peerDependencies": {
+    "@fougere/core": "workspace:*",
+    "@fougere/schema": "workspace:*"
   }
 }

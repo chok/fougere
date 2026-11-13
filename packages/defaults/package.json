@@ -36,14 +36,14 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@fougere/core": "workspace:*",
     "@fougere/transport-http": "workspace:*",
     "@fougere/container": "workspace:*",
     "@fougere/adapter-memory": "workspace:*",
     "jiti": "^2.6.1"
   },
   "peerDependencies": {
-    "@fougere/compiler": "workspace:^"
+    "@fougere/compiler": "workspace:*",
+    "@fougere/core": "workspace:*"
   },
   "peerDependenciesMeta": {
     "@fougere/compiler": {
@@ -54,11 +54,12 @@
     "access": "public"
   },
   "devDependencies": {
+    "@fougere/adapter-sql": "workspace:*",
     "@fougere/compiler": "workspace:*",
+    "@fougere/core": "workspace:*",
     "@fougere/schema": "workspace:*",
-    "kysely": "^0.29.8",
-    "better-sqlite3": "^13.0.3",
     "@types/better-sqlite3": "^7.6.13",
-    "@fougere/adapter-sql": "workspace:*"
+    "better-sqlite3": "^13.0.3",
+    "kysely": "^0.29.8"
   }
 }

@@ -41,15 +41,15 @@
     "jiti": "^2.6.1"
   },
   "peerDependencies": {
-    "@fougere/core": "workspace:^",
-    "@fougere/container": "workspace:^",
-    "@fougere/schema": "workspace:^"
+    "@fougere/container": "workspace:*",
+    "@fougere/core": "workspace:*",
+    "@fougere/schema": "workspace:*"
   },
   "devDependencies": {
+    "@fougere/container": "workspace:*",
     "@fougere/core": "workspace:*",
     "@fougere/schema": "workspace:*",
-    "vitest": "^4.1.0",
-    "@fougere/container": "workspace:*"
+    "vitest": "^4.1.0"
   },
   "publishConfig": {
     "access": "public"

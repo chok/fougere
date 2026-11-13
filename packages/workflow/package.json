@@ -36,16 +36,16 @@
     "prepublishOnly": "pnpm run build"
   },
   "peerDependencies": {
-    "@fougere/core": "workspace:^",
-    "@fougere/schema": "workspace:^",
-    "@fougere/container": "workspace:^"
-  },
-  "devDependencies": {
     "@fougere/container": "workspace:*",
     "@fougere/core": "workspace:*",
-    "@fougere/schema": "workspace:*",
+    "@fougere/schema": "workspace:*"
+  },
+  "devDependencies": {
     "@fougere/adapter-sql": "workspace:*",
+    "@fougere/container": "workspace:*",
+    "@fougere/core": "workspace:*",
     "@fougere/defaults": "workspace:*",
+    "@fougere/schema": "workspace:*",
     "vitest": "^4.1.0"
   },
   "publishConfig": {

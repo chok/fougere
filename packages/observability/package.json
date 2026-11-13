@@ -38,8 +38,8 @@
     "prepublishOnly": "pnpm run build"
   },
   "peerDependencies": {
-    "@fougere/core": "workspace:^",
-    "@fougere/adapter-sql": "workspace:^"
+    "@fougere/adapter-sql": "workspace:*",
+    "@fougere/core": "workspace:*"
   },
   "devDependencies": {
     "@fougere/adapter-sql": "workspace:*",

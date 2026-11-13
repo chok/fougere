@@ -46,15 +46,17 @@
     "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
-    "@fougere/core": "workspace:*",
-    "@fougere/schema": "workspace:*",
     "@fougere/http": "workspace:*"
   },
   "peerDependencies": {
+    "@fougere/core": "workspace:*",
+    "@fougere/schema": "workspace:*",
     "@pothos/core": ">=4.0.0",
     "graphql": ">=16.0.0"
   },
   "devDependencies": {
+    "@fougere/core": "workspace:*",
+    "@fougere/schema": "workspace:*",
     "@pothos/core": "^4.12.0",
     "graphql": "^16.13.1"
   },
