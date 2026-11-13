@@ -55,7 +55,7 @@ describe('workspace project scaffold', () => {
     }
   });
 
-  it('writes which builds may run in each package manager\u2019s own file', () => {
+  it('writes which builds may run, and that a package is added at its exact version, in each package manager\u2019s own file', () => {
     const parent = mkdtempSync(join(tmpdir(), 'fougere-builds-'));
     const project = (manager: PackageManager) => {
       const root = join(parent, manager.name);
@@ -72,16 +72,20 @@ describe('workspace project scaffold', () => {
       expect(workspace).not.toContain('packages:');
       expect(workspace).toContain('better-sqlite3: false');
       expect(workspace).toContain('esbuild: true');
+      expect(workspace).toContain('saveExact: true');
 
-      expect(project(new PackageManager('bun')).pkg.trustedDependencies).toEqual(['esbuild']);
+      const bun = project(new PackageManager('bun'));
+      expect(bun.pkg.trustedDependencies).toEqual(['esbuild']);
+      expect(readFileSync(join(bun.root, 'bunfig.toml'), 'utf8')).toBe('[install]\nexact = true\n');
 
       const yarn = project(new PackageManager('yarn', '4.9.1'));
       expect(yarn.pkg.dependenciesMeta).toEqual({ 'better-sqlite3': { built: false } });
-      expect(readFileSync(join(yarn.root, '.yarnrc.yml'), 'utf8')).toBe('nodeLinker: node-modules\n');
+      expect(readFileSync(join(yarn.root, '.yarnrc.yml'), 'utf8')).toBe('nodeLinker: node-modules\ndefaultSemverRangePrefix: ""\n');
 
       const npm = project(new PackageManager('npm'));
       expect(Object.keys(npm.pkg)).not.toContain('trustedDependencies');
       expect(existsSync(join(npm.root, 'pnpm-workspace.yaml'))).toBe(false);
+      expect(readFileSync(join(npm.root, '.npmrc'), 'utf8')).toBe('save-exact=true\n');
     } finally {
       rmSync(parent, { recursive: true, force: true });
     }

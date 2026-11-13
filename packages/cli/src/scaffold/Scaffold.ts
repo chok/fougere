@@ -107,7 +107,7 @@ function relativeTo(path: string, dir: string): string {
   return relative(dirname(path), dir);
 }
 
-/** What a package manager reads beside `package.json` — the apps as members, and which builds may run. */
+/** What a package manager reads beside `package.json` — the apps as members, which builds may run, and that a package is added at its exact version. */
 export function settle(dir: string, manager: PackageManager): void {
   const path = join(dir, 'package.json');
   const pkg = JSON.parse(readFileSync(path, 'utf8')) as Record<string, unknown>;
@@ -117,15 +117,20 @@ export function settle(dir: string, manager: PackageManager): void {
   if (manager.name === 'pnpm') {
     writeFileSync(join(dir, 'pnpm-workspace.yaml'), [
       ...(pkg.workspaces ? ['packages:', '  - apps/*', ''] : []),
+      'saveExact: true',
       'allowBuilds:',
       ...builds.map(([name, allow]) => `  ${name}: ${allow}`),
       '',
     ].join('\n'));
   }
-  if (manager.name === 'bun') pkg.trustedDependencies = builds.filter(([, allow]) => allow).map(([name]) => name);
+  if (manager.name === 'npm') writeFileSync(join(dir, '.npmrc'), 'save-exact=true\n');
+  if (manager.name === 'bun') {
+    pkg.trustedDependencies = builds.filter(([, allow]) => allow).map(([name]) => name);
+    writeFileSync(join(dir, 'bunfig.toml'), '[install]\nexact = true\n');
+  }
   if (manager.name === 'yarn') {
     pkg.dependenciesMeta = Object.fromEntries(builds.filter(([, allow]) => !allow).map(([name]) => [name, { built: false }]));
-    if (!existsSync(join(dir, '.yarnrc.yml'))) writeFileSync(join(dir, '.yarnrc.yml'), 'nodeLinker: node-modules\n');
+    if (!existsSync(join(dir, '.yarnrc.yml'))) writeFileSync(join(dir, '.yarnrc.yml'), 'nodeLinker: node-modules\ndefaultSemverRangePrefix: ""\n');
   }
 
   writeFileSync(path, JSON.stringify(pkg, null, 2) + '\n');
