@@ -1,6 +1,6 @@
 {
   "name": "A fact",
-  "title": "Mail is *its own domain*",
+  "title": "Move mail to its own *frond*",
   "concept": "fact",
   "lede": "The blog announces that a post was published, and a second frond receives it. The mailer and its log move into that frond.",
   "fig": "The blog names nobody. Accepting a Fact<T> is the subscription.",

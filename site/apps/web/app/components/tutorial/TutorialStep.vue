@@ -13,7 +13,7 @@ interface Step {
   tryIt?: { command: string; said: Record<string, string>; output: string };
   install?: Record<string, string>;
   start?: Record<string, string>;
-  aside?: string; zero?: string;
+  aside?: string;
   links: { title: string; path: string }[];
 }
 
@@ -165,7 +165,6 @@ onBeforeUnmount(() => removeEventListener('keydown', onKey));
             </div>
           </div>
         </div>
-        <div v-if="step.zero" class="stamp"><b>0</b> line changed under {{ step.zero }}</div>
 
         <ul v-if="Array.isArray(step.fig)" class="terms">
           <li v-for="one in step.fig" :key="one.term"><b>{{ one.term }}</b> {{ one.text }}</li>
@@ -284,8 +283,6 @@ button.file:hover { background: rgb(120 88 40 / 0.08); }
 .line.added { background: var(--code-added); }
 .line.added .no { color: var(--code-added-ink); }
 
-.stamp { display: inline-flex; align-items: center; gap: 10px; margin-top: 12px; padding: 8px 12px; border: 1.5px solid var(--ui-primary); border-radius: var(--radius-small); color: var(--ui-primary); background: var(--ui-bg-elevated); font-family: var(--font-mono); font-size: var(--text-tiny); letter-spacing: 0.04em; transform: rotate(-1.5deg); }
-.stamp b { font-family: var(--font-serif); font-size: 26px; font-weight: 400; line-height: 1; }
 
 .terms { margin: 14px 0 0; padding-left: 18px; display: grid; gap: 6px; font-size: var(--text-body); line-height: 1.5; color: var(--ui-text-muted); }
 .terms b { color: var(--ui-text); font-weight: 600; }

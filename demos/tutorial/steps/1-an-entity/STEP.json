@@ -1,6 +1,6 @@
 {
   "name": "An entity",
-  "title": "Create your first entity *and a simple CRUD*",
+  "title": "Create your first *entity* and a simple CRUD",
   "concept": "entity",
   "lede": "We write a Post entity and the associated handler to expose operations to the rest of the world.",
   "fig": [

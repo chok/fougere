@@ -63,7 +63,6 @@ export default defineContentConfig({
         install: z.record(z.string(), z.string()).optional(),
         start: z.record(z.string(), z.string()).optional(),
         aside: z.string().optional(),
-        zero: z.string().optional(),
         links: z.array(z.object({ title: z.string(), path: z.string() })),
       }),
     }),

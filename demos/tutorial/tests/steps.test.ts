@@ -1,7 +1,6 @@
 /**
  * Every claim a tutorial step makes, checked against the step itself: the request of "try it"
- * answers what the page prints, the aside refuses as said,
- * and the "0 line changed" of steps 4 and 6 is an equality of files, not a sentence.
+ * answers what the page prints, and the aside refuses as said.
  */
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { cpSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';

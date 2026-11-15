@@ -1,6 +1,6 @@
 {
   "name": "A rule",
-  "title": "Publishing is *not an update*",
+  "title": "Add a *publish* operation",
   "concept": "handler",
   "lede": "A post is published only once. We write that rule as a method and make status readOnly, so nothing else can change it, not even update.",
   "fig": "A state changes through an operation, never through a field write.",

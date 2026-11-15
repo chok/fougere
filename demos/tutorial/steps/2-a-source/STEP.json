@@ -1,6 +1,6 @@
 {
   "name": "A source",
-  "title": "One line, *and the data stays*",
+  "title": "Add a *SQL source*",
   "concept": "configuration",
   "lede": "Rows in memory are lost at every restart, so we add SQLite with one line in sources. The app then refuses to start until the table exists, and fougere migrate creates it.",
   "fig": "The handler asks for its data as before. Where it lives is a line of config.",

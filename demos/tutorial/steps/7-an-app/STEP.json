@@ -1,6 +1,6 @@
 {
   "name": "An app",
-  "title": "A page, *and nothing declared twice*",
+  "title": "Add a *Nuxt app*",
   "concept": "facade",
   "lede": "We add a Nuxt app in apps/nuxt with the @fougere/nuxt module and write a page. The page calls the blog by its name, and the fronds run inside Nuxt.",
   "fig": "The page names post and an operation. Its data, its form and its refusals are read from what you already wrote.",
@@ -19,8 +19,8 @@
       "path": "/docs/serve/forms"
     },
     {
-      "title": "Pick a host",
-      "path": "/docs/adopt/hosts"
+      "title": "Add Fougere to an app",
+      "path": "/docs/adopt/an-app"
     }
   ],
   "install": "npm create nuxt@latest apps/nuxt && cd apps/nuxt && npm install @fougere/nuxt"

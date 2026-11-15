@@ -8,9 +8,8 @@ import { saidBy } from './managers';
  * `demos/tutorial/steps/*` → `content/tutorial/<step>.md`, at build — the sibling of `demo.ts`.
  *
  * A step is a whole project and a `STEP.json` saying what it grew. What the page shows of it is
- * computed here against the step before: which files are new, changed or moved, which lines were
- * added, and the "0 line changed" stamp. Nothing on the page is a
- * copy of the code, and `demos/tutorial/tests` checks every claim the JSON makes.
+ * computed here against the step before: which files are new, changed or moved, and which lines
+ * were added. Nothing on the page is a copy of the code, and `demos/tutorial/tests` checks every claim the JSON makes.
  */
 
 type Fig = string | { term: string; text: string }[];
@@ -132,12 +131,6 @@ function pageOf(index: number, slug: string, step: Step, files: Map<string, stri
     return { path, state: stateOf(path), lines: lines.map((text, at) => ({ text, added: added.has(at) })) };
   });
 
-  const changedUnder = (prefix: RegExp) => index > 0 && [...files.keys(), ...gone].some((path) =>
-    prefix.test(path) && previous.get(path) !== files.get(path));
-  const zero = index === 0 ? undefined
-    : !changedUnder(/^fronds\//) ? 'fronds/'
-      : !changedUnder(/^fronds\/[^/]+\/handlers\//) ? 'handlers/' : undefined;
-
   const data = {
     title: step.title.replace(/\*/g, ''),
     description: step.lede,
@@ -153,7 +146,6 @@ function pageOf(index: number, slug: string, step: Step, files: Map<string, stri
     ...(install ? { install: saidIn(install) } : {}),
     ...(step.start ? { start: saidIn(step.start) } : {}),
     ...(step.aside ? { aside: step.aside } : {}),
-    ...(zero ? { zero } : {}),
     links: step.links,
     slug,
   };

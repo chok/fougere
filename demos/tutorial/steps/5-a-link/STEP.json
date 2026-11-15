@@ -1,6 +1,6 @@
 {
   "name": "A link",
-  "title": "Stand *in front* of the port",
+  "title": "Log every mail with a *link*",
   "concept": "port",
   "lede": "We log every mail without touching the handler or the mailer. A class that implements the mailer and asks for it stands in front of it.",
   "fig": "Around a capability, not inside it.",
