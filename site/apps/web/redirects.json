@@ -2,7 +2,7 @@
   "pages": {
     "/docs/getting-started": "/tutorial/1-an-entity",
     "/tutorial/1-crud": "/tutorial/1-an-entity",
-    "/docs/existing-app": "/docs/adopt/existing-app",
+    "/docs/existing-app": "/docs/adopt/an-app",
     "/docs/bring-your-schema": "/docs/adopt/bring-your-schema",
     "/docs/cli": "/reference/cli",
     "/docs/demos": "/docs/adopt/demos",
@@ -37,7 +37,8 @@
     "/docs/infra/gradient": "/docs/concepts/configuration",
     "/docs/infra/surfaces": "/docs/serve/rest-graphql",
     "/docs/infra/deployment": "/docs/run/deploy",
-    "/docs/infra/hosts": "/docs/adopt/hosts",
+    "/docs/infra/hosts": "/docs/adopt/an-app",
+    "/docs/adopt/hosts": "/docs/adopt/an-app",
     "/docs/infra/sources": "/docs/data/sql",
     "/docs/infra/lifecycle": "/docs/run/lifecycle",
     "/docs/infra/identity": "/docs/run/secure",
@@ -48,7 +49,8 @@
     "/tutorial/3-a-port": "/tutorial/4-a-port",
     "/tutorial/4-a-link": "/tutorial/5-a-link",
     "/tutorial/5-a-fact": "/tutorial/6-a-fact",
-    "/tutorial/6-split": "/tutorial/8-split"
+    "/tutorial/6-split": "/tutorial/8-split",
+    "/docs/adopt/existing-app": "/docs/adopt/an-app"
   },
   "sections": {
     "/docs/business/collect-and-present#present": "/docs/data/computed-field",
@@ -82,11 +84,15 @@
     "/docs/guides/data#forms": "/docs/serve/forms",
     "/docs/guides/data#rest-and-graphql": "/docs/serve/rest-graphql",
     "/docs/guides/data#migrations": "/docs/data/sql#migrations",
-    "/docs/guides/data#one-more-field": "/docs/concepts/entity#one-more-field",
+    "/docs/guides/data#one-more-field": "/docs/concepts/entity#add-a-field",
     "/docs/guides/topology#moving-a-frond": "/tutorial/6-split",
     "/docs/guides/topology#fronds": "/docs/concepts/facade",
     "/docs/getting-started#fougereconfigts": "/reference/config",
     "/docs/getting-started#run": "/docs/adopt/new-project#create-it",
-    "/docs/getting-started#what-an-app-looks-like": "/docs/adopt/new-project#what-you-get"
+    "/docs/getting-started#what-an-app-looks-like": "/docs/adopt/new-project#what-the-project-contains",
+    "/docs/adopt/hosts#any-engine": "/docs/adopt/an-app#serve-on-any-engine",
+    "/docs/adopt/existing-app#untangle-a-monolith": "/docs/run/split-an-existing-app",
+    "/docs/adopt/existing-app#ask-your-agent": "/docs/adopt/an-app#ask-your-agent",
+    "/docs/adopt/existing-app#any-engine": "/docs/adopt/an-app#serve-on-any-engine"
   }
 }

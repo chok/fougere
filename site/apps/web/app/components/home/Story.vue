@@ -223,7 +223,7 @@ onBeforeUnmount(() => cancelAnimationFrame(frame));
         </ol>
 
         <div class="shortcuts" :class="{ started: chapter >= 1 }">
-          <NuxtLink :to="localePath('/docs/adopt/existing-app#ask-your-agent')">{{ $t('home.tryAgent') }}</NuxtLink>
+          <NuxtLink :to="localePath('/docs/adopt/an-app#ask-your-agent')">{{ $t('home.tryAgent') }}</NuxtLink>
           <button type="button" @click="jump('try')">{{ $t('home.skip') }}</button>
         </div>
         <p v-if="chapter === 0" class="hint">{{ $t('home.scroll') }}<br>↓</p>
