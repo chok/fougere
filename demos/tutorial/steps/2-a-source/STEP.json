@@ -8,7 +8,7 @@
     "command": "npx fougere migrate --latest --apply",
     "output": "◇  create posts\n◆  1 change(s) applied."
   },
-  "aside": "On Postgres it is { type: 'pg', url: process.env.DATABASE_URL }, and nothing else in the project changes.",
+  "aside": "On Postgres it is { type: 'pg', url: process.env.DATABASE_URL }, with the pg package in place of better-sqlite3. No file under fronds/ changes.",
   "links": [
     {
       "title": "SQLite or Postgres",

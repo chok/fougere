@@ -237,14 +237,23 @@ describe('extensionsOf', () => {
         '/app/fougere.config.ts');
 
       expect(out).toContain("import config from '/app/fougere.config';");
-      expect(out).toContain('fronds: config.fronds }');
+      expect(out).toContain('fronds: config.fronds, sources: config.sources }');
+    });
+
+    it('opens the sources the config file holds when the server starts, not the ones the build read', () => {
+      const out = generateBootPlugin(
+        { sources: { main: { type: 'pg', url: 'postgres://build/app' } } } as unknown as FougereConfig,
+        [], '/app/boot', [], undefined, '/w', '/app/fougere.config.ts');
+
+      expect(out).toContain('resolveStorage(config.sources, "/w")');
+      expect(out).not.toContain('postgres://build/app"}}, "/w")');
     });
 
     it('is handed over even when the app declares no storage', () => {
       const out = generateBootPlugin(
         {} as FougereConfig, [], '/app/boot', [], undefined, undefined, '/app/fougere.config.ts');
 
-      expect(out).toContain('fronds: config.fronds }');
+      expect(out).toContain('fronds: config.fronds, sources: config.sources }');
     });
   });
 });

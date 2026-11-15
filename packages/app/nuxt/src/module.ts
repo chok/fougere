@@ -270,7 +270,7 @@ export function generateBootPlugin(
   lines.push(`import { configureFougere } from '${fougereAppPath}';`);
   if (statedPath) lines.push(`import fronds, * as statement from '${statedPath.replace(/\.(m?)[jt]sx?$/, '')}';`);
   if (configFile) lines.push(`import config from '${configFile.replace(/\.(m?)[jt]sx?$/, '')}';`);
-  const configArg = configFile ? `{ ...${JSON.stringify(carried(config))}, fronds: config.fronds }` : JSON.stringify(carried(config));
+  const configArg = configFile ? `{ ...${JSON.stringify(carried(config))}, fronds: config.fronds, sources: config.sources }` : JSON.stringify(carried(config));
 
   const moduleKeys = keyedFrondEntries(config.fronds).map((entry) => entry.key).filter(statesModule);
   if (moduleKeys.length > 0) {
@@ -314,7 +314,7 @@ export function generateBootPlugin(
   lines.push(``);
   lines.push(`  try {`);
   const rootArg = storageRoot ? `, ${JSON.stringify(storageRoot)}` : '';
-  lines.push(`    const storage = resolveStorage(${JSON.stringify(sources)}${rootArg});`);
+  lines.push(`    const storage = resolveStorage(${configFile ? 'config.sources' : JSON.stringify(sources)}${rootArg});`);
   lines.push(`    nitroApp.hooks.hook('close', () => storage.close?.());`);
   lines.push(``);
   lines.push(`    configureFougere({`);
