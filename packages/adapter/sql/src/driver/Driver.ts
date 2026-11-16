@@ -7,7 +7,7 @@ import type { Engine } from '../fields/Engine.js';
 /**
  * The packages each engine opens with; the app installs them.
  *
- * Documented: [sources](https://fougere.dev/docs/data/sql).
+ * Documented: [sources](https://fougere.dev/docs/data/storage).
  */
 export const PACKAGES: Record<Engine, string[]> = {
   sqlite: ['better-sqlite3'],

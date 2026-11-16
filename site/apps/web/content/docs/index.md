@@ -48,7 +48,7 @@ None of this is written by you:
 - **the type** — `Post` is the TypeScript type of a row;
 - **the validation** — the same rules in the browser and on the server: a `title` past 160
   characters is refused in both;
-- **the table** — and the migration when a field changes ([SQLite or Postgres](/docs/data/sql));
+- **the table** — and the migration when a field changes ([Store your data](/docs/data/storage));
 - **the API** — `POST /api/blog/posts/:id/publish`, a GraphQL mutation
   ([REST, OpenAPI, GraphQL](/docs/serve/rest-graphql));
 - **the page's client** — `useCommand(post, 'publish')`, typed down to the errors it can answer:
