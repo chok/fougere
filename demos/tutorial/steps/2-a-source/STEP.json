@@ -2,25 +2,20 @@
   "name": "A source",
   "title": "Add a *SQL source*",
   "concept": "configuration",
-  "lede": "Rows in memory are lost at every restart, so we add SQLite with one line in sources. The app then refuses to start until the table exists, and fougere migrate creates it.",
-  "fig": "The handler asks for its data as before. Where it lives is a line of config.",
+  "lede": "Posts kept in memory are lost at every restart. One line in sources stores them in SQLite. The app then refuses to start until the table exists, and *fougere migrate* creates it.",
+  "fig": "PostHandler does not change. Only fougere.config.ts says where posts are stored.",
   "try": {
     "command": "npx fougere migrate --latest --apply",
     "output": "◇  create posts\n◆  1 change(s) applied."
   },
-  "aside": "On Postgres it is { type: 'pg', url: process.env.DATABASE_URL }, with the pg package in place of better-sqlite3. No file under fronds/ changes.",
   "links": [
     {
-      "title": "SQLite or Postgres",
-      "path": "/docs/data/sql"
-    },
-    {
-      "title": "Evolve a schema",
-      "path": "/docs/data/evolve"
+      "title": "Choose another database",
+      "path": "/docs/data/storage"
     },
     {
       "title": "Configuration",
-      "path": "/docs/concepts/configuration"
+      "path": "/docs/concepts/configuration#where-data-is-stored"
     }
   ]
 }

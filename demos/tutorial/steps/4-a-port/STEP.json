@@ -14,7 +14,6 @@
     "status": 200,
     "log": "mail: Published: Hi"
   },
-  "aside": "Add FakeMailer extends Mailer and the app refuses to start, naming both classes and the line that settles it: ports: { Mailer: '…' }.",
   "links": [
     {
       "title": "Port",

@@ -8,7 +8,6 @@
     "command": "cd apps/nuxt && npm run dev   # then open localhost:3000/posts",
     "output": "a form with one field, title — and the posts, each with Publish"
   },
-  "aside": "Publish twice from two tabs: the second click shows Already published, the CONFLICT the handler throws.",
   "links": [
     {
       "title": "Pages",

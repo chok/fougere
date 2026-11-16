@@ -1,20 +1,20 @@
 {
   "name": "An entity",
-  "title": "Create your first *entity* and a simple CRUD",
+  "title": "Create your first *entity* and a *simple CRUD*",
   "concept": "entity",
   "lede": "We write a Post entity and the associated handler to expose operations to the rest of the world.",
   "fig": [
     {
-      "term": "An entity (Post.ts)",
-      "text": "is the center where we can read and derive a lot of things (validations, forms, APIs, etc.)."
+      "term": "Post",
+      "text": "is an entity. It describes a post. Validation, forms and APIs are read from it."
     },
     {
-      "term": "A repository (Repository<Post>)",
-      "text": "is a facility to access storage around your entity. At this point, data are stored in memory by default."
+      "term": "PostHandler",
+      "text": "is a handler. Its public methods are operations anyone can call."
     },
     {
-      "term": "A handler (PostHandler.ts)",
-      "text": "is the base of operations exposed to the world. All public methods of a class in this folder are publicly exposed to the world and can ask for data. A handler can extend everything (including a repository)."
+      "term": "Repository<Post>",
+      "text": "is a repository. It stores posts in memory. *PostHandler* extends it, so it already lists, reads, creates, updates and deletes."
     }
   ],
   "start": "npx fougere dev blog",
@@ -31,7 +31,6 @@
     "status": 422,
     "contains": "String is too short"
   },
-  "aside": "PATCH /api/blog/posts/:id with { status: 'published' } passes here: nothing guards it yet. A rule, two steps on, closes it.",
   "links": [
     {
       "title": "Entity",
@@ -44,6 +43,10 @@
     {
       "title": "Repository",
       "path": "/docs/concepts/repository"
+    },
+    {
+      "title": "REST, OpenAPI, GraphQL",
+      "path": "/docs/serve/rest-graphql"
     }
   ]
 }

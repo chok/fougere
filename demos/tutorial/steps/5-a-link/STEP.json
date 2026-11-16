@@ -20,7 +20,7 @@
       "path": "/docs/concepts/port"
     },
     {
-      "title": "Around every call",
+      "title": "Run code before and after every call",
       "path": "/docs/behaviour/around-every-call"
     }
   ]

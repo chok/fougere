@@ -13,7 +13,6 @@ interface Step {
   tryIt?: { command: string; said: Record<string, string>; output: string };
   install?: Record<string, string>;
   start?: Record<string, string>;
-  aside?: string;
   links: { title: string; path: string }[];
 }
 
@@ -57,8 +56,10 @@ const open = (path: string) => {
   opened.value = path;
 };
 
-const heading = computed(() =>
-  props.step.heading.replace(/[&<>]/g, (c) => `&#${c.charCodeAt(0)};`).replace(/\*([^*]+)\*/g, '<em>$1</em>'));
+const emphasized = (text: string) =>
+  text.replace(/[&<>]/g, (c) => `&#${c.charCodeAt(0)};`).replace(/\*([^*]+)\*/g, '<em>$1</em>');
+
+const heading = computed(() => emphasized(props.step.heading));
 
 /** The files as a tree, folders first in reading order, each file with what this step did to it. */
 const tree = computed(() => {
@@ -117,7 +118,7 @@ onBeforeUnmount(() => removeEventListener('keydown', onKey));
     <div class="leaves">
       <div class="center">
         <h1 v-html="heading" />
-        <p class="lede">{{ step.lede }}</p>
+        <p class="lede" v-html="emphasized(step.lede)" />
 
         <div v-if="install" class="slip install">
           <span class="tag">Install</span>
@@ -167,7 +168,7 @@ onBeforeUnmount(() => removeEventListener('keydown', onKey));
         </div>
 
         <ul v-if="Array.isArray(step.fig)" class="terms">
-          <li v-for="one in step.fig" :key="one.term"><b>{{ one.term }}</b> {{ one.text }}</li>
+          <li v-for="one in step.fig" :key="one.term" v-html="emphasized(`*${one.term}* ${one.text}`)" />
         </ul>
         <p v-else class="fig">{{ step.fig }}</p>
 
@@ -199,10 +200,9 @@ onBeforeUnmount(() => removeEventListener('keydown', onKey));
           <pre class="tabbed"><span class="prompt">$</span> {{ said }}
 <span class="output">{{ step.tryIt.output }}</span></pre>
         </div>
-        <p v-if="step.aside" class="aside">{{ step.aside }}</p>
 
         <div v-if="step.links.length" class="deeper">
-          <span>In the docs</span>
+          <span>Go further</span>
           <NuxtLink v-for="link in step.links" :key="link.path" :to="link.path">{{ link.title }}</NuxtLink>
         </div>
 
@@ -284,9 +284,9 @@ button.file:hover { background: rgb(120 88 40 / 0.08); }
 .line.added .no { color: var(--code-added-ink); }
 
 
-.terms { margin: 14px 0 0; padding-left: 18px; display: grid; gap: 6px; font-size: var(--text-body); line-height: 1.5; color: var(--ui-text-muted); }
-.terms b { color: var(--ui-text); font-weight: 600; }
-.fig { margin: 10px 0 0; font-family: var(--font-serif); font-style: italic; font-size: var(--text-body); color: var(--ui-text-muted); }
+.terms { margin: 36px 0 0; padding: 0 0 0 20px; list-style: none; display: grid; gap: 6px; font-size: var(--text-body); line-height: 1.5; color: var(--ui-text-muted); }
+.terms :deep(em) { font-style: normal; font-weight: 600; color: var(--ui-primary); }
+.fig { margin: 36px 0 0; padding-left: 20px; font-family: var(--font-serif); font-style: italic; font-size: var(--text-body); color: var(--ui-text-muted); }
 
 .slip { position: relative; margin-top: 44px; }
 .hand { font-family: var(--hand); }
@@ -304,7 +304,6 @@ button.file:hover { background: rgb(120 88 40 / 0.08); }
 .managers button { cursor: pointer; padding: 2px 8px; border-radius: 999px; font-family: var(--font-mono); font-size: var(--text-tiny); color: #7f927f; }
 .managers button[aria-selected="true"] { background: var(--code-added); color: var(--code-soft); }
 .slip .output { color: #7f927f; }
-.aside { margin: 16px 0 0; padding-left: 12px; border-left: 2px solid var(--ui-border); font-size: var(--text-note); line-height: 1.5; color: var(--ui-text-muted); }
 
 .pills { display: flex; justify-content: space-between; gap: 10px; margin-top: 30px; }
 .pill { display: inline-flex; align-items: center; min-height: 40px; padding: 0 16px; border: 1px solid var(--ui-text); border-radius: 999px; font-family: var(--font-mono); font-size: var(--text-tiny); letter-spacing: 0.04em; color: var(--ui-text); text-decoration: none; }

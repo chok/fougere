@@ -19,7 +19,6 @@ interface Step {
   try?: { command: string; output: string };
   install?: string;
   start?: string;
-  aside?: string;
   links: { title: string; path: string }[];
 }
 
@@ -27,13 +26,19 @@ interface Step {
 const shown = (path: string) =>
   path !== 'STEP.json' && !path.endsWith('tsconfig.json') && !path.split('/').some((part) => part.startsWith('.'));
 
-async function filesOf(root: string): Promise<Map<string, string>> {
+/** A manifest as `fougere new` writes it, each `latest` of a Fougere package pinned to the version released with this site. */
+const pinned = (manifest: string, version: string) => manifest.replace(/("@fougere\/[^"]+": )"latest"/g, `$1"${version}"`);
+
+async function filesOf(root: string, version: string): Promise<Map<string, string>> {
   const files = new Map<string, string>();
   const walk = async (here: string) => {
     for (const name of (await readdir(here)).sort()) {
       const path = join(here, name);
       if ((await stat(path)).isDirectory()) await walk(path);
-      else if (shown(relative(root, path))) files.set(relative(root, path), await readFile(path, 'utf8'));
+      else if (shown(relative(root, path))) {
+        const text = await readFile(path, 'utf8');
+        files.set(relative(root, path), name === 'package.json' ? pinned(text, version) : text);
+      }
     }
   };
   await walk(root);
@@ -57,20 +62,21 @@ async function emptyFoldersOf(root: string, files: Map<string, string>): Promise
   return folders.filter((folder) => ![...files.keys()].some((file) => file.startsWith(`${folder}/`))).map((folder) => `${folder}/`);
 }
 
-/** The lines of `after` absent from `before`, by longest common subsequence — files here are short. */
+/** The lines of `after` absent from `before`, a line that only gained its trailing comma aside. */
 function addedLines(before: string[], after: string[]): Set<number> {
+  const same = (i: number, j: number) => before[i]!.replace(/,$/, '') === after[j]!.replace(/,$/, '');
   const table = before.map(() => after.map(() => 0));
   const at = (i: number, j: number) => (i < before.length && j < after.length ? table[i]![j]! : 0);
   for (let i = before.length - 1; i >= 0; i--) {
     for (let j = after.length - 1; j >= 0; j--) {
-      table[i]![j] = before[i] === after[j] ? at(i + 1, j + 1) + 1 : Math.max(at(i + 1, j), at(i, j + 1));
+      table[i]![j] = same(i, j) ? at(i + 1, j + 1) + 1 : Math.max(at(i + 1, j), at(i, j + 1));
     }
   }
   const added = new Set<number>();
   let i = 0;
   let j = 0;
   while (j < after.length) {
-    if (i < before.length && before[i] === after[j]) {
+    if (i < before.length && same(i, j)) {
       i++;
       j++;
     } else if (i < before.length && at(i + 1, j) >= at(i, j + 1)) {
@@ -145,7 +151,6 @@ function pageOf(index: number, slug: string, step: Step, files: Map<string, stri
     ...(step.try ? { tryIt: { command: step.try.command, said: saidIn(step.try.command), output: step.try.output } } : {}),
     ...(install ? { install: saidIn(install) } : {}),
     ...(step.start ? { start: saidIn(step.start) } : {}),
-    ...(step.aside ? { aside: step.aside } : {}),
     links: step.links,
     slug,
   };
@@ -165,7 +170,9 @@ function saidIn(command: string): Record<string, string> {
 export default defineNuxtModule({
   meta: { name: 'tutorial' },
   async setup(_options, nuxt) {
-    const steps = join(nuxt.options.rootDir, '..', '..', '..', 'demos', 'tutorial', 'steps');
+    const repository = join(nuxt.options.rootDir, '..', '..', '..');
+    const steps = join(repository, 'demos', 'tutorial', 'steps');
+    const { version } = JSON.parse(await readFile(join(repository, 'packages', 'cli', 'package.json'), 'utf8')) as { version: string };
     const pages = join(nuxt.options.rootDir, 'content', 'tutorial');
 
     const project = async () => {
@@ -176,7 +183,7 @@ export default defineNuxtModule({
       for (const [index, name] of names.entries()) {
         const root = join(steps, name);
         const step = JSON.parse(await readFile(join(root, 'STEP.json'), 'utf8')) as Step;
-        const files = await filesOf(root);
+        const files = await filesOf(root, version);
         await writeFile(join(pages, `${name}.md`), pageOf(index, name, step, files, previous, await emptyFoldersOf(root, files)));
         previous = files;
       }
