@@ -12,6 +12,8 @@ export interface Plan {
   changes: StepChange[];
   /** What the DDL may not decide alone; empty means the step can run whole. */
   refusals: Refusal[];
+  /** Columns a step removed and another declaration of the table still holds, so nothing drops them. */
+  kept: { table: string; column: string }[];
 }
 
 /** Collapse a chain of steps into one, following each field through its renames. */
@@ -68,6 +70,7 @@ export function planStep(step: SetDiff, tables: TableDef[], options: PlanOptions
   const byName = new Map(tables.map((table) => [table.name, table]));
   const changes: StepChange[] = [];
   const refusals: Refusal[] = [];
+  const kept: Plan['kept'] = [];
 
   for (const [entity, answer] of Object.entries(step.entities)) {
     const table = resolve(entity);
@@ -79,11 +82,12 @@ export function planStep(step: SetDiff, tables: TableDef[], options: PlanOptions
     for (const change of answer.changes) {
       const decided = realise(entity, table, change, byName.get(table)!);
       if ('reason' in decided) refusals.push(decided);
+      else if (decided.kept) kept.push(decided.kept);
       else if (decided.change && !(actual && done(decided.change, actual.get(table)))) changes.push(decided.change);
     }
   }
 
-  return { changes, refusals };
+  return { changes, refusals, kept };
 }
 
 function realise(
@@ -91,12 +95,14 @@ function realise(
   table: string,
   change: ShapeChange,
   target: TableDef,
-): { change?: StepChange } | Refusal {
+): { change?: StepChange; kept?: Plan['kept'][number] } | Refusal {
   switch (change.kind) {
     case 'renamed':
       return { change: { kind: 'renameColumn', table, from: toSnakeCase(change.from), to: toSnakeCase(change.to) } };
 
     case 'removed':
+      if (target.columns.some((column) => column.field === change.field)) return { kept: { table, column: toSnakeCase(change.field) } };
+
       return { change: { kind: 'dropColumn', table, column: toSnakeCase(change.field) } };
 
     case 'added': {

@@ -13,6 +13,7 @@ import { applyStep, collapseChain, planStep, stepSQL } from '../src/step/Plan.js
 import { desiredTables } from '../src/diff/Change.js';
 import { actualState, type SchemaState } from '../src/diff/SchemaState.js';
 import { createTableSQL } from '../src/ddl/SqlSink.js';
+import { sourceViewOf } from '@fougere/core';
 
 const bundle = (fields: Fields) => Bundle.fromSchemas({ post: class extends entity(fields) {} });
 const between = (before: Fields, after: Fields, options: SetDiffOptions = {}) =>
@@ -71,6 +72,22 @@ describe('a removal is realised, and only from a step', () => {
     expect('body' in row).toBe(false);
     expect(row.title).toBe('Hello');
   });
+
+  it('keeps a column another frond still declares on the same table', async () => {
+    const named = <T extends abstract new (...args: never[]) => unknown>(ctor: T): T => Object.defineProperty(ctor, 'name', { value: 'Post' });
+    const current = { id: primary(), title: text() };
+    const fronds = [
+      { name: 'blog', entities: [{ name: 'post', entityClass: named(class extends entity(current) {}) }] },
+      { name: 'archive', entities: [{ name: 'post', entityClass: named(class extends entity({ id: primary(), body: text() }) {}) }] },
+    ];
+    const plan = planStep(between(V1, current), desiredTables(sourceViewOf(fronds)));
+
+    await applyStep(plan, db);
+
+    expect(plan.changes).toEqual([]);
+    expect(plan.kept).toEqual([{ table: 'posts', column: 'body' }]);
+    expect(await db.selectFrom('posts').selectAll().executeTakeFirst()).toEqual({ id: '1', title: 'Hello', body: 'the text' });
+  });
 });
 
 describe('what it will not decide alone', () => {
@@ -99,7 +116,7 @@ describe('what it will not decide alone', () => {
     const step = between(V1, current);
     const plan = planStep(step, desiredTables(appOf(current)));
 
-    expect(plan).toEqual({ changes: [], refusals: [] });
+    expect(plan).toEqual({ changes: [], refusals: [], kept: [] });
   });
 
   it('refuses a type change rather than inventing a conversion', () => {

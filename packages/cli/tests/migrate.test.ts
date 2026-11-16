@@ -3,7 +3,7 @@
  * database the entities moved ahead of is brought up here, and nowhere else.
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { access, cp, mkdir, mkdtemp, writeFile } from 'node:fs/promises';
+import { access, cp, mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createSqliteSource } from '@fougere/adapter-sql';
@@ -139,5 +139,22 @@ export default class Post extends entity({ id: primary(), content: text() }, { p
     expect(plan.chain).toEqual(['v2']);
     expect(plan.changes).toEqual([{ kind: 'renameColumn', table: 'posts', from: 'body', to: 'content' }]);
     expect(await rows()).toEqual([{ id: 'p1', content: 'hello' }]);
+  });
+
+  it('keeps a removed field the frozen step lists as kept, and the rows keep it', async () => {
+    await tableOfYesterday();
+    await frozenYesterday();
+    await entityNow(`import { entity, primary } from '@fougere/schema';
+export default class Post extends entity({ id: primary() }) {}
+`);
+    await freeze('v2');
+    const from = join(root, 'fronds/blog/versions/v2/from.json');
+    const step = JSON.parse(await readFile(from, 'utf8'));
+    await writeFile(from, JSON.stringify({ ...step, kept: { post: ['body'] } }));
+    const plan = await shared(true);
+
+    expect(step.kept).toEqual({});
+    expect(plan.changes).toEqual([]);
+    expect(await rows()).toEqual([{ id: 'p1', body: 'hello' }]);
   });
 });

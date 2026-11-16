@@ -5,7 +5,7 @@ import { Bundle, type SchemaBundle, type SchemaView, type SetDiff } from '@fouge
 /** One cut version: its name, and the step that reached it — absent on the first. */
 export interface Version {
   name: string;
-  step?: SetDiff & { previous?: string };
+  step?: SetDiff & { previous?: string; kept?: Record<string, string[]> };
 }
 
 /** The versions a frond has cut, oldest first, read by following each step's `previous`. */
@@ -18,7 +18,7 @@ export async function chainOf(frondPath: string, versions: string): Promise<Vers
   const steps = new Map<string, Version['step']>();
   for (const name of names) {
     const raw = await readFile(join(directory, name, 'from.json'), 'utf8').catch(() => undefined);
-    steps.set(name, raw ? (JSON.parse(raw) as Version['step']) : undefined);
+    steps.set(name, raw ? withoutKept(JSON.parse(raw) as NonNullable<Version['step']>) : undefined);
   }
 
   const roots = names.filter((name) => steps.get(name)?.previous === undefined);
@@ -43,6 +43,18 @@ export async function chainOf(frondPath: string, versions: string): Promise<Vers
   }
 
   return chain;
+}
+
+function withoutKept(step: NonNullable<Version['step']>): NonNullable<Version['step']> {
+  const kept = step.kept ?? {};
+  const entities = Object.fromEntries(
+    Object.entries(step.entities).map(([entity, answer]) => [
+      entity,
+      { ...answer, changes: answer.changes.filter((change) => !(change.kind === 'removed' && kept[entity]?.includes(change.field))) },
+    ]),
+  );
+
+  return { ...step, entities };
 }
 
 /** The tip of a frond's chain and its shapes there — `except` leaves out the version being cut. */

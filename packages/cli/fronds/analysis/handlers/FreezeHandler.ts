@@ -54,7 +54,7 @@ export default class FreezeHandler {
       if (!previous || !step) continue;
       await writeFile(
         join(path, versions, version, 'from.json'),
-        `${JSON.stringify({ previous: previous.name, renamed, ...step }, null, 2)}\n`,
+        `${JSON.stringify({ previous: previous.name, renamed, kept: {}, ...step }, null, 2)}\n`,
       );
     }
 

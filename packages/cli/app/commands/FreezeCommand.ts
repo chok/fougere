@@ -92,7 +92,12 @@ export default class FreezeCommand {
     }
     for (const [entity, answer] of moved) {
       for (const change of answer.changes) {
-        if (change.kind === 'removed') this.ui.warn(`${entity}.${change.field} and its data are deleted at the next migrate. If it was renamed, say so on the field with previous:.`);
+        if (change.kind === 'removed') {
+          this.ui.warn(
+            `${entity}.${change.field} and its data are deleted at the next migrate. If it was renamed, say so on the field with previous:. `
+            + `To keep the column, write kept: { ${entity}: ['${change.field}'] } in the from.json of ${written.version}.`,
+          );
+        }
       }
     }
     if (step.entitiesAdded.length > 0) this.ui.step(`new: ${step.entitiesAdded.join(', ')}`);

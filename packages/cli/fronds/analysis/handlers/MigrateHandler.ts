@@ -69,6 +69,7 @@ export default class MigrateHandler {
         changes.push(...plan.changes);
         refusals.push(...plan.refusals);
         plans.push({ plan, db });
+        for (const { table, column } of plan.kept) warnings.push(`${table}.${column} is kept — another frond still declares it`);
 
         const planned = new Set(plan.changes.map((change) => `${change.table}.${change.kind === 'renameColumn' ? change.from : change.column}`));
         const mine = tables.filter((table) => actual.has(table.name));
