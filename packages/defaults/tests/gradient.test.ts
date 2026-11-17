@@ -19,7 +19,7 @@ import {
 } from '@fougere/schema';
 import { createSqliteSource } from '@fougere/adapter-sql';
 import { createMemorySource } from '@fougere/adapter-memory';
-import { Collect, createApp, createAppRunner, createLocalRunner, Repository, ErrorCode, frond, Invocation, migrating, Present, togetherKeyOf, type App, type Storage, type Transport } from '@fougere/core';
+import { Collect, createApp, createAppRunner, createLocalRunner, Repository, ErrorCode, frond, Invocation, migrating, Present, togetherKeyOf, type App, type Call, type Dispatcher, type Storage, type Transport } from '@fougere/core';
 import { layerOf, storageFrom } from '../src/storage/ResolvedStorage.js';
 
 class Author extends entity({
@@ -131,6 +131,21 @@ class WelcomeHandler {
   }
 }
 
+const audited: string[] = [];
+
+/** Stands around the calls of the frond that declares it — `people`, or `app` when they are one. */
+class AuditLink implements Partial<Dispatcher> {
+  constructor(private inner: Pick<Dispatcher, 'dispatch'>) {}
+
+  async dispatch(call: Call): Promise<unknown> {
+    audited.push(`${call.address.address}.${call.address.operation}`);
+
+    return this.inner.dispatch(call);
+  }
+}
+
+const audit = { ctor: AuditLink, name: 'AuditLink', deps: ['Dispatcher'], implements: ['Dispatcher'] };
+
 interface Placement {
   /** One frond holding everything — the rung every project starts on. */
   together?: boolean;
@@ -177,7 +192,7 @@ const fronds = ({ together = false, moved = false, strandCollector = false, fram
       handlers: [{ ctor: AuthorHandler, repository: Author }, { ctor: ArticleHandler, repository: Article }, census, ...framed, announcer, listener],
       presenters: [{ ctor: AuthorPresenter, presents: Author }],
       collectors: [{ ctor: CallerCollector, collects: Caller }],
-      providers: [service],
+      providers: [service, audit],
     })];
   }
 
@@ -189,7 +204,7 @@ const fronds = ({ together = false, moved = false, strandCollector = false, fram
       // A collector lives in the frond that CONSUMES it — one in the wrong frond refuses the
       // boot, which is its own invariant and not something a placement may soften.
       collectors: [{ ctor: CallerCollector, collects: Caller }],
-      providers: moved ? [] : [service],
+      providers: moved ? [audit] : [service, audit],
     }),
     frond('writing', {
       entities: [Article],
@@ -307,6 +322,20 @@ describe('Emit<T> — the listener hears it, wherever it answers', () => {
 
     await expect(ask(one, 'join', 'join', {})).resolves.toEqual({ id: 'a-1' });
     await vi.waitFor(() => expect(welcomed).toEqual(['Ada']));
+    await one.dispose();
+  });
+});
+
+describe('a link in front of Dispatcher — around the calls its frond serves, and no others', () => {
+  it.each(cases)('wraps people’s calls, and writing’s only when they are one frond — %s', async (_name, where) => {
+    const one = await world(where);
+    const ada = await ask(one, 'author', 'create', { name: 'Ada', email: 'a@b.co' }) as { id: string };
+    audited.length = 0;
+
+    await ask(one, 'author', 'findById', {}, { id: ada.id });
+    await ask(one, 'article', 'create', { title: 'One', authorId: ada.id });
+
+    expect(audited).toEqual('together' in where ? ['author.findById', 'article.create'] : ['author.findById']);
     await one.dispose();
   });
 });
@@ -506,16 +535,4 @@ describe('state — judged where it entered, read the same at every placement', 
     await expect(createAppRunner(entry)({ address: 'visit', op: 'read' }, signedIn as never))
       .rejects.toMatchObject({ code: ErrorCode.VALIDATION_FAILED, message: expect.stringContaining('state.user: Unknown field') });
   });
-});
-
-/**
- * What this bench still cannot say, and why — a `todo` is a claim nobody has checked, which is
- * the only honest way to leave one.
- */
-describe.todo('still unmeasured across placements', () => {
-  // A middleware covers the addresses its frond SERVES — an assertion about scope, and the
-  // bench varies placement, not scope. `core/tests/middleware.test.ts` is where it belongs.
-  it.todo('middleware: it runs around its own frond’s addresses and around no others');
-  // A LINK does cross, and `core/tests/pipe.test.ts` pins it there: it has an address, so it
-  // answers the same behind `remotes:` — and its failure stops the announcement either way.
 });
