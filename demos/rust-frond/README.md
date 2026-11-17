@@ -20,9 +20,10 @@ The frond honours two contracts, and both are JSON:
 
 Everything else belongs to it: the language, the storage, the validator.
 
-The moment that counts is step 4 of the consumer. `Card.toSchema()`
+The moment that counts is step 3 of the consumer. `Card.toSchema()`
 (`packages/schema/src/projection/card/Card.ts`, `toSchema`) rebuilds a **live** schema from
-the map, and the TS validator refuses a payload before any network:
+the map, and the consumer, by calling it, has the TS validator refuse a payload before any
+network:
 
 ```
 ✗ couleur  — Unknown field
@@ -33,6 +34,10 @@ the map, and the TS validator refuses a payload before any network:
 
 Those messages come from `@cfworker/json-schema`, on the TS side, applied to rules that
 no line of TypeScript declares. "The truth travels, the realization varies" — literally.
+
+A call through the app's facade does not do this on its own: the process that sends a call
+judges its state, never its input, and the frond that receives it is the one that keeps its
+rules — here, the Rust code. Judging with the map is the consumer's choice.
 
 ## The 4 axes on the wire
 
