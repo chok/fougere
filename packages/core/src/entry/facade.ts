@@ -1,4 +1,7 @@
 import { Call } from '../wire/Call.js';
+import { behaviourIn } from '../wire/behaviourIn.js';
+import { ErrorCode } from '../wire/ErrorCode.js';
+import { FougereError } from '../wire/FougereError.js';
 
 import { RouteAddress } from '../wire/RouteAddress.js';
 import type { DispatchPort } from '../dispatch/DispatchPort.js';
@@ -34,7 +37,11 @@ export function facadeOperations(
 ): Record<string, Operation> {
   const send = sending(dispatcher, address, surface, received);
 
-  return operationsOf((name) => (...args: unknown[]) => send(name, { args: withoutTrailingAbsence(args) }), operationNames);
+  return operationsOf((name) => async (...args: unknown[]) => {
+    refuseBehaviour(address, name, args);
+
+    return send(name, { args: withoutTrailingAbsence(args) });
+  }, operationNames);
 }
 
 /** What a door sends: the invocation it received, as a `Call`. */
@@ -69,6 +76,19 @@ function operationsOf(operation: (name: string) => Operation, operationNames?: I
   return operationNames
     ? Object.fromEntries([...operationNames].map((name) => [name, operation(name)]))
     : dynamicOperations(operation);
+}
+
+function refuseBehaviour(address: string, operation: string, args: readonly unknown[]): void {
+  for (const [index, argument] of args.entries()) {
+    const path = behaviourIn(argument);
+    if (!path) continue;
+
+    const where = path.length > 0 ? ` at '${path.join('.')}'` : '';
+    throw new FougereError({
+      code: ErrorCode.INTERNAL_ERROR,
+      message: `${address}.${operation}: argument ${index + 1} carries behaviour${where} — only data crosses a frond.`,
+    });
+  }
 }
 
 function withoutTrailingAbsence(args: unknown[]): unknown[] {
