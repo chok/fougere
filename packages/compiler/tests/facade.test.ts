@@ -118,4 +118,18 @@ describe('the facades file', () => {
     expect(written.match(/export const post:/g)).toHaveLength(1);
     expect(written).not.toContain("'public:post'> = ");
   }, 30_000);
+
+  it('says an op can come back unanswered when it answers elsewhere, or calls a frond that does', async () => {
+    const root = join(import.meta.dirname, '../../../demos/crossing-cost');
+    const scan = await scanProject(root);
+    const errorsOf = (written: string, op: string) => new RegExp(`'${op.replace('.', '\\.')}': \\{ errors: ([^}]*) \\}`).exec(written)?.[1] ?? '';
+
+    const together = emitFacade(scan, { outFile: join(root, '.fougere/facade.ts') });
+    const pricingApart = emitFacade(scan, { outFile: join(root, '.fougere/facade.ts'), remotes: { pricing: 'http://127.0.0.1:4610' } });
+
+    expect(errorsOf(together, 'cart.checkout')).not.toContain('GATEWAY_TIMEOUT');
+    expect(errorsOf(pricingApart, 'cart.checkout')).toContain('ErrorCode.GATEWAY_TIMEOUT');
+    expect(errorsOf(pricingApart, 'price.total')).toContain('ErrorCode.BAD_GATEWAY');
+    expect(errorsOf(pricingApart, 'product.list')).not.toContain('GATEWAY_TIMEOUT');
+  }, 30_000);
 });

@@ -189,7 +189,7 @@ const module = defineNuxtModule<FougereModuleOptions>({
     addTemplate({
       filename: 'fougere-facade.ts',
       write: true,
-      getContents: () => emitFacade(scan, { outFile: facadeFile }),
+      getContents: () => emitFacade(scan, { outFile: facadeFile, remotes: remotesOf(config) }),
     });
     nuxt.options.alias['@fronds/facade'] = facadeFile;
 

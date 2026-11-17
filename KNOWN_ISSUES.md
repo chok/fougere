@@ -208,6 +208,12 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
   written with its `.ts` keeps it, which no file there answers. Stated 2026-10-20.
 - **`fronds:` names one address per frond**, so the same frond cannot be deployed twice. The
   key is a frond NAME, a type, while a deployment has instances. Not implemented.
+- **The network errors an op declares follow the config loaded when the types are written** —
+  `emitFacade` (`core/src/projection/FacadeModule.ts`) and `openApiOf` add `BAD_GATEWAY` and
+  `GATEWAY_TIMEOUT` to an op that answers in another process or calls a frond that does, read off
+  `fronds:` as it stands then. A project whose dev runs every frond in one process and whose prod
+  splits them writes its pages against types that never mention either error. Knowing every topology
+  a project deploys, and typing against the worst, is a project of its own. Stated 2026-11-17.
 - **A process serves the GraphQL of the fronds it hosts, and no graph spans two** — `registerAll`
   (`adapter/graphql/src/auto-register.ts`) leaves out an op whose `placement` is `remote`, the way
   `routesOf` does for REST, so each process answers its own `/graphql`. One graph over every process

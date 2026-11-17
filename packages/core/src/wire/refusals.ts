@@ -6,7 +6,7 @@ export interface Refusable {
   kind?: OperationKind;
   input?: unknown;
   errors?: readonly string[];
-  /** Absent on a card op read from a frond that answers in this process. */
+  /** Whether it answers in another process, or calls a frond that does. */
   remote?: boolean;
 }
 

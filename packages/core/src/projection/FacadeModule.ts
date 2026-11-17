@@ -3,6 +3,7 @@ import { ErrorCode } from '../wire/ErrorCode.js';
 import { refusalsOf, type Refusable } from '../wire/refusals.js';
 import type { ScanResult } from '../scan.js';
 import { servedSurfaces } from '../descriptor/surface.js';
+import { reachedBy, servedBy } from '../module/topology/declared.js';
 import type { FacadeOptions } from './FacadeOptions.js';
 
 function specifierOf(filePath: string, outFile: string): string {
@@ -25,14 +26,17 @@ export function codesOf(contract: Refusable): string {
  */
 export function emitFacade(scan: ScanResult, options: FacadeOptions): string {
   const served: Served[] = [];
+  const elsewhere = new Set(Object.keys(options.remotes ?? {}));
+  const index = servedBy([...scan.fronds]);
 
   for (const frond of scan.fronds) {
     for (const handler of frond.handlers) {
+      const remote = elsewhere.has(frond.name) || reachedBy(handler.deps, frond.name, index).some((one) => elsewhere.has(one));
       for (const surface of servedSurfaces(frond, handler)) {
         served.push({
           at: surface ? `${surface}:${handler.address}` : handler.address,
           handler: `import('${specifierOf(handler.filePath, options.outFile)}').default`,
-          ops: [...(handler.operations ?? [])].map(([name, contract]) => ({ name, codes: codesOf(contract) })),
+          ops: [...(handler.operations ?? [])].map(([name, contract]) => ({ name, codes: codesOf({ ...contract, remote }) })),
         });
       }
     }

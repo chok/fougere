@@ -138,7 +138,7 @@ function responsesOf(route: RouteDefinition, meta: OperationMeta, designates: bo
   }
 
   const missing = designates && (route.method === 'DELETE' || meta.cardinality === 'one' || meta.cardinality === 'maybe');
-  const codes = new Set([...refusalsOf({ kind: meta.kind, input: meta.input, errors: meta.errors }), ...(missing ? [ErrorCode.NOT_FOUND] : [])]);
+  const codes = new Set([...refusalsOf({ kind: meta.kind, input: meta.input, errors: meta.errors, remote: meta.placement === 'remote' || (meta.reach?.hops ?? 0) > 0 }), ...(missing ? [ErrorCode.NOT_FOUND] : [])]);
   const refusedAt = new Map<number, ErrorCode[]>();
   for (const code of codes) {
     const { status } = toHttpError(new FougereError({ code, message: code }));
