@@ -181,6 +181,7 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
       state: appLifecycle.state(),
       plugged,
     };
+    const facadeServedRemotely = remoteRouter ? answerRemotes(assembly, remoteRouter, fronds) : () => false;
     for (const frond of fronds) await installing(frond, assembly);
 
     warnAboutRelations(relations, hosting, log);
@@ -197,8 +198,6 @@ export async function createApp(options: CreateAppOptions): Promise<App> {
     emissions.register((facade) => facadeFor(addressOf(facade)));
     refuseWhatDoesNotHold(refused);
     markLineCarriers(emissions);
-
-    const facadeServedRemotely = remoteRouter ? answerRemotes(assembly, remoteRouter, fronds) : () => false;
 
     const app: App = {
       container,
