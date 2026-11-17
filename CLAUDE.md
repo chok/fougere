@@ -1240,7 +1240,9 @@ body INSIDE the cycle from the reader the host hands it — a request with no bo
 on every host, where three read `{}` — and writes the status read off the contract — `201` for a `POST` on the collection answering one row, `204` for nothing or a `DELETE`
 answering `true`, `404` for a missing row — and a page as `{ items, total, hasMore, endCursor }`.
 Pinned by `adapter/rest/tests/door.test.ts`, `testing/tests/rest-status.test.ts` and
-`transport/http/tests/beside.test.ts`.
+`transport/http/tests/beside.test.ts`. GraphQL is cut the same way: `registerAll`
+(`adapter/graphql/src/auto-register.ts`) leaves out an op whose `placement` is `remote`, so each process
+answers its own `/graphql` — pinned by `testing/tests/doors-remote.test.ts`.
 
 **A host hands a `Request` to ONE function** — `answer(app, request)` (`app/shared/src/answer.ts`,
 `@fougere/app/answer`) reads the door off the path — the envelope, REST, GraphQL over `POST` and
