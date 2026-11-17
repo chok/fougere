@@ -246,7 +246,8 @@ export function registerAll(
       if (!effective) {
         throw new Error(`GraphQL cannot project '${address}' without its EffectiveOperation table.`);
       }
-      const operations = new Map([...effective].filter(([, meta]) => !listens(meta)));
+      const operations = new Map([...effective].filter(([, meta]) => meta.placement !== 'remote' && !listens(meta)));
+      if (operations.size === 0) continue;
 
       const name = upperFirst(address);
       const typeName = `${upperFirst(frond.name)}${name}`;

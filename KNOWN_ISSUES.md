@@ -208,6 +208,12 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
   written with its `.ts` keeps it, which no file there answers. Stated 2026-10-20.
 - **`fronds:` names one address per frond**, so the same frond cannot be deployed twice. The
   key is a frond NAME, a type, while a deployment has instances. Not implemented.
+- **A process serves the GraphQL of the fronds it hosts, and no graph spans two** — `registerAll`
+  (`adapter/graphql/src/auto-register.ts`) leaves out an op whose `placement` is `remote`, the way
+  `routesOf` does for REST, so each process answers its own `/graphql`. One graph over every process
+  is federation. Not implemented. Stated 2026-11-17, pinned by `testing/tests/doors-remote.test.ts`:
+  before, a remote frond made the calling process throw while building its schema, and its whole
+  `/graphql` with it.
 - **A `list` the handler writes itself carries no `total` in the admin** — `@fougere/admin`. An array has
   nowhere to hold it; a repository's `list` answers a page with `total`. Pagination stays exact (one row
   more than the page, `pageInfo`), only a row count may be absent.
