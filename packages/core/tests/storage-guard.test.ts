@@ -111,7 +111,7 @@ describe('StorageGuard', () => {
       id: primary(),
       amount: number().with({ boundary: { in: { decode: 'guardCents' } } }),
     };
-    const storage = storageOver(() => store)({ getFields: () => priced } as never, 'money');
+    const storage = storageOver(() => store)({ getFields: () => priced, getUnique: () => [] } as never, 'money');
     const guarded = new StorageGuard(priced, 'money').guard(storage);
 
     await guarded.upsertAll([{ id: 'a', amount: 10000 }]);

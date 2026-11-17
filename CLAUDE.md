@@ -995,11 +995,14 @@ and wins whole: no scheme and no key is read then. `@fougere/defaults` imports t
 the conventional boot answers `http` with nothing in the config. Pinned by `core/tests/transports.test.ts`
 and `transport/http/tests/transports.test.ts`.
 
-**`enforces?` is not a gesture but a promise** — the constraints a source refuses AT THE ROWS,
-which the judge at the door cannot: it refuses the duplicate it can SEE, and two writes arriving
-together see the same absence. `declares(schema, 'unique')` is its dual, read by `module/frame/frame.ts`
-too. SQL states `sqlEnforces`; a Map states nothing, and the boot names the entities that costs
-rather than refusing them. Pinned by `core/tests/enforced.test.ts`.
+**`enforces?` is not a gesture but a promise** — the constraints a source refuses AT THE ROWS.
+Nothing at the door judges `unique`: the place rows live keeps it or nobody does.
+`declares(schema, 'unique')` is its dual, read by `module/frame/frame.ts` too. SQL states
+`sqlEnforces`. A source built on `storageOver` keeps `unique` in the frame (`uniqueGroupsOf`,
+`storage/Store.ts`), its writes on one entity taking turns in the process; memory states it, files do
+not, since two processes writing one directory still see the same absence. The boot names the
+entities a source that states nothing costs, rather than refusing them. Pinned by
+`core/tests/enforced.test.ts` and `adapter/memory/tests/unique.test.ts`.
 
 **A `ref()` is held by a key, read by the guard, or named at boot** — `module/relation/relations.ts`,
 `relationChecksOf`. `relation` is the second member of `Constraint`, and the PAIR decides, never the
@@ -1015,9 +1018,10 @@ sees its parent and never its siblings, and the frame and the surface build thei
 the same answer as the frond's storage. Pinned by `core/tests/relations.test.ts` and
 `demos/together-frame`, case 5. What a placement may not change BESIDE a deletion is
 `defaults/tests/gradient.test.ts`: validation, boundary, lifecycle, `unique`, the reference,
-a presenter handed the PAGE and a collector reading what the door filled — over the same
-matrix, plus the two refusals no placement may soften (a collector where nothing consumes it,
-a frame whose member answers elsewhere).
+a presenter handed the PAGE, a collector reading what the door filled and a fact reaching its
+listener once — over the same matrix, two of whose placements keep their rows in memory, where
+`unique` is named at boot rather than kept — plus the two refusals no placement may soften (a
+collector where nothing consumes it, a frame whose member answers elsewhere).
 
 **Across two sources, a write and the delete of its target wait for each other on a mark** — a row of
 `FougereTarget` in the source that names the target, added to its view by `sourceViewOf`. A write locks

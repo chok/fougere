@@ -28,6 +28,21 @@ export function storageOver(open: (entity: SchemaView, name: string) => Store): 
     const turns = Turns.of(store);
     const pk = Object.entries(fields).find(([, field]) => Role.of(field).isPrimary())?.[0] ?? 'id';
     const keyOf = (value: unknown) => String(value);
+    const unique = uniqueGroupsOf(entity);
+    const keepingUnique = <R>(work: () => Promise<R>): Promise<R> =>
+      (unique.length > 0 ? turns.take(UNIQUE_TURN, work) : work());
+    const refuseTaken = async (values: Values, key: string, alsoWritten: readonly Values[] = []): Promise<void> => {
+      if (unique.length === 0) return;
+      const held = [...(await store.all()).filter((row) => keyOf(row[pk]) !== key), ...alsoWritten];
+      const taken = unique.find((group) => group.every((field) => values[field] !== null && values[field] !== undefined)
+        && held.some((row) => group.every((field) => sameValue(row[field], values[field]))));
+      if (taken) {
+        throw new FougereError({
+          code: ErrorCode.CONFLICT,
+          message: `A row with these values already exists in ${name}: ${taken.join(', ')}.`,
+        });
+      }
+    };
     const matches = (values: Record<string, unknown>, criteria: Record<string, unknown>) =>
       Object.entries(criteria).every(([key, value]) => {
         const comparison = comparisonOf(fields[key], value);
@@ -43,16 +58,17 @@ export function storageOver(open: (entity: SchemaView, name: string) => Store): 
       const shown = selected ?? own;
       const pick = (values: Values): Values => Object.fromEntries(Object.entries(values).filter(([key]) => shown.has(key)));
 
-      const upsert = async (input: Partial<Record<string, unknown>>): Promise<Values> => {
+      const upsert = async (input: Partial<Record<string, unknown>>): Promise<Values> => keepingUnique(async () => {
         const created = applyCreate(fields, applyUpdate(fields, input));
         const id = created[pk] as string | undefined;
         if (id === undefined) throw new Error(`${name}.upsert() needs a ${pk}.`);
         const previous = await store.get(keyOf(id));
         const values = previous ? { ...previous, ...applyUpdate(fields, input) } : created;
+        await refuseTaken(values, keyOf(id));
         await store.set(keyOf(id), values);
 
         return pick(values);
-      };
+      });
 
       const prepared = async (input: Partial<Record<string, unknown>>): Promise<[string, Values]> => {
         const values = applyCreate(fields, input);
@@ -118,21 +134,29 @@ export function storageOver(open: (entity: SchemaView, name: string) => Store): 
           return inputs.length;
         },
         async create(input: Partial<Record<string, unknown>>) {
-          const [key, values] = await prepared(input);
-          await store.set(key, values);
+          return keepingUnique(async () => {
+            const [key, values] = await prepared(input);
+            await refuseTaken(values, key);
+            await store.set(key, values);
 
-          return pick(values);
+            return pick(values);
+          });
         },
         async createAll(inputs: readonly Values[]) {
-          const rows = await Promise.all(inputs.map(prepared));
-          const keys = rows.map(([key]) => key);
-          const repeated = keys.find((key, index) => keys.indexOf(key) !== index);
-          if (repeated !== undefined) {
-            throw new FougereError({ code: ErrorCode.CONFLICT, message: `${name}.createAll: '${pk}' ${JSON.stringify(repeated)} is given twice.` });
-          }
-          for (const [key, values] of rows) await store.set(key, values);
+          return keepingUnique(async () => {
+            const rows = await Promise.all(inputs.map(prepared));
+            const keys = rows.map(([key]) => key);
+            const repeated = keys.find((key, index) => keys.indexOf(key) !== index);
+            if (repeated !== undefined) {
+              throw new FougereError({ code: ErrorCode.CONFLICT, message: `${name}.createAll: '${pk}' ${JSON.stringify(repeated)} is given twice.` });
+            }
+            for (const [index, [key, values]] of rows.entries()) {
+              await refuseTaken(values, key, rows.slice(0, index).map(([, earlier]) => earlier));
+            }
+            for (const [key, values] of rows) await store.set(key, values);
 
-          return rows.map(([, values]) => pick(values));
+            return rows.map(([, values]) => pick(values));
+          });
         },
         async update(id: string, input: Values | Change<Values>) {
           return turns.take(keyOf(id), async () => {
@@ -140,9 +164,13 @@ export function storageOver(open: (entity: SchemaView, name: string) => Store): 
             if (!existing) throw new FougereError({ code: ErrorCode.NOT_FOUND, message: `No row in ${name} for ${JSON.stringify(id)}.` });
             const patch = isChange(input) ? await input(pick(existing)) : input;
             const updated = { ...existing, ...applyUpdate(fields, patch), [pk]: existing[pk] };
-            await store.set(keyOf(id), updated);
 
-            return pick(updated);
+            return keepingUnique(async () => {
+              await refuseTaken(updated, keyOf(id));
+              await store.set(keyOf(id), updated);
+
+              return pick(updated);
+            });
           });
         },
         async updateByKeys(ids: readonly string[], change: Change<Values>) {
@@ -157,7 +185,10 @@ export function storageOver(open: (entity: SchemaView, name: string) => Store): 
             for (const [key, existing] of held) {
               const patch = await change(pick(existing!));
               const values = { ...existing!, ...applyUpdate(fields, patch), [pk]: existing![pk] };
-              await store.set(key, values);
+              await keepingUnique(async () => {
+                await refuseTaken(values, key);
+                await store.set(key, values);
+              });
               updated.set(key, pick(values));
             }
 
@@ -172,6 +203,20 @@ export function storageOver(open: (entity: SchemaView, name: string) => Store): 
     return scoped();
   };
 }
+
+const UNIQUE_TURN = '\u0000unique';
+
+function uniqueGroupsOf(entity: SchemaView): readonly (readonly string[])[] {
+  const fields = Object.entries(entity.getFields());
+  const single = fields
+    .filter(([, field]) => Role.of(field).isUnique() && !Role.of(field).isPrimary())
+    .map(([key]) => [key]);
+
+  return [...single, ...entity.getUnique()];
+}
+
+const sameValue = (held: unknown, written: unknown): boolean =>
+  Object.is(held, written) || (held instanceof Date && written instanceof Date && held.getTime() === written.getTime());
 
 function compares(stored: unknown, comparison: Comparison): boolean {
   return comparisonsIn(comparison).every(([name, asked]) => {

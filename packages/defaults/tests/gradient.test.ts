@@ -18,6 +18,7 @@ import {
   created, date, entity, json, oneOf, optional, primary, readOnly, ref, text, unique, updated, writeOnly,
 } from '@fougere/schema';
 import { createSqliteSource } from '@fougere/adapter-sql';
+import { createMemorySource } from '@fougere/adapter-memory';
 import { Collect, createApp, createAppRunner, createLocalRunner, Repository, ErrorCode, frond, Invocation, migrating, Present, togetherKeyOf, type App, type Storage, type Transport } from '@fougere/core';
 import { layerOf, storageFrom } from '../src/storage/ResolvedStorage.js';
 
@@ -107,6 +108,29 @@ class CensusHandler {
   }
 }
 
+/** What `people` announces and `writing` reads — a projection of the row it is about. */
+class AuthorJoined extends Author.pick('id', 'name') {}
+
+/** Announces, and names no recipient. */
+class JoinHandler {
+  constructor(private joined: (fact: { id: string; name: string }) => Promise<void>) {}
+
+  async join(): Promise<{ id: string }> {
+    await this.joined({ id: 'a-1', name: 'Ada' });
+
+    return { id: 'a-1' };
+  }
+}
+
+const welcomed: string[] = [];
+
+/** Accepting the fact is the whole subscription. */
+class WelcomeHandler {
+  async welcome(fact: { id: string; name: string }): Promise<void> {
+    welcomed.push(fact.name);
+  }
+}
+
 interface Placement {
   /** One frond holding everything — the rung every project starts on. */
   together?: boolean;
@@ -120,6 +144,8 @@ interface Placement {
   strandCollector?: boolean;
   /** A frame over two entities, to see it refused once they are two processes. */
   frame?: boolean;
+  /** Rows in a Map rather than SQLite — a source that keeps no constraint of its own. */
+  memory?: boolean;
 }
 
 const fronds = ({ together = false, moved = false, strandCollector = false, frame = false }: Placement) => {
@@ -139,11 +165,16 @@ const fronds = ({ together = false, moved = false, strandCollector = false, fram
   const framed = frame
     ? [{ ctor: LedgerHandler, deps: [togetherKeyOf(['author', 'article'])], operations: { write: { binding: [] } } }]
     : [];
+  const announcer = { ctor: JoinHandler, deps: ['Emit<AuthorJoined>'], operations: { join: { binding: [] } } };
+  const listener = {
+    ctor: WelcomeHandler,
+    operations: { welcome: { binding: [{ name: 'fact', optional: false, source: { kind: 'fact' as const, factName: 'authorJoined' } }] } },
+  };
 
   if (together) {
     return [frond('app', {
-      entities: [Author, Article],
-      handlers: [{ ctor: AuthorHandler, repository: Author }, { ctor: ArticleHandler, repository: Article }, census, ...framed],
+      entities: [Author, Article, AuthorJoined],
+      handlers: [{ ctor: AuthorHandler, repository: Author }, { ctor: ArticleHandler, repository: Article }, census, ...framed, announcer, listener],
       presenters: [{ ctor: AuthorPresenter, presents: Author }],
       collectors: [{ ctor: CallerCollector, collects: Caller }],
       providers: [service],
@@ -152,8 +183,8 @@ const fronds = ({ together = false, moved = false, strandCollector = false, fram
 
   return [
     frond('people', {
-      entities: [Author],
-      handlers: [{ ctor: AuthorHandler, repository: Author }, ...(moved ? [] : [census]), ...framed],
+      entities: [Author, AuthorJoined],
+      handlers: [{ ctor: AuthorHandler, repository: Author }, ...(moved ? [] : [census]), ...framed, announcer],
       presenters: [{ ctor: AuthorPresenter, presents: Author }],
       // A collector lives in the frond that CONSUMES it — one in the wrong frond refuses the
       // boot, which is its own invariant and not something a placement may soften.
@@ -162,7 +193,7 @@ const fronds = ({ together = false, moved = false, strandCollector = false, fram
     }),
     frond('writing', {
       entities: [Article],
-      handlers: [{ ctor: ArticleHandler, repository: Article }, ...(moved ? [census] : [])],
+      handlers: [{ ctor: ArticleHandler, repository: Article }, ...(moved ? [census] : []), listener],
       // Stranded: `census` moved here and its collector did not follow.
       collectors: moved && !strandCollector ? [{ ctor: CallerCollector, collects: Caller }] : [],
       providers: moved ? [service] : [],
@@ -190,12 +221,13 @@ async function world(placement: Placement): Promise<World> {
   const spies = (['debug', 'info', 'log', 'warn', 'error'] as const)
     .map((method) => vi.spyOn(console, method).mockImplementation((...parts) => { said.push(parts.join(' ')); }));
 
+  const sourceAt = (file: string) => (placement.memory ? createMemorySource() : createSqliteSource({ path: join(dir, file) }));
   const storage = storageFrom(placement.split
     ? {
-      main: { source: createSqliteSource({ path: join(dir, 'app.db') }) },
-      archive: { source: createSqliteSource({ path: join(dir, 'archive.db') }), rows: ['Article'] },
+      main: { source: sourceAt('app.db') },
+      archive: { source: sourceAt('archive.db'), rows: ['Article'] },
     }
-    : { main: { source: createSqliteSource({ path: join(dir, 'app.db') }) } });
+    : { main: { source: sourceAt('app.db') } });
   const layer = layerOf(storage);
 
   let people: App;
@@ -236,6 +268,8 @@ const PLACEMENTS = {
   'two fronds, two sources': { split: true },
   'two processes': { apart: true },
   'two processes, two sources': { apart: true, split: true },
+  'one frond, in memory': { together: true, memory: true },
+  'two processes, two sources, in memory': { apart: true, split: true, memory: true },
 } satisfies Record<string, Placement>;
 
 const cases = Object.entries(PLACEMENTS);
@@ -262,6 +296,17 @@ describe('validation — the same input, the same refusal', () => {
 
     await expect(ask(one, 'author', 'create', { name: 'Ada', email: 'a@b.co', nickname: 'ada' }))
       .rejects.toMatchObject({ code: ErrorCode.VALIDATION_FAILED });
+    await one.dispose();
+  });
+});
+
+describe('Emit<T> — the listener hears it, wherever it answers', () => {
+  it.each(cases)('delivers the fact once — %s', async (_name, where) => {
+    welcomed.length = 0;
+    const one = await world(where);
+
+    await expect(ask(one, 'join', 'join', {})).resolves.toEqual({ id: 'a-1' });
+    await vi.waitFor(() => expect(welcomed).toEqual(['Ada']));
     await one.dispose();
   });
 });
@@ -307,8 +352,6 @@ describe('unique — kept at the rows, wherever they are', () => {
     const one = await world(where);
     await ask(one, 'author', 'create', { name: 'Ada', email: 'a@b.co' });
 
-    // The engine refuses, because it is the only one that can: two writes arriving together
-    // see the same absence, and the judge at the door sees only what is already stored.
     await expect(ask(one, 'author', 'create', { name: 'Bob', email: 'a@b.co' })).rejects.toThrow();
     await one.dispose();
   });
@@ -473,9 +516,6 @@ describe.todo('still unmeasured across placements', () => {
   // A middleware covers the addresses its frond SERVES — an assertion about scope, and the
   // bench varies placement, not scope. `core/tests/middleware.test.ts` is where it belongs.
   it.todo('middleware: it runs around its own frond’s addresses and around no others');
-  // An emission does not cross a process without a carrier, and that IS the invariant — what
-  // would be measured here is a carrier, which is a subject of its own.
-  it.todo('Emit<T>: reached in one process, and announced rather than carried across');
   // A LINK does cross, and `core/tests/pipe.test.ts` pins it there: it has an address, so it
   // answers the same behind `remotes:` — and its failure stops the announcement either way.
 });

@@ -1,10 +1,8 @@
 /**
  * What the place rows live in keeps, and what it only appears to.
  *
- * `unique()` reads as one promise wherever it is declared, and it is not one. The judge at the
- * facade refuses a duplicate it can SEE — a row already stored. Two writes arriving together see
- * the same absence, and only the place they land can refuse the second. SQL does, a Map does
- * not, and until now nothing said so.
+ * `unique()` reads as one promise wherever it is declared, and only the place rows live keeps it.
+ * SQL does, a Map does since the frame keeps it, files do not, and the boot says which.
  */
 import { describe, it, expect, vi } from 'vitest';
 import { createContainer } from '@fougere/container';

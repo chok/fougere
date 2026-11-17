@@ -28,7 +28,7 @@ export function createMemorySource(): Source {
     return store;
   });
 
-  return { storageFactory, name: 'memory' };
+  return { storageFactory, name: 'memory', enforces: ['unique'] };
 }
 
 const MEMORY = Format.of('source/memory')
