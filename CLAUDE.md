@@ -726,17 +726,22 @@ inheritance — and each of the three that later opened it to a list had to writ
 wins". ONE level: the frond an `extends` names may not inherit itself (`frond-extends-chain`),
 which is what keeps a cycle out without a cycle check, the way Cargo's single level does. A
 frond a family inherits from needs NO entry of its own, so what it may not be is asked of the
-NAMES rather than of the entries. A child resolves what its parent declared, because its scope hangs off its parent's: `installFrond` starts from
-`container.resolve('frond:' + under)` and `ScopeContainer.resolve` walks up on its own, so
-providers, `<E>Repository`, presenters and port keys are inherited with no mechanism at all.
-Middlewares and host ports are not — neither is a container key — so both are CARRIED lists,
-composed outside the child's own. Nesting says nothing about placement and nothing about the
-right to CALL: two fronds still reach each other through a façade or an announced fact, and
-`verify()` exempts an ancestor and no one else. What keeps that safe is the refusal: a frond a
-family inherits from may not serve (`frond-parent-serves`), may not be placed at an address
-(`frond-parent-remote`), and may not declare rows (`frond-parent-entities`) — with no façade
-nothing can call it, so nothing can move it, and it stands in every process holding one of its
-children. An entry is an object, never a string — `{ remote }` for a frond, `{ options }` for a
+NAMES rather than of the entries. A child TAKES its parent's code: it serves the parent's handlers
+(`inherited`, `boot/nesting.ts`), and its scope EXTENDS the parent's (`Container.extend()`), which
+takes the parent's registrations and builds them itself — the way `this` is the child's in a method
+the parent wrote. So `class ResendMailer extends Mailer` in the child is what the parent's
+`MailService` is handed; a scope made by `createScope()` would have asked the parent to build it, and
+the parent looks for `Mailer` at home. What the child registers passes before what it took, and a
+value the parent was handed stays one object. Middlewares and host ports are not container keys, so
+both are CARRIED lists, composed outside the child's own. Nesting says nothing about placement and nothing
+about the right to CALL: two fronds still reach each other through a façade or an announced fact, and
+`verify()` exempts an ancestor and no one else. A frond a family inherits from serves nothing itself,
+may not be placed at an address (`frond-parent-remote`), and may not declare rows
+(`frond-parent-entities`) — with no façade nothing can call it, so nothing can move it, and it stands
+in every process holding one of its children. A frond a PACKAGE brings is named by its key
+(`statesPackage`, `project/ConfigModules.ts`), so `mail: { extends: '@acme/mail' }` extends it; two
+children of one package refuse (`frond-key-taken`) until each answers under its own name. Pinned by
+`core/tests/extends-package.test.ts`. An entry is an object, never a string — `{ remote }` for a frond, `{ options }` for a
 module key — and `keyedFrondEntries` refuses a string naming the object to write, since one
 string meant an address under one key and an argument under another. `remotesOf` reads the
 `remote` of each entry; a module key is imported by the HOST, never
@@ -894,8 +899,8 @@ The scope is the FROND and the fronds under it, and no KEY widens it — the wid
 tree, and a tree is not a deployment statement. A key would break the gradient: a frond moved
 behind `fronds:` would silently leave the reach of a link its own code never mentions, and the
 gradient promises the USER CODE is identical. Nesting cannot do that, because a frond a family
-inherits from is REFUSED a placement of its own (`frond-parent-remote`) and refused handlers
-(`frond-parent-serves`) — with no façade, nothing can call it and nothing can move it, so it
+inherits from is REFUSED a placement of its own (`frond-parent-remote`) and serves nothing itself —
+its handlers are its children's — so with no façade, nothing can call it and nothing can move it, so it
 stands in every process that holds one of its children. Its links are carried down
 (`Assembly.hostPortsOf`) and composed outside the child's own, the same shape the middlewares
 needed, since a host port has no container key either. A link that must reach fronds of no common
