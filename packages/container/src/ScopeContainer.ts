@@ -16,6 +16,7 @@ export class ScopeContainer implements Container {
   private readonly toDispose: (AsyncDisposable | Disposable)[] = [];
   private readonly children: ScopeContainer[] = [];
   private readonly registry = new Map<string, Entry>();
+  private readonly inherited = new Set<string>();
   private readonly resolving: string[];
 
   private fallback: ((name: string) => unknown) | undefined;
@@ -64,6 +65,18 @@ export class ScopeContainer implements Container {
 
   createScope(): Container {
     const child = new ScopeContainer(this);
+
+    this.children.push(child);
+
+    return child;
+  }
+
+  extend(): Container {
+    const child = new ScopeContainer(this);
+    for (const [name, entry] of this.registry) {
+      child.registry.set(name, { factory: entry.factory, lifetime: entry.lifetime, dependencies: entry.dependencies });
+      child.inherited.add(name);
+    }
 
     this.children.push(child);
 
@@ -164,12 +177,13 @@ export class ScopeContainer implements Container {
   }
 
   private addEntry(name: string, entry: Entry): void {
-    if (this.registry.has(name)) {
+    if (this.registry.has(name) && !this.inherited.has(name)) {
       throw new ContainerError(
         `'${name}' is already registered in this scope. Use replace() to replace it.`,
       );
     }
 
+    this.inherited.delete(name);
     this.registry.set(name, entry);
   }
 

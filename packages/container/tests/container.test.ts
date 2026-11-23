@@ -113,6 +113,44 @@ describe('Container', () => {
     });
   });
 
+  describe('extend()', () => {
+    class Greeting {
+      constructor(private name: { value: string }) {}
+      say() { return `hello ${this.name.value}`; }
+    }
+
+    it('builds what it takes from its parent with what it registers itself', () => {
+      const parent = createContainer();
+      parent.register('Greeting', Greeting, { deps: ['Name'], lifetime: 'singleton' });
+      parent.registerValue('Name', { value: 'parent' });
+
+      const child = parent.extend();
+      child.registerValue('Name', { value: 'child' });
+
+      expect(child.resolve<Greeting>('Greeting').say()).toBe('hello child');
+      expect(parent.resolve<Greeting>('Greeting').say()).toBe('hello parent');
+    });
+
+    it('shares a value its parent was handed, and builds its own instance of a class', () => {
+      const parent = createContainer();
+      const name = { value: 'shared' };
+      parent.registerValue('Name', name);
+      parent.register('Greeting', Greeting, { deps: ['Name'], lifetime: 'singleton' });
+
+      const child = parent.extend();
+
+      expect(child.resolve('Name')).toBe(name);
+      expect(child.resolve('Greeting')).not.toBe(parent.resolve('Greeting'));
+    });
+
+    it('still refuses a name registered twice by the child itself', () => {
+      const child = createContainer().extend();
+      child.registerValue('Name', { value: 'one' });
+
+      expect(() => child.registerValue('Name', { value: 'two' })).toThrow(/already registered/);
+    });
+  });
+
   describe('dependencies()', () => {
     it('says what each registration of its own scope asks for', () => {
       const container = createContainer();

@@ -30,6 +30,9 @@ export interface Container {
   /** The child reads every registration above it; the parent closes it. */
   createScope(): Container;
 
+  /** A child that takes this scope's registrations and builds them itself, so what it registers is what they are handed. */
+  extend(): Container;
+
   /** Children first, then what this scope built, in reverse — refusals travel as one `AggregateError`. */
   dispose(): Promise<void>;
 }

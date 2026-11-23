@@ -1,40 +1,13 @@
 import type { Diagnostic } from '../diagnostic.js';
 import { frondPackage, resolveConventions, type Conventions } from '../config/Conventions.js';
-import { isFrondDescriptor, nameOf } from '../descriptor/FrondDescriptor.js';
+import { isFrondDescriptor } from '../descriptor/FrondDescriptor.js';
 import type { FrondDescriptor } from '../descriptor/FrondDescriptor.js';
-import type { ProviderEntry } from '../descriptor/ProviderEntry.js';
 import { Fronds } from '../descriptor/Fronds.js';
 import { statesModule, type FrondEntries } from '../config/FrondEntries.js';
 import { keyedFrondEntries } from '../config/KeyedFrondEntry.js';
 
-function portsOf(provider: ProviderEntry): string[] {
-  const ancestors: string[] = [];
-  for (let base = Object.getPrototypeOf(provider.ctor) as { name?: string } | null; base?.name; base = Object.getPrototypeOf(base) as { name?: string } | null) {
-    ancestors.push(base.name);
-  }
-
-  return [...(provider.implements ?? []), ...ancestors];
-}
-
-function isLink(provider: ProviderEntry): boolean {
-  return portsOf(provider).some((port) => provider.deps.includes(port));
-}
-
-function servicesInherited(parent: FrondDescriptor, child: FrondDescriptor): ProviderEntry[] {
-  const declared = new Set(child.providers.map(nameOf));
-  const realized = new Set(child.providers.filter((one) => !isLink(one)).flatMap(portsOf));
-
-  return parent.providers.filter((one) =>
-    !declared.has(nameOf(one)) && !isLink(one) && !portsOf(one).some((port) => realized.has(port)));
-}
-
 function childOf(frond: FrondDescriptor, parent: FrondDescriptor): FrondDescriptor {
-  return {
-    ...frond,
-    extends: parent.name,
-    handlers: [...parent.handlers, ...frond.handlers],
-    providers: [...frond.providers, ...servicesInherited(parent, frond)],
-  };
+  return { ...frond, extends: parent.name, handlers: [...parent.handlers, ...frond.handlers] };
 }
 
 function refuseParentEntities(
@@ -166,7 +139,7 @@ export function parentsFirst(fronds: Fronds, under: Map<string, string>): Fronds
   ]);
 }
 
-/** The fronds as the tree makes them: a child serves what its parent declares and builds its services, a parent serves nothing. */
+/** The fronds as the tree makes them: a child serves its parent's handlers, a parent serves nothing. */
 export function inherited(fronds: Fronds, under: Map<string, string>): Fronds {
   if (under.size === 0) return fronds;
 

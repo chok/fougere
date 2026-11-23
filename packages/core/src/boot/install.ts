@@ -82,8 +82,9 @@ export async function installFrond(frond: FrondDescriptor, assembly: Assembly): 
     return;
   }
 
-  const above = frond.extends ? container.resolve<Container>(`frond:${frond.extends}`) : container;
-  const scope = above.createScope();
+  const scope = frond.extends
+    ? container.resolve<Container>(`frond:${frond.extends}`).extend()
+    : container.createScope();
   const frondLog = log.child(frond.name);
   scope.registerValue('Logger', container.resolve<Logger>('Logger').child(frond.name));
 
