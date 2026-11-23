@@ -122,6 +122,14 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
   audit destination loses every `info` a service writes. What a destination receives then depends
   on the command that started the process. Measured 2026-10-01. The fix is one line: push to the
   carry first and test the threshold only before `console[method]`.
+- **A port nothing realizes is built as the abstract class itself, and answers `undefined`** —
+  `registerProviders` (`boot/providers.ts`) registers an `abstract` provider under its own name, which
+  is what makes the port answer so that `ancestorsOf` (`descriptor/bases.ts`) recognizes a class
+  extending it. With no realization, that registration is what a dependent is handed: the abstract
+  method is gone at run time, so `mailer.send()` answers `undefined` and the boot says nothing.
+  Measured 2026-11-23 with a package frond whose `Mailer` no class extends. Skipping the abstract
+  registration breaks the port detection (7 tests of `ports.test.ts`); the fix is a name the
+  container knows as DECLARED and not realized, refused by `dependency-unregistered`.
 - **A type alias of a port does not bind** — `type Log = Emit<LogLine>` then
   `constructor(private log: Log)` resolves to the key `Log`, and the boot refuses
   `'Log' is not registered`. The checker keeps the OUTER alias symbol and drops
