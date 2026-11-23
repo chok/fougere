@@ -1,6 +1,12 @@
-import { generateRoutes, type RouteDefinition } from '@fougere/adapter-rest';
 import type { App } from '@fougere/core';
-import type { Matchable } from './Matchable.js';
+import { generateRoutes, type RouteDefinition } from './RouteDefinition.js';
+
+/** One row of the canonical table, in the form this facade matches against. */
+export interface Matchable {
+  /** `route.path` split once: a literal segment, or `:name` to capture. */
+  segments: string[];
+  route: RouteDefinition;
+}
 
 export type RouteMatch =
   | { kind: 'match'; route: RouteDefinition; params: Record<string, string> }

@@ -6,8 +6,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { entity, primary, text } from '@fougere/schema';
-import { type Matchable } from '../src/Matchable.js';
-import { matchRoute, tableOf } from '../src/RouteMatch.js';
+import { matchRoute, tableOf, type Matchable } from '../src/routes/RouteMatch.js';
 
 class Post extends entity({ id: primary(), title: text() }) {}
 class Secret extends entity({ id: primary(), token: text() }) {}

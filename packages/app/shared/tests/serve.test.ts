@@ -8,6 +8,7 @@
  * What an op's return becomes on the wire is `answer`'s, in `adapter-rest`.
  */
 import '@fougere/adapter-graphql';
+import '@fougere/adapter-rest';
 import { describe, it, expect } from 'vitest';
 import { entity, primary, text } from '@fougere/schema';
 import { answerAt } from '@fougere/core';
@@ -147,18 +148,5 @@ describe('the call envelope a page knocks on', () => {
     const body = await answered!.json() as { error: { data: { code: string; message: string } } };
 
     expect(body.error.data).toMatchObject({ code: 'BAD_REQUEST', message: expect.stringMatching(/not `args` \(only fronds send `args`\)/) });
-  });
-});
-
-describe('the audience a GraphQL path selects', () => {
-  it('is the one segment after where GraphQL is mounted, on every host', async () => {
-    const { graphqlSurfaceOf } = await import('../src/graphql.js');
-
-    expect(graphqlSurfaceOf('/graphql')).toBeUndefined();
-    expect(graphqlSurfaceOf('/graphql/public')).toBe('public');
-    expect(graphqlSurfaceOf('/graphql/public?x=1')).toBe('public');
-    expect(graphqlSurfaceOf('/api/graphql/admin', '/api/graphql')).toBe('admin');
-    expect(graphqlSurfaceOf('/graphqlx/public')).toBeUndefined();
-    expect(graphqlSurfaceOf('/graphql/a/b')).toBeUndefined();
   });
 });

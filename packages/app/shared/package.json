@@ -52,7 +52,6 @@
   },
   "dependencies": {
     "@fougere/defaults": "workspace:*",
-    "@fougere/adapter-rest": "workspace:*",
     "@fougere/transport-http": "workspace:*",
     "jiti": "^2.6.1",
     "@fougere/container": "workspace:*",
@@ -60,6 +59,7 @@
     "srvx": "^1.0.5"
   },
   "devDependencies": {
+    "@fougere/adapter-rest": "workspace:*",
     "@fougere/adapter-graphql": "workspace:*",
     "@fougere/adapter-sql": "workspace:*",
     "@fougere/compiler": "workspace:*",

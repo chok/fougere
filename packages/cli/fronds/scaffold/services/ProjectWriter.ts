@@ -76,7 +76,7 @@ function hosts(): string[] {
     { devDependencies?: Record<string, string> };
 
   return Object.keys(manifest.devDependencies ?? {})
-    .filter((pkg) => pkg.startsWith('@fougere/'))
+    .filter((pkg) => pkg.startsWith('@fougere/') && !pkg.startsWith('@fougere/adapter-'))
     .map((pkg) => pkg.slice('@fougere/'.length));
 }
 

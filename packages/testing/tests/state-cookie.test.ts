@@ -3,6 +3,7 @@
  * cookie, the next request sends it back and the op reads the value — a changed cookie reads as
  * absent. Core signs; `@fougere/state-cookie` writes the line; the door carries it.
  */
+import '@fougere/adapter-rest';
 import '@fougere/state-cookie';
 import { describe, expect, it } from 'vitest';
 import { configureFougere, useFougereApp } from '@fougere/app';

@@ -2,6 +2,7 @@
  * The caller's state kept in a session: the caller holds one cookie with a reference, and every name
  * `state:` keeps in `session` lives in one row. The op is the one a cookie-kept state is written with.
  */
+import '@fougere/adapter-rest';
 import '@fougere/state-session';
 import { describe, expect, it } from 'vitest';
 import { configureFougere, useFougereApp } from '@fougere/app';

@@ -1,5 +1,4 @@
-import { createLocalRunner, envLevel, identityFromEnv, serves, setLogLevel } from '@fougere/core';
-import { prefixOf } from '@fougere/adapter-rest';
+import { createLocalRunner, envLevel, identityFromEnv, Protocols, setLogLevel } from '@fougere/core';
 import { answer as webAnswer } from '@fougere/app/answer';
 import { ALIASES, BUILD_DIRECTORY, loadConfig, registerFrondAliases, remotesOf, appOptionsFileIn } from '@fougere/core/node';
 import { readFileSync } from 'node:fs';
@@ -72,7 +71,10 @@ export default class ServeCommand {
     const { use } = (await loadConfig(root)).server ?? {};
     const { port: bound } = await serve((call, inv) => current(call, inv), { port, verify, requireIdentity, beside, answer, use });
     this.ui.step(`frond ${frond} served — POST http://127.0.0.1:${bound}/_fougere/call`);
-    if (serves(hosted.protocols, 'rest')) this.ui.info(`REST under http://127.0.0.1:${bound}${prefixOf(hosted.protocols)}`);
+    for (const [name, options] of Object.entries(hosted.protocols)) {
+      const mountedAt = Protocols.resolve(name).mountedAt?.(options);
+      if (mountedAt !== undefined) this.ui.info(`${name} under http://127.0.0.1:${bound}${mountedAt}`);
+    }
     this.ui.info(requireIdentity ? 'signed calls only (FOUGERE_ROOT_KEY is set)' : 'unsigned calls accepted — no FOUGERE_ROOT_KEY');
 
     if (hosting.watched.length === 0) {

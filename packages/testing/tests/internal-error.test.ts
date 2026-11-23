@@ -2,6 +2,7 @@
  * An error nobody wrote for a caller never leaves, whichever door the caller came in by — the rule
  * `toPublicError` states, which GraphQL did not apply: the message below reached the client whole.
  */
+import '@fougere/adapter-rest';
 import '@fougere/adapter-graphql';
 import { describe, expect, it } from 'vitest';
 import { executeOn } from '@fougere/adapter-graphql';

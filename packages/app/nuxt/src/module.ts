@@ -11,8 +11,7 @@ import {
   useLogger,
 } from '@nuxt/kit';
 import type { Nuxt } from '@nuxt/schema';
-import { Fronds, WITHOUT_GLOBAL_INSTALL, orderSeeds, serves, type ScanResult } from '@fougere/core';
-import { prefixOf } from '@fougere/app';
+import { Fronds, Protocols, WITHOUT_GLOBAL_INSTALL, orderSeeds, type ScanResult } from '@fougere/core';
 import { frondPackage, resolveConventions, keyedFrondEntries, statesModule, type Conventions } from '@fougere/core';
 import { emitFacade, emitNames, frondAliases, frondNamesOf, NAMES, REMOTES, appOptionsFileIn, appOptionsIn, setModuleLoader, loadNearestConfig, configFileNear, projectRootOf, remotesOf } from '@fougere/core/node';
 import { declaresStorage } from '@fougere/defaults';
@@ -163,10 +162,11 @@ const module = defineNuxtModule<FougereModuleOptions>({
     addServerHandler({ route: '/_fougere/call', method: 'post', handler: answering });
     addServerHandler({ route: '/_fougere/call/**', method: 'post', handler: answering });
     addPlugin({ src: runtimeResolve('plugins/session.server'), mode: 'server' });
-    if (serves(config.protocols, 'rest')) addServerHandler({ route: `${prefixOf(config.protocols)}/**`, handler: answering });
-    if (serves(config.protocols, 'graphql')) {
-      addServerHandler({ route: '/graphql', method: 'post', handler: answering });
-      addServerHandler({ route: '/graphql/**', method: 'post', handler: answering });
+    for (const [name, protocol] of Object.entries(config.protocols ?? {})) {
+      const mountedAt = Protocols.resolve(name, `protocols.${name}`).mountedAt?.(protocol);
+      if (mountedAt === undefined) continue;
+      addServerHandler({ route: mountedAt, handler: answering });
+      addServerHandler({ route: `${mountedAt}/**`, handler: answering });
     }
     addServerImportsDir(runtimeResolve('server/utils'));
 

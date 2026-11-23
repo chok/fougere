@@ -14,7 +14,7 @@ import { describe, it, expect } from 'vitest';
 import { join } from 'node:path';
 import { createLocalRunner } from '@fougere/core';
 import { Invocation } from '@fougere/core/contract';
-import { tableOf } from '@fougere/app';
+import { tableOf } from '@fougere/adapter-rest';
 import { answered, called } from './web.js';
 import { testApp } from '../src/index.js';
 

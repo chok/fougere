@@ -15,8 +15,14 @@ import { identityCardOf } from '../src/boot/card.js';
 import fixture from './fixtures-collector-input/fronds.js';
 import overrideFixture from './fixtures-operation-override/fronds.js';
 
-// What `@fougere/adapter-rest` and `-graphql` register at import — core's tests import neither.
 for (const name of ['rest', 'graphql']) Protocols.register(name, { format: Format.of(`protocol/${name}`).closed() });
+
+declare module '../src/index.js' {
+  interface FougereProtocols {
+    rest: object;
+    graphql: object;
+  }
+}
 
 describe('EffectiveOperation as the shared runtime contract', () => {
   it('carries the resolved handler, kind, provenance, placement, exposure and absence semantics', async () => {

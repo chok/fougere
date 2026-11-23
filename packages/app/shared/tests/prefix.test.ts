@@ -3,6 +3,7 @@
  * without booting; a host that routes by file is told when its file sits elsewhere.
  */
 import { afterEach, describe, it, expect } from 'vitest';
+import '@fougere/adapter-rest';
 import { answer } from '../src/answer.js';
 import { fougere } from '../src/web.js';
 import { configureFougere, useFougereApp } from '../src/boot.js';
@@ -25,6 +26,6 @@ describe('the prefix the config states', () => {
     const response = await fougere(new Request('http://localhost/api/blog/posts'));
 
     expect(response.status).toBe(404);
-    expect((await response.json() as { message: string }).message).toContain('is not under the REST prefix /v1');
+    expect((await response.json() as { message: string }).message).toContain('is under no protocol this app serves (rest under /v1)');
   });
 });

@@ -985,7 +985,7 @@ nearest file (`loadNearestConfig`). Pinned by `core/tests/values.test.ts`,
 registry (`core/src/extension/Protocol.ts`), augmented by `adapter-rest` and `adapter-graphql` at import.
 `protocols: { graphql: {} }` with no import refuses the boot naming it (`boot/protocols.ts`); an
 import alone serves nothing, since a helper imported anywhere would otherwise open `/graphql`.
-The host reads the registry (`app/shared/src/graphql.ts`) and never imports a package by name.
+An adapter registers where it is mounted (`mountedAt`) and what it answers to a `Request` (`answer`), so the host (`app/shared/src/answer.ts`, the Nuxt module, `fougere serve`) reads the registry and imports no protocol package: a config that names `rest` without importing it refuses the boot, and `ProtocolConfig` is `Record<string, never>` until an adapter augments it.
 It replaced `adapters: { rest: true }`, whose open index admitted `grapql: true` in silence and
 whose word already meant the storage engines on an entity.
 
@@ -1150,8 +1150,8 @@ Pinned by `transport/http/tests/doors.test.ts`.
 `graphqlDoor` (`adapter/graphql/src/door.ts`) reads the document inside the cycle and runs the
 engine, whose resolvers make one call per root field and per relation — all carrying the one
 request, pinned by `testing/tests/graphql-request.test.ts`. A refusal before the engine (no query, a
-body refused, a mutation over GET) answers a status and an `errors` list; the protocol registers the
-door beside `executeOn`, and the hosts resolve it without naming the package.
+body refused, a mutation over GET) answers a status and an `errors` list; the protocol's `answer` opens the
+door, and the hosts reach it through `Protocols` without naming the package.
 The terminal (`@fougere/oclif`) is a door too, and the one `trusted`: its caller is the operator on
 the machine, so a refusal reaches it whole where every other door reads `Internal error` — a
 property a door states, not a case core knows. oclif parses the flags before the cycle; the door

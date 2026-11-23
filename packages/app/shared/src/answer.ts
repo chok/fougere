@@ -1,20 +1,6 @@
 /** Every door an app opens on HTTP, answered from a Web-standard `Request` — on any runtime, a Worker included. */
-import {
-  createAppRunner,
-  ErrorCode,
-  FougereError,
-  maxBodyBytes,
-  Protocols,
-  readWithin,
-  serves,
-  type App,
-  type Door,
-} from '@fougere/core';
+import { createAppRunner, FougereError, maxBodyBytes, Protocols, readWithin, type App } from '@fougere/core';
 import { pageDoor, PARSE_ERROR } from '@fougere/transport-http/receive';
-import { describedAt, restDoor } from '@fougere/adapter-rest';
-import { GRAPHQL_PATH, graphqlSurfaceOf, type GraphQLDocument } from './graphql.js';
-import { matchRoute, tableOf } from './RouteMatch.js';
-import { jsonBodyOf } from './jsonBody.js';
 import { stateFor } from './state.js';
 
 export const CALL_PATH = '/_fougere/call';
@@ -26,15 +12,15 @@ export interface AnswerOptions {
 
 /** What the app answers to this request, or `undefined` when no door of it is the request's. */
 export async function answer(app: App, request: Request, options: AnswerOptions = {}): Promise<Response | undefined> {
-  const url = new URL(request.url);
-  const { pathname } = url;
-  const method = request.method.toUpperCase();
-  const state = () => options.state ?? stateFor(request.headers, app);
+  const state = async () => options.state ?? stateFor(request.headers, app);
+  if (request.method.toUpperCase() === 'POST' && new URL(request.url).pathname.startsWith(CALL_PATH)) return call(app, request, await state());
 
-  if (method === 'POST' && pathname.startsWith(CALL_PATH)) return call(app, request, await state());
-  if ((method === 'POST' || method === 'GET') && (pathname === GRAPHQL_PATH || graphqlSurfaceOf(pathname))) return graphql(app, request, await state());
+  for (const name of Object.keys(app.protocols)) {
+    const answered = await Protocols.resolve(name, `protocols.${name}`).answer?.(app, request, state);
+    if (answered) return answered;
+  }
 
-  return rest(app, request, state, url);
+  return undefined;
 }
 
 /** The audience this envelope serves — the path segment after `/_fougere/call`. */
@@ -62,91 +48,4 @@ async function call(app: App, request: Request, state: Record<string, unknown>):
   });
 
   return Response.json(await app.answer(door, body), { headers: response });
-}
-
-async function rest(
-  app: App,
-  request: Request,
-  state: () => Promise<Record<string, unknown>> | Record<string, unknown>,
-  url: URL,
-): Promise<Response | undefined> {
-  if (!serves(app.protocols, 'rest')) return undefined;
-
-  const method = request.method.toUpperCase();
-  const described = describedAt(app, method, url.pathname);
-  if (described) {
-    const headers = headersOf(described.headers);
-    if (described.raw) return new Response(described.data as string, { status: described.status, headers });
-
-    return Response.json(described.data, { status: described.status, headers });
-  }
-
-  const segments = url.pathname.split('/').filter(Boolean);
-  const match = matchRoute(tableOf(app), method, segments);
-  if (!match) return undefined;
-
-  if (match.kind === 'method-not-allowed') {
-    return Response.json(
-      { message: `Method ${method} not allowed on ${url.pathname} — try ${match.allow.join(', ')}`, allow: match.allow },
-      { status: 405, headers: { allow: match.allow.join(', ') } },
-    );
-  }
-
-  const { route, params } = match;
-  const { status, data, headers } = await app.answer(restDoor(route), {
-    operation: route.operationName,
-    headers: request.headers,
-    params,
-    query: Object.fromEntries(url.searchParams),
-    body: () => jsonBodyOf(request),
-    state: await state(),
-  });
-  if (status === 204) return new Response(null, { status, headers: headersOf(headers) });
-
-  return Response.json(data, { status, headers: headersOf(headers) });
-}
-
-type GraphQLDoor = Door<
-  { document: () => Promise<GraphQLDocument | undefined>; readOnly?: boolean; state: Record<string, unknown>; headers?: Headers },
-  unknown,
-  { status: number; data: unknown; headers?: Record<string, string | string[]> }
->;
-
-async function graphql(app: App, request: Request, state: Record<string, unknown>): Promise<Response | undefined> {
-  if (!serves(app.protocols, 'graphql')) return undefined;
-
-  const registered = Protocols.resolve('graphql', 'protocols.graphql') as unknown as { door: (app: App, surface?: string) => GraphQLDoor };
-  const { status, data, headers } = await app.answer(registered.door(app, graphqlSurfaceOf(new URL(request.url).pathname)), {
-    ...(request.method.toUpperCase() === 'GET'
-      ? { document: async () => documentOf(new URL(request.url).searchParams), readOnly: true }
-      : { document: async () => (await jsonBodyOf(request)) as GraphQLDocument | undefined }),
-    state,
-    headers: request.headers,
-  });
-  if (status === 200) return Response.json(data, { status, headers: headersOf(headers) });
-
-  const [first] = (data as { errors: { message: string }[] }).errors;
-
-  return Response.json({ message: first!.message, ...(data as Record<string, unknown>) }, { status });
-}
-
-function documentOf(search: URLSearchParams): GraphQLDocument {
-  const variables = search.get('variables');
-  let parsed: Record<string, unknown> | undefined;
-  try {
-    parsed = variables ? JSON.parse(variables) : undefined;
-  } catch (cause) {
-    throw new FougereError({ code: ErrorCode.BAD_REQUEST, message: 'The variables are not valid JSON.', cause });
-  }
-
-  return { query: search.get('query') ?? undefined, variables: parsed, operationName: search.get('operationName') ?? undefined };
-}
-
-function headersOf(written: Record<string, string | string[]> = {}): Headers {
-  const headers = new Headers();
-  for (const [name, value] of Object.entries(written)) {
-    for (const one of Array.isArray(value) ? value : [value]) headers.append(name, one);
-  }
-
-  return headers;
 }

@@ -1,3 +1,4 @@
+import '@fougere/adapter-memory';
 import { migrating, type App } from '@fougere/core';
 import { loadConfig, projectRootOf } from '@fougere/core/node';
 import { boot } from '@fougere/defaults';

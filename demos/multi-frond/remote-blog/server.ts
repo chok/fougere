@@ -7,6 +7,7 @@
  *   identity card `fougere sync` reads. One discovery surface, not two: a
  *   dedicated GET used to publish every entity, façade or not.
  */
+import '@fougere/adapter-rest';
 import { Hono } from 'hono';
 import { serve } from '@hono/node-server';
 import { createApp, createLocalRunner } from '@fougere/core';

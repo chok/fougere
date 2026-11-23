@@ -11,9 +11,6 @@ export {
 
 export { authOf } from './auth.js';
 
-export { tableOf } from './RouteMatch.js';
-export { prefixOf } from '@fougere/adapter-rest';
-
 export { invokeOn, sessionOn } from './invoke.js';
 
 export { errorsByField, formFieldsOf, openingOf, payloadOf, tableColumnsOf } from './FormEntity.js';
@@ -26,9 +23,5 @@ export { type TableColumn } from './TableColumn.js';
 export { SESSION_CALL, sessionOf, type SessionView } from './session.js';
 
 export { stateFor } from './state.js';
-
-export { jsonBodyOf } from './jsonBody.js';
-
-export { graphqlSurfaceOf, type GraphQLDocument } from './graphql.js';
 
 export { createMemoryStorage } from '@fougere/adapter-memory';

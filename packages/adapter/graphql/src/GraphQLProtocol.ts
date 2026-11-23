@@ -1,8 +1,7 @@
 import { Format, upperFirst, type Accepted } from '@fougere/schema';
 import { Protocols, listens, type EffectiveOperation } from '@fougere/core';
 import { rootFieldOf } from './rootFields.js';
-import { executeOn, schemaOf } from './app.js';
-import { graphqlDoor } from './door.js';
+import { answer, GRAPHQL_PATH } from './answer.js';
 
 const GRAPHQL = Format.of('protocol/graphql').closed();
 
@@ -24,10 +23,9 @@ function answersAt(operation: EffectiveOperation): string | undefined {
   return `${root} ${rootFieldOf(operation.name, upperFirst(operation.handler.address), operation)}`;
 }
 
-const served = {
+Protocols.register('graphql', {
   format: GRAPHQL,
-  executeOn,
-  door: (app: Parameters<typeof schemaOf>[0], surface?: string) => graphqlDoor(schemaOf(app, surface)),
   answersAt,
-};
-Protocols.register('graphql', served);
+  mountedAt: () => GRAPHQL_PATH,
+  answer,
+});

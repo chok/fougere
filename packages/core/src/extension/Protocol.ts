@@ -5,10 +5,12 @@ import type { FrondDescriptor } from '../descriptor/FrondDescriptor.js';
 import type { EffectiveOperation } from '../operation/EffectiveOperation.js';
 
 /** The protocols this app serves — a key per protocol, its options as the adapter states them. */
-export type ProtocolConfig = { [K in keyof FougereProtocols]?: FougereProtocols[K] };
+export type ProtocolConfig = [keyof FougereProtocols] extends [never]
+  ? Record<string, never>
+  : { [K in keyof FougereProtocols]?: FougereProtocols[K] };
 
 /** A protocol an adapter serves: what its entry admits. A host reads the rest by name. */
-export interface ProtocolType<Options = any> {
+export interface ProtocolType<Options = any, Application = any> {
   readonly format: Format<Options>;
   /**
    * The port its door's links stand in front of.
@@ -24,6 +26,13 @@ export interface ProtocolType<Options = any> {
    * Documented: [REST and GraphQL](https://fougere.dev/docs/serve/rest-graphql).
    */
   answersAt?(operation: EffectiveOperation, options: Options, frond: FrondDescriptor): string | undefined;
+  /**
+   * The path every request of this protocol sits under.
+   * Ex: `/api`.
+   */
+  mountedAt?(options: Options): string;
+  /** What this protocol answers to the request, or `undefined` when the request is not its own. */
+  answer?(app: Application, request: Request, state: () => Promise<Record<string, unknown>>): Promise<Response | undefined>;
 }
 
 /** Which adapter serves a protocol; naming it in `protocols:` is what serves it. */

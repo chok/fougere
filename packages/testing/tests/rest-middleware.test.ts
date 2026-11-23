@@ -5,7 +5,8 @@
  */
 import { describe, expect, it } from 'vitest';
 import { openApiOf, Rest, type ResponseResult, type RestRequest, type RestResponse } from '@fougere/adapter-rest';
-import { configureFougere, tableOf, useFougereApp } from '@fougere/app';
+import { configureFougere, useFougereApp } from '@fougere/app';
+import { tableOf } from '@fougere/adapter-rest';
 import { answered, called } from './web.js';
 import { createContainer } from '@fougere/container';
 import { createApp, ErrorCode, FougereError, frond } from '@fougere/core';

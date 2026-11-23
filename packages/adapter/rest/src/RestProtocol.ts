@@ -2,6 +2,7 @@ import { Format, type Accepted } from '@fougere/schema';
 import { HTTP_METHODS } from '@fougere/http';
 import { Protocols, RouteAddress, isScanned, listens, type EffectiveOperation, type FrondDescriptor, type ProtocolConfig } from '@fougere/core';
 import { routeOf } from './routes/RouteDefinition.js';
+import { answer } from './answer.js';
 
 /** Where one operation answers, when what its contract derives is not what it should be. */
 const RESPONSE = Format.of()
@@ -81,4 +82,6 @@ Protocols.register('rest', {
   port: 'Rest',
   refusals: (options: Accepted<typeof REST>, fronds) => misplaced(options.overrides, fronds),
   answersAt,
+  mountedAt: (options: Accepted<typeof REST>) => options.prefix ?? PREFIX,
+  answer,
 });

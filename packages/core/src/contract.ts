@@ -19,7 +19,7 @@ export { RouteAddress } from './wire/RouteAddress.js';
 export type { FrondCall } from './wire/FrondCall.js';
 export type { SignedCall } from './wire/SignedCall.js';
 export type { Transport } from './wire/Transport.js';
-export { ENVELOPE_BYTES, maxBodyBytes, maxFrameBytes, readWithin, setMaxBodyBytes } from './wire/BodyLimit.js';
+export { ENVELOPE_BYTES, maxBodyBytes, jsonBodyOf, maxFrameBytes, readWithin, setMaxBodyBytes } from './wire/BodyLimit.js';
 export { RPC_ADDRESS } from './wire/RpcAnswer.js';
 export type { CallPage } from './wire/CallPage.js';
 export { Page, asPage } from './wire/Page.js';

@@ -1,18 +1,11 @@
-/**
- * A web door reads a body within `maxBodyBytes`, and refuses a body that is not JSON rather than
- * reading it as `{}`. REST and GraphQL read through it here and under Nuxt — without a limit, before.
- */
 import { afterEach, describe, it, expect } from 'vitest';
-import { setMaxBodyBytes } from '@fougere/core';
-import { configureFougere } from '../src/boot.js';
-import { jsonBodyOf } from '../src/jsonBody.js';
+import { jsonBodyOf, setMaxBodyBytes } from '../src/index.js';
 
 const post = (body: string, type = 'application/json') =>
   new Request('http://localhost/api/blog/posts', { method: 'POST', body, headers: { 'content-type': type } });
 
 afterEach(() => {
   setMaxBodyBytes(2 * 1024 * 1024);
-  configureFougere({});
 });
 
 describe('a web door reading a body', () => {

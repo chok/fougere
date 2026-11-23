@@ -44,6 +44,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@fougere/adapter-memory": "workspace:*",
     "@fougere/container": "workspace:*",
     "@fougere/defaults": "workspace:*",
     "json-schema-faker": "^0.6.3",
@@ -56,6 +57,7 @@
   },
   "peerDependencies": {
     "@fougere/adapter-graphql": "workspace:*",
+    "@fougere/adapter-rest": "workspace:*",
     "@fougere/adapter-sql": "workspace:*",
     "@fougere/core": "workspace:*",
     "@fougere/observability": "workspace:*",
@@ -63,6 +65,9 @@
     "vitest": ">=2"
   },
   "peerDependenciesMeta": {
+    "@fougere/adapter-rest": {
+      "optional": true
+    },
     "@fougere/adapter-sql": {
       "optional": true
     },

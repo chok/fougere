@@ -1,7 +1,7 @@
 import { afterAll, describe, expect, it } from 'vitest';
 import { join } from 'node:path';
 import { createLocalRunner, Invocation } from '@fougere/core';
-import { tableOf } from '@fougere/app';
+import { tableOf } from '@fougere/adapter-rest';
 import { answer } from '@fougere/app/answer';
 import { executeOn, schemaOf } from '@fougere/adapter-graphql';
 import { testApp } from '../src/index.js';
