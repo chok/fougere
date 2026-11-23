@@ -1,5 +1,6 @@
 import type { Container } from '@fougere/container';
 import { directoryOf, resolveConventions, type Conventions } from '../config/Conventions.js';
+import { statesPackage } from '../config/FrondEntries.js';
 import type { Diagnostic } from '../diagnostic.js';
 import type { FrondDescriptor } from '../descriptor/FrondDescriptor.js';
 import { HOST_PORTS } from './ports.js';
@@ -13,10 +14,14 @@ export function unregistered(
 ): Diagnostic[] {
   const refused = new Map<string, Diagnostic>();
   const handlerFrond = new Map(fronds.flatMap((frond) => frond.handlers.map((handler) => [handler.name, frond.name] as const)));
+  const byName = new Map(fronds.map((frond) => [frond.name, frond]));
+  const extended = new Set(fronds.flatMap((frond) => (frond.extends ? [frond.extends] : [])));
+  const builtBy = (frond: FrondDescriptor) => [...frond.providers, ...frond.presenters, ...frond.collectors];
   for (const frond of fronds) {
-    if (!container.has(`frond:${frond.name}`)) continue;
+    if (extended.has(frond.name) || !container.has(`frond:${frond.name}`)) continue;
     const scope = container.resolve<Container>(`frond:${frond.name}`);
-    const declared = [...frond.handlers, ...frond.providers, ...frond.presenters, ...frond.collectors];
+    const parent = frond.extends ? byName.get(frond.extends) : undefined;
+    const declared = [...frond.handlers, ...builtBy(frond), ...(parent ? builtBy(parent) : [])];
     for (const { ctor, deps, filePath } of declared) {
       for (const missing of deps) {
         if (scope.has(missing) || HOST_PORTS.has(missing) || facadeServedRemotely(missing)) continue;
@@ -41,8 +46,13 @@ export function unregistered(
           frond: frond.name,
           subject: ctor.name,
           filePath,
-          message: `${ctor.name} asks for ${missing}, and nothing in the frond '${frond.name}' provides it. `
-            + `Add a class named ${missing} in ${directoryOf(frond.name, 'services', conventions)}, or check the spelling.`,
+          message: scope.declares(missing)
+            ? `${ctor.name} asks for ${missing}, a port nothing in the frond '${frond.name}' realizes. `
+              + (statesPackage(frond.name)
+                ? `Extend it — mine: { extends: '${frond.name}' } — and write a class that extends ${missing} in fronds/mine/services/.`
+                : `Write a class that extends ${missing} in ${directoryOf(frond.name, 'services', conventions)}.`)
+            : `${ctor.name} asks for ${missing}, and nothing in the frond '${frond.name}' provides it. `
+              + `Add a class named ${missing} in ${directoryOf(frond.name, 'services', conventions)}, or check the spelling.`,
         });
       }
     }

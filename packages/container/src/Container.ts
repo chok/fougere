@@ -24,6 +24,12 @@ export interface Container {
   /** Answers for this scope and its parents, and builds nothing. */
   has(name: string): boolean;
 
+  /** A name known before anything realizes it — a port: `has` stays false and `resolve` refuses until a registration stands in its place. */
+  declare(name: string): void;
+
+  /** Whether this scope or a parent declared the name, realized or not. */
+  declares(name: string): boolean;
+
   /** A resolver of last resort, consulted when no scope holds the name. */
   setFallback(resolve: (name: string) => unknown): void;
 

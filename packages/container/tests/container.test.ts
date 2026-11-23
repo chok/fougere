@@ -113,6 +113,28 @@ describe('Container', () => {
     });
   });
 
+  describe('declare()', () => {
+    it('knows a name nothing builds yet, and refuses to resolve it', () => {
+      const container = createContainer();
+      container.declare('Mailer');
+
+      expect(container.has('Mailer')).toBe(false);
+      expect(container.declares('Mailer')).toBe(true);
+      expect(() => container.resolve('Mailer')).toThrow(/'Mailer' is declared, and nothing realizes it/);
+    });
+
+    it('lets a registration stand in its place, in the scope or in one that extends it', () => {
+      const container = createContainer();
+      container.declare('Mailer');
+      const child = container.extend();
+      child.registerValue('Mailer', 'resend');
+      container.registerValue('Mailer', 'smtp');
+
+      expect(child.resolve('Mailer')).toBe('resend');
+      expect(container.resolve('Mailer')).toBe('smtp');
+    });
+  });
+
   describe('extend()', () => {
     class Greeting {
       constructor(private name: { value: string }) {}

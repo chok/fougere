@@ -69,6 +69,16 @@ describe('a frond extended from a package', () => {
     expect(sent).toBe('resend:a@b.fr');
   });
 
+  it('refuses the package alone when nothing realizes its port, naming the port', async () => {
+    await expect(welcome([pkg(false)], { '@acme/mail': {} }))
+      .rejects.toThrow(/a port nothing in the frond '@acme\/mail' realizes\. Extend it — mine: \{ extends: '@acme\/mail' \}/);
+  });
+
+  it('refuses a child that realizes nothing either, in the child', async () => {
+    await expect(welcome([pkg(false), frond('mymail')], { '@acme/mail': {}, mymail: { extends: '@acme/mail' } }))
+      .rejects.toThrow(/a port nothing in the frond 'mymail' realizes/);
+  });
+
   it('keeps the package default when the child states none', async () => {
     const mine = frond('mymail');
 

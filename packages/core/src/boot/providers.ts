@@ -79,6 +79,10 @@ export function registerProviders(
   for (const provider of frond.providers) {
     if (links.has(provider) || registered.has(nameOf(provider))) continue;
     registered.add(nameOf(provider));
+    if (provider.abstract) {
+      scope.declare(nameOf(provider));
+      continue;
+    }
     scope.register(nameOf(provider), provider.ctor, { deps: ownLogger(nameOf(provider), provider.deps), ...lifetimeOf(provider.ctor) });
   }
   registerRepositories(frond, scope, refused, ownLogger, plugged);
@@ -87,7 +91,7 @@ export function registerProviders(
     frondLog.debug(`seam ${seam} → ${links.map((one) => one.ctor.name).join(' → ')} → the realization`);
     plugged.push({ point: seam, by: 'type', frond: frond.name, answers: [...links.map(nameOf), 'the realization'] });
   }
-  for (const [port, chain] of portBindings([...frond.providers, ...realizations], (n) => scope.has(n), ports, refused)) {
+  for (const [port, chain] of portBindings([...frond.providers, ...realizations], (n) => scope.has(n) || scope.declares(n), ports, refused)) {
     if (chain.length === 0) continue;
     if (HOST_PORTS.has(port)) continue;
     const realization = chain.at(-1)!;

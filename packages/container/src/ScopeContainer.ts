@@ -9,6 +9,7 @@ interface Entry {
   lifetime: Lifetime;
   dependencies: readonly string[];
   instance?: unknown;
+  declared?: true;
 }
 
 /** A scope reaches its parent and its children through members only a scope can read. */
@@ -44,7 +45,9 @@ export class ScopeContainer implements Container {
   resolve<T>(name: string): T {
     const entry = this.registry.get(name);
 
-    if (!entry) {
+    if (!entry || entry.declared) {
+      if (this.parent?.has(name)) return this.parent.resolve<T>(name);
+      if (this.declares(name)) throw new ContainerError(`'${name}' is declared, and nothing realizes it.`);
       if (this.parent) return this.parent.resolve<T>(name);
 
       return this.buildFallback<T>(name);
@@ -55,12 +58,22 @@ export class ScopeContainer implements Container {
     return this.build<T>(name, entry);
   }
 
+  declare(name: string): void {
+    this.addEntry(name, { factory: () => undefined, lifetime: 'transient', dependencies: [], declared: true });
+  }
+
+  declares(name: string): boolean {
+    return this.registry.get(name)?.declared === true || (this.parent?.declares(name) ?? false);
+  }
+
   dependencies(): ReadonlyMap<string, readonly string[]> {
     return new Map([...this.registry].map(([name, entry]) => [name, entry.dependencies]));
   }
 
   has(name: string): boolean {
-    return this.registry.has(name) || (this.parent?.has(name) ?? false);
+    const entry = this.registry.get(name);
+
+    return (entry !== undefined && !entry.declared) || (this.parent?.has(name) ?? false);
   }
 
   createScope(): Container {
@@ -74,7 +87,7 @@ export class ScopeContainer implements Container {
   extend(): Container {
     const child = new ScopeContainer(this);
     for (const [name, entry] of this.registry) {
-      child.registry.set(name, { factory: entry.factory, lifetime: entry.lifetime, dependencies: entry.dependencies });
+      child.registry.set(name, { factory: entry.factory, lifetime: entry.lifetime, dependencies: entry.dependencies, ...(entry.declared ? { declared: true as const } : {}) });
       child.inherited.add(name);
     }
 
@@ -177,7 +190,8 @@ export class ScopeContainer implements Container {
   }
 
   private addEntry(name: string, entry: Entry): void {
-    if (this.registry.has(name) && !this.inherited.has(name)) {
+    const existing = this.registry.get(name);
+    if (existing && !existing.declared && !this.inherited.has(name)) {
       throw new ContainerError(
         `'${name}' is already registered in this scope. Use replace() to replace it.`,
       );
@@ -188,7 +202,7 @@ export class ScopeContainer implements Container {
   }
 
   private replaceEntry(name: string, entry: Entry): void {
-    if (!this.has(name)) {
+    if (!this.has(name) && !this.declares(name)) {
       throw new ContainerError(`'${name}' is not registered, so it cannot be replaced. Use register().`);
     }
 
