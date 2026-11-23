@@ -29,3 +29,8 @@ export interface FrondAttributes {
 export function statesModule(key: string): boolean {
   return key.includes('/') || key.startsWith('.');
 }
+
+/** Whether a key names an installed package, whose frond then answers under that key. */
+export function statesPackage(key: string): boolean {
+  return statesModule(key) && !key.startsWith('.') && !key.startsWith('/');
+}

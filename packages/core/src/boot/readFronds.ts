@@ -4,7 +4,7 @@ import type { HandlerEntry } from '../descriptor/HandlerEntry.js';
 import type { PresenterEntry } from '../descriptor/PresenterEntry.js';
 import { hostedBy } from './hosted.js';
 import { termRefusals } from './terms.js';
-import { nestingOf, parentsFirst } from './nesting.js';
+import { inherited, nestingOf } from './nesting.js';
 import type { Fronds } from '../descriptor/Fronds.js';
 import type { FrondDescriptor } from '../descriptor/FrondDescriptor.js';
 import { refusalOf, type Diagnostic } from '../diagnostic.js';
@@ -71,11 +71,7 @@ export async function readFronds(
   const refusal = refusalOf(refused, 'thing(s) the frond tree does not allow');
   if (refusal) throw refusal;
 
-  for (const frond of fronds) {
-    const parent = under.get(frond.name);
-    if (parent !== undefined) frond.extends = parent;
-  }
-  const ordered = parentsFirst(fronds, under);
+  const ordered = inherited(fronds, under);
 
   for (const term of options.vocabulary ?? []) term.register();
   const termRefusal = refusalOf(termRefusals(ordered, conventions), 'term(s) nothing in this process answers');

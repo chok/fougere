@@ -1,30 +1,40 @@
 import type { Diagnostic } from '../diagnostic.js';
 import { frondPackage, resolveConventions, type Conventions } from '../config/Conventions.js';
-import { isFrondDescriptor } from '../descriptor/FrondDescriptor.js';
+import { isFrondDescriptor, nameOf } from '../descriptor/FrondDescriptor.js';
 import type { FrondDescriptor } from '../descriptor/FrondDescriptor.js';
+import type { ProviderEntry } from '../descriptor/ProviderEntry.js';
 import { Fronds } from '../descriptor/Fronds.js';
 import { statesModule, type FrondEntries } from '../config/FrondEntries.js';
 import { keyedFrondEntries } from '../config/KeyedFrondEntry.js';
 
-function refuseServingParent(
-  parent: FrondDescriptor,
-  children: string[],
-  refused: Diagnostic[],
-): boolean {
-  if (parent.handlers.length === 0) return false;
+function portsOf(provider: ProviderEntry): string[] {
+  const ancestors: string[] = [];
+  for (let base = Object.getPrototypeOf(provider.ctor) as { name?: string } | null; base?.name; base = Object.getPrototypeOf(base) as { name?: string } | null) {
+    ancestors.push(base.name);
+  }
 
-  const served = [...new Set(parent.handlers.map((handler) => handler.address))];
-  refused.push({
-    severity: 'blocking',
-    code: 'frond-parent-serves',
-    filePath: parent.handlers[0]!.filePath,
-    frond: parent.name,
-    subject: parent.name,
-    message: `The frond '${parent.name}' is extended by ${children.map((one) => `'${one}'`).join(', ')}, so it cannot have handlers (${served.join(', ')}). `
-      + 'Move its handlers into one of them.',
-  });
+  return [...(provider.implements ?? []), ...ancestors];
+}
 
-  return true;
+function isLink(provider: ProviderEntry): boolean {
+  return portsOf(provider).some((port) => provider.deps.includes(port));
+}
+
+function servicesInherited(parent: FrondDescriptor, child: FrondDescriptor): ProviderEntry[] {
+  const declared = new Set(child.providers.map(nameOf));
+  const realized = new Set(child.providers.filter((one) => !isLink(one)).flatMap(portsOf));
+
+  return parent.providers.filter((one) =>
+    !declared.has(nameOf(one)) && !isLink(one) && !portsOf(one).some((port) => realized.has(port)));
+}
+
+function childOf(frond: FrondDescriptor, parent: FrondDescriptor): FrondDescriptor {
+  return {
+    ...frond,
+    extends: parent.name,
+    handlers: [...parent.handlers, ...frond.handlers],
+    providers: [...frond.providers, ...servicesInherited(parent, frond)],
+  };
 }
 
 function refuseParentEntities(
@@ -107,7 +117,7 @@ export function nestingOf(
       });
     }
 
-    if (!refuseServingParent(frond, children, refused)) refuseParentEntities(frond, children, refused, conventions, valued);
+    refuseParentEntities(frond, children, refused, conventions, valued);
   }
 
   for (const statement of statements) {
@@ -156,13 +166,26 @@ export function parentsFirst(fronds: Fronds, under: Map<string, string>): Fronds
   ]);
 }
 
+/** The fronds as the tree makes them: a child serves what its parent declares and builds its services, a parent serves nothing. */
+export function inherited(fronds: Fronds, under: Map<string, string>): Fronds {
+  if (under.size === 0) return fronds;
+
+  const byName = new Map(fronds.map((frond) => [frond.name, frond]));
+  const parents = new Set(under.values());
+  const made = fronds.map((frond): FrondDescriptor => {
+    const parent = byName.get(under.get(frond.name) ?? '');
+    if (parent) return childOf(frond, parent);
+    if (parents.has(frond.name)) return { ...frond, handlers: [] };
+
+    return frond;
+  });
+
+  return parentsFirst(Fronds.list(made), under);
+}
+
 /** The tree a boot stamps, for a reader that does not boot. */
 export function nested(fronds: Fronds, entries: FrondEntries | undefined): Fronds {
   const { under } = nestingOf(entries, fronds, undefined, true);
-  for (const frond of fronds) {
-    const parent = under.get(frond.name);
-    if (parent !== undefined) frond.extends = parent;
-  }
 
-  return parentsFirst(fronds, under);
+  return inherited(fronds, under);
 }

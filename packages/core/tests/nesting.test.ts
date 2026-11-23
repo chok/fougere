@@ -9,7 +9,7 @@ import nested from './fixtures-nesting/fronds.js';
 import { describe, it, expect } from 'vitest';
 import { createContainer } from '@fougere/container';
 import { createApp, createLocalRunner, declaredTopologyOf, verify } from '../src/index.js';
-import { nestingOf, parentsFirst } from '../src/boot/nesting.js';
+import { inherited, nestingOf, parentsFirst } from '../src/boot/nesting.js';
 import { Fronds } from '../src/descriptor/Fronds.js';
 import { Invocation } from '../src/wire/Invocation.js';
 import type { FrondDescriptor } from '../src/descriptor/FrondDescriptor.js';
@@ -63,11 +63,11 @@ describe('nestingOf', () => {
     expect(refused).toEqual([]);
   });
 
-  it('refuses a parent that serves', async () => {
-    const { refused } = nestingOf({ shop: { extends: 'cart' } }, await hosted(), undefined);
+  it('hands a parent\'s handlers to its child, which serves them', async () => {
+    const fronds = inherited(await hosted(['blog', 'shop']), new Map([['shop', 'blog']]));
 
-    expect(codesOf(refused)).toEqual(['frond-parent-serves']);
-    expect(refused[0]?.message).toContain('cannot have handlers (cart)');
+    expect(fronds.find((one) => one.name === 'blog')?.handlers).toEqual([]);
+    expect(fronds.find((one) => one.name === 'shop')?.handlers.map((one) => one.address)).toEqual(['post']);
   });
 
   it('refuses a parent placed at an address', async () => {

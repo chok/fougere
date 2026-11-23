@@ -27,7 +27,7 @@ describe('configModules', () => {
       '@acme/watch': {},
     });
 
-    expect(fronds).toEqual([{ name: 'audit', path: './lines.jsonl', handlers: [] }]);
+    expect(fronds).toEqual([{ name: '@acme/audit', path: './lines.jsonl', handlers: [] }]);
     expect(extensions.map((one) => (one as { name: string }).name)).toEqual(['watch']);
   });
 
