@@ -20,6 +20,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./positional": {
+      "types": "./dist/positional.d.ts",
+      "import": "./dist/positional.js"
     }
   },
   "files": [

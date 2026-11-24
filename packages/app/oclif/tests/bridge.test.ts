@@ -27,6 +27,14 @@ describe('an entity, as flags', () => {
     expect(Object.keys(flags)).toEqual(['cents', 'state']);
   });
 
+  it('gives by position what frond.config.ts lists, an optional one included', () => {
+    const { args, flags } = inputToShape(Product.getFields(), ['state']);
+
+    expect(Object.keys(args)).toEqual(['state']);
+    expect(args.state).toMatchObject({ required: false });
+    expect(Object.keys(flags)).toEqual(['sku', 'cents']);
+  });
+
   it('carries the field description, so `--help` restates nothing', () => {
     expect(inputToShape(Product.getFields()).args.sku).toMatchObject({ description: 'Warehouse reference' });
   });
@@ -61,6 +69,16 @@ describe('a bare parameter, as flags', () => {
     const { args } = paramsToShape([{ name: 'id', type: { name: 'string' } }]);
 
     expect(args.id).toMatchObject({ required: true });
+  });
+
+  it('gives by position the parameters frond.config.ts lists', () => {
+    const { args, flags } = paramsToShape([
+      { name: 'id', type: { name: 'string' } },
+      { name: 'process', type: { name: 'string' }, optional: true },
+    ], ['process']);
+
+    expect(Object.keys(args)).toEqual(['process']);
+    expect(Object.keys(flags)).toEqual(['id']);
   });
 
   it('skips what the framework fills, and what a flag cannot carry', () => {

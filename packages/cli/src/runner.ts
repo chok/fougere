@@ -35,9 +35,9 @@ export async function run(app: App, root = new URL('..', import.meta.url).pathna
 
   const subCommands: Record<string, ReturnType<typeof defineCommand>> = {};
 
-  for (const { name: cmdName, entity, handler: handlerEntry } of cliCommandsOf(app)) {
+  for (const { name: cmdName, entity, handler: handlerEntry, positional } of cliCommandsOf(app)) {
     const fields = entity.entityClass.getFields();
-    const args = entityToArgs(fields);
+    const args = entityToArgs(fields, positional);
 
     const appCommand = appCommands.get(cmdName);
 

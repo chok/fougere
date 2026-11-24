@@ -17,8 +17,8 @@ interface CommandMeta {
 function extractCommandMeta(app: App): CommandMeta[] {
   const commands: CommandMeta[] = [];
 
-  for (const { name, entity } of cliCommandsOf(app)) {
-    const args = Object.entries(entityToArgs(entity.entityClass.getFields())) as
+  for (const { name, entity, positional: stated } of cliCommandsOf(app)) {
+    const args = Object.entries(entityToArgs(entity.entityClass.getFields(), stated)) as
       [string, { type?: string }][];
     const positional = args.find(([, def]) => def.type === 'positional')?.[0];
 

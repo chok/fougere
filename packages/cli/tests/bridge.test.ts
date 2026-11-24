@@ -81,6 +81,13 @@ describe('entityToArgs', () => {
     expect(args.title?.type).toBe('positional');
     expect(args.count?.type).toBe('string');
   });
+
+  it('gives by position what frond.config.ts lists, an optional one included', () => {
+    const stated = entityToArgs(Wide.getFields(), ['note']);
+
+    expect(stated.note).toMatchObject({ type: 'positional', required: false });
+    expect(stated.title?.type).toBe('string');
+  });
 });
 
 describe('a flag is text, and the shape says what it stands for', () => {

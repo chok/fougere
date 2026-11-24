@@ -1,6 +1,9 @@
 import { Command, Config, handle, run as runOclif } from '@oclif/core';
 import type { App, Door, DoorOutcome, FrondDescriptor } from '@fougere/core';
 import { inputOf, inputToShape, paramsOf, paramsToShape, type Shape } from './bridge.js';
+import { positionalOf } from './positional.js';
+
+export { positionalOf } from './positional.js';
 
 interface Loadable {
   id: string;
@@ -59,7 +62,8 @@ export function commandsOf(app: App): Loadable[] {
       for (const [name, contract] of handler.operations ?? []) {
         const fields = contract.input?.getFields?.();
         const params = contract.signature?.params ?? [];
-        const shape = fields ? inputToShape(fields) : paramsToShape(params);
+        const stated = positionalOf(frond, handler.address, name);
+        const shape = fields ? inputToShape(fields, stated) : paramsToShape(params, stated);
         const door: Door<Record<string, unknown>, unknown, DoorOutcome> = {
           name: 'terminal',
           trusted: true,

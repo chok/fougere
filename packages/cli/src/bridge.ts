@@ -18,7 +18,7 @@ function suppliedIn(fields: Fields): Fields {
 }
 
 /** Convert an Entity's fields into citty args definition. */
-export function entityToArgs(fields: Fields): ArgsDef {
+export function entityToArgs(fields: Fields, stated?: readonly string[]): ArgsDef {
   const args: ArgsDef = {};
   let positionalIndex = 0;
 
@@ -37,7 +37,7 @@ export function entityToArgs(fields: Fields): ArgsDef {
     const options = shape && 'enum' in shape && shape.enum?.length
       ? shape.enum.filter((value) => value !== null).map(String)
       : undefined;
-    const positional = positionalIndex === 0
+    const positional = stated ? stated.includes(key) : positionalIndex === 0
       && common.required
       && key !== 'force'
       && options === undefined

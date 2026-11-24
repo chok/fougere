@@ -20,7 +20,10 @@ export interface Shape {
 
 const RESOLVED = new Set(['user', 'invocation', 'ctx', 'context']);
 
-export function paramsToShape(params: readonly { name: string; type: { name?: string }; optional?: boolean }[]): Shape {
+export function paramsToShape(
+  params: readonly { name: string; type: { name?: string }; optional?: boolean }[],
+  stated?: readonly string[],
+): Shape {
   const args: Record<string, unknown> = {};
   const flags: Record<string, unknown> = {};
   let positional = false;
@@ -31,8 +34,8 @@ export function paramsToShape(params: readonly { name: string; type: { name?: st
     if (!/^(string|number|boolean)$/.test(type)) continue;
 
     const required = param.optional !== true;
-    if (!positional && required && type === 'string') {
-      args[param.name] = Args.string({ required: true });
+    if (stated ? stated.includes(param.name) : !positional && required && type === 'string') {
+      args[param.name] = Args.string({ required });
       positional = true;
       continue;
     }
@@ -45,7 +48,7 @@ export function paramsToShape(params: readonly { name: string; type: { name?: st
 }
 
 /** One operation's input, as the pair oclif parses a command line into. */
-export function inputToShape(fields: Fields): Shape {
+export function inputToShape(fields: Fields, stated?: readonly string[]): Shape {
   const args: Record<string, unknown> = {};
   const flags: Record<string, unknown> = {};
   let positional = false;
@@ -61,8 +64,8 @@ export function inputToShape(fields: Fields): Shape {
       ? shape.enum.filter((value) => value !== null).map(String)
       : undefined;
 
-    if (!positional && required && type === 'text' && !options) {
-      args[key] = Args.string({ description, required: true });
+    if (stated ? stated.includes(key) : !positional && required && type === 'text' && !options) {
+      args[key] = Args.string({ description, required });
       positional = true;
       continue;
     }
