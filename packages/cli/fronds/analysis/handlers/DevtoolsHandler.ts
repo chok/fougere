@@ -1,7 +1,6 @@
 import { createHttpTransport } from '@fougere/transport-http/client';
-import type { CallPage, CallRecord } from '@fougere/core';
+import { Topology, type CallPage, type CallRecord } from '@fougere/core';
 import ProjectScan from '../services/ProjectScan.js';
-import { Topology } from '@fougere/core/node';
 
 const LOCAL = 'http://127.0.0.1:3000';
 
@@ -58,9 +57,9 @@ export default class DevtoolsHandler {
   }
 
   private async addresses(root?: string): Promise<{ url: string; frond?: string }[]> {
-    const { root: projectRoot } = await this.projectScan.at(root);
+    const { config } = await this.projectScan.at(root);
     const here = local();
-    const remotes = Object.entries(Topology.of(projectRoot).addresses())
+    const remotes = Object.entries(Topology.of(config).addresses())
       .map(([frond, url]) => ({ url: trimmed(url), frond }));
 
     return [{ url: here }, ...remotes.filter((one) => one.url !== here)];

@@ -12,7 +12,7 @@ export default defineFougere({
   protocols: { rest: { openapi: {} }, graphql: {} },
   fronds: {
     '@fougere/log': {},
-    // A frond like any other: the process fougere.topology.yaml runs it in starts its engine.
+    // A frond like any other: the process that runs it starts its engine.
     auth: betterAuth({
       user: User,
       secret: 'nuxt-blog-demo-secret-at-least-32-characters!',
@@ -26,5 +26,10 @@ export default defineFougere({
         // google: { clientId: process.env.GOOGLE_CLIENT_ID!, clientSecret: process.env.GOOGLE_CLIENT_SECRET! },
       },
     }),
+  },
+  // The blog frond runs in its own process (pnpm dev:blog). Remove these lines and the
+  // whole app runs in one process again — the code does not change by a comma.
+  processes: {
+    blog: { url: 'http://127.0.0.1:4100', fronds: ['blog'] },
   },
 });

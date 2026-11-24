@@ -19,20 +19,35 @@ function attributesOf(entry: FrondEntry, key: string): FrondAttributes {
   if (typeof entry === 'string') {
     const written = statesModule(key)
       ? `Write '${key}': { options: '${entry}' }.`
-      : `Where a frond answers is written in fougere.topology.yaml.`;
+      : `Where a frond answers is written under processes:.`;
     throw new Error(`fougere.config.ts: the entry '${key}' is a string. ${written}`);
   }
 
   return isFrondDescriptor(entry) ? {} : entry;
 }
 
-/** The fronds a process loads: the ones it runs, and the ones they extend, whose code they take. */
-export function withExtended(names: readonly string[], fronds: FrondEntries | undefined): string[] {
-  const extended = keyedFrondEntries(fronds)
-    .filter((entry) => entry.extends !== undefined && names.includes(entry.key))
+/**
+ * The fronds a process loads out of the project's: the ones it runs, and the ones they extend, whose code they take.
+ * Ex: `only: ['blgo']` refuses, naming the fronds the project has.
+ */
+export function loadedFronds<Frond extends { name: string }>(
+  fronds: readonly Frond[],
+  only: readonly string[] | undefined,
+  entries: FrondEntries | undefined,
+): Frond[] {
+  if (only === undefined) return [...fronds];
+
+  const names = fronds.map((frond) => frond.name);
+  const missing = only.filter((name) => !names.includes(name));
+  if (missing.length > 0) {
+    throw new Error(`processes: has this process run ${missing.map((name) => `'${name}'`).join(', ')}, `
+      + `which the project has no frond for. It has ${names.map((name) => `'${name}'`).join(', ') || 'none'}.`);
+  }
+  const extended = keyedFrondEntries(entries)
+    .filter((entry) => entry.extends !== undefined && only.includes(entry.key))
     .map((entry) => entry.extends as string);
 
-  return [...new Set([...extended, ...names])];
+  return fronds.filter((frond) => only.includes(frond.name) || extended.includes(frond.name));
 }
 
 /** Every frond the config states, the ones inheriting from nothing first. */

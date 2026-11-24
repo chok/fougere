@@ -44,14 +44,14 @@ posts (title, body, …)                // the table
 
 // GraphQL, or any adapter that reads an entity's schema`;
 
-const choicesSnippet = `# fougere.topology.yaml
-processes:
-  blog: { url: http://127.0.0.1:4100, fronds: [blog] }`;
+const choicesSnippet = `// fougere.config.ts
+processes: { blog: { url: 'http://127.0.0.1:4100', fronds: ['blog'] } },
+ports: { Moderation: 'ManualModeration' },`;
 
 const { data: highlighted } = await useAsyncData('home-code', async () => {
   const { highlight } = await import('~/home/code');
   const snippets = { code: codeSnippet, schema: schemaSnippet, derivation: derivationSnippet, choices: choicesSnippet };
-  const rendered = await Promise.all(Object.entries(snippets).map(async ([key, code]) => [key, await highlight(code, key === 'choices' ? 'yaml' : 'ts')] as const));
+  const rendered = await Promise.all(Object.entries(snippets).map(async ([key, code]) => [key, await highlight(code)] as const));
 
   return Object.fromEntries(rendered) as Record<string, string>;
 });

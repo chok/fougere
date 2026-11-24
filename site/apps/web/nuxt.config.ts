@@ -25,7 +25,7 @@ export default defineNuxtConfig({
   experimental: { sharedPrerenderData: false },
   // `./modules/demo` is named rather than left to the modules/ scan: it writes into
   // content/ and must run before @nuxt/content reads it.
-  modules: ['./modules/demo', './modules/tutorial', './modules/reference', './modules/managers', './modules/schemas', '@nuxt/ui', '@nuxt/content', '@nuxtjs/i18n', '@fougere/nuxt'],
+  modules: ['./modules/demo', './modules/tutorial', './modules/reference', './modules/managers', '@nuxt/ui', '@nuxt/content', '@nuxtjs/i18n', '@fougere/nuxt'],
   css: ['~/assets/css/main.css'],
   fonts: {
     families: [

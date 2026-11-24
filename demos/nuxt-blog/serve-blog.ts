@@ -2,13 +2,13 @@
  * The blog Frond, alone in its process — the gradient lived.
  *
  * Same `fronds/**` as the Nuxt app: only the runtime moves. The address is declared
- * ONCE, in `fougere.topology.yaml`, and this process binds exactly what the consumer
+ * ONCE, in `processes:` of `fougere.config.ts`, and this process binds exactly what the consumer
  * was told to call.
  */
 import { createJiti } from 'jiti';
-import { createLocalRunner, Logger, serves } from '@fougere/core';
+import { createLocalRunner, Logger, serves, Topology } from '@fougere/core';
 import { bootApp } from '@fougere/defaults';
-import { frondAliases, setModuleLoader, Topology } from '@fougere/core/node';
+import { frondAliases, setModuleLoader, loadConfig } from '@fougere/core/node';
 import { prefixOf } from '@fougere/adapter-rest';
 import { serve } from '@fougere/transport-http';
 import { answer } from '@fougere/app/answer';
@@ -25,8 +25,8 @@ const jiti = createJiti(import.meta.url, {
 });
 setModuleLoader((filePath: string) => jiti.import(filePath) as Promise<Record<string, unknown>>);
 
-const { url: address } = Topology.of(process.cwd()).placement('blog');
-if (!address) throw new Error("fougere.topology.yaml gives the process 'blog' no url, so nothing would call it.");
+const { url: address } = Topology.of(await loadConfig(process.cwd())).placement('blog');
+if (!address) throw new Error("fougere.config.ts gives the process 'blog' no url, so nothing would call it.");
 const { hostname, port: declaredPort } = new URL(address);
 
 const log = new Logger('blog-host');

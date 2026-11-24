@@ -1,6 +1,6 @@
-import { createLocalRunner, envLevel, identityFromEnv, Protocols, setLogLevel } from '@fougere/core';
+import { createLocalRunner, envLevel, identityFromEnv, Protocols, setLogLevel, Topology, type ProcessPlacement } from '@fougere/core';
 import { answer as webAnswer } from '@fougere/app/answer';
-import { ALIASES, BUILD_DIRECTORY, loadConfig, registerFrondAliases, appOptionsFileIn, Topology } from '@fougere/core/node';
+import { ALIASES, BUILD_DIRECTORY, loadConfig, registerFrondAliases, appOptionsFileIn } from '@fougere/core/node';
 import { readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
@@ -8,7 +8,6 @@ import { Registry } from '@fougere/registry';
 import { serve, type ReceiveOptions } from '@fougere/transport-http';
 import { watch } from 'node:fs';
 import type { App, Transport } from '@fougere/core';
-import type { Placement } from '@fougere/core/node';
 import type { ui as createUi } from '../../src/ui.js';
 
 type Ui = ReturnType<typeof createUi>;
@@ -45,9 +44,9 @@ export default class ServeCommand {
   async run(raw: Record<string, unknown>) {
     const running = (raw.process as string | undefined) ?? process.env[Topology.VARIABLE];
     const root = process.cwd();
-    let placement: Placement;
+    let placement: ProcessPlacement;
     try {
-      placement = Topology.of(root).placement(running);
+      placement = Topology.of(await loadConfig(root)).placement(running);
     } catch (refusal) {
       this.ui.error((refusal as Error).message);
 

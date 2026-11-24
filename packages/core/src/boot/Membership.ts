@@ -14,8 +14,8 @@ import { decoded } from '../dispatch/decoded.js';
 /** The one wording for "nobody hosts this here", with both ways out. */
 const notLoaded = (entity: string) =>
   `The frond that serves ${entity} is not in this process.\n` +
-  `  - list it in this process's fronds in fougere.topology.yaml, or\n` +
-  `  - list it in a process that has an url there`;
+  `  - leave it out of processes: in fougere.config.ts, or\n` +
+  `  - give it a process of its own there`;
 
 export function ownedBy<T>(fronds: Fronds, container: Container, entity: string, key: string): T | undefined {
   const owner = fronds.owner(entity);

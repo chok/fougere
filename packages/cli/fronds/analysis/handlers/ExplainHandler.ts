@@ -15,7 +15,7 @@ import {
 import { relative } from 'node:path';
 import ProjectScan from '../services/ProjectScan.js';
 import { ANONYMOUS_SCHEMA_NAME, type SchemaView } from '@fougere/schema';
-import { Topology } from '@fougere/core/node';
+import { Topology } from '@fougere/core';
 
 export type ExplainedBinding = Binding['source'];
 
@@ -97,7 +97,7 @@ export default class ExplainHandler {
   /** What this project serves, op by op: its kind and where each protocol answers it. */
   async list(input: { root?: string }): Promise<ExplainListing> {
     const { scan, model } = await this.modelOf(input.root);
-    const remotes = Topology.of(scan.root).addresses();
+    const remotes = Topology.of(scan.config).addresses();
     const answering = Object.keys(scan.config.protocols ?? {})
       .map((name) => [name, Protocols.find(name)] as const)
       .filter((entry): entry is readonly [string, NonNullable<typeof entry[1]>] => entry[1]?.answersAt !== undefined);
@@ -128,7 +128,7 @@ export default class ExplainHandler {
       scan,
       model: resolveEffectiveOperations(scan.fronds, {
         diagnostics: scan.diagnostics,
-        remotes: Topology.of(scan.root).addresses(),
+        remotes: Topology.of(scan.config).addresses(),
         protocols: scan.config.protocols,
       }),
     };

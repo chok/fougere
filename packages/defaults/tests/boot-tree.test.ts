@@ -2,8 +2,8 @@
  * The conventional boot, reading what a config says about its fronds.
  *
  * `core` is where the tree is judged and where a scope hangs off its parent's; what is under
- * test here is the HOST half — that `boot()` reads `fronds:` and `fougere.topology.yaml` off
- * the files at all, and hands both over.
+ * test here is the HOST half — that `boot()` reads `fronds:` and `processes:` off the
+ * file at all, and hands both over.
  */
 import { describe, it, expect } from 'vitest';
 import { join } from 'node:path';

@@ -11,7 +11,7 @@ export type { SourceEntities } from './storage/SourceEntities.js';
 export type { ResolvedStorage } from './storage/ResolvedStorage.js';
 
 export interface BootAppOptions {
-  /** The process of `fougere.topology.yaml` this boot is; absent, `FOUGERE_PROCESS`, else the app. */
+  /** The process of `processes:` this boot is; absent, `FOUGERE_PROCESS`, else the app. */
   process?: string;
   /**
    * What this app takes on beyond its fronds; a member with the same name replaces the framework's.

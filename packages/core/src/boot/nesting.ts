@@ -36,7 +36,7 @@ export function nestingOf(
   entries: FrondEntries | undefined,
   fronds: Fronds,
   remotes: Record<string, string> | undefined,
-  /** This process carries a subset of the project — its process in `fougere.topology.yaml` — so an absent name is expected. */
+  /** This process carries a subset of the project — its entry in `processes:` — so an absent name is expected. */
   narrowed = false,
   conventions: Conventions = resolveConventions(),
   /** Held as one value, which a frond a family inherits from may keep. */

@@ -64,10 +64,9 @@ None of this is written by you:
 
 Today the blog runs inside your app. Tomorrow it runs on its own server:
 
-```yaml
-# fougere.topology.yaml
-processes:
-  blog: { url: http://127.0.0.1:4100, fronds: [blog] }
+```ts
+// fougere.config.ts
+processes: { blog: { url: 'http://127.0.0.1:4100', fronds: ['blog'] } },
 ```
 
 That line is the whole change. The page still calls `publish`, and the handler is the same file;

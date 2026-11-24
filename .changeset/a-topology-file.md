@@ -8,4 +8,4 @@
 '@fougere/compiler': patch
 ---
 
-Where a frond runs is written in `fougere.topology.yaml`, beside `fougere.config.ts`: the processes the app reaches, each with its `url` and its `fronds`. The app is every frond the file places nowhere, and starts with no name; a process starts with `fougere serve <process>`, `fougere dev <process>` or `FOUGERE_PROCESS`. `remote:` on a `fronds:` entry, `only:` on `bootApp` and `FOUGERE_FRONDS` are gone. A `url` reads the environment as Compose does: `${CATALOG_URL:-binding://CATALOG}`. An editor completes the file from `https://fougere.dev/schema/topology.json`, named on its first line.
+Where a frond runs is `processes:` in `fougere.config.ts`: each process with its `url` and the fronds it runs, `{ blog: { url: 'http://127.0.0.1:4100', fronds: ['blog'] } }`. An app is every frond `processes:` places nowhere, and starts with no name; a process starts with `fougere serve <process>`, `fougere dev <process>` or `FOUGERE_PROCESS`. A process naming a frond the project does not have refuses to start. `remote:` on a `fronds:` entry, `only:` on `bootApp` and `FOUGERE_FRONDS` are gone.

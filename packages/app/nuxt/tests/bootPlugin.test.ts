@@ -125,13 +125,15 @@ describe('a storage that could not be opened', () => {
     expect(out).not.toContain('resolveStorage');
   });
 
-  it('carries the topology, because a Worker has no disk to read it from', () => {
+  it('reads processes: off the config file when the server starts, so a url read from the environment is the server\'s', () => {
     const out = generateBootPlugin(
-      {}, [], '/app/boot', [], '/app/fronds.ts', undefined, undefined, undefined,
-      [{ name: 'catalog', url: 'https://x.workers.dev', fronds: ['catalog'] }],
+      { processes: { catalog: { url: 'https://x.workers.dev', fronds: ['catalog'] } } },
+      [], '/app/boot', [], '/app/fronds.ts', undefined, '/app/fougere.config.ts',
     );
 
-    expect(out).toContain('topology: [{"name":"catalog","url":"https://x.workers.dev","fronds":["catalog"]}]');
+    expect(out).toContain("import config from '/app/fougere.config';");
+    expect(out).toContain('processes: config.processes');
+    expect(out).not.toContain('x.workers.dev');
   });
 
   it('carries `ports:`, or two realizations refuse the boot with the line that settles it written', () => {
@@ -235,7 +237,7 @@ describe('extensionsOf', () => {
         '/app/fougere.config.ts');
 
       expect(out).toContain("import config from '/app/fougere.config';");
-      expect(out).toContain('fronds: config.fronds, sources: config.sources }');
+      expect(out).toContain('fronds: config.fronds, sources: config.sources, processes: config.processes }');
     });
 
     it('opens the sources the config file holds when the server starts, not the ones the build read', () => {
@@ -251,7 +253,7 @@ describe('extensionsOf', () => {
       const out = generateBootPlugin(
         {} as FougereConfig, [], '/app/boot', [], undefined, undefined, '/app/fougere.config.ts');
 
-      expect(out).toContain('fronds: config.fronds, sources: config.sources }');
+      expect(out).toContain('fronds: config.fronds, sources: config.sources, processes: config.processes }');
     });
   });
 });

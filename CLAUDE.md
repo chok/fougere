@@ -14,7 +14,7 @@ reads nothing of `adapters:`, which only `adapter/sql` reads. The two things thi
 to call its two ideas are its two readings:
 
 1. **Single-schema** — what a definition yields is *derived* from it: one Entity class (`class Post extends entity({...})`) generates validation, DB tables (Kysely), GraphQL types (Pothos), form contracts, API surfaces.
-2. **The gradient** — how it is realized is *chosen apart* from it: a Frond (entities + handlers + collectors + seeds) runs in-process or in its own process behind JSON-RPC, with **identical user code**. `fronds:` in `fougere.config.ts` says what an app is made of — an entry per frond, whose `extends:` names the one it inherits code from, and whose key names a module when a package brings it — and `fougere.topology.yaml` says which process runs which frond, and where each answers.
+2. **The gradient** — how it is realized is *chosen apart* from it: a Frond (entities + handlers + collectors + seeds) runs in-process or in its own process behind JSON-RPC, with **identical user code**. `fronds:` in `fougere.config.ts` says what an app is made of — an entry per frond, whose `extends:` names the one it inherits code from, and whose key names a module when a package brings it — and `processes:` says which process runs which frond, and where each answers.
 
 Reference docs: `site/apps/web/content/` — `docs/` (concepts, then tasks by need, then Extending), `reference/`, and the tutorial, projected from `demos/tutorial/` by `site/apps/web/modules/tutorial.ts`. An old docs URL is a line of `site/apps/web/redirects.json`.
 
@@ -34,8 +34,8 @@ pnpm -C site migrate               # the boot only READS the schema: a SQL-file 
                                    # first (site, *-blog demos, oclif-catalog)
 pnpm -C site dev                   # :3000 — vitrine + docs + blog Frond
 pnpm -C demos/nuxt-blog dev:blog   # blog Frond alone in its process (:4100)
-pnpm -C demos/nuxt-blog dev        # Nuxt app (:3000), the process `web` of fougere.topology.yaml
-                                   # delete the topology file → same app in-process
+pnpm -C demos/nuxt-blog dev        # Nuxt app (:3000), blog reached where processes: places it
+                                   # remove processes: → same app in-process
 pnpm -C demos/schema-ecommerce dev # Apollo Server on :4000
 pnpm -C demos/container-basics dev
 pnpm -C demos/core-scanner dev
@@ -746,113 +746,21 @@ module key — and `keyedFrondEntries` refuses a string, naming where an address
 by core, and where it lands is read off its form — `up`/`down` means an extension. Pinned by
 `core/tests/{fronds-stated,nesting,stated-modules}.test.ts`.
 
-**Where each frond runs is `fougere.topology.yaml`'s, a file of DATA beside the config** —
-`Topology` (`core/src/project/Topology.ts`), `processes:` each with its `url` and its `fronds`. It lists
-the processes the app REACHES, never the app: a process with no `url` has no meaning but "the app", so
-the app is every frond the file places nowhere, and is started with no name. A process is named by
-`fougere serve <process>` or `FOUGERE_PROCESS`; a name with no file refuses. `placement(name)` is what a
-boot reads: the fronds it runs and the `url` of every frond another process runs. A frond they extend is CODE, not placement, so the topology never lists it: the boot
-loads it beside them (`withExtended`, `config/KeyedFrondEntry.ts`); `addresses()` is what a command reading the project reads.
-YAML because every language reads it, and its format is a `Format` like any entry; a `url` reads the
-environment as Compose does, `${CATALOG_URL:-binding://CATALOG}`. A frond run by two processes
-refuses. It replaced `remote:` on an entry and `only:` passed by each command, and
-`FOUGERE_FRONDS`, a third filter the Nuxt module read. A host with no disk is HANDED it: the Nuxt
-plugin carries the processes as JSON (`FougereServerConfig.topology`). Pinned by
-`core/tests/topology.test.ts` and `defaults/tests/boot-tree.test.ts`.
-
-**Config, consulted vs consumed** — `boot/apply.ts`, `applyConfig`. A value CONSULTED at use
-can move; a value CONSUMED to build something cannot. `logLevel` and `maxBodyBytes` are the
-consulted keys, and every other difference is reported as `pending`. `maxBodyBytes`
-(`wire/BodyLimit.ts`) is what a CALLER may send — every door reads it, and a hop reads it plus
-`ENVELOPE_BYTES`, the room for what a forwarding process adds; measured against the caller's
-limit alone, a body just under 1 MiB passed in process and was refused a hop away (site-only
-audit, 2026-09-23). The receivers' own `maxBodyBytes` option is gone with it: a client that
-could not see it refused at 1 MiB whatever the receiver took. Every door reads through ONE reader,
-`readWithin` (`wire/BodyLimit.ts`), which refuses on the declared length before a byte is read and
-then while counting; four doors read without a limit before it (Hono, Nuxt's REST and GraphQL
-routes, `rest` and `graphql` in `app/shared/src/web.ts`). A body that is not JSON is refused with
-415 (`UNSUPPORTED_MEDIA_TYPE`), never read as `{}`, which left the op to refuse a missing field.
-Pinned by `core/tests/body-limit.test.ts`, `app/shared/tests/web-body.test.ts`. `Logger` holds NO level:
-`setLogLevel` sets one threshold for the process. `FOUGERE_LOG_LEVEL` wins over the file. A
-re-read needs `loadConfig(root, { fresh: true })` — a module is cached by its specifier.
-Core catches no signal: a process belongs to its host. Pinned by `tests/log-level.test.ts`.
-
-**What has an AFTER can be a middleware; what has none cannot.** A middleware is `(ctx,
-next)` — it holds what comes next, so it may not run it, and it may act on what came back.
-An operation has both halves: refusing IS an answer, and the answer is worth seeing. A
-fact has neither — the announcer left with `void`, and a subscriber's answer is discarded
-— so handing a link `next` would grant only the power to suppress and leave the other half
-dead. That is why `Pipe<T>` returns a value instead of taking `next`, and it is the line
-between the two, not a convention.
-
-**What stands around a frond's calls is a link in front of `Dispatcher`** — `implements
-Partial<Dispatcher>` with `inner: Dispatcher`, a service like any other, read off its clause like any
-link (`dispatch(call: Call)`, `boot/calls.ts`). Each frond's scope answers `Dispatcher` with the rest of
-the call (`theRest`), so the port machinery builds the chain with nothing of its own, and the facade
-hands each call over as the `Call` it is. `Dispatcher<PostHandler>` is that handler's own chain, inside
-the frond's and never handed down to a child: a subject is an entity for what a thing IS
-(`Repository<Post>`), a handler for what RUNS (`Rest<PostHandler>`), and this was the case left empty. Two are ordered by the frond — `ports: { Dispatcher:
-['Timing', 'Audit'] }` in `frond.config.ts`, outside in, read beside `fougere.config.ts`'s `ports:` and
-winning for that frond — and two with no order refuse like any two links. `Middleware`, the `middlewares:`
-order and `middleware-not-extended` are gone, and so is `middlewares/`. Measured before the move: the 23
-middlewares of the tree read `context.address` and `context.operation`, both on the `Call`. Pinned by
-`core/tests/calls.test.ts`, `compiler/tests/middleware-form.test.ts`, `compiler/tests/middleware-order.test.ts`.
-A chain answers for its own frond — every ADDRESS its handlers answer to, wider than its
-entities since a handler without one runs behind it too — AND for the fronds under it in
-`FougereConfig.fronds`. How far it reaches is written nowhere else: `MiddlewareEntry.scope`
-is gone, because where a frond sits IS the reach and stating it twice put one decision in
-two places. A frond serving nothing has no address of its own, so what it declares only
-ever reaches its family — which is also why such a middleware used to run NOWHERE, in
-silence, `registerMiddlewares` looping over handlers it did not have. An ancestor's list is
-CARRIED (`Assembly.middlewaresOf`) rather than resolved: a middleware is not a container
-key, so the scope chain cannot hand it down. Its closure keeps the scope that built it, so
-it takes its dependencies from the frond that declared it — inheriting the code, not the
-context. ONE instance per frond scope — its only consumer is the dispatch, which lives as
-long as the app, so its lifetime is not a choice — built at its FIRST call and never at
-boot, because a dependency may be registered by an extension's `up`, and closed with its
-frond when it answers `[Symbol.asyncDispose]`. The price: two calls at once share it, so a
-middleware holds nothing of a call on `this` — what a call carries travels in `context`.
-It used to be built per call, to hand a request-scoped dependency its own instance; no
-such scope exists (a call is not a request, and the transport is a leaf), and five calls
-built five. `App.use` and a frond's directory are two doors onto ONE writer (`use` in
-`boot/bootstrap.ts`), and `App.use` is the HOST's — it arrives after the boot and has no
-tree. Pinned by `core/tests/middleware-frond.test.ts`.
-
-**A log line is an announced fact** — `@fougere/log`. `Emit<LogLine>` is what a frond asks
-for, and a destination is a handler accepting `Fact<LogLine>` — that signature IS the
-subscription, so two destinations both receive and none is not declaring the frond. The
-console one writes with `console[method]` and announces NOTHING: a destination that logs is
-a ring, which the emission refuses by name where the old `onLog` sink's try/catch swallowed
-it. That sink is GONE — the emission replaced its last caller, and it went with the
-module-level array it read; `LogSink` remains, as the shape of what a destination hands a
-line to. The package STATES its frond (`logFrond()`), because scanning a directory under
-`packages/` fails — see Known issues.
-
-`Logger` is a SHORTCUT over that emission: `log.info(msg)` builds the line
-`Emit<LogLine>` takes whole, and printing is part of what the shortcut IS — the console is
-written whoever else took the line, because skipping it once a destination existed made a
-devtools ring silence the terminal (306 lines in `demos/observability` became 2). So a
-destination sends a line ELSEWHERE, which is why `@fougere/log` ships a FILE and not a
-console. Announcing through `Emit<LogLine>` reaches destinations only.
-
-The SHAPE is core's too — `entityByName` gets `LogLine` when no frond declared it, or a
-destination brought by an extension is handed a line whose `at: created()` was never
-stamped. A logger a package CONSTRUCTS carries nothing: `new Logger(service)` printed and
-announced nothing, which is why `observability` resolves the app's and names a child.
-
-A `LineBuffer` is also what a TEST watches a logger through — `observability/tests/logs.test.ts`
-held the last `onLog` call sites and now names its own carry, which is the same door the
-boot uses.
-
-The lines are HELD until an emission exists, in a `LineBuffer` held PER BOOT — a process-wide
-slot sent a second app's lines to the first app's door, and only the first of three
-printed. They are handed over AFTER the ascent, because handing them over RESOLVES the
-destination and what a brought one depends on is registered by its own extension's `up`:
-`calls` registers its two rings there, and every held line died on `'LogRing' is not
-registered`. Whatever CARRIES a line writes none: `Emissions` has a logger with no carry, and
-`CARRIES_LINE` — filled by the boot from who subscribed, never written down — is read by
-`callLines`, by `trace()` and by `calls`' ring. Pinned by `log/tests/log.test.ts`
-and `demos/log-destinations`.
+**Where each frond runs is `processes:`'s** — `Topology` (`core/src/config/Topology.ts`), a reading of
+the config: each process with its `url` and its `fronds`. It lists the processes an app REACHES, never
+the app: a process with no `url` has no meaning but "the app", so an app is every frond `processes:`
+places nowhere, and starts with no name. A process is named by `fougere serve <process>` or
+`FOUGERE_PROCESS`; a name with no `processes:` refuses, and so does a frond two processes run.
+`placement(name)` is what a boot reads: the fronds it runs, the `url` of every frond another process
+runs, and what it carries (`platform`). A frond they extend is CODE, not placement: the boot loads it
+beside them, and refuses a frond the project has none of (`loadedFronds`, `config/KeyedFrondEntry.ts`).
+`fronds` is typed `NameOf<'frond'> | (string & {})`: the editor proposes the project's fronds and admits
+one whose code lives elsewhere. It was a YAML file for a day, read by every language; it came back
+here because no process outside TypeScript reads it yet, and the YAML cost the name completion, a
+published schema and a variable syntax of its own. A process in another language is HANDED what
+concerns it by whoever starts it. It replaced `remote:` on an entry, `only:` passed by each command, and
+`FOUGERE_FRONDS`, a third filter the Nuxt module read. Pinned by `core/tests/topology.test.ts` and
+`defaults/tests/boot-tree.test.ts`.
 
 **What a call writes is `@fougere/log`'s, and it rises in every process** — `log()` is an
 EXTENSION, so `fronds: { '@fougere/log': {} }` is mounted by every boot that reads the config
@@ -1004,7 +912,7 @@ whose word already meant the storage engines on an entity.
 registry answering `http`, `https` and `binding` once `@fougere/transport-http` is imported (`binding://CATALOG`
 is a Cloudflare service binding, read off `cloudflare:workers` at the first call, the way `d1` reads its
 database). The boot opens each address ONCE, before the router (`transportsOf`, `transportAtOf` in
-`boot/bootstrap.ts`), so a scheme nothing registered refuses the boot naming the url in `fougere.topology.yaml`, and the
+`boot/bootstrap.ts`), so a scheme nothing registered refuses the boot naming the url in `processes:`, and the
 router and the relation readings (`peers`, `rowHostsFor.ts`) read one table — the readings used to build a
 transport per read, and five places built their own from the address. `remoteTransport:` is the host's word
 and wins whole: no scheme and no key is read then. `@fougere/defaults` imports the package for its effect, so

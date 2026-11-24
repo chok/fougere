@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { statesModule, type FrondEntries } from '../src/config/FrondEntries.js';
-import { keyedFrondEntries, withExtended } from '../src/config/KeyedFrondEntry.js';
+import { keyedFrondEntries, loadedFronds } from '../src/config/KeyedFrondEntry.js';
 
 describe('statesModule', () => {
   it('tells a module specifier from a frond name', () => {
@@ -29,7 +29,7 @@ describe('keyedFrondEntries', () => {
     const entries = { blog: 'http://localhost:4100' } as unknown as FrondEntries;
 
     expect(() => keyedFrondEntries(entries))
-      .toThrow("the entry 'blog' is a string. Where a frond answers is written in fougere.topology.yaml.");
+      .toThrow("the entry 'blog' is a string. Where a frond answers is written under processes:.");
   });
 
   it('refuses a string under a module key too, naming options', () => {
@@ -50,12 +50,20 @@ describe('keyedFrondEntries', () => {
   });
 });
 
-describe('withExtended', () => {
+describe('loadedFronds', () => {
+  const project = [{ name: 'shop' }, { name: 'cart' }, { name: 'blog' }];
+  const entries = { shop: {}, cart: { extends: 'shop' }, blog: {} };
+
   it('loads the frond a child extends beside it, since the child takes its code', () => {
-    expect(withExtended(['cart'], { shop: {}, cart: { extends: 'shop' }, blog: {} })).toEqual(['shop', 'cart']);
+    expect(loadedFronds(project, ['cart'], entries).map((frond) => frond.name)).toEqual(['shop', 'cart']);
   });
 
-  it('loads nothing more for a frond that extends nothing', () => {
-    expect(withExtended(['blog'], { cart: { extends: 'shop' }, blog: {} })).toEqual(['blog']);
+  it('loads every frond when the process is the app', () => {
+    expect(loadedFronds(project, undefined, entries)).toHaveLength(3);
+  });
+
+  it('refuses a name the project has no frond for, naming the ones it has', () => {
+    expect(() => loadedFronds(project, ['blgo'], entries))
+      .toThrow("processes: has this process run 'blgo', which the project has no frond for. It has 'shop', 'cart', 'blog'.");
   });
 });

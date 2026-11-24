@@ -10,8 +10,8 @@
  */
 import { appOptionsOf } from '@fougere/defaults';
 import { log } from '@fougere/log';
-import { createApp, createLocalRunner, type Storage, type Transport } from '@fougere/core';
-import { Topology } from '@fougere/core/node';
+import { createApp, createLocalRunner, Topology, type Storage, type Transport } from '@fougere/core';
+import { loadConfig } from '@fougere/core/node';
 import { createContainer } from '@fougere/container';
 import { join } from 'node:path';
 import { memory } from './transport/memory.js';
@@ -43,7 +43,7 @@ async function run(name: string, chain: Transport) {
     ...statement,
     createContainer,
     storageFactory: shelf,
-    remotes: Topology.of(root).addresses(),
+    remotes: Topology.of(await loadConfig(root)).addresses(),
     remoteTransport: () => chain,
     extensions: [log()],
   });

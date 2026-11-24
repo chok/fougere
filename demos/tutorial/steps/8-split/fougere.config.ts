@@ -8,4 +8,7 @@ export default defineFougere({
   fronds: {
     '@fougere/log': {},
   },
+  processes: {
+    mail: { url: 'http://127.0.0.1:4100', fronds: ['mail'] },
+  },
 });

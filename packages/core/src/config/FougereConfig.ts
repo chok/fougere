@@ -10,6 +10,8 @@ import type { FrondEntries } from './FrondEntries.js';
 import { DEFAULT_CONVENTIONS } from './Conventions.js';
 import type { StateEntry } from '../extension/FougereStates.js';
 import type { ServerConfig } from './ServerConfig.js';
+import type { AppEntry, ProcessEntry } from './Topology.js';
+import type { Extension } from '../boot/Extension.js';
 
 export interface FougereConfig {
   /** Where entities live: a name, a type and its options, then `rows:` and `values:`. */
@@ -22,6 +24,18 @@ export interface FougereConfig {
   maxBodyBytes?: number;
   /** What this app is made of, keyed by frond name or module specifier. */
   fronds?: FrondEntries;
+  /**
+   * What every process carries beside its fronds, unless it states its own.
+   * Ex: `[log()]`.
+   */
+  platform?: readonly Extension[];
+  /** The project's apps, by their directory under `apps/`, where one differs from `platform:`. */
+  apps?: Record<string, AppEntry>;
+  /**
+   * The processes the apps reach, each with its url and the fronds it runs.
+   * Ex: `{ blog: { url: 'http://127.0.0.1:4100', fronds: ['blog'] } }`.
+   */
+  processes?: Record<string, ProcessEntry>;
   /** What answers a port — a name, or the chain from the outside in. */
   ports?: PortChoice;
   /** The protocols this app serves beside its own calls — named here, made available by an import. */

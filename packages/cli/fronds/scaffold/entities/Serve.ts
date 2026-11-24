@@ -1,7 +1,7 @@
 import { entity, text, number, optional } from "@fougere/schema";
 
-/** `fougere serve [process]` — run the app, or a process of `fougere.topology.yaml`, from what `fougere build` wrote. */
+/** `fougere serve [process]` — run the app, or a process of `processes:`, from what `fougere build` wrote. */
 export default class Serve extends entity({
-  process: optional(text({ min: 1, description: "Process of fougere.topology.yaml to run (default FOUGERE_PROCESS, else the app)" })),
+  process: optional(text({ min: 1, description: "Process of processes: to run (default FOUGERE_PROCESS, else the app)" })),
   port: optional(number({ description: "Port to listen on (default the process url, else 4100)" })),
 }) {}

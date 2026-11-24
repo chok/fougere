@@ -6,7 +6,7 @@ import { User } from './src/entities.js';
 export default defineFougere({
   sources: { main: { type: 'sqlite', path: 'fougere.db' } },
   fronds: {
-    // A frond like any other: the process fougere.topology.yaml runs it in starts its engine.
+    // A frond like any other: the process that runs it starts its engine.
     auth: betterAuth({
       user: User,
       secret: 'demo-secret-must-be-at-least-32-characters-long!',

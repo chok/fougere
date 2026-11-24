@@ -3,7 +3,7 @@
   "title": "Run mail in its *own process*",
   "concept": "configuration",
   "lede": "Mail is slow, so we run it in its own process. Only where it runs changes, not the code.",
-  "fig": "Your code says what a thing is. fougere.topology.yaml says which process runs it.",
+  "fig": "Your code says what a thing is. One line of config says which process runs it.",
   "try": {
     "command": "npx fougere dev mail   # then publish from localhost:3000/posts",
     "output": "INF [app:mail:AuditMailer] (mail:MailHandler.onPublished) sending Published: Hi"

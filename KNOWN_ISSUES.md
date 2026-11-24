@@ -5,7 +5,7 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
 - **A remote's listeners are read once.** `listenersOf` (`boot/remote.ts`) indexes the cards at
   the first `discover`, like the routes, so a subscriber added to a running remote is not seen
   until the announcer restarts. Stated 2026-10-02, the day cards began to carry `listens`.
-- **A listener in a process `fougere.topology.yaml` gives no `url` is unreachable from a served frond.**
+- **A listener in an app is unreachable from a frond another process serves** — an app has no `url`.
   The announcer calls a listener, and nothing calls a Nuxt app: `blog` behind `fougere serve`
   and `search` hosted by Nuxt reach each other in no direction. Measured 2026-10-01 on a
   scratch `shop`. Giving `search`'s process a `url`, or `blog` back in the Nuxt process, is the
@@ -206,7 +206,7 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
   (`compiler/src/compile.ts`) follows the static imports of the config and `fronds.ts`, so a module
   loaded through a path computed at run time is not in `.fougere/build/`, and `@fronds/<name>/X.ts`
   written with its `.ts` keeps it, which no file there answers. Stated 2026-10-20.
-- **A frond runs in one process of `fougere.topology.yaml`**, so the same frond cannot be deployed
+- **A frond runs in one process of `processes:`**, so the same frond cannot be deployed
   twice. A name is a frond, a type, while a deployment has instances. Not implemented.
 - **A `list` the handler writes itself carries no `total` in the admin** — `@fougere/admin`. An array has
   nowhere to hold it; a repository's `list` answers a page with `total`. Pagination stays exact (one row

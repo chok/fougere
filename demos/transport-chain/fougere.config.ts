@@ -1,4 +1,11 @@
 import { defineFougere } from '@fougere/core';
 
-/** Where each frond runs is `fougere.topology.yaml`'s, beside this file. */
-export default defineFougere({});
+/**
+ * `catalog` runs elsewhere. What this demo adds to that statement is HOW the call gets
+ * there — a list read from the outside in, the same order `ports:` already uses.
+ */
+export default defineFougere({
+  processes: {
+    catalog: { url: 'memory://catalog', fronds: ['catalog'] },
+  },
+});

@@ -11,7 +11,8 @@ export type { FougereFrondProtocols } from './descriptor/FougereFrondProtocols.j
 export type { FougereConfig } from './config/FougereConfig.js';
 export type { ServerConfig, ServerMiddleware } from './config/ServerConfig.js';
 export { statesModule, type FrondEntries, type FrondEntry } from './config/FrondEntries.js';
-export { keyedFrondEntries, withExtended, type KeyedFrondEntry } from './config/KeyedFrondEntry.js';
+export { keyedFrondEntries, loadedFronds, type KeyedFrondEntry } from './config/KeyedFrondEntry.js';
+export { Topology, type AppEntry, type ProcessEntry, type ProcessPlacement, type TopologyStatement } from './config/Topology.js';
 export { nested } from './boot/nesting.js';
 export type { AnswerFor } from './extension/AnswerFor.js';
 export type { FougereNames } from './FougereNames.js';
