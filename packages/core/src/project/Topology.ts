@@ -39,6 +39,8 @@ export interface Placement {
 export class Topology {
   static readonly FILE = 'fougere.topology.yaml';
   static readonly VARIABLE = 'FOUGERE_PROCESS';
+  /** What the file admits — the JSON Schema an editor completes it from. */
+  static readonly format = TOPOLOGY;
   private static readonly VARIABLE_REFERENCE = /\$\{([A-Za-z_][A-Za-z0-9_]*)(?::-([^}]*))?\}/g;
 
   private constructor(readonly processes: readonly TopologyProcess[]) {}
@@ -63,7 +65,7 @@ export class Topology {
    */
   static parse(text: string, environment: Record<string, string | undefined> = process.env): Topology {
     const document: unknown = parse(text) ?? {};
-    const refusal = JsonSchemaValidator.of(TOPOLOGY.schema as JsonSchema).refusalOf(document, []);
+    const refusal = JsonSchemaValidator.of(Topology.format.schema as JsonSchema).refusalOf(document, []);
     if (refusal) throw new SchemaError(`${Topology.FILE}: ${dotted(refusal.path)}: ${refusal.message}`);
 
     const { processes } = document as Required<Accepted<typeof TOPOLOGY>>;

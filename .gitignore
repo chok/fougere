@@ -42,6 +42,8 @@ site/apps/web/content/reference/0[3-9].*.md
 site/apps/web/content/reference/1[0-9].*.md
 site/apps/web/content/reference/packages/
 site/apps/web/public/demo/
+# written by site/apps/web/modules/schemas.ts
+site/apps/web/public/schema/
 
 # Rendered by `foundryctl cast` when a demo brings a collector up — local state.
 demos/*/signoz/casting.yaml.lock
