@@ -5,7 +5,7 @@ import type ProductHandler from '@fronds/catalog/handlers/ProductHandler.js';
 /**
  * Two neighbours by TYPE, and not a word about where either runs.
  *
- * `fougere.config.ts` is the whole topology statement. Uncomment a line there and this file
+ * `fougere.topology.yaml` is the whole topology statement. Uncomment a line there and this file
  * reports two network hops instead of none — without changing by a comma.
  */
 export default class CartHandler {

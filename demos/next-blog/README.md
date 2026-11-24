@@ -93,5 +93,6 @@ and `@fougere/next` is ESM-only, so the subpath does not resolve there.
 
 ## The topology is still one line
 
-`fougere.config.ts` has `remotes:` commented out. Uncomment it, start the blog frond
-in its own process, and none of the pages, the handler or the entity change.
+Write a `fougere.topology.yaml` beside `fougere.config.ts` giving `blog` a process of its own —
+`processes: { blog: { url: http://127.0.0.1:4100, fronds: [blog] } }` — start it with
+`fougere dev blog`, and none of the pages, the handler or the entity change.
