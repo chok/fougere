@@ -11,7 +11,7 @@
 import { appOptionsOf } from '@fougere/defaults';
 import { log } from '@fougere/log';
 import { createApp, createLocalRunner, type Storage, type Transport } from '@fougere/core';
-import { loadConfig, remotesOf } from '@fougere/core/node';
+import { Topology } from '@fougere/core/node';
 import { createContainer } from '@fougere/container';
 import { join } from 'node:path';
 import { memory } from './transport/memory.js';
@@ -21,7 +21,6 @@ import { cutting } from './transport/cutting.js';
 import { refusing } from './transport/refusing.js';
 
 const root = join(import.meta.dirname, '..');
-const config = await loadConfig(root);
 const statement = await appOptionsOf(root);
 
 const SHELF = [
@@ -44,7 +43,7 @@ async function run(name: string, chain: Transport) {
     ...statement,
     createContainer,
     storageFactory: shelf,
-    remotes: remotesOf(config),
+    remotes: Topology.of(root).addresses(),
     remoteTransport: () => chain,
     extensions: [log()],
   });

@@ -12,7 +12,7 @@ import ProjectScan from '../services/ProjectScan.js';
 import { readFileSync, statSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { FACADE_OUT, DEFAULT_OUT } from './BuildHandler.js';
-import { remotesOf, appOptionsFileIn, appOptionsIn } from '@fougere/core/node';
+import { Topology, appOptionsFileIn, appOptionsIn } from '@fougere/core/node';
 import type { FrondDescriptor } from '@fougere/core';
 
 export interface CheckResult {
@@ -32,7 +32,7 @@ export default class CheckHandler {
     const { fronds, diagnostics, config, root } = await this.projectScan.at(input.root);
     const model = resolveEffectiveOperations(fronds, {
       diagnostics,
-      remotes: remotesOf(config),
+      remotes: Topology.of(root).addresses(),
       protocols: config.protocols,
     });
     const findings: Diagnostic[] = [...model.diagnostics];

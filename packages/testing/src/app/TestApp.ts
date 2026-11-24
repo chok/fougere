@@ -30,9 +30,9 @@ export async function testApp(options: TestAppOptions = {}): Promise<TestApp> {
   const app = await boot({
     onEmit: (fact, payload) => { heard.push({ fact, payload }); },
     root: options.root ?? scope?.root,
-    fronds: options.fronds ?? (scope?.frond ? [scope.frond] : undefined),
-    config: options.topology ? undefined : { fronds: {} },
-    ...(options.topology ? {} : { remotes: {} }),
+    ...(options.topology
+      ? {}
+      : { only: options.fronds ?? (scope?.frond ? [scope.frond] : undefined), remotes: {}, config: { fronds: {} } }),
     storage: () => storage,
     extensions: [migrating(storage.migrate)],
   });

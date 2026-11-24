@@ -43,7 +43,7 @@ describe('configModules', () => {
   });
 
   it('says nothing about the fronds a scan finds on disk', async () => {
-    const { fronds, extensions } = await configModules({ cart: { extends: 'shop' }, blog: { remote: 'http://a' } });
+    const { fronds, extensions } = await configModules({ cart: { extends: 'shop' }, blog: {} });
 
     expect(fronds).toEqual([]);
     expect(extensions).toEqual([]);
@@ -51,7 +51,7 @@ describe('configModules', () => {
 
   it('hands over a frond the config built in place, with nothing to import', async () => {
     const auth = frond('auth');
-    const { fronds } = await configModules({ blog: { remote: 'http://127.0.0.1:4100' }, auth });
+    const { fronds } = await configModules({ blog: {}, auth });
 
     expect(fronds).toEqual([auth]);
   });

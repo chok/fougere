@@ -72,7 +72,8 @@
     "@fougere/graph": "workspace:*",
     "@fougere/registry": "workspace:*",
     "dequal": "^2.0.3",
-    "get-tsconfig": "^4.14.3"
+    "get-tsconfig": "^4.14.3",
+    "yaml": "^2.9.0"
   },
   "devDependencies": {
     "@fougere/schema": "workspace:*",

@@ -1,9 +1,9 @@
 /** Fougere server bootstrap — single entry point for an app's lifecycle, whatever hosts it. */
 import { resolve, sep } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { applyConfig, createApp, Logger, migrating } from '@fougere/core';
+import { applyConfig, createApp, Logger, migrating, withExtended } from '@fougere/core';
 import { resolveConventions } from '@fougere/core';
-import { frondAliases, loadNearestConfig, remotesOf, setModuleLoader, configModules } from '@fougere/core/node';
+import { frondAliases, loadNearestConfig, Topology, setModuleLoader, configModules, type TopologyProcess } from '@fougere/core/node';
 
 import type { App, AuthRuntime, CreateAppOptions, FougereConfig, Transport } from '@fougere/core';
 import { authOf } from './auth.js';
@@ -23,6 +23,8 @@ export interface FougereServerConfig {
   vocabulary?: CreateAppOptions['vocabulary'];
   /** What `fougere.config.ts` says, when the host already read it. */
   config?: Partial<FougereConfig>;
+  /** The processes `fougere.topology.yaml` states, when the host already read it. */
+  topology?: readonly TopologyProcess[];
   /** Who performs an outgoing call, when the default cannot. */
   remoteTransport?: (url: string) => Transport;
   /**
@@ -137,13 +139,16 @@ async function boot(): Promise<App> {
   }
 
   const stated = await configModules(fileConfig.fronds);
-  const remotes = remotesOf(fileConfig);
+  const topology = _config.topology ? Topology.from(_config.topology) : Topology.of(root);
+  const { only, remotes } = topology.placement();
+  const loaded = only && withExtended(only, fileConfig.fronds);
   const declared: Partial<Pick<CreateAppOptions, 'fronds' | 'vocabulary'>> = _config.fronds
     ? { fronds: _config.fronds, vocabulary: _config.vocabulary }
     : await appOptionsOf(root, { conventions: fileConfig.conventions });
+  const fronds = [...(declared.fronds ?? []), ...stated.fronds].filter((frond) => !loaded || loaded.includes(frond.name));
 
   const app = await createApp({
-    ...(declared.fronds || stated.fronds.length > 0 ? { fronds: [...(declared.fronds ?? []), ...stated.fronds] } : {}),
+    ...(declared.fronds || stated.fronds.length > 0 ? { fronds } : {}),
     ...(declared.vocabulary ? { vocabulary: declared.vocabulary } : {}),
     ...layerOf(storage),
     protocols: fileConfig.protocols,
@@ -151,6 +156,7 @@ async function boot(): Promise<App> {
     ports: fileConfig.ports,
     conventions: fileConfig.conventions,
     remotes,
+    narrowed: only !== undefined,
     /** Who inherits code from whom — the tree, whole, so a refusal can name where an entry sits. */
     under: fileConfig.fronds,
     remoteTransport: _config.remoteTransport,

@@ -18,7 +18,7 @@ const acrossTheWire = (run: Transport): Transport => (call, invocation) =>
 const storage = resolveStorage({ main: { type: 'sqlite', path: ':memory:' } });
 const near = await boot({
   root,
-  fronds: ['press'],
+  only: ['press'],
   config: { fronds: {} },
   remotes: { press: 'http://press.test' },
   remoteTransport: () => acrossTheWire(createLocalRunner(far)),

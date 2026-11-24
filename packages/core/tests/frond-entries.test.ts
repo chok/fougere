@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { statesModule, type FrondEntries } from '../src/config/FrondEntries.js';
-import { keyedFrondEntries } from '../src/config/KeyedFrondEntry.js';
-import { remotesOf } from '../src/config/FougereConfig.js';
+import { keyedFrondEntries, withExtended } from '../src/config/KeyedFrondEntry.js';
 
 describe('statesModule', () => {
   it('tells a module specifier from a frond name', () => {
@@ -18,21 +17,19 @@ describe('keyedFrondEntries', () => {
     expect(keyedFrondEntries({
       billing: {},
       cart: { extends: 'billing' },
-      blog: { remote: 'http://localhost:4100' },
       '@fougere/log': { options: './lines.jsonl' },
     })).toEqual([
       { key: 'billing', path: 'billing' },
-      { key: 'blog', path: 'blog', value: 'http://localhost:4100' },
       { key: '@fougere/log', path: '@fougere/log', value: './lines.jsonl' },
       { key: 'cart', path: 'billing.cart', extends: 'billing' },
     ]);
   });
 
-  it('refuses a string, naming the object to write', () => {
+  it('refuses an address written as the entry, naming the file that places a frond', () => {
     const entries = { blog: 'http://localhost:4100' } as unknown as FrondEntries;
 
     expect(() => keyedFrondEntries(entries))
-      .toThrow("the entry 'blog' is a string. Write blog: { remote: 'http://localhost:4100' }.");
+      .toThrow("the entry 'blog' is a string. Where a frond answers is written in fougere.topology.yaml.");
   });
 
   it('refuses a string under a module key too, naming options', () => {
@@ -53,13 +50,12 @@ describe('keyedFrondEntries', () => {
   });
 });
 
-describe('remotesOf', () => {
-  it('reads the address of each frond that answers elsewhere', () => {
-    expect(remotesOf({ fronds: { cart: { extends: 'billing' }, blog: { remote: 'http://localhost:4100' } } }))
-      .toEqual({ blog: 'http://localhost:4100' });
+describe('withExtended', () => {
+  it('loads the frond a child extends beside it, since the child takes its code', () => {
+    expect(withExtended(['cart'], { shop: {}, cart: { extends: 'shop' }, blog: {} })).toEqual(['shop', 'cart']);
   });
 
-  it('leaves a module argument out — it is not an address', () => {
-    expect(remotesOf({ fronds: { '@fougere/log': { options: './lines.jsonl' } } })).toEqual({});
+  it('loads nothing more for a frond that extends nothing', () => {
+    expect(withExtended(['blog'], { cart: { extends: 'shop' }, blog: {} })).toEqual(['blog']);
   });
 });

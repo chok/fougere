@@ -2,8 +2,8 @@
  * The conventional boot, reading what a config says about its fronds.
  *
  * `core` is where the tree is judged and where a scope hangs off its parent's; what is under
- * test here is the HOST half — that `boot()` reads `fronds:` off the file at all, hands the
- * tree over, and folds a string leaf into the same topology `remotes:` states.
+ * test here is the HOST half — that `boot()` reads `fronds:` and `fougere.topology.yaml` off
+ * the files at all, and hands both over.
  */
 import { describe, it, expect } from 'vitest';
 import { join } from 'node:path';
@@ -13,7 +13,7 @@ import { boot } from '../src/boot.js';
 
 const root = join(import.meta.dirname, 'fixtures-boot-tree');
 
-/** The config places `blog` at an address, and an address with no transport is refused. */
+/** The topology places `blog` at an address, and an address with no transport is refused. */
 const remoteTransport = () => async () => undefined;
 
 describe('boot, on a project whose config states a tree', () => {
@@ -25,25 +25,15 @@ describe('boot, on a project whose config states a tree', () => {
     expect(out).toBe('12.50 EUR');
   });
 
-  it('reads a string leaf as the address it is', async () => {
+  it('reaches a frond another process runs at that process url', async () => {
     await using app = await boot({ root, createContainer, remoteTransport });
 
-    // `blog: 'http://…'` in the tree says what `remotes: { blog: … }` says. This boot read
-    // neither off the file until now, so a project stating its topology got a process that
-    // believed every frond was local.
     expect(app.remotes).toEqual({ blog: 'http://127.0.0.1:4321' });
   });
 
-  it('narrows what this process carries with `only:`, which is another question', async () => {
-    await using app = await boot({ root, createContainer, remoteTransport, only: ['shop', 'cart'] });
+  it('runs, as the app, every frond the topology places nowhere else', async () => {
+    await using app = await boot({ root, createContainer, remoteTransport });
 
     expect(app.fronds.map((frond) => frond.name)).toEqual(['shop', 'cart']);
-  });
-
-  it('refuses to carry a child without the frond it inherits from', async () => {
-    // `only:` narrows what one process holds; it may not cut a family in half, since the code
-    // `cart` resolves would simply not be there.
-    await expect(boot({ root, createContainer, remoteTransport, only: ['cart'] }))
-      .rejects.toThrow(/frond-family-split[\s\S]*The frond 'cart' extends 'shop', which this process leaves out/);
   });
 });

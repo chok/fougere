@@ -3,7 +3,7 @@ import {
   type DeclaredTopology, type EntityNode, type DomainCluster,
 } from '@fougere/core';
 import ProjectScan from '../services/ProjectScan.js';
-import { remotesOf } from '@fougere/core/node';
+import { Topology } from '@fougere/core/node';
 
 export interface GraphResult {
   /** How many fronds the scan found. */
@@ -21,13 +21,13 @@ export default class GraphHandler {
 
   /** Report how a workspace's fronds and entities reference each other. */
   async execute(input: { root?: string; minEntities?: number }): Promise<GraphResult> {
-    const { fronds, config } = await this.projectScan.at(input.root);
+    const { fronds, root } = await this.projectScan.at(input.root);
     const nodes = buildGraph(fronds);
     const clusters = suggestSplit(nodes);
 
     return {
       totalFronds: fronds.length,
-      declared: declaredTopologyOf({ fronds, remotes: remotesOf(config) }),
+      declared: declaredTopologyOf({ fronds, remotes: Topology.of(root).addresses() }),
       nodes: Object.fromEntries(nodes),
       clusters,
       totalEntities: nodes.size,

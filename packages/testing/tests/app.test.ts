@@ -52,7 +52,7 @@ describe('testApp', () => {
     expect(rows).toHaveLength(0);
   });
 
-  it('boots the project as `fronds:` places it, the frond elsewhere not running', async () => {
+  it('boots as the app the topology describes, the frond elsewhere not running', async () => {
     await using app = await testApp({ root: join(import.meta.dirname, 'fixtures-topology'), topology: true });
 
     expect(app.remotes).toEqual({ billing: 'http://127.0.0.1:1' });

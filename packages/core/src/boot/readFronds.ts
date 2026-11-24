@@ -32,7 +32,7 @@ export function refuseDuplicateKeys(
         frond,
         subject: key,
         message: `The fronds '${first}' and '${frond}' both have a ${what} answering ${key}, the other in ${fileOf.get(key)}. `
-          + 'Rename one, or leave one frond out of this process (only:).',
+          + 'Rename one, or run one of them in another process (fougere.topology.yaml).',
       });
 
       return;

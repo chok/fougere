@@ -14,7 +14,7 @@ export default defineFougere({
     posts: { type: 'file', path: 'posts', rows: ['Post'] },
   },
   fronds: {
-    // A frond like any other: `only:` or an address decides which process starts its engine.
+    // A frond like any other: the process fougere.topology.yaml runs it in starts its engine.
     auth: betterAuth({
       user: User,
       secret: process.env.SITE_AUTH_SECRET ?? 'fougere-site-dev-secret-at-least-32-characters!',

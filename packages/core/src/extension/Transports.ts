@@ -5,7 +5,7 @@ import type { Transport } from '../wire/Transport.js';
 
 /**
  * What carries a call to an address whose scheme names it.
- * Ex: `http` for `remote: 'http://…'`.
+ * Ex: `http` for `url: http://…` in `fougere.topology.yaml`.
  *
  * Documented: [extension points](https://fougere.dev/docs/extending/extension-points).
  */

@@ -1,5 +1,5 @@
 /**
- * The scheme of `remote:` names what carries a call there, and one table answers every reader.
+ * The scheme of a process url names what carries a call there, and one table answers every reader.
  */
 import { describe, it, expect } from 'vitest';
 import { createContainer } from '@fougere/container';
@@ -19,7 +19,7 @@ Transports.register('probe', {
   },
 });
 
-describe('the scheme of `remote:` names its transport', () => {
+describe('the scheme of a process url names its transport', () => {
   it('opens the transport registered under it, once per address', async () => {
     opened.length = 0;
     await using app = await createApp({ fronds: [], createContainer, remotes: { catalog: 'probe://catalog' } });
@@ -32,14 +32,14 @@ describe('the scheme of `remote:` names its transport', () => {
 
   it('refuses the boot naming the entry and the schemes it knows', async () => {
     await expect(createApp({ fronds: [], createContainer, remotes: { catalog: 'tcp://127.0.0.1:4700' } }))
-      .rejects.toThrow(/fronds\.catalog\.remote: Unknown transport 'tcp'\. Known: probe\./);
+      .rejects.toThrow(/the url of 'catalog': Unknown transport 'tcp'\. Known: probe\./);
   });
 
   it('refuses an address written without its scheme', async () => {
     await expect(createApp({ fronds: [], createContainer, remotes: { catalog: 'catalog:4100' } }))
-      .rejects.toThrow(/fronds\.catalog\.remote: Unknown transport 'catalog'/);
+      .rejects.toThrow(/the url of 'catalog': Unknown transport 'catalog'/);
     await expect(createApp({ fronds: [], createContainer, remotes: { catalog: '127.0.0.1' } }))
-      .rejects.toThrow(/fronds\.catalog\.remote: '127\.0\.0\.1' is not an address/);
+      .rejects.toThrow(/the url of 'catalog': '127\.0\.0\.1' is not an address/);
   });
 
   it('leaves the registry unread when the host hands its own transport', async () => {

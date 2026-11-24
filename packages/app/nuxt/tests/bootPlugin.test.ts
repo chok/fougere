@@ -125,15 +125,13 @@ describe('a storage that could not be opened', () => {
     expect(out).not.toContain('resolveStorage');
   });
 
-  it('carries the topology, because a consumer has nothing else', () => {
-    // `fronds:` is the whole reason an app that hosts nothing boots at all, and `boot()`
-    // used to re-read it off a disk the Worker does not have.
+  it('carries the topology, because a Worker has no disk to read it from', () => {
     const out = generateBootPlugin(
-      { fronds: { catalog: { remote: 'https://x.workers.dev' } } },
-      [], '/app/boot', [], '/app/fronds.ts',
+      {}, [], '/app/boot', [], '/app/fronds.ts', undefined, undefined, undefined,
+      [{ name: 'catalog', url: 'https://x.workers.dev', fronds: ['catalog'] }],
     );
 
-    expect(out).toContain('"fronds":{"catalog":{"remote":"https://x.workers.dev"}}');
+    expect(out).toContain('topology: [{"name":"catalog","url":"https://x.workers.dev","fronds":["catalog"]}]');
   });
 
   it('carries `ports:`, or two realizations refuse the boot with the line that settles it written', () => {

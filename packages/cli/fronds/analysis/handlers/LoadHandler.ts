@@ -2,7 +2,7 @@ import { loadScript, reachableOps } from '@fougere/testing/load';
 import { writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import ProjectScan from '../services/ProjectScan.js';
-import { remotesOf } from '@fougere/core/node';
+import { Topology } from '@fougere/core/node';
 
 export interface LoadScenario {
   /** Where it was written, or `null` when it was only printed. */
@@ -25,9 +25,9 @@ export default class LoadHandler {
 
   /** Generate a k6 scenario covering every operation the default facade answers. */
   async execute(input: { root?: string; facade?: string; out?: string; force?: boolean }): Promise<LoadScenario> {
-    const { root, fronds, config } = await this.projectScan.at(input.root);
+    const { root, fronds } = await this.projectScan.at(input.root);
     const facade = input.facade?.trim() || undefined;
-    const remotes = remotesOf(config);
+    const remotes = Topology.of(root).addresses();
     const script = loadScript({ fronds }, { ...(facade ? { facade } : {}), remotes });
 
     const file = input.out === undefined ? join(root, 'load.js') : input.out || null;

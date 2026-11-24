@@ -11,7 +11,7 @@ export type FrondEntries = {
 };
 
 /**
- * An entry: `{ remote }`, `{ options }`, or the frond itself.
+ * An entry: `{ extends }`, `{ options }`, or the frond itself.
  * Ex: `auth: betterAuth({ … })`.
  */
 export type FrondEntry = FrondAttributes | FrondDescriptor;
@@ -19,8 +19,6 @@ export type FrondEntry = FrondAttributes | FrondDescriptor;
 export interface FrondAttributes {
   /** The frond this one inherits code from, one level only. */
   extends?: NameOf<'frond'> | (string & {});
-  /** Where it answers — the address of the process that serves it. */
-  remote?: string;
   /** What the host hands a module key when it imports it. */
   options?: string;
 }

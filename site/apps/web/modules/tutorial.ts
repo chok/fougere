@@ -106,7 +106,7 @@ function installOf(files: Map<string, string>, previous: Map<string, string>): s
 const linesOf = (text: string) => text.replace(/\n$/, '').split('\n');
 
 /** The order a reader meets a project in: what a thing is, what it does, then how it runs. */
-const RANK = ['/entities/', '/handlers/', '/services/', '/pages/', 'fougere.config.ts'];
+const RANK = ['/entities/', '/handlers/', '/services/', '/pages/', 'fougere.config.ts', 'fougere.topology.yaml'];
 const rank = (path: string) => {
   const at = RANK.findIndex((part) => path.includes(part));
 

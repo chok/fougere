@@ -9,7 +9,7 @@ export interface TestAppOptions {
   testPath?: string;
   /** Where the rows go. */
   db?: string;
-  /** Follows `remotes:` from the config; false by default. */
+  /** Boots as the app `fougere.topology.yaml` describes, the fronds it places reached at their url; false by default. */
   topology?: boolean;
   /** Ports answered by a double that returns nothing until the test says what. */
   stub?: Port[];

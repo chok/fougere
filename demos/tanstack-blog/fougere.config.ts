@@ -12,6 +12,5 @@ export default defineFougere({
   protocols: { rest: {} },
   fronds: {
     '@fougere/log': {},
-    // blog: { remote: 'http://127.0.0.1:4100' },
   },
 });

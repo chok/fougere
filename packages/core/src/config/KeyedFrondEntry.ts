@@ -9,7 +9,7 @@ export interface KeyedFrondEntry {
   extends?: string;
   /** The entry that named it, for a refusal that says where to look. */
   path: string;
-  /** An address for a frond that is elsewhere, an argument for a module. */
+  /** What the host hands a module when it imports it. */
   value?: string;
   /** The frond the config built in place, which the host installs like one it scanned. */
   descriptor?: FrondDescriptor;
@@ -17,12 +17,22 @@ export interface KeyedFrondEntry {
 
 function attributesOf(entry: FrondEntry, key: string): FrondAttributes {
   if (typeof entry === 'string') {
-    const written = statesModule(key) ? `{ options: '${entry}' }` : `{ remote: '${entry}' }`;
-    const named = statesModule(key) ? `'${key}'` : key;
-    throw new Error(`fougere.config.ts: the entry '${key}' is a string. Write ${named}: ${written}.`);
+    const written = statesModule(key)
+      ? `Write '${key}': { options: '${entry}' }.`
+      : `Where a frond answers is written in fougere.topology.yaml.`;
+    throw new Error(`fougere.config.ts: the entry '${key}' is a string. ${written}`);
   }
 
   return isFrondDescriptor(entry) ? {} : entry;
+}
+
+/** The fronds a process loads: the ones it runs, and the ones they extend, whose code they take. */
+export function withExtended(names: readonly string[], fronds: FrondEntries | undefined): string[] {
+  const extended = keyedFrondEntries(fronds)
+    .filter((entry) => entry.extends !== undefined && names.includes(entry.key))
+    .map((entry) => entry.extends as string);
+
+  return [...new Set([...extended, ...names])];
 }
 
 /** Every frond the config states, the ones inheriting from nothing first. */
@@ -34,7 +44,7 @@ export function keyedFrondEntries(fronds: FrondEntries | undefined): KeyedFrondE
 
     const attributes = attributesOf(value, key);
     const above = attributes.extends;
-    const carries = statesModule(key) ? attributes.options : attributes.remote;
+    const carries = statesModule(key) ? attributes.options : undefined;
 
     return {
       key,

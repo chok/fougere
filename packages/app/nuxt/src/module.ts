@@ -13,7 +13,7 @@ import {
 import type { Nuxt } from '@nuxt/schema';
 import { Fronds, Protocols, WITHOUT_GLOBAL_INSTALL, orderSeeds, type ScanResult } from '@fougere/core';
 import { frondPackage, resolveConventions, keyedFrondEntries, statesModule, type Conventions } from '@fougere/core';
-import { emitFacade, emitNames, frondAliases, frondNamesOf, NAMES, REMOTES, appOptionsFileIn, appOptionsIn, setModuleLoader, loadNearestConfig, configFileNear, projectRootOf, remotesOf } from '@fougere/core/node';
+import { emitFacade, emitNames, frondAliases, frondNamesOf, NAMES, REMOTES, appOptionsFileIn, appOptionsIn, setModuleLoader, loadNearestConfig, configFileNear, projectRootOf, Topology, type TopologyProcess } from '@fougere/core/node';
 import { declaresStorage } from '@fougere/defaults';
 import type { SeedEntry, FougereConfig } from '@fougere/core';
 import { createJiti } from 'jiti';
@@ -101,11 +101,10 @@ const module = defineNuxtModule<FougereModuleOptions>({
     const aliases = await frondAliases(scanRoot, conventions);
     installLoader(aliases);
 
-    const frondsFilter = process.env.FOUGERE_FRONDS?.split(',').map((s) => s.trim()).filter(Boolean);
     const frondsFile = appOptionsFileIn(scanRoot);
     const { scan, statement } = frondsFile
-      ? { scan: await statedIn(scanRoot, frondsFile, frondsFilter), statement: undefined }
-      : await scanned(scanRoot, frondsFilter, conventions);
+      ? { scan: await statedIn(scanRoot, frondsFile), statement: undefined }
+      : await scanned(scanRoot, conventions);
     const { fronds } = scan;
 
     const scope = `${conventions.scope}/*`;
@@ -135,7 +134,7 @@ const module = defineNuxtModule<FougereModuleOptions>({
       ...syncedEntityNames(scanRoot, conventions),
     ];
     const entityNames = [...new Set(designated)];
-    if (Object.keys(remotesOf(config)).length > 0 && entityNames.length === 0) {
+    if (Object.keys(Topology.of(scanRoot).addresses()).length > 0 && entityNames.length === 0) {
       useLogger('fougere').warn(
         'fougere: a frond runs elsewhere, and its entity names are unknown here, so the production build may rename them '
         + `and calls to it would fail. Run \`fougere sync\` to bring its entities into remotes/. ${WITHOUT_GLOBAL_INSTALL}`,
@@ -189,7 +188,7 @@ const module = defineNuxtModule<FougereModuleOptions>({
     addTemplate({
       filename: 'fougere-facade.ts',
       write: true,
-      getContents: () => emitFacade(scan, { outFile: facadeFile, remotes: remotesOf(config) }),
+      getContents: () => emitFacade(scan, { outFile: facadeFile, remotes: Topology.of(scanRoot).addresses() }),
     });
     nuxt.options.alias['@fronds/facade'] = facadeFile;
 
@@ -203,7 +202,7 @@ const module = defineNuxtModule<FougereModuleOptions>({
     const bootTpl = addTemplate({
       filename: 'fougere-boot.ts',
       write: true,
-      getContents: () => generateBootPlugin(config, allSeeds, runtimeResolve('server/utils/boot'), extensionsOf(options), statedPath, scanRoot, config.fronds || config.sources ? configFile : undefined, nuxt.options.dev ? scanRoot : null),
+      getContents: () => generateBootPlugin(config, allSeeds, runtimeResolve('server/utils/boot'), extensionsOf(options), statedPath, scanRoot, config.fronds || config.sources ? configFile : undefined, nuxt.options.dev ? scanRoot : null, Topology.of(scanRoot).processes),
     });
     addServerPlugin(bootTpl.dst);
 
@@ -226,16 +225,16 @@ function carried(config: FougereConfig): Partial<FougereConfig> {
 }
 
 
-async function statedIn(root: string, frondsFile: string, only: string[] | undefined): Promise<ScanResult> {
-  return { root, fronds: Fronds.list((await appOptionsIn(frondsFile, only)).fronds), diagnostics: [] };
+async function statedIn(root: string, frondsFile: string): Promise<ScanResult> {
+  return { root, fronds: Fronds.list((await appOptionsIn(frondsFile)).fronds), diagnostics: [] };
 }
 
-async function scanned(root: string, only: string[] | undefined, conventions: Conventions): Promise<{ scan: ScanResult; statement: string }> {
+async function scanned(root: string, conventions: Conventions): Promise<{ scan: ScanResult; statement: string }> {
   const compiler = await import('@fougere/compiler').catch((error: NodeJS.ErrnoException) => {
     if (error.code !== 'ERR_MODULE_NOT_FOUND') throw error;
     throw new Error(`${root} has no fronds.ts and @fougere/compiler is not installed. Run \`fougere build\`, or install @fougere/compiler. ${WITHOUT_GLOBAL_INSTALL}`);
   });
-  const scan = await compiler.scanProject(root, only, conventions);
+  const scan = await compiler.scanProject(root, undefined, conventions);
 
   return { scan, statement: compiler.emitAppOptions(scan) };
 }
@@ -263,6 +262,8 @@ export function generateBootPlugin(
   root?: string,
   configFile?: string,
   storageRoot: string | null | undefined = root,
+  /** The processes `fougere.topology.yaml` states, carried since a Worker has no disk to read them from. */
+  processes: readonly TopologyProcess[] = [],
 ): string {
   const lines: string[] = [];
   lines.push(`// Auto-generated by @fougere/nuxt — do not edit`);
@@ -271,6 +272,7 @@ export function generateBootPlugin(
   if (statedPath) lines.push(`import fronds, * as statement from '${statedPath.replace(/\.(m?)[jt]sx?$/, '')}';`);
   if (configFile) lines.push(`import config from '${configFile.replace(/\.(m?)[jt]sx?$/, '')}';`);
   const configArg = configFile ? `{ ...${JSON.stringify(carried(config))}, fronds: config.fronds, sources: config.sources }` : JSON.stringify(carried(config));
+  const topologyArg = processes.length > 0 ? `, topology: ${JSON.stringify(processes)}` : '';
 
   const moduleKeys = keyedFrondEntries(config.fronds).map((entry) => entry.key).filter(statesModule);
   if (moduleKeys.length > 0) {
@@ -290,7 +292,7 @@ export function generateBootPlugin(
     lines.push(``);
     lines.push(`export default defineNitroPlugin(() => {`);
     const states = statedPath ? 'fronds, vocabulary: statement.vocabulary, ' : '';
-    lines.push(`  configureFougere({ ${states}config: ${configArg} });`);
+    lines.push(`  configureFougere({ ${states}config: ${configArg}${topologyArg} });`);
     lines.push(`});`);
 
     return lines.join('\n') + '\n';
@@ -310,7 +312,7 @@ export function generateBootPlugin(
 
   lines.push(`export default defineNitroPlugin(async (nitroApp) => {`);
   const states = statedPath ? 'fronds, vocabulary: statement.vocabulary, ' : '';
-  lines.push(`  configureFougere({ ${states}config: ${configArg} });`);
+  lines.push(`  configureFougere({ ${states}config: ${configArg}${topologyArg} });`);
   lines.push(``);
   lines.push(`  try {`);
   const rootArg = storageRoot ? `, ${JSON.stringify(storageRoot)}` : '';
@@ -319,7 +321,7 @@ export function generateBootPlugin(
   lines.push(``);
   lines.push(`    configureFougere({`);
   if (statedPath) lines.push(`      fronds,`, `      vocabulary: statement.vocabulary,`);
-  lines.push(`      config: ${configArg},`);
+  lines.push(`      config: ${configArg}${topologyArg},`);
   lines.push(`      storage,`);
   lines.push(`      extensions: [`);
 

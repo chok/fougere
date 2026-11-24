@@ -1,6 +1,6 @@
 import { createLocalRunner, envLevel, identityFromEnv, Protocols, setLogLevel } from '@fougere/core';
 import { answer as webAnswer } from '@fougere/app/answer';
-import { ALIASES, BUILD_DIRECTORY, loadConfig, registerFrondAliases, remotesOf, appOptionsFileIn } from '@fougere/core/node';
+import { ALIASES, BUILD_DIRECTORY, loadConfig, registerFrondAliases, appOptionsFileIn, Topology } from '@fougere/core/node';
 import { readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
@@ -8,6 +8,7 @@ import { Registry } from '@fougere/registry';
 import { serve, type ReceiveOptions } from '@fougere/transport-http';
 import { watch } from 'node:fs';
 import type { App, Transport } from '@fougere/core';
+import type { Placement } from '@fougere/core/node';
 import type { ui as createUi } from '../../src/ui.js';
 
 type Ui = ReturnType<typeof createUi>;
@@ -22,7 +23,7 @@ export interface Hosting {
   watched: string[];
 }
 
-/** One frond, alone in this process, served over HTTP from what `fougere build` wrote. */
+/** A process of the topology — the app when none is named — served over HTTP from what `fougere build` wrote. */
 export default class ServeCommand {
   static DEFAULT_PORT = 4100;
   /** Starts what `fougere build` wrote, so the runner installs no loader for the project's TypeScript. */
@@ -32,45 +33,41 @@ export default class ServeCommand {
 
   constructor(private app: App, private ui: Ui) {}
 
-  /** Where `fronds:` places this frond, so the process listens where its callers will look. */
-  static async portStated(root: string, frond: string): Promise<number> {
-    const address = remotesOf(await loadConfig(root))[frond];
-    if (!address) return ServeCommand.DEFAULT_PORT;
+  /** The port of the process's `url`, so it listens where its callers will look. */
+  static portOf(url: string | undefined): number {
+    if (url === undefined) return ServeCommand.DEFAULT_PORT;
 
-    const url = new URL(address);
+    const address = new URL(url);
 
-    return Number(url.port || (url.protocol === 'https:' ? 443 : 80));
+    return Number(address.port || (address.protocol === 'https:' ? 443 : 80));
   }
 
   async run(raw: Record<string, unknown>) {
-    const frond = raw.frond as string | undefined;
-
-
-
-
-    if (!frond) { this.ui.error(`Usage: fougere ${this.verb} <frond>`); return; }
-
+    const running = (raw.process as string | undefined) ?? process.env[Topology.VARIABLE];
     const root = process.cwd();
-    const hosting = await this.hosting(root, frond);
-    if (!hosting) return;
-
-    setLogLevel(envLevel() ?? 'info');
-    let hosted = await hosting.boot();
-    if (!hosted.fronds.some((f) => f.name === frond)) {
-      this.ui.error(`No frond '${frond}' in this project.`);
+    let placement: Placement;
+    try {
+      placement = Topology.of(root).placement(running);
+    } catch (refusal) {
+      this.ui.error((refusal as Error).message);
 
       return;
     }
 
+    const hosting = await this.hosting(root, running);
+    if (!hosting) return;
+
+    setLogLevel(envLevel() ?? 'info');
+    let hosted = await hosting.boot();
     let current: Transport = createLocalRunner(hosted);
 
-    const port = raw.port != null ? Number(raw.port) : await ServeCommand.portStated(root, frond);
+    const port = raw.port != null ? Number(raw.port) : ServeCommand.portOf(placement.url);
     const { verify, requireIdentity } = await identityFromEnv();
     const beside = (request: Request) => webAnswer(hosted, request);
     const answer: ReceiveOptions['answer'] = (door, received) => hosted.answer(door, received);
     const { use } = (await loadConfig(root)).server ?? {};
     const { port: bound } = await serve((call, inv) => current(call, inv), { port, verify, requireIdentity, beside, answer, use });
-    this.ui.step(`frond ${frond} served — POST http://127.0.0.1:${bound}/_fougere/call`);
+    this.ui.step(`${running === undefined ? 'app' : `process ${running}`} served — POST http://127.0.0.1:${bound}/_fougere/call`);
     for (const [name, options] of Object.entries(hosted.protocols)) {
       const mountedAt = Protocols.resolve(name).mountedAt?.(options);
       if (mountedAt !== undefined) this.ui.info(`${name} under http://127.0.0.1:${bound}${mountedAt}`);
@@ -120,10 +117,10 @@ export default class ServeCommand {
   }
 
   /** The project `fougere build` wrote, booted by Node: `@fronds/<name>` resolves through the table it left. */
-  protected async hosting(root: string, frond: string): Promise<Hosting | undefined> {
+  protected async hosting(root: string, running: string | undefined): Promise<Hosting | undefined> {
     const built = resolve(root, BUILD_DIRECTORY);
     if (!appOptionsFileIn(built)) {
-      this.ui.error(`Nothing built in ${BUILD_DIRECTORY}/. Run \`fougere build\` first — or \`fougere dev ${frond}\` to run the sources.`);
+      this.ui.error(`Nothing built in ${BUILD_DIRECTORY}/. Run \`fougere build\` first — or \`fougere dev${running === undefined ? '' : ` ${running}`}\` to run the sources.`);
 
       return undefined;
     }
@@ -131,6 +128,6 @@ export default class ServeCommand {
     registerFrondAliases(Object.fromEntries(Object.entries(table).map(([alias, dir]) => [alias, join(built, dir)])));
     const { bootApp } = await import('@fougere/defaults');
 
-    return { boot: () => bootApp(root, { only: [frond], built }), watched: [] };
+    return { boot: () => bootApp(root, { process: running, built }), watched: [] };
   }
 }

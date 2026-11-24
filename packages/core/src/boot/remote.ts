@@ -200,7 +200,7 @@ export async function transportAtOf(options: CreateAppOptions): Promise<((addres
 
   const identity = await identityFromEnv();
 
-  return transportsOf(remotes, (address, label) => Transports.open(address, identity, `fronds.${label}.remote`));
+  return transportsOf(remotes, (address, label) => Transports.open(address, identity, `fougere.topology.yaml, the url of '${label}'`));
 }
 
 export function remoteRouterOf(options: CreateAppOptions, transportAt: ((address: string) => Transport) | undefined): RemoteRouter | undefined {

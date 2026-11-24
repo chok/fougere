@@ -1,6 +1,6 @@
-import { Logger, WITHOUT_GLOBAL_INSTALL, applyConfig, createApp, type App, type CreateAppOptions, type Extension, type FougereConfig, type FrondDescriptor, type Transport } from '@fougere/core';
+import { Logger, WITHOUT_GLOBAL_INSTALL, applyConfig, createApp, withExtended, type App, type CreateAppOptions, type Extension, type FougereConfig, type FrondDescriptor, type Transport } from '@fougere/core';
 import { layerOf, type ResolvedStorage } from './storage/ResolvedStorage.js';
-import { getModuleLoader, loadConfig, MODULES, remotesOf, configModules, appOptionsFileIn, appOptionsIn, type ModuleLoader } from '@fougere/core/node';
+import { getModuleLoader, loadConfig, MODULES, Topology, configModules, appOptionsFileIn, appOptionsIn, type ModuleLoader } from '@fougere/core/node';
 import { join, resolve, sep } from 'node:path';
 import { existsSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
@@ -16,13 +16,13 @@ interface BootOptions {
   config?: Partial<FougereConfig>;
   /** The container to resolve through. Absent, core builds its own. */
   createContainer?: () => Container;
-  /** Boots only these fronds, by name; absent, every one found. */
+  /** The process of `fougere.topology.yaml` this boot is; absent, `FOUGERE_PROCESS`, else the app. */
+  process?: string;
+  /** Boots only these fronds, the topology unread — a test booting the frond it sits in. */
   only?: string[];
-  /** @deprecated The name `only:` now carries. */
-  fronds?: string[];
-  /** Remote fronds, label → address; a declared remote wins over local presence. */
+  /** Where the fronds elsewhere answer, the topology unread. */
   remotes?: Record<string, string>;
-  /** Replaces the transport every address of `remotes` names by its scheme. */
+  /** Replaces the transport every address of the topology names by its scheme. */
   remoteTransport?: (url: string) => Transport;
   /** Carries an announced fact out of this process. */
   onEmit?: CreateAppOptions['onEmit'];
@@ -55,9 +55,12 @@ export async function boot(options: BootOptions): Promise<App> {
   }
 
   const stated = await configModules(config.fronds, fromProject(root, options.built));
-  const only = options.only ?? options.fronds;
+  const { only, remotes } = options.only !== undefined || options.remotes !== undefined
+    ? { only: options.only, remotes: options.remotes ?? {} }
+    : Topology.of(root).placement(options.process);
   const statement = await appOptionsOf(code, { conventions: config.conventions });
-  const hosted = [...statement.fronds, ...stated.fronds].filter((frond) => !only || only.includes(frond.name));
+  const loaded = only && withExtended(only, config.fronds);
+  const hosted = [...statement.fronds, ...stated.fronds].filter((frond) => !loaded || loaded.includes(frond.name));
 
   log.debug('creating app');
   const app = await createApp({
@@ -65,7 +68,7 @@ export async function boot(options: BootOptions): Promise<App> {
     vocabulary: statement.vocabulary,
     createContainer: options.createContainer,
     ...(layer && layerOf(layer)),
-    remotes: options.remotes ?? remotesOf(config),
+    remotes,
     under: config.fronds,
     narrowed: only !== undefined,
     ports: config.ports,

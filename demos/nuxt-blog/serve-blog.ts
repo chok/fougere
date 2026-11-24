@@ -2,14 +2,13 @@
  * The blog Frond, alone in its process — the gradient lived.
  *
  * Same `fronds/**` as the Nuxt app: only the runtime moves. The address is declared
- * ONCE, in `fougere.config.ts` under `remotes:`, and this process binds exactly what
- * the consumer was told to call. Writing the port here too put one number in two
- * files, and nothing made them agree.
+ * ONCE, in `fougere.topology.yaml`, and this process binds exactly what the consumer
+ * was told to call.
  */
 import { createJiti } from 'jiti';
 import { createLocalRunner, Logger, serves } from '@fougere/core';
 import { bootApp } from '@fougere/defaults';
-import { frondAliases, setModuleLoader, loadConfig, remotesOf } from '@fougere/core/node';
+import { frondAliases, setModuleLoader, Topology } from '@fougere/core/node';
 import { prefixOf } from '@fougere/adapter-rest';
 import { serve } from '@fougere/transport-http';
 import { answer } from '@fougere/app/answer';
@@ -26,16 +25,8 @@ const jiti = createJiti(import.meta.url, {
 });
 setModuleLoader((filePath: string) => jiti.import(filePath) as Promise<Record<string, unknown>>);
 
-// Commenting the address is how you take the frond back in-process, so its absence means
-// this process has no caller — say that rather than binding a port nobody dials.
-const config = await loadConfig(process.cwd());
-const address = remotesOf(config).blog;
-if (!address) {
-  throw new Error(
-    "No address for 'blog' in fougere.config.ts — `fronds: { blog: { remote: 'http://…' } }` is what sends calls here.\n"
-    + '  Uncomment it to run the frond split, or drop this process and run the app in-process.',
-  );
-}
+const { url: address } = Topology.of(process.cwd()).placement('blog');
+if (!address) throw new Error("fougere.topology.yaml gives the process 'blog' no url, so nothing would call it.");
 const { hostname, port: declaredPort } = new URL(address);
 
 const log = new Logger('blog-host');
@@ -46,7 +37,7 @@ const log = new Logger('blog-host');
 // What this process adds is its own: the panel, on a loopback port, shows every call this frond
 // executes, the ones that arrived over the wire included — the half a browser's devtools cannot show.
 const app = await bootApp(process.cwd(), {
-  only: ['blog'],
+  process: 'blog',
   extensions: [observability({ service: 'blog-host' }), calls({ panel: 4400 })],
 });
 

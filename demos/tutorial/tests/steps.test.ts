@@ -8,7 +8,7 @@ import { join, relative } from 'node:path';
 import { testApp } from '@fougere/testing';
 import { bootApp } from '@fougere/defaults';
 import { answer } from '@fougere/app/answer';
-import { loadConfig, remotesOf } from '@fougere/core/node';
+import { Topology } from '@fougere/core/node';
 import { identityCardOf, type App } from '@fougere/core';
 
 const STEPS = join(import.meta.dirname, '..', 'steps');
@@ -156,6 +156,6 @@ describe('what the steps say beside "try it"', () => {
   });
 
   it('step 8 places mail elsewhere', async () => {
-    expect(remotesOf(await loadConfig(join(STEPS, '8-split')))).toEqual({ mail: 'http://127.0.0.1:4100' });
+    expect(Topology.of(join(STEPS, '8-split')).placement(undefined)).toEqual({ remotes: { mail: 'http://127.0.0.1:4100' } });
   });
 });

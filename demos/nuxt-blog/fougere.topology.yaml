@@ -1,0 +1,4 @@
+# The blog frond runs in its own process (pnpm dev:blog). Delete these lines and
+# the whole app runs in one process again — the code does not change by a comma.
+processes:
+  blog: { url: http://127.0.0.1:4100, fronds: [blog] }

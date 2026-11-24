@@ -1,6 +1,5 @@
 import type { Diagnostic } from '../diagnostic.js';
 import { frondPackage, resolveConventions, type Conventions } from '../config/Conventions.js';
-import { isFrondDescriptor } from '../descriptor/FrondDescriptor.js';
 import type { FrondDescriptor } from '../descriptor/FrondDescriptor.js';
 import { Fronds } from '../descriptor/Fronds.js';
 import { statesModule, type FrondEntries } from '../config/FrondEntries.js';
@@ -37,7 +36,7 @@ export function nestingOf(
   entries: FrondEntries | undefined,
   fronds: Fronds,
   remotes: Record<string, string> | undefined,
-  /** This process carries a subset of the project — `only:`, so an absent name is expected. */
+  /** This process carries a subset of the project — its process in `fougere.topology.yaml` — so an absent name is expected. */
   narrowed = false,
   conventions: Conventions = resolveConventions(),
   /** Held as one value, which a frond a family inherits from may keep. */
@@ -76,9 +75,8 @@ export function nestingOf(
     const frond = here.get(parent);
     if (frond === undefined) continue;
 
-    const placed = entries[parent];
-    const address = typeof placed === 'string' ? placed : isFrondDescriptor(placed) ? undefined : placed?.remote;
-    if (address !== undefined || (remotes && parent in remotes)) {
+    const address = remotes?.[parent];
+    if (address !== undefined) {
       refused.push({
         severity: 'blocking',
         code: 'frond-parent-remote',
@@ -86,7 +84,7 @@ export function nestingOf(
         frond: frond.name,
         subject: parent,
         message: `The frond '${parent}' is extended by ${children.map((one) => `'${one}'`).join(', ')}, so it cannot have an address `
-          + `(${address ?? remotes?.[parent]}). Give the address to one of them instead.`,
+          + `(${address}). Run one of them in that process instead.`,
       });
     }
 
@@ -97,7 +95,7 @@ export function nestingOf(
     const frond = here.get(statement.key);
 
     if (frond === undefined) {
-      const placedRemotely = statement.value !== undefined || (remotes && statement.key in remotes);
+      const placedRemotely = remotes !== undefined && statement.key in remotes;
       if (!statesModule(statement.key) && !placedRemotely && here.size > 0 && !narrowed) {
         refused.push({
           severity: 'blocking',

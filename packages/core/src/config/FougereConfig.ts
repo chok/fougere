@@ -6,8 +6,7 @@ import type { SourceConfig } from '../extension/SourceConfig.js';
 import type { PortChoice } from '../extension/PortChoice.js';
 import { getModuleLoader } from '../loader.js';
 import type { ProtocolConfig } from '../extension/Protocol.js';
-import { statesModule, type FrondEntries } from './FrondEntries.js';
-import { keyedFrondEntries } from './KeyedFrondEntry.js';
+import type { FrondEntries } from './FrondEntries.js';
 import { DEFAULT_CONVENTIONS } from './Conventions.js';
 import type { StateEntry } from '../extension/FougereStates.js';
 import type { ServerConfig } from './ServerConfig.js';
@@ -80,16 +79,6 @@ async function loadConfigFrom(dir: string, fresh?: boolean): Promise<FougereConf
 /** Load the root fougere.config.{ts,js,mjs} from the given directory. */
 export async function loadConfig(root: string, options?: { fresh?: boolean }): Promise<FougereConfig> {
   return loadConfigFrom(root, options?.fresh);
-}
-
-/** Where each frond answers: the `remote` of its entry in `fronds:`. */
-export function remotesOf(config: FougereConfig): Record<string, string> {
-  const addresses: Record<string, string> = {};
-  for (const entry of keyedFrondEntries(config.fronds)) {
-    if (entry.value !== undefined && !statesModule(entry.key)) addresses[entry.key] = entry.value;
-  }
-
-  return addresses;
 }
 
 /** The config an app reads: the nearest file, from `dir` up. */

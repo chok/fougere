@@ -12,10 +12,7 @@ export default defineFougere({
   protocols: { rest: { openapi: {} }, graphql: {} },
   fronds: {
     '@fougere/log': {},
-    // La Frond blog vit dans un autre process (pnpm dev:blog). Commenter cette
-    // ligne pour la ravoir in-process — le code ne change pas d'une virgule.
-    blog: { remote: 'http://127.0.0.1:4100' },
-    // A frond like any other: `only:` or an address decides which process starts its engine.
+    // A frond like any other: the process fougere.topology.yaml runs it in starts its engine.
     auth: betterAuth({
       user: User,
       secret: 'nuxt-blog-demo-secret-at-least-32-characters!',

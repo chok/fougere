@@ -21,7 +21,7 @@
       "text": "is imported by fougere.config.ts, which then says *protocols: { rest: {} }*. Without the import, that line does not typecheck and the app refuses to start."
     }
   ],
-  "start": "npx fougere dev blog",
+  "start": "npx fougere dev",
   "try": {
     "command": "curl -X POST localhost:4100/api/blog/posts -d '{\"title\":\"\"}'",
     "output": "422  VALIDATION_FAILED  title: String is too short (0 < 1).",

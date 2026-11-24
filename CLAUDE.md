@@ -14,7 +14,7 @@ reads nothing of `adapters:`, which only `adapter/sql` reads. The two things thi
 to call its two ideas are its two readings:
 
 1. **Single-schema** — what a definition yields is *derived* from it: one Entity class (`class Post extends entity({...})`) generates validation, DB tables (Kysely), GraphQL types (Pothos), form contracts, API surfaces.
-2. **The gradient** — how it is realized is *chosen apart* from it: a Frond (entities + handlers + collectors + seeds) runs in-process or in its own process behind JSON-RPC, with **identical user code**. `fronds:` in `fougere.config.ts` is the whole statement — an entry per frond, whose `extends:` names the one it inherits code from, whose `remote:` says where it answers, and whose key names a module when a package brings it.
+2. **The gradient** — how it is realized is *chosen apart* from it: a Frond (entities + handlers + collectors + seeds) runs in-process or in its own process behind JSON-RPC, with **identical user code**. `fronds:` in `fougere.config.ts` says what an app is made of — an entry per frond, whose `extends:` names the one it inherits code from, and whose key names a module when a package brings it — and `fougere.topology.yaml` says which process runs which frond, and where each answers.
 
 Reference docs: `site/apps/web/content/` — `docs/` (concepts, then tasks by need, then Extending), `reference/`, and the tutorial, projected from `demos/tutorial/` by `site/apps/web/modules/tutorial.ts`. An old docs URL is a line of `site/apps/web/redirects.json`.
 
@@ -34,8 +34,8 @@ pnpm -C site migrate               # the boot only READS the schema: a SQL-file 
                                    # first (site, *-blog demos, oclif-catalog)
 pnpm -C site dev                   # :3000 — vitrine + docs + blog Frond
 pnpm -C demos/nuxt-blog dev:blog   # blog Frond alone in its process (:4100)
-pnpm -C demos/nuxt-blog dev        # Nuxt app (:3000), consumes it via remotes
-                                   # comment `fronds:` → same app in-process
+pnpm -C demos/nuxt-blog dev        # Nuxt app (:3000), the process `web` of fougere.topology.yaml
+                                   # delete the topology file → same app in-process
 pnpm -C demos/schema-ecommerce dev # Apollo Server on :4000
 pnpm -C demos/container-basics dev
 pnpm -C demos/core-scanner dev
@@ -387,8 +387,8 @@ keys share. Pinned by `core/tests/state.test.ts` and `defaults/tests/gradient.te
 file imports the package, so the entry holds the frond itself (`FrondEntry` admits a
 `FrondDescriptor`, recognized by `isFrondDescriptor`, and its key must be its name), and the
 frond carries its extension (`FrondDeclaration.extensions`) — engine, `AUTH`, `user`/`session` —
-which rises only where the frond is served. `only:` leaves it out like any frond, so `fougere
-serve blog` starts no engine and migrates no session table. The `auth:` key is gone: an
+which rises only where the frond is served. A process the topology does not run it in leaves it
+out like any frond, so `fougere serve blog` starts no engine and migrates no session table. The `auth:` key is gone: an
 extension belongs to the process, and a brought frond stands in every process, so the engine
 used to start wherever the config was read. A MODULE key (`'@fougere/…'`) could not have carried
 it: `import()` resolves from the file calling it, and core's default loader looked for the
@@ -647,7 +647,7 @@ terms as `vocabulary`. `appOptionsIn` (`@fougere/core/node`) reads one, `writeAp
 (`@fougere/defaults`) is the two end to end — the project's file when it wrote one, the scan's
 otherwise. `createApp` takes `fronds:` and nothing else: it took `scan:` too, and each host booted a
 different way, so `demos/nuxt-blog` in-process served no `publish` and ran no middleware while
-`fougere serve` did, with every test green. The file is the PROJECT's, whole — `only:` filters
+`fougere serve` did, with every test green. The file is the PROJECT's, whole — the topology filters
 what a process reads, and two processes read one file. A contract the scan could not decide is not
 written (`input-contract-ambiguous` refuses `emitAppOptions`), and the file each value comes from
 travels as `files:` so a refusal still names it. A host that BUILDS — `@fougere/vite`, `@fougere/next`,
@@ -741,13 +741,24 @@ may not be placed at an address (`frond-parent-remote`), and may not declare row
 in every process holding one of its children. A frond a PACKAGE brings is named by its key
 (`statesPackage`, `project/ConfigModules.ts`), so `mail: { extends: '@acme/mail' }` extends it; two
 children of one package refuse (`frond-key-taken`) until each answers under its own name. Pinned by
-`core/tests/extends-package.test.ts`. An entry is an object, never a string — `{ remote }` for a frond, `{ options }` for a
-module key — and `keyedFrondEntries` refuses a string naming the object to write, since one
-string meant an address under one key and an argument under another. `remotesOf` reads the
-`remote` of each entry; a module key is imported by the HOST, never
-by core, and where it lands is read off its form — `up`/`down` means an extension. The word
-`fronds` had three senses and now has two: the filter is `only:`. Pinned by
+`core/tests/extends-package.test.ts`. An entry is an object, never a string — `{ extends }` for a frond, `{ options }` for a
+module key — and `keyedFrondEntries` refuses a string, naming where an address is written now. A module key is imported by the HOST, never
+by core, and where it lands is read off its form — `up`/`down` means an extension. Pinned by
 `core/tests/{fronds-stated,nesting,stated-modules}.test.ts`.
+
+**Where each frond runs is `fougere.topology.yaml`'s, a file of DATA beside the config** —
+`Topology` (`core/src/project/Topology.ts`), `processes:` each with its `url` and its `fronds`. It lists
+the processes the app REACHES, never the app: a process with no `url` has no meaning but "the app", so
+the app is every frond the file places nowhere, and is started with no name. A process is named by
+`fougere serve <process>` or `FOUGERE_PROCESS`; a name with no file refuses. `placement(name)` is what a
+boot reads: the fronds it runs and the `url` of every frond another process runs. A frond they extend is CODE, not placement, so the topology never lists it: the boot
+loads it beside them (`withExtended`, `config/KeyedFrondEntry.ts`); `addresses()` is what a command reading the project reads.
+YAML because every language reads it, and its format is a `Format` like any entry; a `url` reads the
+environment as Compose does, `${CATALOG_URL:-binding://CATALOG}`. A frond run by two processes
+refuses. It replaced `remote:` on an entry and `only:` passed by each command, and
+`FOUGERE_FRONDS`, a third filter the Nuxt module read. A host with no disk is HANDED it: the Nuxt
+plugin carries the processes as JSON (`FougereServerConfig.topology`). Pinned by
+`core/tests/topology.test.ts` and `defaults/tests/boot-tree.test.ts`.
 
 **Config, consulted vs consumed** — `boot/apply.ts`, `applyConfig`. A value CONSULTED at use
 can move; a value CONSUMED to build something cannot. `logLevel` and `maxBodyBytes` are the
@@ -845,7 +856,7 @@ and `demos/log-destinations`.
 
 **What a call writes is `@fougere/log`'s, and it rises in every process** — `log()` is an
 EXTENSION, so `fronds: { '@fougere/log': {} }` is mounted by every boot that reads the config
-(`configModules` is not narrowed by `only:`), and `up` installs `callLines`: two lines a call,
+(`configModules` is not narrowed by the topology), and `up` installs `callLines`: two lines a call,
 under the frond that answers, `← <caller>` when a signed call came from another process. A path
 (`'@fougere/log': { options: './lines.jsonl' }`) brings the file destination as well. It used to be core's
 `loggerMiddleware`, installed by `observability` alone, so an app that did not trace wrote nothing
@@ -989,11 +1000,11 @@ An adapter registers where it is mounted (`mountedAt`) and what it answers to a 
 It replaced `adapters: { rest: true }`, whose open index admitted `grapql: true` in silence and
 whose word already meant the storage engines on an entity.
 
-**`remote:` names its transport by its scheme** — `Transports` (`core/src/extension/Transports.ts`), a
+**A process `url` names its transport by its scheme** — `Transports` (`core/src/extension/Transports.ts`), a
 registry answering `http`, `https` and `binding` once `@fougere/transport-http` is imported (`binding://CATALOG`
 is a Cloudflare service binding, read off `cloudflare:workers` at the first call, the way `d1` reads its
 database). The boot opens each address ONCE, before the router (`transportsOf`, `transportAtOf` in
-`boot/bootstrap.ts`), so a scheme nothing registered refuses the boot naming `fronds.<frond>.remote`, and the
+`boot/bootstrap.ts`), so a scheme nothing registered refuses the boot naming the url in `fougere.topology.yaml`, and the
 router and the relation readings (`peers`, `rowHostsFor.ts`) read one table — the readings used to build a
 transport per read, and five places built their own from the address. `remoteTransport:` is the host's word
 and wins whole: no scheme and no key is read then. `@fougere/defaults` imports the package for its effect, so

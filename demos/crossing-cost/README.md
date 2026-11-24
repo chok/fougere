@@ -21,7 +21,7 @@ constructor(
 ) {}
 ```
 
-No address, no client, no branch. `fougere.config.ts` is the whole topology statement.
+No address, no client, no branch. `fougere.topology.yaml` is the whole topology statement.
 
 ## The two numbers
 
@@ -33,14 +33,15 @@ Price.total        answers local   reaches catalog            0 hop(s)
 Product.list       answers local   reaches —                  0 hop(s)
 ```
 
-Uncomment the two lines in `fougere.config.ts` and run it again:
+Give `pricing` and `catalog` a process each — uncomment their two lines in `fougere.topology.yaml` —
+and run it again:
 
 ```
 Cart.checkout      answers local   reaches catalog, pricing   2 hop(s)
 ```
 
 The demo then answers `pricing` and `catalog` for real — each in an app of its own, scanned alone
-the way `fougere serve` carries one frond, behind HTTP on the port the config names. The checkout
+the way `fougere serve` carries one frond, behind HTTP on the port the topology names. The checkout
 crosses the wire twice and answers the same:
 
 ```
@@ -58,8 +59,7 @@ a fingerprint of `fronds/`:
 fronds/ sha256 <12 hex> — the same on both runs: no file under fronds/ moved.
 ```
 
-It reads the same before and after the line is uncommented, because the line is the only thing
-that changed.
+It reads the same before and after, because the topology is the only thing that changed.
 
 **Same file, same signature, different cost.** `placement` says where an operation ANSWERS;
 `reach` says where its work GOES. Three numbers a process writes down today are a function of
@@ -69,7 +69,7 @@ nobody, as the same subject as `Cart.checkout`, which pays two round trips.
 
 ## The Frond nobody serves
 
-`ledger` is in `remotes:` and no code reaches it, no process answers it. It is reported anyway:
+`ledger` has a process in `fougere.topology.yaml` and no code reaches it, no process answers it. It is reported anyway:
 
 ```
 ledger    elsewhere  http://127.0.0.1:4630

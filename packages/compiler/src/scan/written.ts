@@ -3,7 +3,7 @@ import { mkdir, rename, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { createJiti } from 'jiti';
 import { resolveConventions, type ConventionsInput, type CreateAppOptions, type Diagnostic } from '@fougere/core';
-import { emitFacade, emitNames, FACADE, frondAliases, loadConfig, NAMES, remotesOf, setModuleLoader, appOptionsIn } from '@fougere/core/node';
+import { emitFacade, emitNames, FACADE, frondAliases, loadConfig, NAMES, Topology, setModuleLoader, appOptionsIn } from '@fougere/core/node';
 import { scanProject } from './scanner.js';
 import { emitAppOptions } from './appOptions.js';
 
@@ -44,6 +44,6 @@ export async function writeDerived(root: string): Promise<void> {
   const statement = join(root, '.fougere', 'fronds.generated.ts');
   const facade = join(root, FACADE);
   await place(statement, emitAppOptions(scan, { outFile: statement }));
-  await place(facade, emitFacade(scan, { outFile: facade, remotes: remotesOf(config) }));
+  await place(facade, emitFacade(scan, { outFile: facade, remotes: Topology.of(root).addresses() }));
   await place(join(root, NAMES), emitNames(scan));
 }
