@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { createLocalRunner, type App } from '@fougere/core';
 import { Invocation } from '@fougere/core/contract';
-import { tableOf } from '@fougere/adapter-rest';
 import { answer } from '@fougere/app/answer';
 import { lowerFirst, type SchemaView } from '@fougere/schema';
 import { listQuery, findQuery, mutationFor, at } from './gql.js';
@@ -174,6 +173,7 @@ function facadesOf(app: App, entity: SchemaView, name: string, surface?: string)
     },
 
     rest: async (op, call) => {
+      const { tableOf } = await import('@fougere/adapter-rest');
       const row = tableOf(app).find((one) => one.route.address === name && one.route.operationName === op);
       if (!row) throw new Error(`[checkDoors] REST serves no ${name}.${op}`);
       const path = row.segments.map((segment) => (segment.startsWith(':') ? call?.id ?? '' : segment)).join('/');

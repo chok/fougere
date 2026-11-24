@@ -34,6 +34,7 @@ function notFound(app: App, request: Request): Response {
   });
   if (!pathname.startsWith('/_fougere/') && !mounted.some(([, path]) => pathname === path || pathname.startsWith(`${path}/`))) {
     const served = mounted.map(([name, path]) => `${name} under ${path}`).join(', ') || 'no protocol';
+
     return Response.json({
       message: `${pathname} is under no protocol this app serves (${served}). Move the route file that hands it here, `
         + 'or change where the protocol is mounted in protocols:.',
