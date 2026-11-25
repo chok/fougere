@@ -35,6 +35,10 @@ const STATED = new Map([
   ['packages/core extension↔operation',
     'Type-only from the extension: a protocol says where an operation answers ' +
     '(`ProtocolType.answersAt`), and the operation model asks each protocol.'],
+  ['packages/core boot↔config',
+    'Type-only from the config: `platform:` lists what a process carries, and what it carries is ' +
+    'an `Extension`, whose type names the `App` it rises on. The boot reads the config; the config ' +
+    'only names the type of the values it holds, the way `fronds:` names a descriptor.'],
 ]);
 
 /** A directory under `module/` is a family of its own: two modules reading each other is the cycle that matters. */

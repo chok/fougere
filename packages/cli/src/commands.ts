@@ -1,6 +1,7 @@
 import type { App } from '@fougere/core';
 import type { EntityEntry, HandlerEntry } from '@fougere/core/descriptor';
-import { positionalOf } from '@fougere/oclif/positional';
+import { RouteAddress } from '@fougere/core';
+import type {} from '@fougere/oclif/positional';
 
 /** One command of this CLI: an entity whose handler answers `execute`. */
 export interface CliCommand {
@@ -20,7 +21,7 @@ export function cliCommandsOf(app: App): CliCommand[] {
       const handler = handlers.get(entity.name);
       if (!handler || typeof app.facadeFor(entity.name)?.execute !== 'function') return [];
 
-      const positional = positionalOf(frond, handler.address, 'execute');
+      const positional = frond.operationsOverrides?.[new RouteAddress({ address: handler.address, operation: 'execute' }).toString()]?.terminal?.positional;
 
       return [{ name: kebabOf(entity.name), entity, handler, ...(positional ? { positional } : {}) }];
     });
