@@ -5,7 +5,8 @@
  *   apps/ops/    a terminal  — states nothing, so it carries `platform:`: the call lines alone
  *   clock        a process at its url — carries `observed` too, the same variable
  *
- * Each app reads its name off its directory. Nothing under fronds/ says any of it.
+ * Each app reads its name off its directory. Nothing under fronds/ says any of it. The
+ * services are not started here: each process is told their address, the way `fougere up` tells it.
  *
  *   pnpm dev                        this walk-through
  *   pnpm clock, pnpm api, pnpm ops  each one for real
@@ -13,13 +14,16 @@
 import { rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { bootApp } from '@fougere/defaults';
-import { createAppRunner, createLocalRunner, Invocation, RPC_ADDRESS, type App } from '@fougere/core';
+import { createAppRunner, createLocalRunner, environmentOf, Invocation, RPC_ADDRESS, type App } from '@fougere/core';
+import { loadConfig } from '@fougere/core/node';
 import { serve } from '@fougere/transport-http';
 import { bootApi } from '../apps/api/boot.js';
 import { bootOps } from '../apps/ops/boot.js';
 
 const root = join(import.meta.dirname, '..');
 rmSync(join(root, '.data'), { recursive: true, force: true });
+
+Object.assign(process.env, environmentOf(await loadConfig(root)));
 
 const ASCENT = new Set(['schema', 'values', 'seeds']);
 
@@ -47,12 +51,14 @@ const now = await createAppRunner(api)({ address: 'clock', op: 'now' }, Invocati
 console.log('\n  ops lists the notes\n');
 const listed = await createAppRunner(ops)({ address: 'note', op: 'list' }, Invocation.empty) as { items: { title: string }[] };
 
+const files = await createAppRunner(api)({ address: 'files', op: 'url' }, Invocation.empty);
 const kept = await createLocalRunner(api)({ address: RPC_ADDRESS, op: 'calls' }, Invocation.empty) as { calls: unknown[] };
 
 console.log(`
   clock.now, from api   → ${String(now)}   (crossed to :4710)
   note.list, from ops   → ${listed.items.map((note) => `"${note.title}"`).join(', ')}   (one SQLite file, two apps)
   api's ring kept ${kept.calls.length} call(s); ops carries no ring, since nothing in its platform keeps one
+  files.url, from api   → ${String(files)}   (FILES_URL, from services.files — no line of the frond writes it)
 `);
 
 await ops.dispose();

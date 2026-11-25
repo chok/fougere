@@ -1755,6 +1755,9 @@ importers:
 
   demos/two-apps:
     dependencies:
+      '@fougere/adapter-env':
+        specifier: workspace:*
+        version: link:../../packages/adapter/env
       '@fougere/adapter-sql':
         specifier: workspace:*
         version: link:../../packages/adapter/sql

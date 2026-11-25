@@ -1,5 +1,6 @@
 import '@fougere/adapter-sql';
 import '@fougere/services';
+import '@fougere/adapter-env';
 import { defineFougere } from '@fougere/core';
 import { log } from '@fougere/log';
 import { calls } from '@fougere/calls';
@@ -19,7 +20,10 @@ const observed = [...base, calls()];
  * each told to the rest as `CACHE_URL` and `FILES_URL`, unless the environment already gives one.
  */
 export default defineFougere({
-  sources: { main: { type: 'sqlite', path: '.data/notes.db' } },
+  sources: {
+    main: { type: 'sqlite', path: '.data/notes.db' },
+    env: { type: 'env', values: ['Files'] },
+  },
   platform: base,
   apps: {
     api: { platform: observed },
