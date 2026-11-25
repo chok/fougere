@@ -46,6 +46,7 @@ pnpm -C demos/mirror-catalog dev    # two passes over a source that only answers
 pnpm -C demos/sse-live dev         # live fan-out to readers who are not trusted peers
 pnpm -C demos/log-destinations dev # two destinations for one line, and the frond that names neither
 pnpm -C demos/shared-parent dev    # one frond holds what a family shares, and answers nothing
+pnpm -C demos/two-apps dev         # two apps and a process over one project — what each one carries
 pnpm -C demos/pipe-split dev       # the op that FINISHES a fact — here, then behind `fronds:`
 pnpm -C demos/ask-quorum dev       # `Emit<T, A>` — the announcement that waits, across three processes
 pnpm -C demos/observability dev    # three processes; `pnpm load` (k6) and `pnpm signoz` beside it
@@ -183,6 +184,7 @@ demos/
   sse-live/            live fan-out to readers who are not trusted peers
   log-destinations/    where a line goes is the operator's line, not the domain's
   shared-parent/       a service and a middleware two fronds inherit, named by neither
+  two-apps/            two apps named by their directory, a process, and the platform each carries
   pipe-split/          `Pipe<T>` — what a link is for, and what `pick` already does without one
   ask-quorum/          `Emit<T, A>` — an announcement that waits, and what a missing answer costs
   admin-panel/ one-declaration/ express-blog/ next-blog/ sveltekit-blog/

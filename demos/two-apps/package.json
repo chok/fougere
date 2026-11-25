@@ -1,0 +1,29 @@
+{
+  "name": "fougere-demo-two-apps",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx src/main.ts",
+    "clock": "fougere dev clock",
+    "api": "tsx apps/api/main.ts",
+    "ops": "tsx apps/ops/main.ts",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit -p ."
+  },
+  "dependencies": {
+    "@fougere/adapter-sql": "workspace:*",
+    "@fougere/calls": "workspace:*",
+    "@fougere/cli": "workspace:*",
+    "@fougere/compiler": "workspace:*",
+    "@fougere/core": "workspace:*",
+    "@fougere/defaults": "workspace:*",
+    "@fougere/log": "workspace:*",
+    "@fougere/oclif": "workspace:*",
+    "@fougere/schema": "workspace:*",
+    "@fougere/transport-http": "workspace:*"
+  },
+  "devDependencies": {
+    "tsx": "^4.0.0",
+    "vitest": "^4.1.0"
+  }
+}
