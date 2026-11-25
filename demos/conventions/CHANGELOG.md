@@ -1,5 +1,18 @@
 # fougere-demo-conventions
 
+## 0.0.1-alpha.6
+
+### Patch Changes
+
+- Updated dependencies [31b9608]
+- Updated dependencies [954f02e]
+- Updated dependencies [640b512]
+  - @fougere/core@0.31.0-alpha.0
+  - @fougere/defaults@0.31.0-alpha.0
+  - @fougere/compiler@0.31.0-alpha.0
+  - @fougere/adapter-memory@0.31.0-alpha.0
+  - @fougere/schema@0.31.0-alpha.0
+
 ## 0.0.1-alpha.5
 
 ### Patch Changes

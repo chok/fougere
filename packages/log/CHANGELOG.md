@@ -1,5 +1,20 @@
 # @fougere/log
 
+## 0.31.0-alpha.0
+
+### Minor Changes
+
+- 0c8aa7c: `log()` writes the two lines of each call and nothing else; the file is its own extension, `file(path)`, which every line of the process reaches. `log(path)` is gone: write `platform: [log(), file(path)]`.
+
+### Patch Changes
+
+- 31b9608: What a process carries is `platform:`: the extensions it mounts, imported from their package — `platform: [log()]`. A process of `processes:` states its own list or carries the config's, exactly the list; to add to the default, spread it. An extension written under `fronds:` (`'@fougere/log': {}`) now refuses the boot, naming the `platform:` line to write.
+- Updated dependencies [31b9608]
+- Updated dependencies [954f02e]
+- Updated dependencies [640b512]
+  - @fougere/core@0.31.0-alpha.0
+  - @fougere/schema@0.31.0-alpha.0
+
 ## 0.30.0-alpha.7
 
 ### Patch Changes

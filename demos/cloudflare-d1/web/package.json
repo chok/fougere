@@ -1,6 +1,6 @@
 {
   "name": "fougere-demo-cloudflare-web",
-  "version": "0.0.3-alpha.15",
+  "version": "0.0.3-alpha.16",
   "private": true,
   "type": "module",
   "scripts": {

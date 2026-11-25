@@ -1,5 +1,18 @@
 # fougere-demo-cloudflare-web
 
+## 0.0.3-alpha.16
+
+### Patch Changes
+
+- Updated dependencies [31b9608]
+- Updated dependencies [954f02e]
+- Updated dependencies [640b512]
+  - @fougere/core@0.31.0-alpha.0
+  - @fougere/nuxt@0.31.0-alpha.0
+  - @fougere/transport-http@0.31.0-alpha.0
+  - @fougere/container@0.31.0-alpha.0
+  - @fougere/schema@0.31.0-alpha.0
+
 ## 0.0.3-alpha.15
 
 ### Patch Changes

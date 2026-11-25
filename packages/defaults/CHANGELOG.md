@@ -1,5 +1,24 @@
 # @fougere/runtime
 
+## 0.31.0-alpha.0
+
+### Minor Changes
+
+- 31b9608: What a process carries is `platform:`: the extensions it mounts, imported from their package — `platform: [log()]`. A process of `processes:` states its own list or carries the config's, exactly the list; to add to the default, spread it. An extension written under `fronds:` (`'@fougere/log': {}`) now refuses the boot, naming the `platform:` line to write.
+- 954f02e: Where a frond runs is `processes:` in `fougere.config.ts`: each process with its `url` and the fronds it runs, `{ blog: { url: 'http://127.0.0.1:4100', fronds: ['blog'] } }`. An app is every frond `processes:` places nowhere, and starts with no name; a process starts with `fougere serve <process>` or `fougere dev <process>`. A process naming a frond the project does not have refuses to start. `remote:` on a `fronds:` entry, `only:` on `bootApp` and `FOUGERE_FRONDS` are gone.
+- 640b512: An app is named by its directory under `apps/`, and carries its own list with `apps: { web: { platform: [...] } }`. The Nuxt module reads the name off its `rootDir`; a terminal passes `appNameOf(root, import.meta.dirname)` to `bootApp`. An entry naming no directory refuses the boot. The `calls` and `observability` options of the Nuxt module are gone: write them in `apps.<name>.platform`.
+
+### Patch Changes
+
+- Updated dependencies [31b9608]
+- Updated dependencies [954f02e]
+- Updated dependencies [640b512]
+  - @fougere/core@0.31.0-alpha.0
+  - @fougere/compiler@0.31.0-alpha.0
+  - @fougere/adapter-memory@0.31.0-alpha.0
+  - @fougere/transport-http@0.31.0-alpha.0
+  - @fougere/container@0.31.0-alpha.0
+
 ## 0.30.0-alpha.7
 
 ### Patch Changes

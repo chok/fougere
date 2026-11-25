@@ -1,5 +1,30 @@
 # @fougere/cli
 
+## 0.31.0-alpha.0
+
+### Minor Changes
+
+- 31b9608: What a process carries is `platform:`: the extensions it mounts, imported from their package — `platform: [log()]`. A process of `processes:` states its own list or carries the config's, exactly the list; to add to the default, spread it. An extension written under `fronds:` (`'@fougere/log': {}`) now refuses the boot, naming the `platform:` line to write.
+- 954f02e: `frond.config.ts` says which parameters the terminal takes by position: `operations: { 'serve.execute': { terminal: { positional: ['process'] } } }`. Unsaid, the first required text stays the positional one.
+- 954f02e: Where a frond runs is `processes:` in `fougere.config.ts`: each process with its `url` and the fronds it runs, `{ blog: { url: 'http://127.0.0.1:4100', fronds: ['blog'] } }`. An app is every frond `processes:` places nowhere, and starts with no name; a process starts with `fougere serve <process>` or `fougere dev <process>`. A process naming a frond the project does not have refuses to start. `remote:` on a `fronds:` entry, `only:` on `bootApp` and `FOUGERE_FRONDS` are gone.
+- a336ee3: Every `fougere` command reads the `.env` at the project's root, a variable already set winning over it — the file a project keeps the address of its database or its search engine in.
+
+### Patch Changes
+
+- Updated dependencies [31b9608]
+- Updated dependencies [954f02e]
+- Updated dependencies [640b512]
+  - @fougere/core@0.31.0-alpha.0
+  - @fougere/defaults@0.31.0-alpha.0
+  - @fougere/app@0.31.0-alpha.0
+  - @fougere/testing@0.31.0-alpha.0
+  - @fougere/compiler@0.31.0-alpha.0
+  - @fougere/adapter-sql@0.31.0-alpha.0
+  - @fougere/transport-http@0.31.0-alpha.0
+  - @fougere/container@0.31.0-alpha.0
+  - @fougere/registry@0.31.0-alpha.0
+  - @fougere/schema@0.31.0-alpha.0
+
 ## 0.30.0-alpha.7
 
 ### Patch Changes

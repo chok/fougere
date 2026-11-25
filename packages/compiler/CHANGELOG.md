@@ -1,5 +1,17 @@
 # @fougere/compiler
 
+## 0.31.0-alpha.0
+
+### Patch Changes
+
+- 954f02e: Where a frond runs is `processes:` in `fougere.config.ts`: each process with its `url` and the fronds it runs, `{ blog: { url: 'http://127.0.0.1:4100', fronds: ['blog'] } }`. An app is every frond `processes:` places nowhere, and starts with no name; a process starts with `fougere serve <process>` or `fougere dev <process>`. A process naming a frond the project does not have refuses to start. `remote:` on a `fronds:` entry, `only:` on `bootApp` and `FOUGERE_FRONDS` are gone.
+- Updated dependencies [31b9608]
+- Updated dependencies [954f02e]
+- Updated dependencies [640b512]
+  - @fougere/core@0.31.0-alpha.0
+  - @fougere/container@0.31.0-alpha.0
+  - @fougere/schema@0.31.0-alpha.0
+
 ## 0.30.0-alpha.7
 
 ### Patch Changes
