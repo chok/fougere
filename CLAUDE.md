@@ -47,6 +47,7 @@ pnpm -C demos/sse-live dev         # live fan-out to readers who are not trusted
 pnpm -C demos/log-destinations dev # two destinations for one line, and the frond that names neither
 pnpm -C demos/shared-parent dev    # one frond holds what a family shares, and answers nothing
 pnpm -C demos/two-apps dev         # two apps and a process over one project — what each one carries
+pnpm -C demos/two-apps exec fougere up  # the same, with a Redis in Docker and a command beside it
 pnpm -C demos/pipe-split dev       # the op that FINISHES a fact — here, then behind `fronds:`
 pnpm -C demos/ask-quorum dev       # `Emit<T, A>` — the announcement that waits, across three processes
 pnpm -C demos/observability dev    # three processes; `pnpm load` (k6) and `pnpm signoz` beside it
@@ -128,6 +129,7 @@ packages/
   testing/             @fougere/testing       cases derived from an entity, doubles derived from a port
   calls/               @fougere/calls         optional: a bounded ring of what this process dispatched, served as rpc.calls
   log/                 @fougere/log           optional: lines to a FILE, one JSON object each — the console is Logger's
+  services/            @fougere/services      optional: the programs `fougere up` starts beside the app — a command, an image
   workflow/            @fougere/workflow      optional: a run says a release began, and a sweep finishes it
   decorators/          @fougere/decorators    `@expose` — publishable, and imported by nobody in this repo
 
@@ -763,6 +765,18 @@ published schema and a variable syntax of its own. A process in another language
 concerns it by whoever starts it. It replaced `remote:` on an entry, `only:` passed by each command, and
 `FOUGERE_FRONDS`, a third filter the Nuxt module read. Pinned by `core/tests/topology.test.ts` and
 `defaults/tests/boot-tree.test.ts`.
+
+**What the app needs running beside it is `services:`'s, and `fougere up` starts it** — a third-party
+program (a search engine, an object store), each entry its TYPE's, the way `sources:` is: `ServiceTypes`
+(`core/src/extension/Service.ts`) a registry whose types `@fougere/services` brings (`process`, a command;
+`docker`, an image), `FougereServices` the interface each augments, `serviceFormat` the keys all share
+(`port`, `scheme`, `health`). The address is written ONCE: `environmentOf` (`config/Environment.ts`)
+tells it as `<NAME>_URL`, the variable the `env` source reads a value's url off, and an address the
+environment already gives means the service runs elsewhere and is not started — the whole dev/prod
+rule. `fougere up` (`cli/app/commands/UpCommand.ts`) starts the services, waits on each `health` (or
+its port), then every process of `processes:` and every app's `dev` script, through `concurrently`;
+`fougere env <process>` prints what a deployment hands a process. Only the project's config declares a
+service, so whatever starts was written by the project.
 
 **What a process carries is `platform:`'s, and what a call writes is `@fougere/log`'s** — an
 extension belongs to the PROCESS, so it is listed in `platform:` as an imported value (`[log()]`),

@@ -1,0 +1,52 @@
+{
+  "name": "@fougere/services",
+  "version": "0.30.0-alpha.7",
+  "description": "The programs `fougere up` starts beside the app — a command, or a Docker image — named by `services:` in fougere.config.ts.",
+  "keywords": [
+    "fougere",
+    "typescript",
+    "services",
+    "docker"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chok/fougere.git",
+    "directory": "packages/services"
+  },
+  "type": "module",
+  "sideEffects": [
+    "./dist/index.js"
+  ],
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "build": "rm -rf dist && tsc",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit -p .",
+    "prepublishOnly": "pnpm run build"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "peerDependencies": {
+    "@fougere/core": "workspace:*",
+    "@fougere/schema": "workspace:*"
+  },
+  "devDependencies": {
+    "@fougere/core": "workspace:*",
+    "@fougere/schema": "workspace:*"
+  }
+}

@@ -3,6 +3,7 @@ import { existsSync } from 'node:fs';
 import type { LogLevel } from '../builtin/LogLevel.js';
 import type { ConventionsInput } from './ConventionsInput.js';
 import type { SourceConfig } from '../extension/SourceConfig.js';
+import type { ServiceConfig } from '../extension/ServiceConfig.js';
 import type { PortChoice } from '../extension/PortChoice.js';
 import { getModuleLoader } from '../loader.js';
 import type { ProtocolConfig } from '../extension/Protocol.js';
@@ -17,6 +18,11 @@ import type { Extension } from '../boot/Extension.js';
 export interface FougereConfig {
   /** Where entities live: a name, a type and its options, then `rows:` and `values:`. */
   sources?: Record<string, SourceConfig>;
+  /**
+   * The programs the app needs running beside it — started by `fougere up` unless `<NAME>_URL` gives one.
+   * Ex: `{ meili: { type: 'docker', image: 'getmeili/meilisearch:v1.12', port: 7700, health: '/health' } }`.
+   */
+  services?: Record<string, ServiceConfig>;
   /** The names the scan reads: the import scope, the fronds directory, every convention directory. */
   conventions?: ConventionsInput;
   /** How much every logger says. */

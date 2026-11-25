@@ -1,0 +1,8 @@
+{
+  "name": "two-apps-api",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx main.ts"
+  }
+}

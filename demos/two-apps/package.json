@@ -20,6 +20,7 @@
     "@fougere/log": "workspace:*",
     "@fougere/oclif": "workspace:*",
     "@fougere/schema": "workspace:*",
+    "@fougere/services": "workspace:*",
     "@fougere/transport-http": "workspace:*"
   },
   "devDependencies": {

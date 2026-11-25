@@ -206,6 +206,9 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
   (`compiler/src/compile.ts`) follows the static imports of the config and `fronds.ts`, so a module
   loaded through a path computed at run time is not in `.fougere/build/`, and `@fronds/<name>/X.ts`
   written with its `.ts` keeps it, which no file there answers. Stated 2026-10-20.
+- **A Docker service with no `health` reads as ready before it is** — `UpCommand.ready` opens the port,
+  and Docker's port mapping accepts a connection before the program inside listens: Redis was `ready`
+  14 ms before it said so, measured 2026-11-25. A `health` path is what waits for the program itself.
 - **A process listens on the port of its `url`** — `ServeCommand.portOf`. The `url` is where the others
   REACH it, which behind a proxy, in a container or through `binding://` is not where it listens; `--port`
   is the way out today. Stated 2026-11-25.
