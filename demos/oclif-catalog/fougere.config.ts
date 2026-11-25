@@ -1,5 +1,6 @@
 import '@fougere/adapter-sql';
 import { defineFougere } from '@fougere/core';
+import { log } from '@fougere/log';
 
 /**
  * A file, not `:memory:` — a terminal command is one process that starts and stops, so an
@@ -8,5 +9,5 @@ import { defineFougere } from '@fougere/core';
  */
 export default defineFougere({
   sources: { main: { type: 'sqlite', path: '.data/catalog.db' } },
-  fronds: { '@fougere/log': {} },
+  platform: [log()],
 });

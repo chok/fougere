@@ -196,7 +196,7 @@ async function project(repository: string, out: string) {
     protocols: [...linksOf('FougereProtocols'), { label: 'Every protocol', path: '/reference/protocols' }],
     state: [...linksOf('FougereStates'), { label: 'Every state keeper', path: '/reference/states' }],
     ports: [{ label: 'Ports Fougere opens', path: '/reference/ports' }],
-    fronds: moduleKeys.flatMap((key) => {
+    platform: moduleKeys.flatMap((key) => {
       const [, label, path] = /^\[`'(.+)'`\]\((.+)\)$/.exec(key) ?? [];
 
       return label && path ? [{ label, path }] : [];
@@ -206,7 +206,8 @@ async function project(repository: string, out: string) {
     sources: `**\`type\` is one of:** ${answeredBy('FougereSources').join(' · ')}. Every key each one admits: [Source types](/reference/sources).`,
     protocols: `**Serves:** ${answeredBy('FougereProtocols').join(' · ')}. See [Protocols](/reference/protocols).`,
     state: `**Kept by:** ${answeredBy('FougereStates').join(' · ')}. See [State keepers](/reference/states).`,
-    fronds: `**A package key:** ${moduleKeys.join(' · ')} — or a frond name, \`{ extends: '…' }\` to inherit another's code. Where each runs: [`processes:`](/docs/concepts/configuration#where-each-frond-runs).`,
+    platform: `**Extensions:** ${moduleKeys.join(' · ')} — imported, then written \`platform: [log()]\`. See [What each process carries](/docs/concepts/configuration#what-each-process-carries).`,
+    fronds: `A frond name, \`{ extends: '…' }\` to inherit another's code, or a package that brings a frond. Where each runs: [\`processes:\`](/docs/concepts/configuration#where-each-frond-runs).`,
     ports: `**Fougere's own ports:** see [Ports Fougere opens](/reference/ports).`,
   };
   const configPage = interfacePage('FougereConfig', 'fougere.config.ts', 'Every key the app config admits, and which package answers each one.',

@@ -762,16 +762,17 @@ concerns it by whoever starts it. It replaced `remote:` on an entry, `only:` pas
 `FOUGERE_FRONDS`, a third filter the Nuxt module read. Pinned by `core/tests/topology.test.ts` and
 `defaults/tests/boot-tree.test.ts`.
 
-**What a call writes is `@fougere/log`'s, and it rises in every process** — `log()` is an
-EXTENSION, so `fronds: { '@fougere/log': {} }` is mounted by every boot that reads the config
-(`configModules` is not narrowed by the topology), and `up` installs `callLines`: two lines a call,
-under the frond that answers, `← <caller>` when a signed call came from another process. A path
-(`'@fougere/log': { options: './lines.jsonl' }`) brings the file destination as well. It used to be core's
+**What a process carries is `platform:`'s, and what a call writes is `@fougere/log`'s** — an
+extension belongs to the PROCESS, so it is listed in `platform:` as an imported value (`[log()]`),
+and a process of `processes:` states its own list or carries the config's — exactly the list, nothing of
+the default merged, inheritance written `[...base, …]`. The placement hands it to the boot
+(`ProcessPlacement.platform`), and both hosts mount it before their own extensions. An extension under
+`fronds:` refuses (`configModules`, `project/ConfigModules.ts`), naming the `platform:` line: it rose
+in EVERY process, so a process stating its own list would have carried it anyway. `log()` installs
+`callLines`: two lines a call, under the frond that answers, `← <caller>` when a signed call came from
+another process; `log(path)` brings the file destination as well. It used to be core's
 `loggerMiddleware`, installed by `observability` alone, so an app that did not trace wrote nothing
-about its calls. The starters write the line. `boot()` resolves a PACKAGE key from the project
-(`fromProject`, `defaults/src/boot.ts`): core's own loader took `'@fougere/log'` for a file path,
-so a script calling `bootApp` with no loader of its own refused the config the starter writes.
-Pinned by `log/tests/call-lines.test.ts`.
+about its calls. The starters write the line. Pinned by `log/tests/call-lines.test.ts`.
 
 **A line says who wrote it and what it was written DURING** — a class asking for `Logger` gets
 `child(<Class>)` under its own key (`ownLoggers`, `core/src/builtin/OwnLoggers.ts`), a substituted

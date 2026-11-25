@@ -2,6 +2,7 @@ import '@fougere/adapter-rest';
 import '@fougere/adapter-graphql';
 import '@fougere/adapter-sql';
 import { defineFougere } from '@fougere/core';
+import { log } from '@fougere/log';
 
 /**
  * The whole configuration. `main` is a SQLite file, its tables are written by
@@ -17,7 +18,5 @@ export default defineFougere({
   // What this app publishes. Absent means not served — the route file existing is
   // not the decision, this is.
   protocols: { rest: {}, graphql: {} },
-  fronds: {
-    '@fougere/log': {},
-  },
+  platform: [log()],
 });

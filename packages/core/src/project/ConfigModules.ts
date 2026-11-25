@@ -1,4 +1,3 @@
-import type { Extension } from '../boot/Extension.js';
 import type { FrondDescriptor } from '../descriptor/FrondDescriptor.js';
 import { isExtension } from '../descriptor/ExtensionEntry.js';
 import { statesModule, statesPackage, type FrondEntries } from '../config/FrondEntries.js';
@@ -11,13 +10,12 @@ function exportedBy(specifier: string): string {
   return last.replace(/\.[cm]?[jt]s$/, '');
 }
 
-/** What a config hands over as code — its module keys and the fronds it built — sorted by what each one is. */
+/** The fronds a config hands over as code: its module keys and the fronds it built. An extension under `fronds:` refuses. */
 export async function configModules(
   entries: FrondEntries | undefined,
   loader: ModuleLoader = getModuleLoader(),
-): Promise<{ fronds: FrondDescriptor[]; extensions: Extension[] }> {
+): Promise<{ fronds: FrondDescriptor[] }> {
   const fronds: FrondDescriptor[] = [];
-  const extensions: Extension[] = [];
 
   for (const entry of keyedFrondEntries(entries)) {
     if (entry.descriptor) {
@@ -42,10 +40,16 @@ export async function configModules(
     }
 
     const exported = (factory as (argument?: unknown) => unknown)(entry.value);
-    if (isExtension(exported)) extensions.push(exported as Extension);
-    else if (statesPackage(entry.key)) fronds.push({ ...(exported as FrondDescriptor), name: entry.key });
+    if (isExtension(exported)) {
+      const argument = entry.value === undefined ? '' : `'${entry.value}'`;
+      throw new Error(
+        `fougere.config.ts: '${entry.key}' is an extension, which a process carries, not a frond. `
+        + `Move it to platform: — import { ${name} } from '${entry.key}', then platform: [${name}(${argument})].`,
+      );
+    }
+    if (statesPackage(entry.key)) fronds.push({ ...(exported as FrondDescriptor), name: entry.key });
     else fronds.push(exported as FrondDescriptor);
   }
 
-  return { fronds, extensions };
+  return { fronds };
 }

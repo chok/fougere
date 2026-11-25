@@ -137,7 +137,7 @@ async function boot(): Promise<App> {
   }
 
   const stated = await configModules(fileConfig.fronds);
-  const { only, remotes } = Topology.of(fileConfig).placement();
+  const { only, remotes, platform } = Topology.of(fileConfig).placement();
   const declared: Partial<Pick<CreateAppOptions, 'fronds' | 'vocabulary'>> = _config.fronds
     ? { fronds: _config.fronds, vocabulary: _config.vocabulary }
     : await appOptionsOf(root, { conventions: fileConfig.conventions });
@@ -158,7 +158,7 @@ async function boot(): Promise<App> {
     remoteTransport: _config.remoteTransport,
     extensions: [
       ...(_config.migrates ? [migrating((app) => storage.migrate?.(app))] : []),
-      ...stated.extensions,
+      ...platform,
       ...(_config.extensions ?? []),
     ],
     onDispose: _config.storage ? undefined : storage.close,

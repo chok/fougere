@@ -32,7 +32,7 @@ export async function testApp(options: TestAppOptions = {}): Promise<TestApp> {
     root: options.root ?? scope?.root,
     ...(options.topology
       ? {}
-      : { only: options.fronds ?? (scope?.frond ? [scope.frond] : undefined), remotes: {}, config: { fronds: {} } }),
+      : { only: options.fronds ?? (scope?.frond ? [scope.frond] : undefined), remotes: {}, config: { fronds: {}, platform: [] } }),
     storage: () => storage,
     extensions: [migrating(storage.migrate)],
   });

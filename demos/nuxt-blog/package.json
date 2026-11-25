@@ -8,7 +8,7 @@
     "graphql": "tsx graphql.ts",
     "build": "nuxt build apps/nuxt",
     "preview": "nuxt preview apps/nuxt",
-    "dev:blog": "node serve-blog.ts",
+    "dev:blog": "fougere dev blog",
     "migrate": "fougere migrate --latest --apply"
   },
   "dependencies": {

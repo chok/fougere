@@ -55,8 +55,8 @@ export async function boot(options: BootOptions): Promise<App> {
   }
 
   const stated = await configModules(config.fronds, fromProject(root, options.built));
-  const { only, remotes } = options.only !== undefined || options.remotes !== undefined
-    ? { only: options.only, remotes: options.remotes ?? {} }
+  const { only, remotes, platform } = options.only !== undefined || options.remotes !== undefined
+    ? { only: options.only, remotes: options.remotes ?? {}, platform: config.platform ?? [] }
     : Topology.of(config).placement(options.process);
   const statement = await appOptionsOf(code, { conventions: config.conventions });
   const hosted = loadedFronds([...statement.fronds, ...stated.fronds], only, config.fronds);
@@ -75,7 +75,7 @@ export async function boot(options: BootOptions): Promise<App> {
     protocols: config.protocols,
     state: config.state,
     onDispose: layer?.close,
-    extensions: [...stated.extensions, ...(options.extensions ?? [])],
+    extensions: [...platform, ...(options.extensions ?? [])],
     onEmit: options.onEmit,
     remoteTransport: options.remoteTransport,
   });

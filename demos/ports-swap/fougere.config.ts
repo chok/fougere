@@ -1,4 +1,5 @@
 import { defineFougere } from '@fougere/core';
+import { log } from '@fougere/log';
 
 /**
  * Two classes extend `Payment`, so the boot refuses to pick one on its own. This line
@@ -9,5 +10,5 @@ import { defineFougere } from '@fougere/core';
  */
 export default defineFougere({
   ports: { Payment: 'StripePayment' },
-  fronds: { '@fougere/log': {} },
+  platform: [log()],
 });

@@ -202,7 +202,7 @@ const module = defineNuxtModule<FougereModuleOptions>({
     const bootTpl = addTemplate({
       filename: 'fougere-boot.ts',
       write: true,
-      getContents: () => generateBootPlugin(config, allSeeds, runtimeResolve('server/utils/boot'), extensionsOf(options), statedPath, scanRoot, config.fronds || config.sources || config.processes ? configFile : undefined, nuxt.options.dev ? scanRoot : null),
+      getContents: () => generateBootPlugin(config, allSeeds, runtimeResolve('server/utils/boot'), extensionsOf(options), statedPath, scanRoot, config.fronds || config.sources || config.processes || config.platform ? configFile : undefined, nuxt.options.dev ? scanRoot : null),
     });
     addServerPlugin(bootTpl.dst);
 
@@ -269,7 +269,7 @@ export function generateBootPlugin(
   lines.push(`import { configureFougere } from '${fougereAppPath}';`);
   if (statedPath) lines.push(`import fronds, * as statement from '${statedPath.replace(/\.(m?)[jt]sx?$/, '')}';`);
   if (configFile) lines.push(`import config from '${configFile.replace(/\.(m?)[jt]sx?$/, '')}';`);
-  const configArg = configFile ? `{ ...${JSON.stringify(carried(config))}, fronds: config.fronds, sources: config.sources, processes: config.processes }` : JSON.stringify(carried(config));
+  const configArg = configFile ? `{ ...${JSON.stringify(carried(config))}, fronds: config.fronds, sources: config.sources, processes: config.processes, platform: config.platform }` : JSON.stringify(carried(config));
 
   const moduleKeys = keyedFrondEntries(config.fronds).map((entry) => entry.key).filter(statesModule);
   if (moduleKeys.length > 0) {

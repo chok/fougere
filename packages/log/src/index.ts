@@ -28,7 +28,10 @@ export const logFrond = (path: string) => {
   });
 };
 
-/** The name `fronds: { '@fougere/log': {} }` reaches: the last segment of the specifier. */
+/**
+ * The lines every call writes, and the file they go to when `path` is given.
+ * Ex: `platform: [log('./lines.jsonl')]`.
+ */
 export const log = (path?: string): Extension => ({
   name: 'log',
   ...(path ? { fronds: [logFrond(path)] } : {}),

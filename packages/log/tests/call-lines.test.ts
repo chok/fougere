@@ -92,12 +92,12 @@ describe('a call writes two lines', () => {
   });
 });
 
-describe('declared once in the config', () => {
-  it('rises in a process started for one frond only, with no loader installed by the caller', async () => {
+describe('declared once in platform:', () => {
+  it('rises in a process started for one frond only', async () => {
     const lines = printed();
     await using app = await boot({
       root: join(here, 'fixtures-app'),
-      config: { fronds: { '@fougere/log': {} } },
+      config: { platform: [log()] },
       only: ['shop'],
     });
 

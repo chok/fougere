@@ -1,9 +1,7 @@
 /**
  * A frond a config names by MODULE — `@fougere/log`, or a package of your own.
  *
- * Which of the two doors it goes through is read off what the module hands back, so the
- * author of a config does not have to know whether their package exports a frond or an
- * extension: the same reading `extensions/` already does off a module's form.
+ * A module that hands back an extension is refused: what a process carries is `platform:`'s.
  */
 import { describe, it, expect, beforeEach } from 'vitest';
 import { configModules } from '../src/project/ConfigModules.js';
@@ -20,15 +18,15 @@ const modules: Record<string, Record<string, unknown>> = {
 describe('configModules', () => {
   beforeEach(() => { setModuleLoader(async (id: string) => modules[id] ?? {}); });
 
-  it('sends a descriptor to the fronds and a rising shape to the extensions', async () => {
-    const { fronds, extensions } = await configModules({
-      cart: { extends: 'shop' },
-      '@acme/audit': { options: './lines.jsonl' },
-      '@acme/watch': {},
-    });
+  it('hands a descriptor over as a frond, named by its key', async () => {
+    const { fronds } = await configModules({ cart: { extends: 'shop' }, '@acme/audit': { options: './lines.jsonl' } });
 
     expect(fronds).toEqual([{ name: '@acme/audit', path: './lines.jsonl', handlers: [] }]);
-    expect(extensions.map((one) => (one as { name: string }).name)).toEqual(['watch']);
+  });
+
+  it('refuses an extension, naming the line platform: takes', async () => {
+    await expect(configModules({ '@acme/watch': { options: 'x' } }))
+      .rejects.toThrow("'@acme/watch' is an extension, which a process carries, not a frond. Move it to platform: — import { watch } from '@acme/watch', then platform: [watch('x')].");
   });
 
   it('reads the export off the last segment, and falls back to the default', async () => {
@@ -43,10 +41,9 @@ describe('configModules', () => {
   });
 
   it('says nothing about the fronds a scan finds on disk', async () => {
-    const { fronds, extensions } = await configModules({ cart: { extends: 'shop' }, blog: {} });
+    const { fronds } = await configModules({ cart: { extends: 'shop' }, blog: {} });
 
     expect(fronds).toEqual([]);
-    expect(extensions).toEqual([]);
   });
 
   it('hands over a frond the config built in place, with nothing to import', async () => {

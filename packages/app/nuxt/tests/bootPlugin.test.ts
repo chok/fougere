@@ -237,7 +237,7 @@ describe('extensionsOf', () => {
         '/app/fougere.config.ts');
 
       expect(out).toContain("import config from '/app/fougere.config';");
-      expect(out).toContain('fronds: config.fronds, sources: config.sources, processes: config.processes }');
+      expect(out).toContain('fronds: config.fronds, sources: config.sources, processes: config.processes, platform: config.platform }');
     });
 
     it('opens the sources the config file holds when the server starts, not the ones the build read', () => {
@@ -253,7 +253,7 @@ describe('extensionsOf', () => {
       const out = generateBootPlugin(
         {} as FougereConfig, [], '/app/boot', [], undefined, undefined, '/app/fougere.config.ts');
 
-      expect(out).toContain('fronds: config.fronds, sources: config.sources, processes: config.processes }');
+      expect(out).toContain('fronds: config.fronds, sources: config.sources, processes: config.processes, platform: config.platform }');
     });
   });
 });
@@ -261,12 +261,12 @@ describe('extensionsOf', () => {
 describe('generateBootPlugin — a module key', () => {
   it('is imported by the bundle and handed to the loader, since nothing resolves it at runtime', () => {
     const out = generateBootPlugin(
-      { fronds: { '@fougere/log': { options: 'logs/app.jsonl' }, './fronds/audit.ts': {} } } as FougereConfig,
+      { fronds: { '@acme/mail': {}, './fronds/audit.ts': {} } } as FougereConfig,
       [], '/app/boot', [], undefined, '/app');
 
-    expect(out).toContain("import * as module_0 from '@fougere/log';");
+    expect(out).toContain("import * as module_0 from '@acme/mail';");
     expect(out).toContain("import * as module_1 from '/app/fronds/audit';");
-    expect(out).toContain('const modules = { "@fougere/log": module_0, "./fronds/audit.ts": module_1 };');
+    expect(out).toContain('const modules = { "@acme/mail": module_0, "./fronds/audit.ts": module_1 };');
     expect(out).toContain('setModuleLoader((id, options) =>');
   });
 });
