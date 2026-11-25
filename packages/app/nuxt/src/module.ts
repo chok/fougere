@@ -13,7 +13,7 @@ import {
 import type { Nuxt } from '@nuxt/schema';
 import { Fronds, Protocols, Topology, WITHOUT_GLOBAL_INSTALL, orderSeeds, type ScanResult } from '@fougere/core';
 import { frondPackage, resolveConventions, keyedFrondEntries, statesModule, type Conventions } from '@fougere/core';
-import { emitFacade, emitNames, frondAliases, frondNamesOf, NAMES, REMOTES, appOptionsFileIn, appOptionsIn, setModuleLoader, loadNearestConfig, configFileNear, projectRootOf } from '@fougere/core/node';
+import { emitFacade, emitNames, frondAliases, frondNamesOf, NAMES, REMOTES, appOptionsFileIn, appOptionsIn, setModuleLoader, loadNearestConfig, configFileNear, projectRootOf, appNameOf, refuseUnknownApps } from '@fougere/core/node';
 import { declaresStorage } from '@fougere/defaults';
 import type { SeedEntry, FougereConfig } from '@fougere/core';
 import { createJiti } from 'jiti';
@@ -23,20 +23,6 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 
 export interface FougereModuleOptions {
   /** Where `fronds/` lives, relative to the app's rootDir — found on its own (`projectRootOf`), so written only when it is elsewhere. */
   root?: string;
-
-  /** `@fougere/observability` — a span per operation, the four signals, OTLP. */
-  observability?: Record<string, unknown> | false;
-  /** `@fougere/calls` — the dev panel: a bounded log of what this process dispatched. */
-  calls?: Record<string, unknown> | false;
-}
-
-const EXTENSION_KEYS = ['observability', 'calls'] as const;
-
-/** What the project asked for, in mount order. `false` is how a key is turned off. */
-export function extensionsOf(options: FougereModuleOptions): { key: string; options: unknown }[] {
-  return EXTENSION_KEYS
-    .filter((key) => options[key] !== undefined && options[key] !== false)
-    .map((key) => ({ key, options: options[key] }));
 }
 
 const restartsOnFrom = (srcDir: string) => (dir: string): RegExp =>
@@ -92,6 +78,7 @@ const module = defineNuxtModule<FougereModuleOptions>({
       Object.entries(options).filter(([, v]) => v !== undefined),
     ) as Partial<FougereConfig>;
     const config: FougereConfig = { ...fileConfig, ...optionsOverride };
+    refuseUnknownApps(config, scanRoot);
 
     if ((process.env.FOUGERE_LOG_LEVEL ?? config.logLevel) === 'debug') {
       process.env.CONSOLA_LEVEL ??= '4';
@@ -202,7 +189,7 @@ const module = defineNuxtModule<FougereModuleOptions>({
     const bootTpl = addTemplate({
       filename: 'fougere-boot.ts',
       write: true,
-      getContents: () => generateBootPlugin(config, allSeeds, runtimeResolve('server/utils/boot'), extensionsOf(options), statedPath, scanRoot, config.fronds || config.sources || config.processes || config.platform ? configFile : undefined, nuxt.options.dev ? scanRoot : null),
+      getContents: () => generateBootPlugin(config, allSeeds, runtimeResolve('server/utils/boot'), appNameOf(scanRoot, rootDir), statedPath, scanRoot, config.fronds || config.sources || config.processes || config.platform || config.apps ? configFile : undefined, nuxt.options.dev ? scanRoot : null),
     });
     addServerPlugin(bootTpl.dst);
 
@@ -255,8 +242,8 @@ export function generateBootPlugin(
   config: FougereConfig,
   seeds: SeedEntry[],
   fougereAppPath: string,
-  /** What `fougere:` named, in mount order. Empty is the whole of "changed nothing". */
-  extensions: { key: string; options: unknown }[] = [],
+  /** The app this host is, by its directory under `apps/`. */
+  app?: string,
   /** The app's own `fronds.ts`, when it states what it hosts instead of being scanned. */
   statedPath?: string,
   root?: string,
@@ -269,7 +256,9 @@ export function generateBootPlugin(
   lines.push(`import { configureFougere } from '${fougereAppPath}';`);
   if (statedPath) lines.push(`import fronds, * as statement from '${statedPath.replace(/\.(m?)[jt]sx?$/, '')}';`);
   if (configFile) lines.push(`import config from '${configFile.replace(/\.(m?)[jt]sx?$/, '')}';`);
-  const configArg = configFile ? `{ ...${JSON.stringify(carried(config))}, fronds: config.fronds, sources: config.sources, processes: config.processes, platform: config.platform }` : JSON.stringify(carried(config));
+  const configArg = configFile ? `{ ...${JSON.stringify(carried(config))}, fronds: config.fronds, sources: config.sources, processes: config.processes, platform: config.platform, apps: config.apps }` : JSON.stringify(carried(config));
+
+  const appArg = app === undefined ? '' : `, app: ${JSON.stringify(app)}`;
 
   const moduleKeys = keyedFrondEntries(config.fronds).map((entry) => entry.key).filter(statesModule);
   if (moduleKeys.length > 0) {
@@ -289,7 +278,7 @@ export function generateBootPlugin(
     lines.push(``);
     lines.push(`export default defineNitroPlugin(() => {`);
     const states = statedPath ? 'fronds, vocabulary: statement.vocabulary, ' : '';
-    lines.push(`  configureFougere({ ${states}config: ${configArg} });`);
+    lines.push(`  configureFougere({ ${states}config: ${configArg}${appArg} });`);
     lines.push(`});`);
 
     return lines.join('\n') + '\n';
@@ -297,9 +286,6 @@ export function generateBootPlugin(
 
   lines.push(`import { resolveStorage } from '@fougere/defaults';`);
   if (seeds.length) lines.push(`import { runSeeds } from '@fougere/core';`);
-  for (const { key } of extensions) {
-    lines.push(`import { ${key} } from '@fougere/${key}';`);
-  }
   lines.push(``);
 
   for (let i = 0; i < seeds.length; i++) {
@@ -309,7 +295,7 @@ export function generateBootPlugin(
 
   lines.push(`export default defineNitroPlugin(async (nitroApp) => {`);
   const states = statedPath ? 'fronds, vocabulary: statement.vocabulary, ' : '';
-  lines.push(`  configureFougere({ ${states}config: ${configArg} });`);
+  lines.push(`  configureFougere({ ${states}config: ${configArg}${appArg} });`);
   lines.push(``);
   lines.push(`  try {`);
   const rootArg = storageRoot ? `, ${JSON.stringify(storageRoot)}` : '';
@@ -319,6 +305,7 @@ export function generateBootPlugin(
   lines.push(`    configureFougere({`);
   if (statedPath) lines.push(`      fronds,`, `      vocabulary: statement.vocabulary,`);
   lines.push(`      config: ${configArg},`);
+  if (app !== undefined) lines.push(`      app: ${JSON.stringify(app)},`);
   lines.push(`      storage,`);
   lines.push(`      extensions: [`);
 
@@ -328,10 +315,6 @@ export function generateBootPlugin(
       lines.push(`          { entityName: '${seeds[i].entityName}', data: seed_${i}, filePath: ${JSON.stringify(seeds[i].filePath)} },`);
     }
     lines.push(`        ], (message) => console.log('[fougere:seed]' + message)) },`);
-  }
-
-  for (const { key, options } of extensions) {
-    lines.push(`        ${key}(${JSON.stringify(options ?? {})}),`);
   }
 
   lines.push(`      ],`);

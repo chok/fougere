@@ -768,7 +768,11 @@ and a process of `processes:` states its own list or carries the config's — ex
 the default merged, inheritance written `[...base, …]`. The placement hands it to the boot
 (`ProcessPlacement.platform`), and both hosts mount it before their own extensions. An extension under
 `fronds:` refuses (`configModules`, `project/ConfigModules.ts`), naming the `platform:` line: it rose
-in EVERY process, so a process stating its own list would have carried it anyway. `log()` installs
+in EVERY process, so a process stating its own list would have carried it anyway. An app carries its own
+the same way, `apps.<name>.platform`, named by its directory under `apps/` (`appNameOf`,
+`project/Apps.ts`): the Nuxt module reads it off its `rootDir`, a terminal hands it to `bootApp`, and an
+entry naming no directory refuses. It replaced the `calls` and `observability` options of the Nuxt module,
+a closed list of two packages written into the plugin by name. `log()` installs
 `callLines`: two lines a call, under the frond that answers, `← <caller>` when a signed call came from
 another process; `log(path)` brings the file destination as well. It used to be core's
 `loggerMiddleware`, installed by `observability` alone, so an app that did not trace wrote nothing

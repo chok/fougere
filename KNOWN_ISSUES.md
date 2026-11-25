@@ -206,6 +206,13 @@ Fact — where — state. The reasoning lives in `fougere-notes/docs/notes/`.
   (`compiler/src/compile.ts`) follows the static imports of the config and `fronds.ts`, so a module
   loaded through a path computed at run time is not in `.fougere/build/`, and `@fronds/<name>/X.ts`
   written with its `.ts` keeps it, which no file there answers. Stated 2026-10-20.
+- **Only Nuxt and `bootApp` know which app they are** — `apps.<name>.platform` reaches an app whose host
+  hands its name over: the Nuxt module reads it off its `rootDir`, a terminal passes `appNameOf` to
+  `bootApp`. Vite, Next, SvelteKit, React Router and Express call `configureFougere` with no `app`, so they
+  carry `platform:`. Stated 2026-11-25.
+- **A process listens on the port of its `url`** — `ServeCommand.portOf`. The `url` is where the others
+  REACH it, which behind a proxy, in a container or through `binding://` is not where it listens; `--port`
+  is the way out today. Stated 2026-11-25.
 - **A frond runs in one process of `processes:`**, so the same frond cannot be deployed
   twice. A name is a frond, a type, while a deployment has instances. Not implemented.
 - **A `list` the handler writes itself carries no `total` in the admin** — `@fougere/admin`. An array has

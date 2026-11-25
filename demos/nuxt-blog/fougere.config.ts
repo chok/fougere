@@ -14,6 +14,13 @@ export default defineFougere({
   // config décide si elle sert quelque chose.
   protocols: { rest: { openapi: {} }, graphql: {} },
   platform: [log()],
+  // The dev panel, on the CONSUMER side: its calls to the blog leave the process — the half a
+  // browser's devtools cannot show. `observability` first: it opens the span whose id every call
+  // carries across the wire, which lets the two panels show the same trace on both sides. No
+  // `otlp:` — the trace exists without a collector, nothing leaves the process.
+  apps: {
+    nuxt: { platform: [log(), observability({ service: 'nuxt-blog' }), calls({ panel: 4402 })] },
+  },
   fronds: {
     // A frond like any other: the process that runs it starts its engine.
     auth: betterAuth({

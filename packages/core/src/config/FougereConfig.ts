@@ -7,6 +7,7 @@ import type { PortChoice } from '../extension/PortChoice.js';
 import { getModuleLoader } from '../loader.js';
 import type { ProtocolConfig } from '../extension/Protocol.js';
 import type { FrondEntries } from './FrondEntries.js';
+import type { NameOf } from '../NameOf.js';
 import { DEFAULT_CONVENTIONS } from './Conventions.js';
 import type { StateEntry } from '../extension/FougereStates.js';
 import type { ServerConfig } from './ServerConfig.js';
@@ -30,7 +31,7 @@ export interface FougereConfig {
    */
   platform?: readonly Extension[];
   /** The project's apps, by their directory under `apps/`, where one differs from `platform:`. */
-  apps?: Record<string, AppEntry>;
+  apps?: { readonly [app in NameOf<'app'> | (string & {})]?: AppEntry };
   /**
    * The processes the apps reach, each with its url and the fronds it runs.
    * Ex: `{ blog: { url: 'http://127.0.0.1:4100', fronds: ['blog'] } }`.

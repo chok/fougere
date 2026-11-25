@@ -14,6 +14,11 @@ export interface BootAppOptions {
   /** The process of `processes:` this boot is; absent, `FOUGERE_PROCESS`, else the app. */
   process?: string;
   /**
+   * The app this boot is, by its directory under `apps/`, when it is no process.
+   * Ex: `appNameOf(root, import.meta.dirname)`.
+   */
+  app?: string;
+  /**
    * What this app takes on beyond its fronds; a member with the same name replaces the framework's.
    * Ex: `observability()`.
    */
@@ -35,6 +40,7 @@ export async function bootApp(root: string, opts: BootAppOptions = {}): Promise<
     root,
     built: opts.built,
     process: opts.process,
+    app: opts.app,
     storage: (cfg) => (storage = resolveStorage(cfg.sources, root)),
     extensions: [...(opts.migrates ? [migrating((app) => storage?.migrate?.(app))] : []), ...(opts.extensions ?? [])],
   });

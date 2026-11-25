@@ -19,7 +19,7 @@ export interface AppEntry {
 /** What the config says about where things run. */
 export interface TopologyStatement {
   platform?: readonly Extension[];
-  apps?: Readonly<Record<string, AppEntry>>;
+  apps?: Readonly<Partial<Record<string, AppEntry>>>;
   processes?: Readonly<Record<string, ProcessEntry>>;
 }
 

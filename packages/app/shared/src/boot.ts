@@ -23,6 +23,8 @@ export interface FougereServerConfig {
   vocabulary?: CreateAppOptions['vocabulary'];
   /** What `fougere.config.ts` says, when the host already read it. */
   config?: Partial<FougereConfig>;
+  /** The app this host is, by its directory under `apps/`. */
+  app?: string;
   /** Who performs an outgoing call, when the default cannot. */
   remoteTransport?: (url: string) => Transport;
   /**
@@ -137,7 +139,7 @@ async function boot(): Promise<App> {
   }
 
   const stated = await configModules(fileConfig.fronds);
-  const { only, remotes, platform } = Topology.of(fileConfig).placement();
+  const { only, remotes, platform } = Topology.of(fileConfig).placement(undefined, _config.app);
   const declared: Partial<Pick<CreateAppOptions, 'fronds' | 'vocabulary'>> = _config.fronds
     ? { fronds: _config.fronds, vocabulary: _config.vocabulary }
     : await appOptionsOf(root, { conventions: fileConfig.conventions });

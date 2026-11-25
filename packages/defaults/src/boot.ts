@@ -1,6 +1,6 @@
 import { Logger, WITHOUT_GLOBAL_INSTALL, applyConfig, createApp, loadedFronds, Topology, type App, type CreateAppOptions, type Extension, type FougereConfig, type FrondDescriptor, type Transport } from '@fougere/core';
 import { layerOf, type ResolvedStorage } from './storage/ResolvedStorage.js';
-import { getModuleLoader, loadConfig, MODULES, configModules, appOptionsFileIn, appOptionsIn, type ModuleLoader } from '@fougere/core/node';
+import { getModuleLoader, loadConfig, MODULES, configModules, refuseUnknownApps, appOptionsFileIn, appOptionsIn, type ModuleLoader } from '@fougere/core/node';
 import { join, resolve, sep } from 'node:path';
 import { existsSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
@@ -18,6 +18,8 @@ interface BootOptions {
   createContainer?: () => Container;
   /** The process of `processes:` this boot is; absent, `FOUGERE_PROCESS`, else the app. */
   process?: string;
+  /** The app this boot is, by its directory under `apps/`, when it is no process. */
+  app?: string;
   /** Boots only these fronds, the topology unread — a test booting the frond it sits in. */
   only?: string[];
   /** Where the fronds elsewhere answer, the topology unread. */
@@ -45,6 +47,7 @@ export async function boot(options: BootOptions): Promise<App> {
   const fileConfig = await loadConfig(code);
   const config: FougereConfig = { ...fileConfig, ...options.config };
   applyConfig(config);
+  refuseUnknownApps(config, root);
   log.info('config loaded');
 
   let layer: ReturnType<NonNullable<BootOptions['storage']>> | undefined;
@@ -57,7 +60,7 @@ export async function boot(options: BootOptions): Promise<App> {
   const stated = await configModules(config.fronds, fromProject(root, options.built));
   const { only, remotes, platform } = options.only !== undefined || options.remotes !== undefined
     ? { only: options.only, remotes: options.remotes ?? {}, platform: config.platform ?? [] }
-    : Topology.of(config).placement(options.process);
+    : Topology.of(config).placement(options.process, options.app);
   const statement = await appOptionsOf(code, { conventions: config.conventions });
   const hosted = loadedFronds([...statement.fronds, ...stated.fronds], only, config.fronds);
 

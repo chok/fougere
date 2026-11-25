@@ -7,14 +7,15 @@
  */
 import { bootApp } from '@fougere/defaults';
 import { setLogLevel } from '@fougere/core';
-import { projectRootOf } from '@fougere/core/node';
+import { appNameOf, projectRootOf } from '@fougere/core/node';
 import { serve } from '@fougere/oclif';
 
 // stdout is a protocol here — `--json` is meant to reach `jq`, and the boot writes with
 // `console.info`. A refusal still reaches stderr, where a shell expects it.
 setLogLevel('error');
 
-const app = await bootApp(projectRootOf(import.meta.dirname));
+const root = projectRootOf(import.meta.dirname);
+const app = await bootApp(root, { app: appNameOf(root, import.meta.dirname) });
 
 await serve(app);
 await app.dispose();

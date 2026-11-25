@@ -1,6 +1,7 @@
 import { basesOf, realizationsOf } from '../descriptor/bases.js';
 import type { FrondDescriptor } from '../descriptor/FrondDescriptor.js';
 import type { ScanResult } from '../scan.js';
+import { appsIn } from '../project/Apps.js';
 
 function union(names: Iterable<string>): string {
   const all = [...new Set(names)].sort();
@@ -50,6 +51,7 @@ export function emitNames(scan: ScanResult): string {
     '  /** Every name this project declares, by kind. A config may write no other. */',
     '  interface FougereNames {',
     `    frond: ${union(fronds)};`,
+    `    app: ${union(appsIn(scan.root))};`,
     `    entity: ${union(entities)};`,
     `    handler: ${union(handlers)};`,
     `    provider: ${union(providers)};`,
