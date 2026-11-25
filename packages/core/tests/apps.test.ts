@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { mkdirSync, mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { appNameOf, appsIn, refuseUnknownApps } from '../src/project/Apps.js';
+import { appNameOf, appRunningIn, appsIn, refuseUnknownApps } from '../src/project/Apps.js';
 
 function project(...apps: string[]): string {
   const root = mkdtempSync(join(tmpdir(), 'apps-'));
@@ -17,6 +17,14 @@ describe('an app', () => {
 
     expect(appNameOf(root, join(root, 'apps', 'web'))).toBe('web');
     expect(appNameOf(root, join(root, 'apps', 'web', 'src'))).toBe('web');
+  });
+
+  it('is read off the directory it runs from, the project found above it', () => {
+    const root = project('web');
+    mkdirSync(join(root, 'fronds'));
+
+    expect(appRunningIn(join(root, 'apps', 'web'))).toBe('web');
+    expect(appRunningIn(root)).toBeUndefined();
   });
 
   it('has no name outside apps/', () => {

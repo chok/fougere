@@ -3,7 +3,7 @@ import { resolve, sep } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { applyConfig, createApp, Logger, migrating, loadedFronds, Topology } from '@fougere/core';
 import { resolveConventions } from '@fougere/core';
-import { frondAliases, loadNearestConfig, setModuleLoader, configModules } from '@fougere/core/node';
+import { appRunningIn, frondAliases, loadNearestConfig, setModuleLoader, configModules } from '@fougere/core/node';
 
 import type { App, AuthRuntime, CreateAppOptions, FougereConfig, Transport } from '@fougere/core';
 import { authOf } from './auth.js';
@@ -23,7 +23,7 @@ export interface FougereServerConfig {
   vocabulary?: CreateAppOptions['vocabulary'];
   /** What `fougere.config.ts` says, when the host already read it. */
   config?: Partial<FougereConfig>;
-  /** The app this host is, by its directory under `apps/`. */
+  /** The app this host is, by its directory under `apps/`; absent, the one it runs from. */
   app?: string;
   /** Who performs an outgoing call, when the default cannot. */
   remoteTransport?: (url: string) => Transport;
@@ -139,7 +139,7 @@ async function boot(): Promise<App> {
   }
 
   const stated = await configModules(fileConfig.fronds);
-  const { only, remotes, platform } = Topology.of(fileConfig).placement(undefined, _config.app);
+  const { only, remotes, platform } = Topology.of(fileConfig).placement(undefined, _config.app ?? appRunningIn(process.cwd()));
   const declared: Partial<Pick<CreateAppOptions, 'fronds' | 'vocabulary'>> = _config.fronds
     ? { fronds: _config.fronds, vocabulary: _config.vocabulary }
     : await appOptionsOf(root, { conventions: fileConfig.conventions });

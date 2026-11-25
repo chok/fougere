@@ -2,7 +2,7 @@
 export { setModuleLoader, getModuleLoader, type ModuleLoader } from './loader.js';
 export { BUILD_DIRECTORY, configFileIn, appOptionsFileIn, loadConfig, loadNearestConfig, configFileNear, projectRootOf } from './config/FougereConfig.js';
 export { configModules } from './project/ConfigModules.js';
-export { APPS, appNameOf, appsIn, refuseUnknownApps } from './project/Apps.js';
+export { APPS, appNameOf, appRunningIn, appsIn, refuseUnknownApps } from './project/Apps.js';
 export { defineFrond, frondConfigFileIn, loadFrondConfig } from './descriptor/FrondConfig.js';
 
 export { generateKeyPair, issueGrant } from './identity/identity-keys.js';

@@ -1,6 +1,7 @@
 /** @fougere/defaults — the conventional boot, declared once. */
 import { migrating, type App, type CreateAppOptions } from '@fougere/core';
 import { boot } from './boot.js';
+import { appRunningIn } from '@fougere/core/node';
 import { resolveStorage, type ResolvedStorage } from './storage/ResolvedStorage.js';
 import '@fougere/transport-http';
 
@@ -14,7 +15,7 @@ export interface BootAppOptions {
   /** The process of `processes:` this boot is; absent, `FOUGERE_PROCESS`, else the app. */
   process?: string;
   /**
-   * The app this boot is, by its directory under `apps/`, when it is no process.
+   * The app this boot is, by its directory under `apps/`, when it is no process; absent, the one it runs from.
    * Ex: `appNameOf(root, import.meta.dirname)`.
    */
   app?: string;
@@ -40,7 +41,7 @@ export async function bootApp(root: string, opts: BootAppOptions = {}): Promise<
     root,
     built: opts.built,
     process: opts.process,
-    app: opts.app,
+    app: opts.app ?? appRunningIn(process.cwd()),
     storage: (cfg) => (storage = resolveStorage(cfg.sources, root)),
     extensions: [...(opts.migrates ? [migrating((app) => storage?.migrate?.(app))] : []), ...(opts.extensions ?? [])],
   });
