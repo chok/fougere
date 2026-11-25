@@ -12,7 +12,7 @@ export type { SourceEntities } from './storage/SourceEntities.js';
 export type { ResolvedStorage } from './storage/ResolvedStorage.js';
 
 export interface BootAppOptions {
-  /** The process of `processes:` this boot is; absent, `FOUGERE_PROCESS`, else the app. */
+  /** The process of `processes:` this boot is; absent, the app. */
   process?: string;
   /**
    * The app this boot is, by its directory under `apps/`, when it is no process; absent, the one it runs from.

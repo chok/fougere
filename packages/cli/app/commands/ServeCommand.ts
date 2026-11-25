@@ -42,7 +42,7 @@ export default class ServeCommand {
   }
 
   async run(raw: Record<string, unknown>) {
-    const running = (raw.process as string | undefined) ?? process.env[Topology.VARIABLE];
+    const running = raw.process as string | undefined;
     const root = process.cwd();
     let placement: ProcessPlacement;
     try {

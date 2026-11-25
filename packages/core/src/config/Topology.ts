@@ -41,7 +41,6 @@ export interface ProcessPlacement {
  * Documented: [processes](https://fougere.dev/docs/concepts/configuration).
  */
 export class Topology {
-  static readonly VARIABLE = 'FOUGERE_PROCESS';
 
   private constructor(private readonly statement: TopologyStatement) {}
 
@@ -60,10 +59,10 @@ export class Topology {
   }
 
   /**
-   * What a process runs — the one named, `FOUGERE_PROCESS` when unsaid — or, with no name, the app `app` names.
+   * What the process `name` runs — or, with no name, the app `app` names.
    * Ex: `placement(undefined, 'web')` is `apps/web`.
    */
-  placement(name: string | undefined = process.env[Topology.VARIABLE], app?: string): ProcessPlacement {
+  placement(name?: string, app?: string): ProcessPlacement {
     const fallback = this.statement.platform ?? [];
     if (name === undefined) {
       return { remotes: this.addresses(), platform: (app && this.statement.apps?.[app]?.platform) || fallback };

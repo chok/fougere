@@ -1,15 +1,13 @@
 import { describe, it, expect, afterAll } from 'vitest';
 import { rmSync } from 'node:fs';
 import { join } from 'node:path';
-import { createAppRunner, environmentOf, Invocation } from '@fougere/core';
-import { loadConfig } from '@fougere/core/node';
+import { createAppRunner, Invocation } from '@fougere/core';
 import { bootApp } from '@fougere/defaults';
 import { bootApi } from '../apps/api/boot.js';
 import { bootOps } from '../apps/ops/boot.js';
 
 const root = join(import.meta.dirname, '..');
 rmSync(join(root, '.data'), { recursive: true, force: true });
-Object.assign(process.env, environmentOf(await loadConfig(root)));
 
 const api = await bootApi();
 const ops = await bootOps();
@@ -38,11 +36,5 @@ describe('two apps over the same fronds', () => {
     const listed = await createAppRunner(ops)({ address: 'note', op: 'list' }, Invocation.empty) as { items: { title: string }[] };
 
     expect(listed.items.map((note) => note.title)).toContain('one table');
-  });
-});
-
-describe('a service, told to the frond that reads it', () => {
-  it('hands the value Files the address services.files answers at', async () => {
-    expect(await createAppRunner(api)({ address: 'files', op: 'url' }, Invocation.empty)).toBe('http://127.0.0.1:7711');
   });
 });

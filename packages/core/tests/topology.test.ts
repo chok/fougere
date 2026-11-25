@@ -41,15 +41,6 @@ describe('a config that places fronds in other processes', () => {
     expect(() => topology.placement('search')).toThrow("fougere.config.ts states no process 'search' under processes:. It states blog, mail.");
   });
 
-  it('reads FOUGERE_PROCESS when no name is given', () => {
-    process.env.FOUGERE_PROCESS = 'mail';
-    try {
-      expect(topology.placement().only).toEqual(['mail', 'audit']);
-    } finally {
-      delete process.env.FOUGERE_PROCESS;
-    }
-  });
-
   it('refuses a frond run by two processes', () => {
     expect(() => Topology.of({ processes: { a: { url: 'http://a', fronds: ['blog'] }, b: { url: 'http://b', fronds: ['blog'] } } }))
       .toThrow("fougere.config.ts: processes.b runs 'blog', which processes.a runs too. A frond runs in one process.");

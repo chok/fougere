@@ -11,7 +11,6 @@
     "typecheck": "tsc --noEmit -p ."
   },
   "dependencies": {
-    "@fougere/adapter-env": "workspace:*",
     "@fougere/adapter-sql": "workspace:*",
     "@fougere/calls": "workspace:*",
     "@fougere/cli": "workspace:*",
@@ -21,7 +20,6 @@
     "@fougere/log": "workspace:*",
     "@fougere/oclif": "workspace:*",
     "@fougere/schema": "workspace:*",
-    "@fougere/services": "workspace:*",
     "@fougere/transport-http": "workspace:*"
   },
   "devDependencies": {
