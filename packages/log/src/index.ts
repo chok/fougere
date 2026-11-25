@@ -29,13 +29,21 @@ export const logFrond = (path: string) => {
 };
 
 /**
- * The lines every call writes, and the file they go to when `path` is given.
- * Ex: `platform: [log('./lines.jsonl')]`.
+ * The two lines every call writes, through the process's logger.
+ * Ex: `platform: [log()]`.
  */
-export const log = (path?: string): Extension => ({
+export const log = (): Extension => ({
   name: 'log',
-  ...(path ? { fronds: [logFrond(path)] } : {}),
   up(app) {
     app.use(callLines(app.container.resolve<Logger>('Logger')));
   },
+});
+
+/**
+ * A file every line of the process goes to, one JSON object each — the call lines among them when `log()` is carried too.
+ * Ex: `platform: [log(), file('./lines.jsonl')]`.
+ */
+export const file = (path: string): Extension => ({
+  name: 'file',
+  fronds: [logFrond(path)],
 });

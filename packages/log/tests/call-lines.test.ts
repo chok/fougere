@@ -10,7 +10,7 @@ import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { createContainer } from '@fougere/container';
 import { createApp, createLocalRunner, frond, Invocation } from '@fougere/core';
-import { log } from '../src/index.js';
+import { file, log } from '../src/index.js';
 
 const here = import.meta.dirname;
 
@@ -77,12 +77,26 @@ describe('a call writes two lines', () => {
     expect(errors.some((line) => line.includes('[app:ops]') && line.includes('RefusingHandler.run'))).toBe(true);
   });
 
+  it('writes no call line when only the file is carried', async () => {
+    const lines = printed();
+    await using app = await createApp({
+      ...(await scannedAppOptions(join(here, 'fixtures-app'))),
+      createContainer,
+      extensions: [file(join(mkdtempSync(join(tmpdir(), 'fougere-log-')), 'lines.jsonl'))],
+    });
+
+    await createLocalRunner(app)({ address: 'order', op: 'create' }, { ...Invocation.empty, params: { id: '8' } });
+
+    expect(app.extensions()).toContain('file');
+    expect(lines.some((line) => line.includes('OrderHandler.create'))).toBe(false);
+  });
+
   it('writes none for the op that carries a line to its file', async () => {
     const lines = printed();
     await using app = await createApp({
       ...(await scannedAppOptions(join(here, 'fixtures-app'))),
       createContainer,
-      extensions: [log(join(mkdtempSync(join(tmpdir(), 'fougere-log-')), 'lines.jsonl'))],
+      extensions: [log(), file(join(mkdtempSync(join(tmpdir(), 'fougere-log-')), 'lines.jsonl'))],
     });
 
     await createLocalRunner(app)({ address: 'order', op: 'create' }, { ...Invocation.empty, params: { id: '9' } });

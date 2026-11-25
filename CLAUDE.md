@@ -776,7 +776,8 @@ the same way, `apps.<name>.platform`, named by its directory under `apps/` (`app
 host is the app it runs from (`appRunningIn`), and an entry naming no directory refuses. It replaced the `calls` and `observability` options of the Nuxt module,
 a closed list of two packages written into the plugin by name. `log()` installs
 `callLines`: two lines a call, under the frond that answers, `← <caller>` when a signed call came from
-another process; `log(path)` brings the file destination as well. It used to be core's
+another process. The file is another extension, `file(path)`: a destination, which every line of
+the process reaches, the call lines only when `log()` is carried too. It used to be core's
 `loggerMiddleware`, installed by `observability` alone, so an app that did not trace wrote nothing
 about its calls. The starters write the line. Pinned by `log/tests/call-lines.test.ts`.
 
